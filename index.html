@@ -1,307 +1,190 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Báo Cáo Công Việc & Giám Định Bảo Hiểm</title>
-  <meta name="description" content="Ứng dụng xử lý báo cáo cổng giám định BHYT và tổng hợp công việc Phòng Công Nghệ Thông Tin tự động, nhanh chóng và chính xác." />
-  
-  <!-- Google Fonts: Inter & Outfit -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <title>Báo cáo cổng giám định</title>
+  <meta name="description" content="Chương trình Báo cáo công việc Giám định Gộp & P.CNTT" />
   
   <!-- ExcelJS Library for 100% client-side Excel manipulation -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   
-  <!-- Pyodide for in-browser Python execution if needed -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Background Glows -->
-  <div class="bg-glow bg-glow-1"></div>
-  <div class="bg-glow bg-glow-2"></div>
-
-  <div class="app-container">
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-badge">
-        <i data-lucide="sparkles" class="badge-icon"></i>
-        <span>Hệ Thống Tự Động Hóa Báo Cáo</span>
+  <!-- Main Window Container (Tkinter window reproduction) -->
+  <div class="tk-window">
+    <!-- Window Title Bar -->
+    <div class="tk-titlebar">
+      <div class="tk-title-left">
+        <!-- Tkinter feather icon SVG -->
+        <svg class="tk-icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
+          <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="16" y1="8" x2="2" y2="22" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="17.5" y1="15" x2="9" y2="15" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="tk-title-text">Báo cáo cổng giám định</span>
       </div>
-      <h1 class="header-title">BÁO CÁO CÔNG VIỆC & CỔNG GIÁM ĐỊNH</h1>
-      <p class="header-desc">
-        Xử lý, lọc dữ liệu và xuất báo cáo Excel chuẩn định dạng cho <strong>Cổng Giám Định BHYT</strong> và <strong>Phòng CNTT</strong> trực tiếp trên trình duyệt.
-      </p>
+      <div class="tk-controls">
+        <button type="button" class="tk-btn-min" tabindex="-1">&#8212;</button>
+        <button type="button" class="tk-btn-max" tabindex="-1">&#9633;</button>
+        <button type="button" class="tk-btn-close" tabindex="-1">&#10005;</button>
+      </div>
+    </div>
+
+    <!-- Window Body -->
+    <div class="tk-body">
+      <!-- Title -->
+      <h1 class="main-title">BÁO CÁO CỔNG GIÁM ĐỊNH</h1>
       
-      <!-- Engine Selector & Status -->
-      <div class="engine-bar">
-        <div class="engine-status">
-          <span class="status-dot active"></span>
-          <span id="engineStatusText">Động cơ: <strong>ExcelJS Siêu Tốc (Trực tiếp)</strong></span>
+      <!-- Subtitle -->
+      <div class="sub-title">CHỌN CHỨC NĂNG CẦN THỰC HIỆN</div>
+
+      <!-- Action Buttons Frame -->
+      <div class="btn-frame">
+        <!-- Button 1: Giam Dinh -->
+        <button type="button" class="tk-big-btn" id="btnGiamDinh">
+          <span class="btn-line">BÁO CÁO</span>
+          <span class="btn-line">CỔNG GIÁM ĐỊNH</span>
+        </button>
+
+        <!-- Button 2: CNTT -->
+        <button type="button" class="tk-big-btn" id="btnCntt">
+          <span class="btn-line">BÁO CÁO CÔNG VIỆC</span>
+          <span class="btn-line">P.CNTT</span>
+        </button>
+      </div>
+
+      <!-- Status Label -->
+      <div class="status-label" id="statusLabel">Sẵn sàng</div>
+
+      <!-- Description Footer -->
+      <div class="info-footer">
+        <div class="info-group">
+          <div>Báo cáo cổng giám định</div>
+          <div class="info-arrow">&rarr; DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx</div>
         </div>
-        <div class="engine-switch">
-          <button type="button" class="engine-btn active" id="btnEngineWeb" title="Xử lý tức thì không cần tải thêm">⚡ Web Engine</button>
-          <button type="button" class="engine-btn" id="btnEnginePy" title="Chạy mã nguồn Python nguyên bản qua WebAssembly">🐍 Python Wasm</button>
+        <div class="info-group">
+          <div>Báo cáo công việc P.CNTT</div>
+          <div class="info-arrow">&rarr; TỔNG HỢP CÔNG VIỆC P.CNTT.xlsx</div>
         </div>
       </div>
-    </header>
+    </div>
+  </div>
 
-    <!-- Navigation Tabs -->
-    <nav class="nav-tabs" role="tablist">
-      <button class="tab-btn active" id="tabGiamDinh" data-tab="giamdinh" role="tab" aria-selected="true">
-        <div class="tab-icon-wrap bg-blue">
-          <i data-lucide="shield-check"></i>
-        </div>
-        <div class="tab-text">
-          <span class="tab-title">1. Báo Cáo Cổng Giám Định</span>
-          <span class="tab-sub">DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM</span>
-        </div>
-      </button>
+  <!-- Hidden File Inputs -->
+  <input type="file" id="fileInputGiamDinh" accept=".xlsx, .xlsm" style="display: none;" />
+  <input type="file" id="fileInputCntt" accept=".xlsx, .xlsm" style="display: none;" />
 
-      <button class="tab-btn" id="tabCntt" data-tab="cntt" role="tab" aria-selected="false">
-        <div class="tab-icon-wrap bg-emerald">
-          <i data-lucide="cpu"></i>
+  <!-- MODAL: Chọn khoảng ngày (Tkinter Toplevel) -->
+  <div class="tk-modal-overlay hidden" id="modalDayRange">
+    <div class="tk-modal-window modal-day-range">
+      <div class="tk-titlebar">
+        <div class="tk-title-left">
+          <span class="tk-title-text">Chọn khoảng ngày</span>
         </div>
-        <div class="tab-text">
-          <span class="tab-title">2. Báo Cáo Công Việc P.CNTT</span>
-          <span class="tab-sub">TỔNG HỢP CÔNG VIỆC P.CNTT</span>
+        <div class="tk-controls">
+          <button type="button" class="tk-btn-close" id="btnCloseDayModal">&#10005;</button>
         </div>
-      </button>
-    </nav>
-
-    <!-- TAB 1: BÁO CÁO CỔNG GIÁM ĐỊNH -->
-    <section class="tab-panel active" id="panelGiamDinh" role="tabpanel">
-      <div class="card main-card">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2 class="card-title">
-              <i data-lucide="file-spreadsheet" class="text-blue"></i>
-              Báo Cáo Cổng Giám Định Bảo Hiểm
-            </h2>
-            <p class="card-subtitle">
-              Lọc danh sách người dùng được duyệt (32 khoa/phòng), giữ nguyên định dạng, gộp ô tiêu đề và tách theo chu kỳ ngày.
-            </p>
-          </div>
-          <button type="button" class="demo-btn" id="btnDemoGiamDinh" title="Tải dữ liệu mẫu để thử nghiệm">
-            <i data-lucide="play-circle"></i> Thử dữ liệu mẫu
-          </button>
+      </div>
+      <div class="tk-modal-body">
+        <h2 class="modal-title">CHỌN KHOẢNG NGÀY</h2>
+        <div class="modal-info" id="dayModalInfo">
+          Ngày hiện tại: 25<br />
+          Mặc định: 15-31
         </div>
-
-        <!-- Upload Dropzone -->
-        <div class="dropzone" id="dropzoneGiamDinh">
-          <input type="file" id="fileInputGiamDinh" accept=".xlsx, .xlsm" class="file-input" />
-          <div class="dropzone-content">
-            <div class="dropzone-icon bg-blue-light">
-              <i data-lucide="upload-cloud" class="text-blue"></i>
-            </div>
-            <h3 class="dropzone-title">Kéo & thả file Excel vào đây</h3>
-            <p class="dropzone-hint">hoặc <span class="text-link">nhấn vào để chọn file</span> từ máy tính (.xlsx, .xlsm)</p>
-            <div class="file-tag">Yêu cầu: File có sheet "Người dùng"</div>
-          </div>
-        </div>
-
-        <!-- File Info Card (Hidden by default) -->
-        <div class="file-info-bar hidden" id="fileInfoGiamDinh">
-          <div class="file-info-left">
-            <i data-lucide="file-check-2" class="text-emerald"></i>
-            <div>
-              <div class="file-name" id="fileNameGiamDinh">ten_file.xlsx</div>
-              <div class="file-size" id="fileSizeGiamDinh">0 KB</div>
-            </div>
-          </div>
-          <button type="button" class="btn-clear" id="btnClearGiamDinh" title="Hủy chọn file">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
-
-        <!-- Configuration Options -->
-        <div class="options-box">
-          <label class="option-label">
-            <i data-lucide="calendar" class="option-icon"></i>
-            Chọn khoảng ngày xuất báo cáo:
+        <div class="modal-radios">
+          <label class="modal-radio-label">
+            <input type="radio" name="dayRangeRadio" value="01-14" id="radioDay0114" />
+            <span>Ngày 01 &rarr; 14</span>
           </label>
-          <div class="radio-group">
-            <label class="radio-card" id="radioCardG1">
-              <input type="radio" name="dayRange" value="01-14" id="range0114" />
-              <div class="radio-content">
-                <div class="radio-title">Chu kỳ: Ngày 01 → Ngày 14</div>
-                <div class="radio-desc">Tổng hợp nửa đầu tháng (14 cột ngày)</div>
-              </div>
-            </label>
-
-            <label class="radio-card" id="radioCardG2">
-              <input type="radio" name="dayRange" value="15-31" id="range1531" />
-              <div class="radio-content">
-                <div class="radio-title">Chu kỳ: Ngày 15 → Ngày 31</div>
-                <div class="radio-desc">Tổng hợp nửa cuối tháng (tối đa 17 cột ngày)</div>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Action Button -->
-        <div class="action-bar">
-          <button type="button" class="btn-primary btn-blue" id="btnProcessGiamDinh" disabled>
-            <i data-lucide="play" class="btn-icon"></i>
-            <span>BẮT ĐẦU XỬ LÝ BÁO CÁO</span>
-          </button>
-        </div>
-
-        <!-- Progress & Status -->
-        <div class="status-box hidden" id="statusBoxGiamDinh">
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="progressBarGiamDinh"></div>
-          </div>
-          <div class="status-message" id="statusMsgGiamDinh">Đang xử lý...</div>
-        </div>
-
-        <!-- Result Box (Hidden by default) -->
-        <div class="result-card hidden" id="resultCardGiamDinh">
-          <div class="result-header">
-            <div class="result-icon-wrap bg-emerald">
-              <i data-lucide="check-circle-2"></i>
-            </div>
-            <div>
-              <h3 class="result-title">Tạo Báo Cáo Thành Công!</h3>
-              <p class="result-desc" id="resultDescGiamDinh">Đã lọc dữ liệu cho các khoa phòng được phê duyệt.</p>
-            </div>
-          </div>
-          <div class="result-actions">
-            <button type="button" class="btn-download" id="btnDownloadGiamDinh">
-              <i data-lucide="download"></i>
-              <span>TẢI FILE EXCEL (.XLSX)</span>
-            </button>
-            <button type="button" class="btn-secondary" id="btnPreviewGiamDinh">
-              <i data-lucide="eye"></i> Xem bảng xem trước
-            </button>
-          </div>
-          <div class="preview-container hidden" id="previewGiamDinh"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: BÁO CÁO CÔNG VIỆC P.CNTT -->
-    <section class="tab-panel" id="panelCntt" role="tabpanel">
-      <div class="card main-card">
-        <div class="card-header">
-          <div class="card-title-group">
-            <h2 class="card-title">
-              <i data-lucide="binary" class="text-emerald"></i>
-              Báo Cáo Công Việc Phòng CNTT
-            </h2>
-            <p class="card-subtitle">
-              Tổng hợp lượt hỗ trợ phần mềm (E-Y), trích xuất & gộp mô tả sửa lỗi khác (AI), tính tổng cộng và định dạng tự động.
-            </p>
-          </div>
-          <button type="button" class="demo-btn" id="btnDemoCntt" title="Tải dữ liệu mẫu để thử nghiệm">
-            <i data-lucide="play-circle"></i> Thử dữ liệu mẫu
-          </button>
-        </div>
-
-        <!-- Upload Dropzone -->
-        <div class="dropzone" id="dropzoneCntt">
-          <input type="file" id="fileInputCntt" accept=".xlsx, .xlsm" class="file-input" />
-          <div class="dropzone-content">
-            <div class="dropzone-icon bg-emerald-light">
-              <i data-lucide="upload-cloud" class="text-emerald"></i>
-            </div>
-            <h3 class="dropzone-title">Kéo & thả file Excel nhật ký vào đây</h3>
-            <p class="dropzone-hint">hoặc <span class="text-link">nhấn vào để chọn file</span> từ máy tính (.xlsx, .xlsm)</p>
-            <div class="file-tag">Đọc tự động dữ liệu phần mềm & sửa lỗi khác</div>
-          </div>
-        </div>
-
-        <!-- File Info Bar -->
-        <div class="file-info-bar hidden" id="fileInfoCntt">
-          <div class="file-info-left">
-            <i data-lucide="file-check-2" class="text-emerald"></i>
-            <div>
-              <div class="file-name" id="fileNameCntt">ten_file.xlsx</div>
-              <div class="file-size" id="fileSizeCntt">0 KB</div>
-            </div>
-          </div>
-          <button type="button" class="btn-clear" id="btnClearCntt" title="Hủy chọn file">
-            <i data-lucide="x"></i>
-          </button>
-        </div>
-
-        <!-- Sheet Selector Option -->
-        <div class="options-box" id="sheetOptionsBoxCntt">
-          <label class="option-label" for="sheetSelectCntt">
-            <i data-lucide="layers" class="option-icon"></i>
-            Chọn Sheet cần tổng hợp:
+          <label class="modal-radio-label">
+            <input type="radio" name="dayRangeRadio" value="15-31" id="radioDay1531" />
+            <span>Ngày 15 &rarr; 31</span>
           </label>
-          <select id="sheetSelectCntt" class="custom-select" disabled>
-            <option value="">-- Vui lòng tải file Excel lên trước --</option>
-          </select>
         </div>
-
-        <!-- Action Button -->
-        <div class="action-bar">
-          <button type="button" class="btn-primary btn-emerald" id="btnProcessCntt" disabled>
-            <i data-lucide="play" class="btn-icon"></i>
-            <span>BẮT ĐẦU TỔNG HỢP CÔNG VIỆC CNTT</span>
-          </button>
-        </div>
-
-        <!-- Progress & Status -->
-        <div class="status-box hidden" id="statusBoxCntt">
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill emerald-fill" id="progressBarCntt"></div>
-          </div>
-          <div class="status-message" id="statusMsgCntt">Đang xử lý...</div>
-        </div>
-
-        <!-- Result Box -->
-        <div class="result-card hidden" id="resultCardCntt">
-          <div class="result-header">
-            <div class="result-icon-wrap bg-emerald">
-              <i data-lucide="check-circle-2"></i>
-            </div>
-            <div>
-              <h3 class="result-title">Tổng Hợp Báo Cáo Thành Công!</h3>
-              <p class="result-desc" id="resultDescCntt">Đã trích xuất các khoa có phát sinh công việc và tự động tính tổng cộng.</p>
-            </div>
-          </div>
-          <div class="result-actions">
-            <button type="button" class="btn-download" id="btnDownloadCntt">
-              <i data-lucide="download"></i>
-              <span>TẢI FILE TỔNG HỢP (.XLSX)</span>
-            </button>
-            <button type="button" class="btn-secondary" id="btnPreviewCntt">
-              <i data-lucide="eye"></i> Xem bảng xem trước
-            </button>
-          </div>
-          <div class="preview-container hidden" id="previewCntt"></div>
+        <div class="modal-btn-wrap">
+          <button type="button" class="tk-std-btn" id="btnConfirmDayRange">TIẾP TỤC</button>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- Activity Console / Logs -->
-    <section class="card log-card">
-      <div class="log-header">
-        <div class="log-title">
-          <i data-lucide="terminal"></i>
-          <span>Nhật Ký Xử Lý (Log Terminal)</span>
+  <!-- MODAL: Chọn Sheet P.CNTT (Tkinter Toplevel) -->
+  <div class="tk-modal-overlay hidden" id="modalSheetSelect">
+    <div class="tk-modal-window modal-sheet-select">
+      <div class="tk-titlebar">
+        <div class="tk-title-left">
+          <span class="tk-title-text">Chọn Sheet P.CNTT</span>
         </div>
-        <button type="button" class="btn-text" id="btnClearLogs">Xóa log</button>
+        <div class="tk-controls">
+          <button type="button" class="tk-btn-close" id="btnCloseSheetModal">&#10005;</button>
+        </div>
       </div>
-      <div class="log-body" id="logBody">
-        <div class="log-entry log-info">[HỆ THỐNG] Ứng dụng đã sẵn sàng. Vui lòng chọn chức năng và tải file Excel lên.</div>
+      <div class="tk-modal-body">
+        <h2 class="modal-title">CHỌN SHEET CẦN XỬ LÝ</h2>
+        <div class="modal-select-wrap">
+          <select id="sheetDropdown" class="tk-select"></select>
+        </div>
+        <div class="modal-btn-wrap">
+          <button type="button" class="tk-std-btn" id="btnConfirmSheet">TIẾP TỤC</button>
+        </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- Footer -->
-    <footer class="app-footer">
-      <p>Chương trình Báo Cáo Công Việc & Giám Định Gộp &bull; Phiên bản Web 2.0</p>
-      <p class="footer-sub">Hỗ trợ đầy đủ định dạng Excel .xlsx, .xlsm &bull; Chạy trực tiếp 100% trên trình duyệt</p>
-    </footer>
+  <!-- MODAL: MessageBox Info/Success (Tkinter messagebox.showinfo) -->
+  <div class="tk-modal-overlay hidden" id="modalInfoBox">
+    <div class="tk-modal-window modal-msgbox">
+      <div class="tk-titlebar">
+        <div class="tk-title-left">
+          <span class="tk-title-text" id="infoBoxTitle">HOÀN THÀNH</span>
+        </div>
+        <div class="tk-controls">
+          <button type="button" class="tk-btn-close" id="btnCloseInfoBox">&#10005;</button>
+        </div>
+      </div>
+      <div class="tk-modal-body msgbox-body">
+        <div class="msgbox-content">
+          <div class="msgbox-icon-wrap info-icon">&#8505;</div>
+          <div class="msgbox-text" id="infoBoxMessage">
+            Đã tạo báo cáo thành công!<br><br>
+            Tên file:<br>
+            <strong id="infoBoxFileName">DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx</strong><br><br>
+            File đã được tự động tải về máy tính.
+          </div>
+        </div>
+        <div class="msgbox-btn-wrap">
+          <button type="button" class="tk-std-btn btn-ok" id="btnOkInfoBox">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: MessageBox Error (Tkinter messagebox.showerror) -->
+  <div class="tk-modal-overlay hidden" id="modalErrorBox">
+    <div class="tk-modal-window modal-msgbox">
+      <div class="tk-titlebar">
+        <div class="tk-title-left">
+          <span class="tk-title-text" id="errorBoxTitle">LỖI</span>
+        </div>
+        <div class="tk-controls">
+          <button type="button" class="tk-btn-close" id="btnCloseErrorBox">&#10005;</button>
+        </div>
+      </div>
+      <div class="tk-modal-body msgbox-body">
+        <div class="msgbox-content">
+          <div class="msgbox-icon-wrap error-icon">&#10006;</div>
+          <div class="msgbox-text" id="errorBoxMessage">
+            Không thể tạo báo cáo:<br><br>
+            <span id="errorBoxDetail">Chi tiết lỗi</span>
+          </div>
+        </div>
+        <div class="msgbox-btn-wrap">
+          <button type="button" class="tk-std-btn btn-ok" id="btnOkErrorBox">OK</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
