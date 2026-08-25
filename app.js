@@ -1,7 +1,7 @@
 // ==========================================================
 // CHƯƠNG TRÌNH BÁO CÁO CÔNG VIỆC & GIÁM ĐỊNH GỘP
 // Mô phỏng 100% logic & luồng giao diện Tkinter Python
-// Hỗ trợ cả ExcelJS và SheetJS (XLSX) cho mọi định dạng
+// Hỗ trợ xử lý an toàn Clean Values & Shared Formulas
 // ==========================================================
 
 const TEN_FILE_GIAM_DINH = "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx";
@@ -42,12 +42,51 @@ const ALLOWED_USERS = new Set([
   "LKTK"
 ]);
 
+// Trích xuất giá trị thuần (tránh lỗi Shared Formula clone)
+function getCleanCellValue(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === "object") {
+    if ("result" in val) {
+      return val.result !== undefined ? val.result : null;
+    }
+    if ("text" in val) {
+      return val.text;
+    }
+    if ("richText" in val && Array.isArray(val.richText)) {
+      return val.richText.map(t => t.text).join("");
+    }
+    if ("hyperlink" in val && "text" in val) {
+      return val.text;
+    }
+    if (val instanceof Date) {
+      return val;
+    }
+  }
+  return val;
+}
+
+// Chuẩn hóa text
 function normalizeText(value) {
-  if (value === null || value === undefined) return "";
-  let text = String(value);
+  const clean = getCleanCellValue(value);
+  if (clean === null || clean === undefined) return "";
+  let text = String(clean);
   text = text.replace(/[\r\n]+/g, " ");
   text = text.replace(/\s+/g, " ");
   return text.trim().toUpperCase();
+}
+
+// Copy style an toàn
+function copyCellStyle(srcCell, targetCell) {
+  if (!srcCell || !targetCell) return;
+  try {
+    if (srcCell.font) targetCell.font = JSON.parse(JSON.stringify(srcCell.font));
+    if (srcCell.alignment) targetCell.alignment = JSON.parse(JSON.stringify(srcCell.alignment));
+    if (srcCell.border) targetCell.border = JSON.parse(JSON.stringify(srcCell.border));
+    if (srcCell.fill) targetCell.fill = JSON.parse(JSON.stringify(srcCell.fill));
+    if (srcCell.numFmt) targetCell.numFmt = srcCell.numFmt;
+  } catch (e) {
+    // Ignore style clone errors
+  }
 }
 
 function downloadBlob(buffer, filename) {
@@ -99,7 +138,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     console.warn("ExcelJS load failed, trying SheetJS fallback...", e);
   }
 
-  // Fallback qua SheetJS nếu ExcelJS gặp lỗi format
+  // Fallback qua SheetJS nếu ExcelJS không load được
   if (!sourceSheet && typeof XLSX !== "undefined") {
     const sjsWb = XLSX.read(arrayBuffer, { type: "array", cellStyles: true });
     let targetSheetName = sjsWb.SheetNames.find(n => {
@@ -108,12 +147,9 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     }) || sjsWb.SheetNames[0];
 
     const sjsWs = sjsWb.Sheets[targetSheetName];
-    // Chuyển SheetJS sheet thành ExcelJS workbook
-    const csvData = XLSX.utils.sheet_to_csv(sjsWs);
     sourceWb = new ExcelJS.Workbook();
     sourceSheet = sourceWb.addWorksheet("Người dùng");
     
-    // Parse CSV rows vào ExcelJS
     const rows = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
     rows.forEach((r, rIdx) => {
       const row = sourceSheet.getRow(rIdx + 1);
@@ -155,7 +191,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
 
   const maxCol = Math.max(sourceSheet.columnCount || 35, 35);
   for (let c = 1; c <= maxCol; c++) {
-    const val = headerRow.getCell(c).value;
+    const val = getCleanCellValue(headerRow.getCell(c).value);
     const norm = normalizeText(val);
 
     if (norm.includes("NGƯỜI DÙNG") || norm.includes("NGUOI DUNG")) {
@@ -195,7 +231,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   const resultWb = new ExcelJS.Workbook();
   const resultSheet = resultWb.addWorksheet("Người dùng");
 
-  // Copy 5 dòng đầu
+  // Copy 5 dòng đầu (dùng getCleanCellValue để tránh lỗi Shared Formula)
   for (let r = 1; r <= 5; r++) {
     const srcRow = sourceSheet.getRow(r);
     const targetRow = resultSheet.getRow(r);
@@ -205,16 +241,13 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
       const srcCell = srcRow.getCell(oldCol);
       const targetCell = targetRow.getCell(newCol);
 
-      targetCell.value = srcCell.value;
-      if (srcCell.font) targetCell.font = Object.assign({}, srcCell.font);
-      if (srcCell.alignment) targetCell.alignment = Object.assign({}, srcCell.alignment);
-      if (srcCell.border) targetCell.border = Object.assign({}, srcCell.border);
-      if (srcCell.fill) targetCell.fill = Object.assign({}, srcCell.fill);
+      targetCell.value = getCleanCellValue(srcCell.value);
+      copyCellStyle(srcCell, targetCell);
     });
   }
 
   // Gộp tiêu đề dòng 1 (A1 -> LastCol)
-  const titleA1 = sourceSheet.getCell("A1").value || "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM";
+  const titleA1 = getCleanCellValue(sourceSheet.getCell("A1").value) || "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(1, c).value = null;
   }
@@ -226,7 +259,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   resultSheet.getRow(1).height = 32;
 
   // Gộp tiêu đề dòng 2 (A2 -> LastCol)
-  const noteA2 = sourceSheet.getCell("A2").value || "";
+  const noteA2 = getCleanCellValue(sourceSheet.getCell("A2").value) || "";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(2, c).value = null;
   }
@@ -251,7 +284,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
 
   for (let r = 6; r <= totalSrcRows; r++) {
     const srcRow = sourceSheet.getRow(r);
-    const userVal = srcRow.getCell(userCol).value;
+    const userVal = getCleanCellValue(srcRow.getCell(userCol).value);
     if (!userVal) continue;
 
     const normUser = normalizeText(userVal);
@@ -274,13 +307,10 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
       if (newCol === 1) {
         targetCell.value = stt;
       } else {
-        targetCell.value = srcCell.value;
+        targetCell.value = getCleanCellValue(srcCell.value);
       }
 
-      if (srcCell.font) targetCell.font = Object.assign({}, srcCell.font);
-      if (srcCell.alignment) targetCell.alignment = Object.assign({}, srcCell.alignment);
-      if (srcCell.border) targetCell.border = Object.assign({}, srcCell.border);
-      if (srcCell.fill) targetCell.fill = Object.assign({}, srcCell.fill);
+      copyCellStyle(srcCell, targetCell);
     });
 
     stt++;
@@ -340,7 +370,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
   const softwareHeaders = [];
   const headerRow105 = ws.getRow(105);
   softwareColumns.forEach(c => {
-    const val = headerRow105.getCell(c).value;
+    const val = getCleanCellValue(headerRow105.getCell(c).value);
     softwareHeaders.push(val !== null && val !== undefined ? String(val).trim() : `Phần mềm ${c-4}`);
   });
 
@@ -348,7 +378,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
   const maxRow = Math.max(ws.rowCount || 0, 250);
 
   for (let r = 106; r <= maxRow; r++) {
-    const deptVal = ws.getRow(r).getCell(4).value;
+    const deptVal = getCleanCellValue(ws.getRow(r).getCell(4).value);
     if (!deptVal) continue;
     const sDept = String(deptVal).trim();
     if (sDept.toUpperCase() === "TỔNG CỘNG" || sDept.toUpperCase() === "TONG CONG") {
@@ -361,7 +391,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
 
   if (departments.length === 0) {
     for (let r = 1; r <= maxRow; r++) {
-      const deptVal = ws.getRow(r).getCell(4).value || ws.getRow(r).getCell(2).value;
+      const deptVal = getCleanCellValue(ws.getRow(r).getCell(4).value) || getCleanCellValue(ws.getRow(r).getCell(2).value);
       if (deptVal) {
         const sDept = String(deptVal).trim();
         if (sDept.toUpperCase().includes("KHOA") || sDept.toUpperCase().includes("PHÒNG") || sDept.toUpperCase().includes("TRUNG TÂM")) {
@@ -377,14 +407,14 @@ async function processCntt(arrayBuffer, targetSheetName) {
   });
 
   for (let r = 106; r <= maxRow; r++) {
-    const deptVal = ws.getRow(r).getCell(4).value;
+    const deptVal = getCleanCellValue(ws.getRow(r).getCell(4).value);
     if (!deptVal) continue;
     const sDept = String(deptVal).trim();
     if (sDept.toUpperCase() === "TỔNG CỘNG" || sDept.toUpperCase() === "TONG CONG") break;
     if (!data[sDept]) continue;
 
     softwareColumns.forEach((c, idx) => {
-      const val = ws.getRow(r).getCell(c).value;
+      const val = getCleanCellValue(ws.getRow(r).getCell(c).value);
       if (val !== null && val !== undefined && val !== "" && val !== 0) {
         data[sDept][idx] = val;
       }
@@ -397,8 +427,8 @@ async function processCntt(arrayBuffer, targetSheetName) {
   });
 
   for (let r = 7; r <= 105; r++) {
-    const deptVal = ws.getRow(r).getCell(2).value;
-    const errorVal = ws.getRow(r).getCell(35).value;
+    const deptVal = getCleanCellValue(ws.getRow(r).getCell(2).value);
+    const errorVal = getCleanCellValue(ws.getRow(r).getCell(35).value);
 
     if (!deptVal || !errorVal) continue;
     const sDept = String(deptVal).trim();
@@ -628,7 +658,6 @@ document.addEventListener("DOMContentLoaded", () => {
     modalErrorBox.classList.add("hidden");
   });
 
-  // Helper đọc ArrayBuffer
   async function getArrayBufferFromFile(file) {
     if (file.arrayBuffer) {
       return await file.arrayBuffer();
@@ -776,7 +805,6 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      // Nếu tên file chứa "giam dinh" hoặc "cham cong" thì chạy giám định, ngược lại chạy CNTT
       const lName = file.name.toLowerCase();
       if (lName.includes("giam") || lName.includes("dinh") || lName.includes("cham") || lName.includes("cong")) {
         handleGiamDinhFile(file);
