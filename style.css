@@ -125,10 +125,29 @@ body {
   width: 100%;
 }
 
-/* Tkinter Large Buttons */
-.tk-big-btn {
+.btn-wrapper {
+  position: relative;
   width: 250px;
   height: 85px;
+}
+
+/* Native file input overlay directly over button */
+.native-file-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 0;
+}
+
+/* Tkinter Large Buttons */
+.tk-big-btn {
+  width: 100%;
+  height: 100%;
   background-color: #F0F0F0;
   border: 1px solid #707070;
   border-radius: 2px;
@@ -141,14 +160,15 @@ body {
   transition: background-color 0.1s, border-color 0.1s;
   box-shadow: 1px 1px 0 #FFFFFF inset, -1px -1px 0 #B0B0B0 inset;
   outline: none;
+  pointer-events: none; /* Let clicks pass directly to native file overlay */
 }
 
-.tk-big-btn:hover {
+.btn-wrapper:hover .tk-big-btn {
   background-color: #E5E5E5;
   border-color: #505050;
 }
 
-.tk-big-btn:active {
+.btn-wrapper:active .tk-big-btn {
   background-color: #D5D5D5;
   box-shadow: -1px -1px 0 #FFFFFF inset, 1px 1px 0 #707070 inset;
   padding-top: 12px;
@@ -394,7 +414,7 @@ body {
   display: none !important;
 }
 
-/* Responsive adjustment for small mobile screens */
+/* Responsive adjustment */
 @media (max-width: 680px) {
   .tk-window {
     width: 100%;
@@ -407,7 +427,7 @@ body {
     gap: 16px;
   }
 
-  .tk-big-btn {
+  .btn-wrapper {
     width: 100%;
     max-width: 280px;
   }

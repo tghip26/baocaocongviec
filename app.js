@@ -1,6 +1,7 @@
 // ==========================================================
 // CHƯƠNG TRÌNH BÁO CÁO CÔNG VIỆC & GIÁM ĐỊNH GỘP
 // Mô phỏng 100% logic & luồng giao diện Tkinter Python
+// Hỗ trợ cả ExcelJS và SheetJS (XLSX) cho mọi định dạng
 // ==========================================================
 
 const TEN_FILE_GIAM_DINH = "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx";
@@ -41,7 +42,6 @@ const ALLOWED_USERS = new Set([
   "LKTK"
 ]);
 
-// Chuẩn hóa text giống normalize_text
 function normalizeText(value) {
   if (value === null || value === undefined) return "";
   let text = String(value);
@@ -50,7 +50,6 @@ function normalizeText(value) {
   return text.trim().toUpperCase();
 }
 
-// Download Helper
 function downloadBlob(buffer, filename) {
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -80,34 +79,62 @@ function getColLetter(colNumber) {
 // 1. THUẬT TOÁN XỬ LÝ BÁO CÁO CỔNG GIÁM ĐỊNH
 // ==========================================================
 async function processGiamDinh(arrayBuffer, startDay, endDay) {
-  const sourceWb = new ExcelJS.Workbook();
-  await sourceWb.xlsx.load(arrayBuffer);
-
+  let sourceWb = null;
   let sourceSheet = null;
-  for (const sheet of sourceWb.worksheets) {
-    const sName = sheet.name.trim().toLowerCase();
-    if (sName === "người dùng" || sName === "nguoi dung" || sName.includes("người dùng") || sName.includes("nguoi dung")) {
-      sourceSheet = sheet;
-      break;
+
+  try {
+    sourceWb = new ExcelJS.Workbook();
+    await sourceWb.xlsx.load(arrayBuffer);
+    for (const sheet of sourceWb.worksheets) {
+      const sName = sheet.name.trim().toLowerCase();
+      if (sName === "người dùng" || sName === "nguoi dung" || sName.includes("người dùng") || sName.includes("nguoi dung")) {
+        sourceSheet = sheet;
+        break;
+      }
     }
+    if (!sourceSheet && sourceWb.worksheets.length > 0) {
+      sourceSheet = sourceWb.worksheets[0];
+    }
+  } catch (e) {
+    console.warn("ExcelJS load failed, trying SheetJS fallback...", e);
+  }
+
+  // Fallback qua SheetJS nếu ExcelJS gặp lỗi format
+  if (!sourceSheet && typeof XLSX !== "undefined") {
+    const sjsWb = XLSX.read(arrayBuffer, { type: "array", cellStyles: true });
+    let targetSheetName = sjsWb.SheetNames.find(n => {
+      const l = n.trim().toLowerCase();
+      return l === "người dùng" || l === "nguoi dung" || l.includes("người dùng") || l.includes("nguoi dung");
+    }) || sjsWb.SheetNames[0];
+
+    const sjsWs = sjsWb.Sheets[targetSheetName];
+    // Chuyển SheetJS sheet thành ExcelJS workbook
+    const csvData = XLSX.utils.sheet_to_csv(sjsWs);
+    sourceWb = new ExcelJS.Workbook();
+    sourceSheet = sourceWb.addWorksheet("Người dùng");
+    
+    // Parse CSV rows vào ExcelJS
+    const rows = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
+    rows.forEach((r, rIdx) => {
+      const row = sourceSheet.getRow(rIdx + 1);
+      r.forEach((cVal, cIdx) => {
+        row.getCell(cIdx + 1).value = cVal;
+      });
+    });
   }
 
   if (!sourceSheet) {
-    sourceSheet = sourceWb.worksheets[0];
+    throw new Error("Không thể đọc cấu trúc sheet 'Người dùng' trong file Excel.");
   }
 
-  if (!sourceSheet) {
-    throw new Error("File không có sheet 'Người dùng'.");
-  }
-
-  // Tìm dòng header
+  // 1. Tìm dòng header
   let headerRowIndex = null;
   const maxSearchRow = Math.min(sourceSheet.rowCount || 20, 20);
 
   for (let r = 1; r <= maxSearchRow; r++) {
     const row = sourceSheet.getRow(r);
     const cellValues = [];
-    row.eachCell({ includeEmpty: false }, (cell) => {
+    row.eachCell({ includeEmpty: true }, (cell) => {
       cellValues.push(normalizeText(cell.value));
     });
 
@@ -121,7 +148,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     headerRowIndex = 4;
   }
 
-  // Tìm cột NGƯỜI DÙNG và các cột ngày
+  // 2. Tìm cột NGƯỜI DÙNG và các cột ngày (1..31)
   const headerRow = sourceSheet.getRow(headerRowIndex);
   let userCol = null;
   const dayColumns = {};
@@ -137,11 +164,9 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
 
     if (val !== null && val !== undefined) {
       const sVal = String(val).trim();
-      if (/^\d+$/.test(sVal)) {
-        const d = parseInt(sVal, 10);
-        if (d >= 1 && d <= 31) {
-          dayColumns[d] = c;
-        }
+      const d = parseInt(sVal, 10);
+      if (!isNaN(d) && d >= 1 && d <= 31) {
+        dayColumns[d] = c;
       }
     }
   }
@@ -150,6 +175,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     userCol = 2;
   }
 
+  // 3. Lấy các cột ngày theo chu kỳ đã chọn
   const selectedDays = [];
   for (let d = startDay; d <= endDay; d++) {
     selectedDays.push(d);
@@ -165,10 +191,11 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   const resultLastCol = sourceColumns.length;
   const resultLastLetter = getColLetter(resultLastCol);
 
+  // 4. Tạo workbook kết quả
   const resultWb = new ExcelJS.Workbook();
   const resultSheet = resultWb.addWorksheet("Người dùng");
 
-  // Copy dòng 1-5
+  // Copy 5 dòng đầu
   for (let r = 1; r <= 5; r++) {
     const srcRow = sourceSheet.getRow(r);
     const targetRow = resultSheet.getRow(r);
@@ -186,7 +213,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     });
   }
 
-  // Gộp tiêu đề dòng 1
+  // Gộp tiêu đề dòng 1 (A1 -> LastCol)
   const titleA1 = sourceSheet.getCell("A1").value || "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(1, c).value = null;
@@ -198,7 +225,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   cellA1.font = { name: "Arial", size: 16, bold: true };
   resultSheet.getRow(1).height = 32;
 
-  // Gộp tiêu đề dòng 2
+  // Gộp tiêu đề dòng 2 (A2 -> LastCol)
   const noteA2 = sourceSheet.getCell("A2").value || "";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(2, c).value = null;
@@ -217,10 +244,10 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   resultSheet.mergeCells(4, 2, 5, 2);
   resultSheet.getCell(4, 2).alignment = { horizontal: "center", vertical: "middle" };
 
-  // Lọc và đánh lại STT
+  // 5. Lọc và đánh lại STT
   let outputRowIdx = 6;
   let stt = 1;
-  const totalSrcRows = sourceSheet.rowCount || 100;
+  const totalSrcRows = Math.max(sourceSheet.rowCount || 0, 100);
 
   for (let r = 6; r <= totalSrcRows; r++) {
     const srcRow = sourceSheet.getRow(r);
@@ -260,7 +287,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     outputRowIdx++;
   }
 
-  // Kích thước cột
+  // Đặt độ rộng cột
   resultSheet.getColumn(1).width = 8;
   resultSheet.getColumn(2).width = 25;
   for (let c = 3; c <= resultLastCol; c++) {
@@ -280,13 +307,29 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
 // 2. THUẬT TOÁN BÁO CÁO CÔNG VIỆC PHÒNG CNTT
 // ==========================================================
 async function processCntt(arrayBuffer, targetSheetName) {
-  const sourceWb = new ExcelJS.Workbook();
-  await sourceWb.xlsx.load(arrayBuffer);
-
-  let ws = null;
-  if (targetSheetName) {
-    ws = sourceWb.getWorksheet(targetSheetName);
+  let sourceWb = new ExcelJS.Workbook();
+  try {
+    await sourceWb.xlsx.load(arrayBuffer);
+  } catch (e) {
+    if (typeof XLSX !== "undefined") {
+      const sjsWb = XLSX.read(arrayBuffer, { type: "array" });
+      const tName = targetSheetName || sjsWb.SheetNames[0];
+      const sjsWs = sjsWb.Sheets[tName];
+      sourceWb = new ExcelJS.Workbook();
+      const wsNew = sourceWb.addWorksheet(tName);
+      const rows = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
+      rows.forEach((r, rIdx) => {
+        const row = wsNew.getRow(rIdx + 1);
+        r.forEach((cVal, cIdx) => {
+          row.getCell(cIdx + 1).value = cVal;
+        });
+      });
+    } else {
+      throw e;
+    }
   }
+
+  let ws = targetSheetName ? sourceWb.getWorksheet(targetSheetName) : null;
   if (!ws) {
     ws = sourceWb.worksheets[0];
   }
@@ -302,7 +345,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
   });
 
   const departments = [];
-  const maxRow = ws.rowCount || 250;
+  const maxRow = Math.max(ws.rowCount || 0, 250);
 
   for (let r = 106; r <= maxRow; r++) {
     const deptVal = ws.getRow(r).getCell(4).value;
@@ -533,13 +576,9 @@ async function processCntt(arrayBuffer, targetSheetName) {
 // ==========================================================
 document.addEventListener("DOMContentLoaded", () => {
   const statusLabel = document.getElementById("statusLabel");
-  const btnGiamDinh = document.getElementById("btnGiamDinh");
-  const btnCntt = document.getElementById("btnCntt");
-
   const fileInputGiamDinh = document.getElementById("fileInputGiamDinh");
   const fileInputCntt = document.getElementById("fileInputCntt");
 
-  // Modals
   const modalDayRange = document.getElementById("modalDayRange");
   const modalSheetSelect = document.getElementById("modalSheetSelect");
   const modalInfoBox = document.getElementById("modalInfoBox");
@@ -565,7 +604,6 @@ document.addEventListener("DOMContentLoaded", () => {
     modalErrorBox.classList.remove("hidden");
   }
 
-  // Close buttons for modals
   document.getElementById("btnCloseDayModal").addEventListener("click", () => {
     modalDayRange.classList.add("hidden");
     setStatus("Sẵn sàng", "gray");
@@ -590,23 +628,26 @@ document.addEventListener("DOMContentLoaded", () => {
     modalErrorBox.classList.add("hidden");
   });
 
+  // Helper đọc ArrayBuffer
+  async function getArrayBufferFromFile(file) {
+    if (file.arrayBuffer) {
+      return await file.arrayBuffer();
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = (e) => reject(e);
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   // ======================================================
   // CHỨC NĂNG 1: BÁO CÁO CỔNG GIÁM ĐỊNH
   // ======================================================
-  btnGiamDinh.addEventListener("click", () => {
-    fileInputGiamDinh.value = "";
-    fileInputGiamDinh.click();
-  });
+  async function handleGiamDinhFile(file) {
+    try {
+      currentGiamDinhBuffer = await getArrayBufferFromFile(file);
 
-  fileInputGiamDinh.addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      currentGiamDinhBuffer = evt.target.result;
-
-      // Hiển thị dialog chọn khoảng ngày
       const today = new Date().getDate();
       const defaultRange = today <= 14 ? "01-14" : "15-31";
 
@@ -620,8 +661,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       modalDayRange.classList.remove("hidden");
-    };
-    reader.readAsArrayBuffer(file);
+    } catch (err) {
+      setStatus("Có lỗi", "red");
+      showErrorBox("LỖI", "Không thể đọc file: " + err.message);
+    }
+  }
+
+  fileInputGiamDinh.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    handleGiamDinhFile(file);
+    fileInputGiamDinh.value = "";
   });
 
   document.getElementById("btnConfirmDayRange").addEventListener("click", async () => {
@@ -642,51 +692,52 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus("Có lỗi", "red");
         showErrorBox("LỖI", err.message);
       }
-    }, 100);
+    }, 50);
   });
 
   // ======================================================
   // CHỨC NĂNG 2: BÁO CÁO CÔNG VIỆC P.CNTT
   // ======================================================
-  btnCntt.addEventListener("click", () => {
-    fileInputCntt.value = "";
-    fileInputCntt.click();
-  });
+  async function handleCnttFile(file) {
+    try {
+      currentCnttBuffer = await getArrayBufferFromFile(file);
+
+      let sheetNames = [];
+      try {
+        const tempWb = new ExcelJS.Workbook();
+        await tempWb.xlsx.load(currentCnttBuffer);
+        sheetNames = tempWb.worksheets.map(w => w.name);
+      } catch (e) {
+        if (typeof XLSX !== "undefined") {
+          const sjsWb = XLSX.read(currentCnttBuffer, { type: "array" });
+          sheetNames = sjsWb.SheetNames;
+        }
+      }
+
+      if (sheetNames.length <= 1) {
+        runCnttProcess(sheetNames[0] || "");
+      } else {
+        const select = document.getElementById("sheetDropdown");
+        select.innerHTML = "";
+        sheetNames.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+        modalSheetSelect.classList.remove("hidden");
+      }
+    } catch (err) {
+      setStatus("Có lỗi", "red");
+      showErrorBox("LỖI", "Không thể đọc file Excel: " + err.message);
+    }
+  }
 
   fileInputCntt.addEventListener("change", (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      currentCnttBuffer = evt.target.result;
-
-      try {
-        const tempWb = new ExcelJS.Workbook();
-        await tempWb.xlsx.load(currentCnttBuffer);
-        const sheetNames = tempWb.worksheets.map(w => w.name);
-
-        if (sheetNames.length === 1) {
-          // Nếu chỉ có 1 sheet thì xử lý luôn
-          runCnttProcess(sheetNames[0]);
-        } else {
-          // Nếu nhiều sheet thì mở dialog chọn sheet
-          const select = document.getElementById("sheetDropdown");
-          select.innerHTML = "";
-          sheetNames.forEach(name => {
-            const opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            select.appendChild(opt);
-          });
-          modalSheetSelect.classList.remove("hidden");
-        }
-      } catch (err) {
-        setStatus("Có lỗi", "red");
-        showErrorBox("LỖI", "Không thể đọc file Excel: " + err.message);
-      }
-    };
-    reader.readAsArrayBuffer(file);
+    handleCnttFile(file);
+    fileInputCntt.value = "";
   });
 
   document.getElementById("btnConfirmSheet").addEventListener("click", () => {
@@ -709,6 +760,29 @@ document.addEventListener("DOMContentLoaded", () => {
         setStatus("Có lỗi", "red");
         showErrorBox("LỖI", err.message);
       }
-    }, 100);
+    }, 50);
   }
+
+  // Hỗ trợ Kéo & thả file (Drag & Drop) vào cửa sổ
+  const mainWindow = document.getElementById("mainWindow");
+  window.addEventListener("dragover", (e) => e.preventDefault());
+  window.addEventListener("drop", (e) => e.preventDefault());
+
+  mainWindow.addEventListener("dragover", (e) => {
+    e.preventDefault();
+  });
+
+  mainWindow.addEventListener("drop", (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      // Nếu tên file chứa "giam dinh" hoặc "cham cong" thì chạy giám định, ngược lại chạy CNTT
+      const lName = file.name.toLowerCase();
+      if (lName.includes("giam") || lName.includes("dinh") || lName.includes("cham") || lName.includes("cong")) {
+        handleGiamDinhFile(file);
+      } else {
+        handleCnttFile(file);
+      }
+    }
+  });
 });

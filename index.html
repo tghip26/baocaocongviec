@@ -6,14 +6,16 @@
   <title>Báo cáo cổng giám định</title>
   <meta name="description" content="Chương trình Báo cáo công việc Giám định Gộp & P.CNTT" />
   
-  <!-- ExcelJS Library for 100% client-side Excel manipulation -->
+  <!-- SheetJS for universal Excel reading (.xlsx, .xlsm, .xls) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- ExcelJS for formatted output generation -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <!-- Main Window Container (Tkinter window reproduction) -->
-  <div class="tk-window">
+  <div class="tk-window" id="mainWindow">
     <!-- Window Title Bar -->
     <div class="tk-titlebar">
       <div class="tk-title-left">
@@ -43,16 +45,22 @@
       <!-- Action Buttons Frame -->
       <div class="btn-frame">
         <!-- Button 1: Giam Dinh -->
-        <button type="button" class="tk-big-btn" id="btnGiamDinh">
-          <span class="btn-line">BÁO CÁO</span>
-          <span class="btn-line">CỔNG GIÁM ĐỊNH</span>
-        </button>
+        <div class="btn-wrapper">
+          <button type="button" class="tk-big-btn" id="btnGiamDinh">
+            <span class="btn-line">BÁO CÁO</span>
+            <span class="btn-line">CỔNG GIÁM ĐỊNH</span>
+          </button>
+          <input type="file" id="fileInputGiamDinh" accept=".xlsx, .xlsm, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, *" class="native-file-overlay" />
+        </div>
 
         <!-- Button 2: CNTT -->
-        <button type="button" class="tk-big-btn" id="btnCntt">
-          <span class="btn-line">BÁO CÁO CÔNG VIỆC</span>
-          <span class="btn-line">P.CNTT</span>
-        </button>
+        <div class="btn-wrapper">
+          <button type="button" class="tk-big-btn" id="btnCntt">
+            <span class="btn-line">BÁO CÁO CÔNG VIỆC</span>
+            <span class="btn-line">P.CNTT</span>
+          </button>
+          <input type="file" id="fileInputCntt" accept=".xlsx, .xlsm, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, *" class="native-file-overlay" />
+        </div>
       </div>
 
       <!-- Status Label -->
@@ -71,10 +79,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Hidden File Inputs -->
-  <input type="file" id="fileInputGiamDinh" accept=".xlsx, .xlsm" style="display: none;" />
-  <input type="file" id="fileInputCntt" accept=".xlsx, .xlsm" style="display: none;" />
 
   <!-- MODAL: Chọn khoảng ngày (Tkinter Toplevel) -->
   <div class="tk-modal-overlay hidden" id="modalDayRange">
