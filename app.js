@@ -1,7 +1,7 @@
 // ==========================================================
 // CHƯƠNG TRÌNH BÁO CÁO CÔNG VIỆC & GIÁM ĐỊNH GỘP
 // Mô phỏng 100% logic & luồng giao diện Tkinter Python
-// Hỗ trợ xử lý an toàn Clean Values & Shared Formulas
+// Sử dụng SheetJS làm bộ đọc siêu tốc & ExcelJS làm bộ xuất định dạng
 // ==========================================================
 
 const TEN_FILE_GIAM_DINH = "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx";
@@ -42,51 +42,12 @@ const ALLOWED_USERS = new Set([
   "LKTK"
 ]);
 
-// Trích xuất giá trị thuần (tránh lỗi Shared Formula clone)
-function getCleanCellValue(val) {
-  if (val === null || val === undefined) return null;
-  if (typeof val === "object") {
-    if ("result" in val) {
-      return val.result !== undefined ? val.result : null;
-    }
-    if ("text" in val) {
-      return val.text;
-    }
-    if ("richText" in val && Array.isArray(val.richText)) {
-      return val.richText.map(t => t.text).join("");
-    }
-    if ("hyperlink" in val && "text" in val) {
-      return val.text;
-    }
-    if (val instanceof Date) {
-      return val;
-    }
-  }
-  return val;
-}
-
-// Chuẩn hóa text
 function normalizeText(value) {
-  const clean = getCleanCellValue(value);
-  if (clean === null || clean === undefined) return "";
-  let text = String(clean);
+  if (value === null || value === undefined) return "";
+  let text = String(value);
   text = text.replace(/[\r\n]+/g, " ");
   text = text.replace(/\s+/g, " ");
   return text.trim().toUpperCase();
-}
-
-// Copy style an toàn
-function copyCellStyle(srcCell, targetCell) {
-  if (!srcCell || !targetCell) return;
-  try {
-    if (srcCell.font) targetCell.font = JSON.parse(JSON.stringify(srcCell.font));
-    if (srcCell.alignment) targetCell.alignment = JSON.parse(JSON.stringify(srcCell.alignment));
-    if (srcCell.border) targetCell.border = JSON.parse(JSON.stringify(srcCell.border));
-    if (srcCell.fill) targetCell.fill = JSON.parse(JSON.stringify(srcCell.fill));
-    if (srcCell.numFmt) targetCell.numFmt = srcCell.numFmt;
-  } catch (e) {
-    // Ignore style clone errors
-  }
 }
 
 function downloadBlob(buffer, filename) {
@@ -115,139 +76,115 @@ function getColLetter(colNumber) {
 }
 
 // ==========================================================
-// 1. THUẬT TOÁN XỬ LÝ BÁO CÁO CỔNG GIÁM ĐỊNH
+// 1. THUẬT TOÁN XỬ LÝ BÁO CÁO CỔNG GIÁM ĐỊNH (SheetJS -> ExcelJS)
 // ==========================================================
 async function processGiamDinh(arrayBuffer, startDay, endDay) {
-  let sourceWb = null;
-  let sourceSheet = null;
+  // 1. Đọc file bằng SheetJS (miễn nhiễm hoàn toàn với lỗi shared formulas & XML hỏng)
+  const sjsWb = XLSX.read(arrayBuffer, { type: "array", cellDates: true, cellFormula: false });
+  
+  let targetSheetName = sjsWb.SheetNames.find(n => {
+    const l = n.trim().toLowerCase();
+    return l === "người dùng" || l === "nguoi dung" || l.includes("người dùng") || l.includes("nguoi dung");
+  }) || sjsWb.SheetNames[0];
 
-  try {
-    sourceWb = new ExcelJS.Workbook();
-    await sourceWb.xlsx.load(arrayBuffer);
-    for (const sheet of sourceWb.worksheets) {
-      const sName = sheet.name.trim().toLowerCase();
-      if (sName === "người dùng" || sName === "nguoi dung" || sName.includes("người dùng") || sName.includes("nguoi dung")) {
-        sourceSheet = sheet;
-        break;
-      }
-    }
-    if (!sourceSheet && sourceWb.worksheets.length > 0) {
-      sourceSheet = sourceWb.worksheets[0];
-    }
-  } catch (e) {
-    console.warn("ExcelJS load failed, trying SheetJS fallback...", e);
+  const sjsWs = sjsWb.Sheets[targetSheetName];
+  if (!sjsWs) {
+    throw new Error("Không tìm thấy sheet 'Người dùng' trong file.");
   }
 
-  // Fallback qua SheetJS nếu ExcelJS không load được
-  if (!sourceSheet && typeof XLSX !== "undefined") {
-    const sjsWb = XLSX.read(arrayBuffer, { type: "array", cellStyles: true });
-    let targetSheetName = sjsWb.SheetNames.find(n => {
-      const l = n.trim().toLowerCase();
-      return l === "người dùng" || l === "nguoi dung" || l.includes("người dùng") || l.includes("nguoi dung");
-    }) || sjsWb.SheetNames[0];
+  // Chuyển sheet thành mảng 2D (0-indexed)
+  const data2D = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
 
-    const sjsWs = sjsWb.Sheets[targetSheetName];
-    sourceWb = new ExcelJS.Workbook();
-    sourceSheet = sourceWb.addWorksheet("Người dùng");
-    
-    const rows = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
-    rows.forEach((r, rIdx) => {
-      const row = sourceSheet.getRow(rIdx + 1);
-      r.forEach((cVal, cIdx) => {
-        row.getCell(cIdx + 1).value = cVal;
-      });
-    });
-  }
+  // 2. Tìm dòng header (chứa STT và NGƯỜI DÙNG) trong 20 dòng đầu
+  let headerRow0 = -1;
+  const maxSearch = Math.min(data2D.length, 20);
 
-  if (!sourceSheet) {
-    throw new Error("Không thể đọc cấu trúc sheet 'Người dùng' trong file Excel.");
-  }
+  for (let r = 0; r < maxSearch; r++) {
+    const row = data2D[r] || [];
+    const cellVals = row.map(v => normalizeText(v));
 
-  // 1. Tìm dòng header
-  let headerRowIndex = null;
-  const maxSearchRow = Math.min(sourceSheet.rowCount || 20, 20);
-
-  for (let r = 1; r <= maxSearchRow; r++) {
-    const row = sourceSheet.getRow(r);
-    const cellValues = [];
-    row.eachCell({ includeEmpty: true }, (cell) => {
-      cellValues.push(normalizeText(cell.value));
-    });
-
-    if (cellValues.some(v => v === "STT") && cellValues.some(v => v.includes("NGƯỜI DÙNG") || v.includes("NGUOI DUNG"))) {
-      headerRowIndex = r;
+    if (cellVals.some(v => v === "STT") && cellVals.some(v => v.includes("NGƯỜI DÙNG") || v.includes("NGUOI DUNG"))) {
+      headerRow0 = r;
       break;
     }
   }
 
-  if (!headerRowIndex) {
-    headerRowIndex = 4;
+  if (headerRow0 === -1) {
+    headerRow0 = 3; // Dòng 4 (0-indexed = 3)
   }
 
-  // 2. Tìm cột NGƯỜI DÙNG và các cột ngày (1..31)
-  const headerRow = sourceSheet.getRow(headerRowIndex);
-  let userCol = null;
-  const dayColumns = {};
+  // 3. Tìm cột NGƯỜI DÙNG và các cột ngày (1..31)
+  const headerRowVals = data2D[headerRow0] || [];
+  let userCol0 = -1;
+  const dayColumns0 = {};
 
-  const maxCol = Math.max(sourceSheet.columnCount || 35, 35);
-  for (let c = 1; c <= maxCol; c++) {
-    const val = getCleanCellValue(headerRow.getCell(c).value);
+  for (let c = 0; c < headerRowVals.length; c++) {
+    const val = headerRowVals[c];
     const norm = normalizeText(val);
 
     if (norm.includes("NGƯỜI DÙNG") || norm.includes("NGUOI DUNG")) {
-      userCol = c;
+      userCol0 = c;
     }
 
-    if (val !== null && val !== undefined) {
+    if (val !== null && val !== undefined && val !== "") {
       const sVal = String(val).trim();
       const d = parseInt(sVal, 10);
       if (!isNaN(d) && d >= 1 && d <= 31) {
-        dayColumns[d] = c;
+        dayColumns0[d] = c;
       }
     }
   }
 
-  if (!userCol) {
-    userCol = 2;
+  if (userCol0 === -1) {
+    userCol0 = 1; // Cột B (0-indexed = 1)
   }
 
-  // 3. Lấy các cột ngày theo chu kỳ đã chọn
+  // 4. Lấy các ngày theo chu kỳ đã chọn
   const selectedDays = [];
   for (let d = startDay; d <= endDay; d++) {
     selectedDays.push(d);
   }
 
-  const sourceColumns = [1, userCol];
+  const sourceCols0 = [0, userCol0];
   selectedDays.forEach(d => {
-    if (dayColumns[d]) {
-      sourceColumns.push(dayColumns[d]);
+    if (dayColumns0[d] !== undefined) {
+      sourceCols0.push(dayColumns0[d]);
     }
   });
 
-  const resultLastCol = sourceColumns.length;
+  const resultLastCol = sourceCols0.length;
   const resultLastLetter = getColLetter(resultLastCol);
 
-  // 4. Tạo workbook kết quả
+  // 5. Tạo file kết quả bằng ExcelJS
   const resultWb = new ExcelJS.Workbook();
   const resultSheet = resultWb.addWorksheet("Người dùng");
 
-  // Copy 5 dòng đầu (dùng getCleanCellValue để tránh lỗi Shared Formula)
-  for (let r = 1; r <= 5; r++) {
-    const srcRow = sourceSheet.getRow(r);
-    const targetRow = resultSheet.getRow(r);
+  const thinBorder = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    bottom: { style: "thin" },
+    right: { style: "thin" }
+  };
 
-    sourceColumns.forEach((oldCol, newIndex) => {
-      const newCol = newIndex + 1;
-      const srcCell = srcRow.getCell(oldCol);
+  // Copy các dòng 1-5 (0-indexed 0..4)
+  for (let r0 = 0; r0 < 5; r0++) {
+    const srcRow = data2D[r0] || [];
+    const targetRow = resultSheet.getRow(r0 + 1);
+
+    sourceCols0.forEach((oldCol0, newIdx) => {
+      const newCol = newIdx + 1;
+      const val = srcRow[oldCol0];
       const targetCell = targetRow.getCell(newCol);
 
-      targetCell.value = getCleanCellValue(srcCell.value);
-      copyCellStyle(srcCell, targetCell);
+      targetCell.value = (val !== undefined && val !== null) ? val : "";
+      targetCell.font = { name: "Arial", size: 10 };
+      targetCell.border = thinBorder;
+      targetCell.alignment = { horizontal: "center", vertical: "middle" };
     });
   }
 
   // Gộp tiêu đề dòng 1 (A1 -> LastCol)
-  const titleA1 = getCleanCellValue(sourceSheet.getCell("A1").value) || "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM";
+  const titleA1 = (data2D[0] && data2D[0][0]) ? data2D[0][0] : "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(1, c).value = null;
   }
@@ -259,7 +196,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   resultSheet.getRow(1).height = 32;
 
   // Gộp tiêu đề dòng 2 (A2 -> LastCol)
-  const noteA2 = getCleanCellValue(sourceSheet.getCell("A2").value) || "";
+  const noteA2 = (data2D[1] && data2D[1][0]) ? data2D[1][0] : "";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(2, c).value = null;
   }
@@ -272,19 +209,20 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   resultSheet.getCell(5, 1).value = null;
   resultSheet.mergeCells(4, 1, 5, 1);
   resultSheet.getCell(4, 1).alignment = { horizontal: "center", vertical: "middle" };
+  resultSheet.getCell(4, 1).font = { name: "Arial", size: 10, bold: true };
 
   resultSheet.getCell(5, 2).value = null;
   resultSheet.mergeCells(4, 2, 5, 2);
   resultSheet.getCell(4, 2).alignment = { horizontal: "center", vertical: "middle" };
+  resultSheet.getCell(4, 2).font = { name: "Arial", size: 10, bold: true };
 
-  // 5. Lọc và đánh lại STT
+  // 6. Lọc và đánh lại STT từ dòng 6 (0-indexed 5) trở đi
   let outputRowIdx = 6;
   let stt = 1;
-  const totalSrcRows = Math.max(sourceSheet.rowCount || 0, 100);
 
-  for (let r = 6; r <= totalSrcRows; r++) {
-    const srcRow = sourceSheet.getRow(r);
-    const userVal = getCleanCellValue(srcRow.getCell(userCol).value);
+  for (let r0 = 5; r0 < data2D.length; r0++) {
+    const srcRow = data2D[r0] || [];
+    const userVal = srcRow[userCol0];
     if (!userVal) continue;
 
     const normUser = normalizeText(userVal);
@@ -299,18 +237,23 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     if (!isAllowed) continue;
 
     const targetRow = resultSheet.getRow(outputRowIdx);
-    sourceColumns.forEach((oldCol, newIndex) => {
-      const newCol = newIndex + 1;
-      const srcCell = srcRow.getCell(oldCol);
+    sourceCols0.forEach((oldCol0, newIdx) => {
+      const newCol = newIdx + 1;
       const targetCell = targetRow.getCell(newCol);
 
       if (newCol === 1) {
         targetCell.value = stt;
       } else {
-        targetCell.value = getCleanCellValue(srcCell.value);
+        const v = srcRow[oldCol0];
+        targetCell.value = (v !== undefined && v !== null) ? v : "";
       }
 
-      copyCellStyle(srcCell, targetCell);
+      targetCell.font = { name: "Arial", size: 10 };
+      targetCell.border = thinBorder;
+      targetCell.alignment = {
+        horizontal: newCol === 2 ? "left" : "center",
+        vertical: "middle"
+      };
     });
 
     stt++;
@@ -334,51 +277,36 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
 }
 
 // ==========================================================
-// 2. THUẬT TOÁN BÁO CÁO CÔNG VIỆC PHÒNG CNTT
+// 2. THUẬT TOÁN BÁO CÁO CÔNG VIỆC PHÒNG CNTT (SheetJS -> ExcelJS)
 // ==========================================================
 async function processCntt(arrayBuffer, targetSheetName) {
-  let sourceWb = new ExcelJS.Workbook();
-  try {
-    await sourceWb.xlsx.load(arrayBuffer);
-  } catch (e) {
-    if (typeof XLSX !== "undefined") {
-      const sjsWb = XLSX.read(arrayBuffer, { type: "array" });
-      const tName = targetSheetName || sjsWb.SheetNames[0];
-      const sjsWs = sjsWb.Sheets[tName];
-      sourceWb = new ExcelJS.Workbook();
-      const wsNew = sourceWb.addWorksheet(tName);
-      const rows = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
-      rows.forEach((r, rIdx) => {
-        const row = wsNew.getRow(rIdx + 1);
-        r.forEach((cVal, cIdx) => {
-          row.getCell(cIdx + 1).value = cVal;
-        });
-      });
-    } else {
-      throw e;
-    }
+  const sjsWb = XLSX.read(arrayBuffer, { type: "array", cellDates: true, cellFormula: false });
+
+  const chosenSheetName = targetSheetName || sjsWb.SheetNames[0];
+  const sjsWs = sjsWb.Sheets[chosenSheetName];
+  if (!sjsWs) {
+    throw new Error(`Không tìm thấy sheet '${chosenSheetName}' trong file.`);
   }
 
-  let ws = targetSheetName ? sourceWb.getWorksheet(targetSheetName) : null;
-  if (!ws) {
-    ws = sourceWb.worksheets[0];
-  }
+  const data2D = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
 
-  const softwareColumns = [];
-  for (let c = 5; c <= 25; c++) softwareColumns.push(c);
+  // Cột phần mềm: Cột 5 đến 25 (0-indexed 4..24)
+  const softwareCols0 = [];
+  for (let c = 4; c <= 24; c++) softwareCols0.push(c);
 
+  // Dòng 105 (0-indexed 104): Header tên phần mềm
   const softwareHeaders = [];
-  const headerRow105 = ws.getRow(105);
-  softwareColumns.forEach(c => {
-    const val = getCleanCellValue(headerRow105.getCell(c).value);
-    softwareHeaders.push(val !== null && val !== undefined ? String(val).trim() : `Phần mềm ${c-4}`);
+  const headerRow105 = data2D[104] || [];
+  softwareCols0.forEach(c => {
+    const val = headerRow105[c];
+    softwareHeaders.push(val !== null && val !== undefined && String(val).trim() !== "" ? String(val).trim() : `Phần mềm ${c-3}`);
   });
 
+  // Danh sách khoa từ dòng 106 (0-indexed 105) trở đi (Cột 4 = D / 0-indexed 3)
   const departments = [];
-  const maxRow = Math.max(ws.rowCount || 0, 250);
-
-  for (let r = 106; r <= maxRow; r++) {
-    const deptVal = getCleanCellValue(ws.getRow(r).getCell(4).value);
+  for (let r0 = 105; r0 < data2D.length; r0++) {
+    const row = data2D[r0] || [];
+    const deptVal = row[3];
     if (!deptVal) continue;
     const sDept = String(deptVal).trim();
     if (sDept.toUpperCase() === "TỔNG CỘNG" || sDept.toUpperCase() === "TONG CONG") {
@@ -389,9 +317,11 @@ async function processCntt(arrayBuffer, targetSheetName) {
     }
   }
 
+  // Quét dự phòng nếu file không bắt đầu từ dòng 106
   if (departments.length === 0) {
-    for (let r = 1; r <= maxRow; r++) {
-      const deptVal = getCleanCellValue(ws.getRow(r).getCell(4).value) || getCleanCellValue(ws.getRow(r).getCell(2).value);
+    for (let r0 = 0; r0 < data2D.length; r0++) {
+      const row = data2D[r0] || [];
+      const deptVal = row[3] || row[1];
       if (deptVal) {
         const sDept = String(deptVal).trim();
         if (sDept.toUpperCase().includes("KHOA") || sDept.toUpperCase().includes("PHÒNG") || sDept.toUpperCase().includes("TRUNG TÂM")) {
@@ -401,34 +331,38 @@ async function processCntt(arrayBuffer, targetSheetName) {
     }
   }
 
+  // Đọc dữ liệu phần mềm
   const data = {};
   departments.forEach(dept => {
-    data[dept] = new Array(softwareColumns.length).fill(null);
+    data[dept] = new Array(softwareCols0.length).fill(null);
   });
 
-  for (let r = 106; r <= maxRow; r++) {
-    const deptVal = getCleanCellValue(ws.getRow(r).getCell(4).value);
+  for (let r0 = 105; r0 < data2D.length; r0++) {
+    const row = data2D[r0] || [];
+    const deptVal = row[3];
     if (!deptVal) continue;
     const sDept = String(deptVal).trim();
     if (sDept.toUpperCase() === "TỔNG CỘNG" || sDept.toUpperCase() === "TONG CONG") break;
     if (!data[sDept]) continue;
 
-    softwareColumns.forEach((c, idx) => {
-      const val = getCleanCellValue(ws.getRow(r).getCell(c).value);
-      if (val !== null && val !== undefined && val !== "" && val !== 0) {
+    softwareCols0.forEach((c, idx) => {
+      const val = row[c];
+      if (val !== null && val !== undefined && val !== "" && val !== 0 && val !== "0") {
         data[sDept][idx] = val;
       }
     });
   }
 
+  // Đọc dữ liệu SỬA LỖI KHÁC: Hàng 7 -> 105 (0-indexed 6..104, Cột 2 = Khoa / index 1, Cột 35 = AI / index 34)
   const otherErrors = {};
   departments.forEach(dept => {
     otherErrors[dept] = [];
   });
 
-  for (let r = 7; r <= 105; r++) {
-    const deptVal = getCleanCellValue(ws.getRow(r).getCell(2).value);
-    const errorVal = getCleanCellValue(ws.getRow(r).getCell(35).value);
+  for (let r0 = 6; r0 <= 104; r0++) {
+    const row = data2D[r0] || [];
+    const deptVal = row[1]; // Cột B
+    const errorVal = row[34]; // Cột AI
 
     if (!deptVal || !errorVal) continue;
     const sDept = String(deptVal).trim();
@@ -441,15 +375,16 @@ async function processCntt(arrayBuffer, targetSheetName) {
     }
   }
 
+  // Lọc các khoa có dữ liệu
   const validDepartments = departments.filter(dept => {
-    const hasSoftware = data[dept].some(v => v !== null && v !== "" && v !== 0);
+    const hasSoftware = data[dept].some(v => v !== null && v !== "" && v !== 0 && v !== "0");
     const hasError = otherErrors[dept] && otherErrors[dept].length > 0;
     return hasSoftware || hasError;
   });
 
   const activeSoftwareIndexes = [];
-  for (let i = 0; i < softwareColumns.length; i++) {
-    const hasData = validDepartments.some(dept => data[dept][i] !== null && data[dept][i] !== "" && data[dept][i] !== 0);
+  for (let i = 0; i < softwareCols0.length; i++) {
+    const hasData = validDepartments.some(dept => data[dept][i] !== null && data[dept][i] !== "" && data[dept][i] !== 0 && data[dept][i] !== "0");
     if (hasData) {
       activeSoftwareIndexes.push(i);
     }
@@ -503,7 +438,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
 
     activeSoftwareIndexes.forEach(swIdx => {
       const val = data[dept][swIdx];
-      if (val !== null && val !== undefined && val !== "" && val !== 0) {
+      if (val !== null && val !== undefined && val !== "" && val !== 0 && val !== "0") {
         row.getCell(colIdx).value = val;
       }
       colIdx++;
@@ -731,17 +666,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       currentCnttBuffer = await getArrayBufferFromFile(file);
 
-      let sheetNames = [];
-      try {
-        const tempWb = new ExcelJS.Workbook();
-        await tempWb.xlsx.load(currentCnttBuffer);
-        sheetNames = tempWb.worksheets.map(w => w.name);
-      } catch (e) {
-        if (typeof XLSX !== "undefined") {
-          const sjsWb = XLSX.read(currentCnttBuffer, { type: "array" });
-          sheetNames = sjsWb.SheetNames;
-        }
-      }
+      // Đọc danh sách sheet bằng SheetJS siêu nhanh
+      const sjsWb = XLSX.read(currentCnttBuffer, { type: "array" });
+      const sheetNames = sjsWb.SheetNames || [];
 
       if (sheetNames.length <= 1) {
         runCnttProcess(sheetNames[0] || "");
