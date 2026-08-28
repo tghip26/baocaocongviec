@@ -1,30 +1,29 @@
 /**
  * tool-word-to-html.js
- * Advanced Word (.docx) to Clean HTML & Inline CSS Converter for CMS & Website Publishing.
- * Specialized for:
- * 1. Bài CTXH (Công Tác Xã Hội / Tin tức sự kiện - Font Times New Roman 16px, #000000, thẳng đầu dòng, ảnh & tiêu đề ảnh căn giữa)
- * 2. Bài Thầu (Thông báo thầu - Font Times New Roman 16px, #000000, thẳng đầu dòng, chỉ có 2 ảnh trên và dưới căn giữa)
- * 100% Link ảnh thường URL (Không mã hóa Base64).
+ * Advanced Word (.docx) to Clean HTML Converter for CMS Website Publishing.
+ * Cấu trúc chuẩn 100% theo mẫu tòa soạn Cổng Website:
+ * 1. Bài CTXH:
+ *    - Các khối văn bản: <div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:times new roman,times,serif;"><span style="font-size:16px;">...</span></span></div>
+ *    - Các khối ảnh: <div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="URL" style="width: 650px; height: 390px;" /><br /><span style="font-family:times new roman,times,serif;"><span style="font-size:16px;">Chú thích ảnh</span></span></div>
+ *    - Khối nguồn/tác giả: <div style="overflow-x: auto; margin: 18px 0px; text-align: right;"><span style="font-family:times new roman,times,serif;"><span style="font-size:16px;">Nguồn: ...</span></span></div>
+ * 2. Bài Thầu:
+ *    - 1 Ảnh trên đầu bài thầu (căn giữa)
+ *    - Toàn bộ nội dung văn bản từ Word (giữ nguyên 100%, căn đều)
+ *    - 1 Ảnh dưới cuối bài thầu (căn giữa)
+ * 3. Link ảnh thường URL (không mã hóa Base64).
  */
 
 class WordToHtmlConverter {
   constructor(options = {}) {
     this.options = Object.assign({
       preset: "ctxh", // "ctxh" | "thau"
-      fontFamily: "'Times New Roman', Times, serif",
+      fontFamily: "times new roman,times,serif",
       baseFontSize: "16px",
       textColor: "#000000",
-      textAlign: "justify", // "justify" | "left" | "center"
-      lineHeight: "1.6",
-      paragraphMarginBottom: "6px",
-      textIndent: "none",
-      tableFullBorder: true,
-      preserveLayoutTables: true,
-      cleanEmptyParagraphs: true,
-      collapseSpaces: true,
+      textAlign: "justify",
 
       // Image URL Controls (Không dùng Base64)
-      ctxhImageUrls: [], // Mảng URL ảnh do người dùng nhập cho bài CTXH
+      ctxhImageUrls: [], // Mảng link ảnh nhập tay
       thauTopImageUrl: "",
       thauTopImageCaption: "",
       thauBottomImageUrl: "",
@@ -45,7 +44,7 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Convert Word (.docx) file data to clean, standard HTML string
+   * Chuyển đổi tệp Word (.docx) sang đúng mẫu HTML của cổng thông tin
    */
   async convertDocxToHtml(fileData, fileName = "") {
     if (!window.JSZip) {
@@ -65,7 +64,7 @@ class WordToHtmlConverter {
       throw new Error(`Tệp ${fileName} không phải là tài liệu Word (.docx) hợp lệ.`);
     }
 
-    // 1. Extract Relationships (Rels)
+    // 1. Đọc Relationships (Rels) để lấy link hyperlinks
     const relsMap = {};
     const relsXmlFile = zip.file("word/_rels/document.xml.rels");
     if (relsXmlFile) {
@@ -80,7 +79,7 @@ class WordToHtmlConverter {
       }
     }
 
-    // 2. Count media images
+    // 2. Đếm số lượng ảnh trong file Word
     const mediaFiles = zip.folder("word/media");
     const extractedImageNames = [];
     if (mediaFiles) {
@@ -92,221 +91,86 @@ class WordToHtmlConverter {
       }
     }
 
-    // 3. Parse word/document.xml
+    // 3. Parse XML document
     const xmlText = await docXmlFile.async("text");
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
     const bodyNode = xmlDoc.getElementsByTagName("w:body")[0] || xmlDoc.getElementsByTagName("body")[0];
     if (!bodyNode) {
-      throw new Error("Không tìm thấy cấu trúc nội dung trong file Word.");
+      throw new Error("Không tìm thấy nội dung trong file Word.");
     }
-
-    // 4. Generate Clean HTML
-    const htmlChunks = [];
-    const childNodes = bodyNode.childNodes;
-
-    let inList = false;
-    let listType = "ul";
-    let imgCounter = 0;
 
     const isThau = this.options.preset === "thau";
 
-    // NẾU LÀ BÀI THẦU: Chèn Ảnh Trên cùng (Đầu bài thầu)
-    if (isThau) {
-      const topUrl = this.options.thauTopImageUrl.trim() || "https://yourwebsite.com/images/thong-bao-thau-1.jpg";
-      const topCaption = this.options.thauTopImageCaption.trim();
-
-      htmlChunks.push(`<p style="text-align: center; margin: 12px 0 4px 0;"><img src="${topUrl}" alt="Ảnh thông báo thầu đầu bài" style="max-width: 100%; height: auto;" /></p>`);
-      if (topCaption) {
-        htmlChunks.push(`<p style="text-align: center; font-style: italic; font-size: 15px; margin: 0 0 14px 0; color: ${this.options.textColor};"><em>${this.escapeHtml(topCaption)}</em></p>`);
-      }
-    }
+    // 4. Trích xuất tuần tự toàn bộ các phần tử trong Body
+    const parsedElements = [];
+    const childNodes = bodyNode.childNodes;
 
     for (let i = 0; i < childNodes.length; i++) {
       const node = childNodes[i];
       const nodeName = node.nodeName.toLowerCase();
 
       if (nodeName === "w:p" || nodeName === "p") {
-        const isListItem = this.checkIsListItem(node);
-        if (isListItem) {
-          if (!inList) {
-            inList = true;
-            listType = isListItem.type || "ul";
-            const listStyles = this.buildParagraphStyles({ isListContainer: true });
-            htmlChunks.push(`<${listType} style="${listStyles}">`);
-          }
-          const liHtml = this.parseParagraph(node, relsMap, { isLi: true, imgIndex: imgCounter });
-          if (liHtml && liHtml.trim()) {
-            htmlChunks.push(`  <li style="margin-bottom: 4px; line-height: ${this.options.lineHeight};">${liHtml}</li>`);
-          }
-        } else {
-          if (inList) {
-            htmlChunks.push(`</${listType}>`);
-            inList = false;
-          }
-
-          // Đối với bài thầu, không chèn ảnh xen kẽ ở giữa
-          const pHtml = this.parseParagraph(node, relsMap, {
-            isLi: false,
-            inTable: false,
-            skipImages: isThau,
-            imgIndex: imgCounter
-          });
-
-          if (pHtml && pHtml.isImage) {
-            imgCounter++;
-          }
-
-          if (pHtml && pHtml.html && pHtml.html.trim().length > 0) {
-            htmlChunks.push(pHtml.html);
-          }
+        const pItem = this.extractParagraphInfo(node, relsMap);
+        if (pItem) {
+          parsedElements.push(pItem);
         }
       } else if (nodeName === "w:tbl" || nodeName === "tbl") {
-        if (inList) {
-          htmlChunks.push(`</${listType}>`);
-          inList = false;
-        }
         const tblHtml = this.parseTable(node, relsMap);
         if (tblHtml) {
-          htmlChunks.push(tblHtml);
+          parsedElements.push({ type: "table", html: tblHtml });
           this.stats.tableCount++;
         }
       }
     }
 
-    if (inList) {
-      htmlChunks.push(`</${listType}>`);
-    }
-
-    // NẾU LÀ BÀI THẦU: Chèn Ảnh Dưới cùng (Cuối bài thầu)
+    // 5. Gom và định dạng theo đúng cấu trúc CMS
+    let finalHtml = "";
     if (isThau) {
-      const btmUrl = this.options.thauBottomImageUrl.trim() || "https://yourwebsite.com/images/thong-bao-thau-2.jpg";
-      const btmCaption = this.options.thauBottomImageCaption.trim();
-
-      htmlChunks.push(`<p style="text-align: center; margin: 16px 0 4px 0;"><img src="${btmUrl}" alt="Ảnh thông báo thầu cuối bài" style="max-width: 100%; height: auto;" /></p>`);
-      if (btmCaption) {
-        htmlChunks.push(`<p style="text-align: center; font-style: italic; font-size: 15px; margin: 0 0 12px 0; color: ${this.options.textColor};"><em>${this.escapeHtml(btmCaption)}</em></p>`);
-      }
+      finalHtml = this.buildThauHtml(parsedElements);
+    } else {
+      finalHtml = this.buildCtxhHtml(parsedElements);
     }
 
-    const fullHtml = htmlChunks.join("\n");
     return {
-      html: fullHtml,
+      html: finalHtml,
       stats: this.stats,
       images: extractedImageNames
     };
   }
 
-  checkIsListItem(pNode) {
-    const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
-    if (!pPr) return false;
-    const numPr = this.findChild(pPr, ["w:numPr", "numPr"]);
-    if (numPr) {
-      const numIdNode = this.findChild(numPr, ["w:numId", "numId"]);
-      const numId = numIdNode ? numIdNode.getAttribute("w:val") || numIdNode.getAttribute("val") : "0";
-      return { isList: true, type: numId === "0" ? "ul" : "ol" };
-    }
-    return false;
-  }
-
   /**
-   * Build clean, unnested CSS style string for <p>
+   * Trích xuất thông tin một đoạn văn từ Word
    */
-  buildParagraphStyles(opts = {}) {
-    const styles = [];
-
-    // 1. Text Align: default left/justify (thẳng đầu dòng)
-    const align = opts.textAlign || (this.options.textAlign === "inherit" ? "" : this.options.textAlign);
-    if (align) {
-      styles.push(`text-align: ${align}`);
-    }
-
-    // 2. Font Family
-    if (this.options.fontFamily && this.options.fontFamily !== "inherit") {
-      styles.push(`font-family: ${this.options.fontFamily}`);
-    }
-
-    // 3. Font Size
-    if (this.options.baseFontSize && this.options.baseFontSize !== "inherit") {
-      styles.push(`font-size: ${this.options.baseFontSize}`);
-    }
-
-    // 4. Line Height
-    if (this.options.lineHeight) {
-      styles.push(`line-height: ${this.options.lineHeight}`);
-    }
-
-    // 5. Text Color
-    if (this.options.textColor && this.options.textColor !== "inherit") {
-      styles.push(`color: ${this.options.textColor}`);
-    }
-
-    // 6. Margins
-    if (opts.isListContainer) {
-      styles.push(`margin: 0 0 ${this.options.paragraphMarginBottom} 24px; padding: 0`);
-    } else if (opts.inTable) {
-      styles.push(`margin: 0 0 2px 0`);
-    } else {
-      const mBottom = opts.isZeroSpacing ? "2px" : this.options.paragraphMarginBottom;
-      styles.push(`margin: 0 0 ${mBottom} 0`);
-    }
-
-    // 7. Text Indent
-    if (!opts.inTable && !opts.isListContainer) {
-      if (this.options.textIndent && this.options.textIndent !== "none" && (align === "justify" || align === "left")) {
-        styles.push(`text-indent: ${this.options.textIndent}`);
-      }
-    }
-
-    return styles.join("; ");
-  }
-
-  /**
-   * Parse a single Word paragraph <w:p>
-   */
-  parseParagraph(pNode, relsMap, ctx = {}) {
-    const isLi = ctx.isLi || false;
-    const inTable = ctx.inTable || false;
-    const skipImages = ctx.skipImages || false;
-    const imgIndex = ctx.imgIndex || 0;
-
+  extractParagraphInfo(pNode, relsMap) {
     const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
     
-    let textAlign = "";
-    let isZeroSpacing = false;
-
+    let align = "justify";
     if (pPr) {
       const jcNode = this.findChild(pPr, ["w:jc", "jc"]);
       if (jcNode) {
         const val = jcNode.getAttribute("w:val") || jcNode.getAttribute("val");
-        if (val === "both" || val === "distribute") textAlign = "justify";
-        else if (val === "center") textAlign = "center";
-        else if (val === "right") textAlign = "right";
-        else if (val === "left") textAlign = "left";
-      }
-
-      const spNode = this.findChild(pPr, ["w:spacing", "spacing"]);
-      if (spNode) {
-        const after = parseInt(spNode.getAttribute("w:after") || spNode.getAttribute("after") || "100", 10);
-        if (after === 0) isZeroSpacing = true;
+        if (val === "center") align = "center";
+        else if (val === "right") align = "right";
+        else if (val === "left") align = "left";
+        else align = "justify";
       }
     }
 
-    // Extract Runs & Raw Data
-    const rawRuns = [];
+    const runs = [];
     const childNodes = pNode.childNodes;
-    let hasImageInP = false;
+    let hasImage = false;
 
     for (let i = 0; i < childNodes.length; i++) {
       const child = childNodes[i];
       const cName = child.nodeName.toLowerCase();
 
       if (cName === "w:r" || cName === "r") {
-        const rData = this.extractRunData(child, relsMap, skipImages, imgIndex);
-        if (rData.text || rData.imageHtml) {
-          rawRuns.push(rData);
-          if (rData.isImage) hasImageInP = true;
+        const rData = this.extractRunData(child);
+        if (rData.text || rData.hasImage) {
+          runs.push(rData);
+          if (rData.hasImage) hasImage = true;
         }
       } else if (cName === "w:hyperlink" || cName === "hyperlink") {
         const rId = child.getAttribute("r:id") || child.getAttribute("id");
@@ -314,103 +178,45 @@ class WordToHtmlConverter {
         const linkRuns = child.childNodes;
         for (let j = 0; j < linkRuns.length; j++) {
           if (linkRuns[j].nodeName.toLowerCase() === "w:r" || linkRuns[j].nodeName.toLowerCase() === "r") {
-            const rData = this.extractRunData(linkRuns[j], relsMap, skipImages, imgIndex);
+            const rData = this.extractRunData(linkRuns[j]);
             if (rData.text) {
               rData.linkUrl = linkUrl;
-              rawRuns.push(rData);
+              runs.push(rData);
             }
           }
         }
       } else if (cName === "w:drawing" || cName === "drawing") {
-        if (!skipImages) {
-          const imgHtml = this.generateImageUrlHtml(imgIndex);
-          if (imgHtml) {
-            rawRuns.push({ text: "", imageHtml: imgHtml, isImage: true });
-            hasImageInP = true;
-          }
-        }
+        hasImage = true;
       }
     }
 
-    if (rawRuns.length === 0) {
-      if (this.options.cleanEmptyParagraphs || inTable) return { html: "", isImage: false };
-      const pStyles = this.buildParagraphStyles({ textAlign, inTable, isZeroSpacing });
-      return { html: `<p style="${pStyles}">&nbsp;</p>`, isImage: false };
-    }
-
-    // Merge adjacent runs
-    const mergedRuns = this.mergeAdjacentRuns(rawRuns);
-
-    // If paragraph contains ONLY an image
-    if (mergedRuns.length === 1 && mergedRuns[0].isImage) {
-      return { html: mergedRuns[0].imageHtml, isImage: true };
-    }
-
-    // Build inner HTML
-    let innerHtml = "";
+    // Build raw text & formatted HTML of paragraph
     let plainText = "";
+    let formattedText = "";
 
-    for (const run of mergedRuns) {
-      if (run.isImage) {
-        innerHtml += run.imageHtml;
-        continue;
+    for (const r of runs) {
+      if (r.text) {
+        let piece = r.text;
+        plainText += piece;
+
+        if (r.isBold) piece = `<strong>${piece}</strong>`;
+        if (r.isItalic) piece = `<em>${piece}</em>`;
+        if (r.isUnderline) piece = `<u>${piece}</u>`;
+        if (r.isStrike) piece = `<s>${piece}</s>`;
+        if (r.isSub) piece = `<sub>${piece}</sub>`;
+        if (r.isSup) piece = `<sup>${piece}</sup>`;
+        if (r.linkUrl) piece = `<a href="${r.linkUrl}" target="_blank" rel="noopener noreferrer">${piece}</a>`;
+
+        formattedText += piece;
       }
-
-      let runStr = run.text;
-      if (this.options.collapseSpaces) {
-        runStr = runStr.replace(/[ \t]{2,}/g, " ");
-      }
-      plainText += runStr;
-
-      if (run.isBold) runStr = `<strong>${runStr}</strong>`;
-      if (run.isItalic) runStr = `<em>${runStr}</em>`;
-      if (run.isUnderline) runStr = `<u>${runStr}</u>`;
-      if (run.isStrike) runStr = `<s>${runStr}</s>`;
-      if (run.isSub) runStr = `<sub>${runStr}</sub>`;
-      if (run.isSup) runStr = `<sup>${runStr}</sup>`;
-
-      // Custom span only if needed
-      const spanStyles = [];
-      if (run.customColor && run.customColor.toLowerCase() !== this.options.textColor.toLowerCase()) {
-        spanStyles.push(`color: ${run.customColor}`);
-      }
-      if (run.customBg) {
-        spanStyles.push(`background-color: ${run.customBg}`);
-      }
-
-      if (spanStyles.length > 0) {
-        runStr = `<span style="${spanStyles.join('; ')};">${runStr}</span>`;
-      }
-
-      if (run.linkUrl) {
-        runStr = `<a href="${run.linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">${runStr}</a>`;
-      }
-
-      if (run.imageHtml) {
-        runStr += run.imageHtml;
-      }
-
-      innerHtml += runStr;
     }
 
     plainText = plainText.trim();
 
-    if (!plainText && !hasImageInP) {
-      if (this.options.cleanEmptyParagraphs || inTable) return { html: "", isImage: false };
-      const pStyles = this.buildParagraphStyles({ textAlign, inTable, isZeroSpacing });
-      return { html: `<p style="${pStyles}">&nbsp;</p>`, isImage: false };
+    if (!plainText && !hasImage) {
+      return null;
     }
 
-    // Check if paragraph is an Image Caption (italicized or starts with "Ảnh:" / "Hình:") -> Center it!
-    const isImageCaption = (textAlign === "center") ||
-      (mergedRuns.length === 1 && mergedRuns[0].isItalic && plainText.length < 150) ||
-      /^(\*?)(Ảnh|Hình|Ảnh \d|Hình \d|Sơ đồ|Bảng)[\s:]/i.test(plainText);
-
-    if (isImageCaption) {
-      textAlign = "center";
-    }
-
-    // Update stats
     if (plainText) {
       const words = plainText.split(/\s+/).filter(w => w.length > 0);
       this.stats.wordCount += words.length;
@@ -418,72 +224,50 @@ class WordToHtmlConverter {
       this.stats.paragraphCount++;
     }
 
-    if (isLi) {
-      return innerHtml;
-    }
+    // Kiểm tra xem đoạn này có phải là chú thích ảnh không
+    const isCaption = align === "center" ||
+      (runs.length === 1 && runs[0].isItalic && plainText.length < 150) ||
+      /^(\*?)(Ảnh|Hình|Ảnh \d|Hình \d|Sơ đồ|Bảng)[\s:]/i.test(plainText);
 
-    const pStyles = this.buildParagraphStyles({
-      textAlign: textAlign || (this.options.textAlign === "inherit" ? "" : this.options.textAlign),
-      inTable,
-      isZeroSpacing
-    });
-
-    const captionStyle = isImageCaption ? ' font-style: italic; font-size: 15px;' : '';
+    // Kiểm tra xem đoạn này có phải là nguồn / tác giả ở cuối bài không
+    const isSource = align === "right" ||
+      /^(Nguồn|Theo|Ảnh|Tác giả|PV|CTV|Theo nguồn)[\s:]/i.test(plainText);
 
     return {
-      html: `<p style="${pStyles};${captionStyle}">${innerHtml}</p>`,
-      isImage: hasImageInP
+      type: "paragraph",
+      plainText,
+      formattedText,
+      align,
+      hasImage,
+      isCaption,
+      isSource
     };
   }
 
-  /**
-   * Extract raw attributes from a Run <w:r>
-   */
-  extractRunData(rNode, relsMap, skipImages = false, imgIndex = 0) {
+  extractRunData(rNode) {
     const rPr = this.findChild(rNode, ["w:rPr", "rPr"]);
-    
     let isBold = false;
     let isItalic = false;
     let isUnderline = false;
     let isStrike = false;
     let isSub = false;
     let isSup = false;
-    let customColor = "";
-    let customBg = "";
 
     if (rPr) {
       if (this.findChild(rPr, ["w:b", "b"])) isBold = true;
       if (this.findChild(rPr, ["w:i", "i"])) isItalic = true;
       if (this.findChild(rPr, ["w:u", "u"])) isUnderline = true;
       if (this.findChild(rPr, ["w:strike", "strike"])) isStrike = true;
-
       const vertAlign = this.findChild(rPr, ["w:vertAlign", "vertAlign"]);
       if (vertAlign) {
         const v = vertAlign.getAttribute("w:val") || vertAlign.getAttribute("val");
         if (v === "subscript") isSub = true;
         if (v === "superscript") isSup = true;
       }
-
-      const colorNode = this.findChild(rPr, ["w:color", "color"]);
-      if (colorNode) {
-        const cVal = colorNode.getAttribute("w:val") || colorNode.getAttribute("val");
-        if (cVal && cVal !== "auto" && cVal.length === 6 && cVal.toLowerCase() !== "000000") {
-          customColor = `#${cVal}`;
-        }
-      }
-
-      const highlightNode = this.findChild(rPr, ["w:highlight", "highlight"]);
-      if (highlightNode) {
-        const hVal = (highlightNode.getAttribute("w:val") || highlightNode.getAttribute("val") || "").toLowerCase();
-        if (hVal === "yellow") customBg = "#fef08a";
-        else if (hVal === "green") customBg = "#bbf7d0";
-        else if (hVal !== "none") customBg = "#fef08a";
-      }
     }
 
     let text = "";
-    let imageHtml = "";
-    let isImage = false;
+    let hasImage = false;
 
     const childNodes = rNode.childNodes;
     for (let i = 0; i < childNodes.length; i++) {
@@ -493,106 +277,155 @@ class WordToHtmlConverter {
       if (cName === "w:t" || cName === "t") {
         text += this.escapeHtml(child.textContent);
       } else if (cName === "w:br" || cName === "br") {
-        text += "<br/>";
+        text += "<br />";
       } else if (cName === "w:tab" || cName === "tab") {
         text += "&emsp;&emsp;";
       } else if (cName === "w:drawing" || cName === "drawing") {
-        if (!skipImages) {
-          const img = this.generateImageUrlHtml(imgIndex);
-          if (img) {
-            imageHtml += img;
-            isImage = true;
-          }
-        }
+        hasImage = true;
       }
     }
 
     return {
       text,
-      imageHtml,
-      isImage,
+      hasImage,
       isBold,
       isItalic,
       isUnderline,
       isStrike,
       isSub,
       isSup,
-      customColor,
-      customBg,
       linkUrl: null
     };
   }
 
-  mergeAdjacentRuns(runs) {
-    if (runs.length <= 1) return runs;
+  /**
+   * Xây dựng HTML chuẩn bài CTXH
+   */
+  buildCtxhHtml(elements) {
+    const outputBlocks = [];
+    let currentTextBlock = [];
+    let imgCounter = 0;
 
-    const merged = [];
-    let current = Object.assign({}, runs[0]);
-
-    for (let i = 1; i < runs.length; i++) {
-      const next = runs[i];
-      const isSameFormat =
-        !current.isImage && !next.isImage &&
-        current.isBold === next.isBold &&
-        current.isItalic === next.isItalic &&
-        current.isUnderline === next.isUnderline &&
-        current.isStrike === next.isStrike &&
-        current.isSub === next.isSub &&
-        current.isSup === next.isSup &&
-        current.customColor === next.customColor &&
-        current.customBg === next.customBg &&
-        current.linkUrl === next.linkUrl;
-
-      if (isSameFormat) {
-        current.text += next.text;
-        if (next.imageHtml) current.imageHtml = (current.imageHtml || "") + next.imageHtml;
-      } else {
-        merged.push(current);
-        current = Object.assign({}, next);
+    const flushTextBlock = () => {
+      if (currentTextBlock.length > 0) {
+        const content = currentTextBlock.join("<br />\n");
+        outputBlocks.push(
+          `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
+        );
+        currentTextBlock = [];
       }
+    };
+
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+
+      if (el.type === "table") {
+        flushTextBlock();
+        outputBlocks.push(el.html);
+        continue;
+      }
+
+      // Xử lý dòng nguồn / tác giả ở cuối bài
+      if (el.isSource && i >= elements.length - 2) {
+        flushTextBlock();
+        outputBlocks.push(
+          `<div style="overflow-x: auto; margin: 18px 0px; text-align: right;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${el.formattedText}</span></span></div>`
+        );
+        continue;
+      }
+
+      // Xử lý khi gặp ảnh hoặc vị trí ảnh
+      if (el.hasImage) {
+        flushTextBlock();
+
+        // Kiểm tra xem đoạn tiếp theo có phải chú thích ảnh không
+        let captionHtml = "";
+        if (i + 1 < elements.length && elements[i + 1].type === "paragraph" && elements[i + 1].isCaption) {
+          captionHtml = elements[i + 1].formattedText;
+          i++; // Bỏ qua đoạn chú thích vì đã đưa vào khối ảnh
+        }
+
+        // Lấy link ảnh từ cấu hình người dùng nhập hoặc placeholder
+        let imgUrl = "";
+        if (this.options.ctxhImageUrls && this.options.ctxhImageUrls[imgCounter]) {
+          imgUrl = this.options.ctxhImageUrls[imgCounter].trim();
+        }
+        if (!imgUrl) {
+          imgUrl = `https://bvdkbacninh.vn/UserContent/images/${imgCounter + 1}.png`;
+        }
+
+        let imgBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${imgUrl}" style="width: 650px; height: 390px;" />`;
+        if (captionHtml) {
+          imgBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${captionHtml}</span></span>`;
+        }
+        imgBlock += `</div>`;
+
+        outputBlocks.push(imgBlock);
+        imgCounter++;
+        continue;
+      }
+
+      // Đoạn văn thông thường -> gom vào khối text
+      currentTextBlock.push(el.formattedText);
     }
-    merged.push(current);
-    return merged;
+
+    flushTextBlock();
+    return outputBlocks.join("\n\n");
   }
 
   /**
-   * Generate clean Image HTML using regular URL (Không dùng Base64)
+   * Xây dựng HTML chuẩn bài Thầu (Chỉ 2 ảnh trên và dưới)
    */
-  generateImageUrlHtml(imgIndex) {
-    let imgUrl = "";
+  buildThauHtml(elements) {
+    const outputBlocks = [];
+    const textLines = [];
 
-    if (this.options.ctxhImageUrls && this.options.ctxhImageUrls[imgIndex]) {
-      imgUrl = this.options.ctxhImageUrls[imgIndex].trim();
+    // 1. Khối Ảnh Trên (Đầu bài thầu)
+    const topUrl = this.options.thauTopImageUrl.trim() || "https://bvdkbacninh.vn/UserContent/images/thau_1.png";
+    const topCaption = this.options.thauTopImageCaption.trim();
+
+    let topBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${topUrl}" style="width: 650px; height: 390px;" />`;
+    if (topCaption) {
+      topBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${this.escapeHtml(topCaption)}</span></span>`;
     }
+    topBlock += `</div>`;
+    outputBlocks.push(topBlock);
 
-    if (!imgUrl) {
-      imgUrl = `https://yourwebsite.com/images/anh-${imgIndex + 1}.jpg`;
-    }
-
-    return `<p style="text-align: center; margin: 14px 0 4px 0;"><img src="${imgUrl}" alt="Hình ảnh ${imgIndex + 1}" style="max-width: 100%; height: auto; display: inline-block; margin: 0 auto;" /></p>`;
-  }
-
-  isTableBorderless(tblNode) {
-    const tblPr = this.findChild(tblNode, ["w:tblPr", "tblPr"]);
-    if (!tblPr) return false;
-
-    const tblBorders = this.findChild(tblPr, ["w:tblBorders", "tblBorders"]);
-    if (!tblBorders) return true;
-
-    let hasVisibleBorder = false;
-    const borderEdges = ["top", "left", "bottom", "right", "insideH", "insideV"];
-    for (const edge of borderEdges) {
-      const edgeNode = this.findChild(tblBorders, [`w:${edge}`, edge]);
-      if (edgeNode) {
-        const val = edgeNode.getAttribute("w:val") || edgeNode.getAttribute("val");
-        if (val && val !== "none" && val !== "nil") {
-          hasVisibleBorder = true;
-          break;
+    // 2. Gom toàn bộ nội dung văn bản từ Word
+    for (const el of elements) {
+      if (el.type === "paragraph") {
+        textLines.push(el.formattedText);
+      } else if (el.type === "table") {
+        if (textLines.length > 0) {
+          const content = textLines.join("<br />\n");
+          outputBlocks.push(
+            `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
+          );
+          textLines.length = 0;
         }
+        outputBlocks.push(el.html);
       }
     }
 
-    return !hasVisibleBorder;
+    if (textLines.length > 0) {
+      const content = textLines.join("<br />\n");
+      outputBlocks.push(
+        `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
+      );
+    }
+
+    // 3. Khối Ảnh Dưới (Cuối bài thầu)
+    const btmUrl = this.options.thauBottomImageUrl.trim() || "https://bvdkbacninh.vn/UserContent/images/thau_2.png";
+    const btmCaption = this.options.thauBottomImageCaption.trim();
+
+    let btmBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${btmUrl}" style="width: 650px; height: 390px;" />`;
+    if (btmCaption) {
+      btmBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${this.escapeHtml(btmCaption)}</span></span>`;
+    }
+    btmBlock += `</div>`;
+    outputBlocks.push(btmBlock);
+
+    return outputBlocks.join("\n\n");
   }
 
   parseTable(tblNode, relsMap) {
@@ -602,29 +435,11 @@ class WordToHtmlConverter {
 
     if (trNodes.length === 0) return "";
 
-    const isLayoutTable = this.options.preserveLayoutTables && this.isTableBorderless(tblNode);
-
-    const tblStyles = [
-      "width: 100%",
-      "border-collapse: collapse",
-      `font-family: ${this.options.fontFamily || "'Times New Roman', Times, serif"}`,
-      `font-size: ${this.options.baseFontSize || '16px'}`,
-      `color: ${this.options.textColor || '#000000'}`,
-      "line-height: 1.45",
-      "margin: 8px 0"
-    ];
-
-    if (!isLayoutTable && this.options.tableFullBorder) {
-      tblStyles.push("border: 1px solid #cbd5e1");
-    } else if (isLayoutTable) {
-      tblStyles.push("border: none");
-    }
-
     const rowsHtml = [];
 
     for (let r = 0; r < trNodes.length; r++) {
       const trNode = trNodes[r];
-      const isHeaderRow = !isLayoutTable && r === 0;
+      const isHeaderRow = r === 0;
 
       const tcNodes = trNode.getElementsByTagName("w:tc").length > 0
         ? trNode.getElementsByTagName("w:tc")
@@ -636,29 +451,10 @@ class WordToHtmlConverter {
         const tcPr = this.findChild(tcNode, ["w:tcPr", "tcPr"]);
 
         let colSpan = 1;
-        let cellBg = "";
-        let cellWidth = "";
-
         if (tcPr) {
           const gridSpan = this.findChild(tcPr, ["w:gridSpan", "gridSpan"]);
           if (gridSpan) {
             colSpan = parseInt(gridSpan.getAttribute("w:val") || gridSpan.getAttribute("val") || "1", 10);
-          }
-
-          const shd = this.findChild(tcPr, ["w:shd", "shd"]);
-          if (shd) {
-            const fill = shd.getAttribute("w:fill") || shd.getAttribute("fill");
-            if (fill && fill !== "auto" && fill.length === 6) {
-              cellBg = `#${fill}`;
-            }
-          }
-
-          const tcW = this.findChild(tcPr, ["w:tcW", "tcW"]);
-          if (tcW) {
-            const wVal = parseInt(tcW.getAttribute("w:val") || tcW.getAttribute("val") || "0", 10);
-            if (wVal > 0 && isLayoutTable && tcNodes.length === 2) {
-              cellWidth = "50%";
-            }
           }
         }
 
@@ -666,47 +462,30 @@ class WordToHtmlConverter {
           ? tcNode.getElementsByTagName("w:p")
           : tcNode.getElementsByTagName("p");
 
-        const cellContentParts = [];
+        const cellTextParts = [];
         for (let p = 0; p < pNodes.length; p++) {
-          const pRes = this.parseParagraph(pNodes[p], relsMap, { isLi: false, inTable: true, skipImages: true });
-          if (pRes && pRes.html) cellContentParts.push(pRes.html);
+          const pInfo = this.extractParagraphInfo(pNodes[p], relsMap);
+          if (pInfo && pInfo.formattedText) {
+            cellTextParts.push(pInfo.formattedText);
+          }
         }
 
-        let cellInner = cellContentParts.join("");
+        let cellInner = cellTextParts.join("<br />");
         if (!cellInner.trim()) cellInner = "&nbsp;";
 
         const cellTag = isHeaderRow ? "th" : "td";
-        const cellStyles = [
-          isLayoutTable ? "padding: 4px 6px" : "padding: 6px 10px",
-          "vertical-align: top"
-        ];
-
-        if (cellWidth) {
-          cellStyles.push(`width: ${cellWidth}`);
-        }
-
-        if (!isLayoutTable && this.options.tableFullBorder) {
-          cellStyles.push("border: 1px solid #cbd5e1");
-        } else if (isLayoutTable) {
-          cellStyles.push("border: none");
-        }
-
-        if (isHeaderRow) {
-          cellStyles.push(`background-color: ${cellBg || '#f1f5f9'}`, "font-weight: bold", "text-align: center");
-        } else if (cellBg) {
-          cellStyles.push(`background-color: ${cellBg}`);
-        }
-
         const spanAttr = colSpan > 1 ? ` colspan="${colSpan}"` : "";
-        cellsHtml.push(`    <${cellTag}${spanAttr} style="${cellStyles.join('; ')};">${cellInner}</${cellTag}>`);
+        const cellStyle = isHeaderRow
+          ? `background-color: #f1f5f9; padding: 6px 10px; font-weight: bold; text-align: center; border: 1px solid #cbd5e1;`
+          : `padding: 6px 10px; vertical-align: top; border: 1px solid #cbd5e1;`;
+
+        cellsHtml.push(`    <${cellTag}${spanAttr} style="${cellStyle}"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${cellInner}</span></span></${cellTag}>`);
       }
 
-      const rowBg = isHeaderRow ? 'background-color: #f1f5f9;' : '';
-      rowsHtml.push(`  <tr style="${rowBg}">\n${cellsHtml.join("\n")}\n  </tr>`);
+      rowsHtml.push(`  <tr>\n${cellsHtml.join("\n")}\n  </tr>`);
     }
 
-    const borderAttr = !isLayoutTable && this.options.tableFullBorder ? ' border="1"' : ' border="0"';
-    return `<table${borderAttr} cellpadding="6" cellspacing="0" style="${tblStyles.join('; ')};">\n${rowsHtml.join("\n")}\n</table>`;
+    return `<div style="overflow-x: auto; margin: 18px 0px;"><table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">\n${rowsHtml.join("\n")}\n</table></div>`;
   }
 
   findChild(node, names) {
