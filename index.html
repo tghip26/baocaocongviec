@@ -3,194 +3,400 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Báo cáo cổng giám định</title>
-  <meta name="description" content="Chương trình Báo cáo công việc Giám định Gộp & P.CNTT" />
-  
-  <!-- SheetJS for universal Excel reading (.xlsx, .xlsm, .xls) -->
+  <title>Hệ Thống Báo Cáo & Cổng Công Cụ Nghiệp Vụ - BVĐK Bắc Ninh Số 2</title>
+  <meta name="description" content="Cổng tổng hợp công cụ Báo cáo Giám định Bảo hiểm, Báo cáo Công việc CNTT, Cấp Chữ ký số và Email công vụ VGCA" />
+
+  <!-- Google Fonts: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Core Client-side Libraries (No server required) -->
+  <!-- JSZip: Universal .docx & zip processing -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <!-- SheetJS: Universal Excel reader (.xlsx, .xlsm, .xls) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- ExcelJS for formatted output generation -->
+  <!-- ExcelJS: Rich styled Excel generator -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
-  
+
+  <!-- Master Stylesheet -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Main Window Container (Tkinter window reproduction) -->
-  <div class="tk-window" id="mainWindow">
-    <!-- Window Title Bar -->
-    <div class="tk-titlebar">
-      <div class="tk-title-left">
-        <!-- Tkinter feather icon SVG -->
-        <svg class="tk-icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
-          <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="16" y1="8" x2="2" y2="22" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="17.5" y1="15" x2="9" y2="15" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span class="tk-title-text">Báo cáo cổng giám định</span>
+  <!-- App Layout Wrapper -->
+  <div class="app-layout">
+    
+    <!-- Left Sidebar -->
+    <aside class="app-sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">BVĐK BẮC NINH SỐ 2</span>
+          <span class="brand-sub">CỔNG CÔNG CỤ NGHIỆP VỤ</span>
+        </div>
       </div>
-      <div class="tk-controls">
-        <button type="button" class="tk-btn-min" tabindex="-1">&#8212;</button>
-        <button type="button" class="tk-btn-max" tabindex="-1">&#9633;</button>
-        <button type="button" class="tk-btn-close" tabindex="-1">&#10005;</button>
-      </div>
-    </div>
 
-    <!-- Window Body -->
-    <div class="tk-body">
-      <!-- Title -->
-      <h1 class="main-title">BÁO CÁO CỔNG GIÁM ĐỊNH</h1>
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav" id="sidebarNav">
+        <div class="nav-section-title">DANH MỤC CÔNG CỤ</div>
+        
+        <a href="#hub" class="nav-item active" data-tool="hub">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </span>
+          <span class="nav-text">Tất cả công cụ (Hub)</span>
+        </a>
+
+        <div class="nav-section-title">BÁO CÁO GIÁM ĐỊNH & CNTT</div>
+        
+        <a href="#giam-dinh" class="nav-item" data-tool="giam-dinh">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </span>
+          <span class="nav-text">Cổng Giám định Bảo hiểm</span>
+        </a>
+
+        <a href="#cntt" class="nav-item" data-tool="cntt">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </span>
+          <span class="nav-text">Báo cáo Công việc P.CNTT</span>
+        </a>
+
+        <div class="nav-section-title">QUẢN LÝ CKS & EMAIL (VGCA)</div>
+        
+        <a href="#vgca-doi-chieu" class="nav-item" data-tool="vgca-doi-chieu">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 11 12 14 22 4"/></svg>
+          </span>
+          <span class="nav-text">Đối chiếu Word + SSO (19 Cột)</span>
+        </a>
+
+        <a href="#vgca-cks" class="nav-item" data-tool="vgca-cks">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <span class="nav-text">Tổng hợp Cấp Chữ Ký Số</span>
+        </a>
+
+        <a href="#vgca-email" class="nav-item" data-tool="vgca-email">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
+          <span class="nav-text">Tổng hợp Cấp Email Công Vụ</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="version-tag">
+          <span class="badge-dot"></span>
+          <span>Sẵn sàng &bull; v2.0 Hub</span>
+        </div>
+        <div class="author-note">Phòng CNTT &bull; Xử lý 100% Trình duyệt</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="app-main">
       
-      <!-- Subtitle -->
-      <div class="sub-title">CHỌN CHỨC NĂNG CẦN THỰC HIỆN</div>
-
-      <!-- Action Buttons Frame -->
-      <div class="btn-frame">
-        <!-- Button 1: Giam Dinh -->
-        <div class="btn-wrapper">
-          <button type="button" class="tk-big-btn" id="btnGiamDinh">
-            <span class="btn-line">BÁO CÁO</span>
-            <span class="btn-line">CỔNG GIÁM ĐỊNH</span>
+      <!-- Top Header Bar -->
+      <header class="app-header">
+        <div class="header-left">
+          <button type="button" class="btn-sidebar-toggle" id="sidebarToggleBtn" title="Thu gọn/Mở menu">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <input type="file" id="fileInputGiamDinh" accept=".xlsx, .xlsm, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, *" class="native-file-overlay" />
+          <div class="header-search">
+            <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="globalSearchInput" placeholder="Tìm kiếm nhanh công cụ (ví dụ: giám định, cks, email, cntt)..." />
+          </div>
         </div>
 
-        <!-- Button 2: CNTT -->
-        <div class="btn-wrapper">
-          <button type="button" class="tk-big-btn" id="btnCntt">
-            <span class="btn-line">BÁO CÁO CÔNG VIỆC</span>
-            <span class="btn-line">P.CNTT</span>
-          </button>
-          <input type="file" id="fileInputCntt" accept=".xlsx, .xlsm, .xls, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, *" class="native-file-overlay" />
+        <div class="header-right">
+          <div class="badge-status">
+            <span class="live-pulse"></span>
+            <span>Trực tuyến</span>
+          </div>
+          <a href="https://github.com/tghip26/baocaocongviec" target="_blank" rel="noopener noreferrer" class="btn-github-link" title="Kho mã nguồn GitHub">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            <span>GitHub</span>
+          </a>
         </div>
-      </div>
+      </header>
 
-      <!-- Status Label -->
-      <div class="status-label" id="statusLabel">Sẵn sàng</div>
+      <!-- Main Body Container -->
+      <main class="app-content">
 
-      <!-- Description Footer -->
-      <div class="info-footer">
-        <div class="info-group">
-          <div>Báo cáo cổng giám định</div>
-          <div class="info-arrow">&rarr; DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx</div>
-        </div>
-        <div class="info-group">
-          <div>Báo cáo công việc P.CNTT</div>
-          <div class="info-arrow">&rarr; TỔNG HỢP CÔNG VIỆC P.CNTT.xlsx</div>
-        </div>
-      </div>
+        <!-- VIEW 1: HUB / DIRECTORY OF TOOLS -->
+        <section class="hub-container" id="hubView">
+          <!-- Hero Banner -->
+          <div class="hub-hero">
+            <div class="hero-content">
+              <span class="hero-badge">CỔNG NGHIỆP VỤ TẬP TRUNG</span>
+              <h1 class="hero-title">Hệ Thống Tổng Hợp Báo Cáo & Cấp Chứng Thư Số</h1>
+              <p class="hero-desc">
+                Nền tảng hỗ trợ tự động hóa xử lý dữ liệu y tế, đối chiếu danh sách, tạo báo cáo chuẩn định dạng Excel & TXT trực tiếp trên trình duyệt siêu tốc, an toàn và bảo mật.
+              </p>
+            </div>
+            <div class="hero-stats">
+              <div class="stat-card">
+                <span class="stat-num">5+</span>
+                <span class="stat-lbl">Công cụ tích hợp</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-num">100%</span>
+                <span class="stat-lbl">Bảo mật trên máy</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-num">0s</span>
+                <span class="stat-lbl">Không chờ Server</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Filter Bar -->
+          <div class="hub-controls">
+            <div class="cat-filter-group" id="categoryFilter">
+              <button type="button" class="cat-btn active" data-cat="all">
+                <span>📁 Tất cả công cụ</span>
+              </button>
+              <button type="button" class="cat-btn" data-cat="giamdinh">
+                <span>📊 Báo cáo Giám định & P.CNTT</span>
+              </button>
+              <button type="button" class="cat-btn" data-cat="vgca">
+                <span>🔐 Quản lý CKS & Email (VGCA)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tool Cards Grid -->
+          <div class="tool-grid" id="toolCardsContainer">
+            <!-- Dynamic tool cards will be injected by JavaScript -->
+          </div>
+        </section>
+
+        <!-- VIEW 2: TOOL EXECUTION WORKSPACE (Dynamic Single Page View) -->
+        <section class="tool-workspace hidden" id="toolView">
+          <!-- Workspace Header Navigation -->
+          <div class="workspace-nav">
+            <button type="button" class="btn-back" id="btnBackToHub">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Quay lại Danh sách công cụ</span>
+            </button>
+            <div class="breadcrumb-trail">
+              <a href="#hub">Cổng công cụ</a>
+              <span class="trail-sep">&rsaquo;</span>
+              <span class="trail-current" id="toolBreadcrumb">Tên công cụ</span>
+            </div>
+          </div>
+
+          <!-- Workspace Header Details -->
+          <div class="workspace-header">
+            <div class="workspace-header-info">
+              <div class="title-with-badge">
+                <h1 class="workspace-title" id="toolHeaderTitle">Tiêu đề công cụ</h1>
+                <span class="tool-badge" id="toolBadge">Phân loại</span>
+              </div>
+              <p class="workspace-subtitle" id="toolHeaderSubtitle">Mô tả chi tiết chức năng</p>
+            </div>
+          </div>
+
+          <!-- Workspace Main Grid: Left Guide & Right Execution -->
+          <div class="workspace-grid">
+            
+            <!-- Left Column: Step Guide & Specs -->
+            <div class="workspace-col-left">
+              <div class="guide-box">
+                <div class="guide-box-header">
+                  <span class="guide-icon">📖</span>
+                  <h3>Hướng dẫn thực hiện</h3>
+                </div>
+                <ul class="guide-list" id="toolGuideList">
+                  <!-- Guide items populated by JS -->
+                </ul>
+              </div>
+
+              <div class="info-card">
+                <div class="info-card-header">
+                  <span class="info-icon">ℹ️</span>
+                  <h4>Quy chuẩn đầu ra</h4>
+                </div>
+                <p id="toolOutputInfo">Tệp kết quả chuẩn</p>
+              </div>
+            </div>
+
+            <!-- Right Column: Upload, Console & Execution -->
+            <div class="workspace-col-right">
+              
+              <!-- Primary Upload Card -->
+              <div class="card upload-card" id="uploadSection">
+                <div class="card-header">
+                  <h3 class="card-title">1. Chọn hoặc Kéo Thả Tệp Dữ Liệu</h3>
+                </div>
+                <div class="card-body">
+                  <!-- Primary Dropzone -->
+                  <div class="dropzone" id="dropzonePrimary">
+                    <input type="file" id="fileInputPrimary" class="hidden-file-input" />
+                    <div class="dropzone-inner">
+                      <div class="dropzone-icon">
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#2563eb" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      </div>
+                      <h4 class="dropzone-title" id="dropzonePrimaryTitle">Kéo & thả tệp vào đây</h4>
+                      <p class="dropzone-desc" id="dropzonePrimaryDesc">Hoặc bấm để duyệt tệp từ máy tính</p>
+                    </div>
+                  </div>
+                  <!-- Primary File List -->
+                  <div class="file-list hidden" id="fileListPrimary"></div>
+
+                  <!-- Secondary Upload Group (SSO Excel for VGCA tools) -->
+                  <div class="secondary-upload-group hidden" id="secondaryUploadGroup">
+                    <div class="secondary-label">
+                      <span>Tệp Excel Tài khoản SSO (Tùy chọn - để tự động điền Email công vụ):</span>
+                    </div>
+                    <div class="dropzone dropzone-sm" id="dropzoneSecondary">
+                      <input type="file" id="fileInputSecondary" class="hidden-file-input" accept=".xlsx, .xls, .xlsm" multiple />
+                      <div class="dropzone-inner sm">
+                        <span class="sm-icon">📊</span>
+                        <span class="sm-text">Bấm hoặc kéo tệp SSO (.xlsx) vào đây</span>
+                      </div>
+                    </div>
+                    <!-- Secondary File List -->
+                    <div class="file-list hidden" id="fileListSecondary"></div>
+                  </div>
+
+                  <!-- Action Buttons & Progress -->
+                  <div class="action-control-bar">
+                    <button type="button" class="btn-primary-action" id="btnRunAction" disabled>
+                      <span class="btn-icon">⚡</span>
+                      <span id="btnRunActionText">Bắt đầu Xử lý</span>
+                    </button>
+                    
+                    <button type="button" class="btn-success-action hidden" id="btnDownloadResult">
+                      📥 Tải Về Kết Quả
+                    </button>
+
+                    <button type="button" class="btn-secondary-action hidden" id="btnResetTool">
+                      🔄 Làm mới
+                    </button>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div class="progress-wrapper hidden" id="progressBarContainer">
+                    <div class="progress-info">
+                      <span>Tiến trình xử lý</span>
+                      <span id="progressLabel">0%</span>
+                    </div>
+                    <div class="progress-track">
+                      <div class="progress-fill" id="progressBar"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Live Log Terminal Card -->
+              <div class="card log-card">
+                <div class="card-header flex-between">
+                  <h3 class="card-title">2. Nhật Ký Xử Lý (Live Console)</h3>
+                  <span class="log-status-dot"></span>
+                </div>
+                <div class="card-body p-0">
+                  <div class="terminal-box" id="logConsole">
+                    <div class="log-line log-info">⚡ Sẵn sàng xử lý. Vui lòng nạp tệp và nhấn nút thực hiện.</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Preview Table Card -->
+              <div class="card preview-card hidden" id="previewSection">
+                <div class="card-header flex-between">
+                  <h3 class="card-title">3. Xem Trước Dữ Liệu Kết Quả</h3>
+                  <span class="preview-count" id="previewSummary">0 bản ghi</span>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-scroll-container">
+                    <table class="preview-table">
+                      <thead id="previewTableHead"></thead>
+                      <tbody id="previewTableBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </main>
     </div>
   </div>
 
-  <!-- MODAL: Chọn khoảng ngày (Tkinter Toplevel) -->
-  <div class="tk-modal-overlay hidden" id="modalDayRange">
-    <div class="tk-modal-window modal-day-range">
-      <div class="tk-titlebar">
-        <div class="tk-title-left">
-          <span class="tk-title-text">Chọn khoảng ngày</span>
-        </div>
-        <div class="tk-controls">
-          <button type="button" class="tk-btn-close" id="btnCloseDayModal">&#10005;</button>
-        </div>
+  <!-- MODAL: Chọn khoảng ngày (Giám định Bảo hiểm) -->
+  <div class="modal-overlay hidden" id="modalDayRange">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">CHỌN KHOẢNG NGÀY BÁO CÁO</h3>
+        <button type="button" class="modal-close" id="btnCloseDayModal">&times;</button>
       </div>
-      <div class="tk-modal-body">
-        <h2 class="modal-title">CHỌN KHOẢNG NGÀY</h2>
-        <div class="modal-info" id="dayModalInfo">
-          Ngày hiện tại: 25<br />
-          Mặc định: 15-31
+      <div class="modal-body">
+        <div class="modal-info-box" id="dayModalInfo">
+          Đang phát hiện ngày...
         </div>
-        <div class="modal-radios">
-          <label class="modal-radio-label">
+        <div class="modal-radio-group">
+          <label class="radio-option">
             <input type="radio" name="dayRangeRadio" value="01-14" id="radioDay0114" />
-            <span>Ngày 01 &rarr; 14</span>
+            <div class="radio-card">
+              <span class="radio-title">Ngày 01 &rarr; Ngày 14</span>
+              <span class="radio-desc">Chu kỳ đầu tháng</span>
+            </div>
           </label>
-          <label class="modal-radio-label">
+          <label class="radio-option">
             <input type="radio" name="dayRangeRadio" value="15-31" id="radioDay1531" />
-            <span>Ngày 15 &rarr; 31</span>
+            <div class="radio-card">
+              <span class="radio-title">Ngày 15 &rarr; Ngày 31</span>
+              <span class="radio-desc">Chu kỳ cuối tháng</span>
+            </div>
           </label>
         </div>
-        <div class="modal-btn-wrap">
-          <button type="button" class="tk-std-btn" id="btnConfirmDayRange">TIẾP TỤC</button>
-        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-confirm" id="btnConfirmDayRange">TIẾP TỤC XỬ LÝ &rarr;</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: Chọn Sheet P.CNTT (Tkinter Toplevel) -->
-  <div class="tk-modal-overlay hidden" id="modalSheetSelect">
-    <div class="tk-modal-window modal-sheet-select">
-      <div class="tk-titlebar">
-        <div class="tk-title-left">
-          <span class="tk-title-text">Chọn Sheet P.CNTT</span>
-        </div>
-        <div class="tk-controls">
-          <button type="button" class="tk-btn-close" id="btnCloseSheetModal">&#10005;</button>
+  <!-- MODAL: Chọn Sheet P.CNTT -->
+  <div class="modal-overlay hidden" id="modalSheetSelect">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">CHỌN SHEET BÁO CÁO CẦN XỬ LÝ</h3>
+        <button type="button" class="modal-close" id="btnCloseSheetModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction">Chọn tên Sheet chứa dữ liệu tổng hợp công việc P.CNTT:</p>
+        <div class="select-group">
+          <select id="sheetDropdown" class="form-select"></select>
         </div>
       </div>
-      <div class="tk-modal-body">
-        <h2 class="modal-title">CHỌN SHEET CẦN XỬ LÝ</h2>
-        <div class="modal-select-wrap">
-          <select id="sheetDropdown" class="tk-select"></select>
-        </div>
-        <div class="modal-btn-wrap">
-          <button type="button" class="tk-std-btn" id="btnConfirmSheet">TIẾP TỤC</button>
-        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-confirm" id="btnConfirmSheet">TIẾP TỤC XỬ LÝ &rarr;</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: MessageBox Info/Success (Tkinter messagebox.showinfo) -->
-  <div class="tk-modal-overlay hidden" id="modalInfoBox">
-    <div class="tk-modal-window modal-msgbox">
-      <div class="tk-titlebar">
-        <div class="tk-title-left">
-          <span class="tk-title-text" id="infoBoxTitle">HOÀN THÀNH</span>
-        </div>
-        <div class="tk-controls">
-          <button type="button" class="tk-btn-close" id="btnCloseInfoBox">&#10005;</button>
-        </div>
-      </div>
-      <div class="tk-modal-body msgbox-body">
-        <div class="msgbox-content">
-          <div class="msgbox-icon-wrap info-icon">&#8505;</div>
-          <div class="msgbox-text" id="infoBoxMessage">
-            Đã tạo báo cáo thành công!<br><br>
-            Tên file:<br>
-            <strong id="infoBoxFileName">DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx</strong><br><br>
-            File đã được tự động tải về máy tính.
-          </div>
-        </div>
-        <div class="msgbox-btn-wrap">
-          <button type="button" class="tk-std-btn btn-ok" id="btnOkInfoBox">OK</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
 
-  <!-- MODAL: MessageBox Error (Tkinter messagebox.showerror) -->
-  <div class="tk-modal-overlay hidden" id="modalErrorBox">
-    <div class="tk-modal-window modal-msgbox">
-      <div class="tk-titlebar">
-        <div class="tk-title-left">
-          <span class="tk-title-text" id="errorBoxTitle">LỖI</span>
-        </div>
-        <div class="tk-controls">
-          <button type="button" class="tk-btn-close" id="btnCloseErrorBox">&#10005;</button>
-        </div>
-      </div>
-      <div class="tk-modal-body msgbox-body">
-        <div class="msgbox-content">
-          <div class="msgbox-icon-wrap error-icon">&#10006;</div>
-          <div class="msgbox-text" id="errorBoxMessage">
-            Không thể tạo báo cáo:<br><br>
-            <span id="errorBoxDetail">Chi tiết lỗi</span>
-          </div>
-        </div>
-        <div class="msgbox-btn-wrap">
-          <button type="button" class="tk-std-btn btn-ok" id="btnOkErrorBox">OK</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
+  <!-- Application Scripts -->
+  <script src="js/docx-parser.js"></script>
+  <script src="js/tools-registry.js"></script>
+  <script src="js/tool-giamdinh.js"></script>
+  <script src="js/tool-vgca-doichieu.js"></script>
+  <script src="js/tool-vgca-cks.js"></script>
+  <script src="js/tool-vgca-email.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
