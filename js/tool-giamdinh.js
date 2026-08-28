@@ -2,6 +2,7 @@
  * tool-giamdinh.js
  * Logic xử lý Báo cáo Giám định Bảo hiểm & Báo cáo Công việc P.CNTT
  * Chạy 100% Client-side bằng SheetJS & ExcelJS
+ * Tối ưu hóa định dạng, căn chỉnh độ rộng cột tự động, lọc danh mục chuẩn
  */
 
 const ALLOWED_USERS = new Set([
@@ -85,7 +86,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   const data2D = XLSX.utils.sheet_to_json(sjsWs, { header: 1, defval: "" });
 
   let headerRow0 = -1;
-  const maxSearch = Math.min(data2D.length, 20);
+  const maxSearch = Math.min(data2D.length, 30);
 
   for (let r = 0; r < maxSearch; r++) {
     const row = data2D[r] || [];
@@ -145,10 +146,10 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   const resultSheet = resultWb.addWorksheet("Người dùng");
 
   const thinBorder = {
-    top: { style: "thin" },
-    left: { style: "thin" },
-    bottom: { style: "thin" },
-    right: { style: "thin" }
+    top: { style: "thin", color: { argb: "FFD0D5DD" } },
+    left: { style: "thin", color: { argb: "FFD0D5DD" } },
+    bottom: { style: "thin", color: { argb: "FFD0D5DD" } },
+    right: { style: "thin", color: { argb: "FFD0D5DD" } }
   };
 
   // Copy dòng 1-5
@@ -168,7 +169,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     });
   }
 
-  // Merge A1 -> LastCol
+  // Merge A1 -> LastCol (Tiêu đề chính)
   const titleA1 = (data2D[0] && data2D[0][0]) ? data2D[0][0] : "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM";
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(1, c).value = null;
@@ -177,11 +178,11 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   const cellA1 = resultSheet.getCell(1, 1);
   cellA1.value = titleA1;
   cellA1.alignment = { horizontal: "center", vertical: "middle", wrapText: false };
-  cellA1.font = { name: "Arial", size: 16, bold: true };
+  cellA1.font = { name: "Arial", size: 15, bold: true, color: { argb: "FF1E3A8A" } };
   resultSheet.getRow(1).height = 32;
 
-  // Merge A2 -> LastCol
-  const noteA2 = (data2D[1] && data2D[1][0]) ? data2D[1][0] : "";
+  // Merge A2 -> LastCol (Ghi chú ngày tháng)
+  const noteA2 = (data2D[1] && data2D[1][0]) ? data2D[1][0] : `Chu kỳ: Ngày ${startDay} đến ngày ${endDay}`;
   for (let c = 2; c <= resultLastCol; c++) {
     resultSheet.getCell(2, c).value = null;
   }
@@ -189,17 +190,29 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
   const cellA2 = resultSheet.getCell(2, 1);
   cellA2.value = noteA2;
   cellA2.alignment = { horizontal: "center", vertical: "middle", wrapText: false };
+  cellA2.font = { name: "Arial", size: 10, italic: true };
+  resultSheet.getRow(2).height = 20;
 
   // Merge A4:A5 và B4:B5
   resultSheet.getCell(5, 1).value = null;
   resultSheet.mergeCells(4, 1, 5, 1);
   resultSheet.getCell(4, 1).alignment = { horizontal: "center", vertical: "middle" };
   resultSheet.getCell(4, 1).font = { name: "Arial", size: 10, bold: true };
+  resultSheet.getCell(4, 1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
 
   resultSheet.getCell(5, 2).value = null;
   resultSheet.mergeCells(4, 2, 5, 2);
   resultSheet.getCell(4, 2).alignment = { horizontal: "center", vertical: "middle" };
   resultSheet.getCell(4, 2).font = { name: "Arial", size: 10, bold: true };
+  resultSheet.getCell(4, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+
+  // Fill nền header ngày dòng 4 và 5
+  for (let c = 3; c <= resultLastCol; c++) {
+    resultSheet.getCell(4, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+    resultSheet.getCell(4, c).font = { name: "Arial", size: 10, bold: true };
+    resultSheet.getCell(5, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
+    resultSheet.getCell(5, c).font = { name: "Arial", size: 10, bold: true };
+  }
 
   // Lọc và đánh lại STT từ dòng 6 trở đi
   let outputRowIdx = 6;
@@ -223,6 +236,7 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     if (!isAllowed) continue;
 
     const targetRow = resultSheet.getRow(outputRowIdx);
+    targetRow.height = 22;
     const rowPreview = [];
 
     sourceCols0.forEach((oldCol0, newIdx) => {
@@ -251,8 +265,9 @@ async function processGiamDinh(arrayBuffer, startDay, endDay) {
     outputRowIdx++;
   }
 
-  resultSheet.getColumn(1).width = 8;
-  resultSheet.getColumn(2).width = 25;
+  // Độ rộng cột tối ưu
+  resultSheet.getColumn(1).width = 7;
+  resultSheet.getColumn(2).width = 26;
   for (let c = 3; c <= resultLastCol; c++) {
     resultSheet.getColumn(c).width = 12;
   }
@@ -393,25 +408,26 @@ async function processCntt(arrayBuffer, targetSheetName) {
   outWs.mergeCells(1, 1, 1, totalColumns);
   const titleCell = outWs.getCell(1, 1);
   titleCell.value = "TỔNG HỢP CÔNG VIỆC P.CNTT";
-  titleCell.font = { name: "Arial", size: 16, bold: true };
+  titleCell.font = { name: "Arial", size: 16, bold: true, color: { argb: "FF1E3A8A" } };
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
-  outWs.getRow(1).height = 32;
+  outWs.getRow(1).height = 34;
 
   // Dòng 3: Header
   const headerRow = outWs.getRow(3);
-  headerRow.height = 75;
+  headerRow.height = 70;
 
   const thinBorder = {
-    top: { style: "thin" },
-    left: { style: "thin" },
-    bottom: { style: "thin" },
-    right: { style: "thin" }
+    top: { style: "thin", color: { argb: "FFD0D5DD" } },
+    left: { style: "thin", color: { argb: "FFD0D5DD" } },
+    bottom: { style: "thin", color: { argb: "FFD0D5DD" } },
+    right: { style: "thin", color: { argb: "FFD0D5DD" } }
   };
 
   headers.forEach((h, idx) => {
     const cell = headerRow.getCell(idx + 1);
     cell.value = h;
     cell.font = { name: "Arial", size: 10, bold: true };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF1F5F9" } };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     cell.border = thinBorder;
   });
@@ -421,6 +437,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
 
   validDepartments.forEach((dept, dIdx) => {
     const row = outWs.getRow(curRow);
+    row.height = 24;
     const rowPreview = [dIdx + 1, dept];
     let colIdx = 1;
 
@@ -455,7 +472,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
       cell.border = thinBorder;
       cell.alignment = {
         horizontal: (c === 2 || (hasOtherErrorCol && c === totalColumns)) ? "left" : "center",
-        vertical: "top",
+        vertical: "middle",
         wrapText: true
       };
     }
@@ -465,6 +482,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
 
   // Dòng TỔNG CỘNG
   const totalRow = outWs.getRow(curRow);
+  totalRow.height = 26;
   totalRow.getCell(2).value = "TỔNG CỘNG";
 
   let grandTotalErrors = 0;
@@ -508,10 +526,11 @@ async function processCntt(arrayBuffer, targetSheetName) {
   for (let c = 1; c <= totalColumns; c++) {
     const cell = totalRow.getCell(c);
     cell.font = { name: "Arial", size: 10, bold: true };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
     cell.border = thinBorder;
     cell.alignment = {
       horizontal: (c === 2 || (hasOtherErrorCol && c === totalColumns)) ? "left" : "center",
-      vertical: "top",
+      vertical: "middle",
       wrapText: true
     };
   }
@@ -522,7 +541,7 @@ async function processCntt(arrayBuffer, targetSheetName) {
     if (headers[c - 1] === "SỬA LỖI KHÁC") {
       outWs.getColumn(c).width = 55;
     } else {
-      outWs.getColumn(c).width = 17;
+      outWs.getColumn(c).width = 18;
     }
   }
 

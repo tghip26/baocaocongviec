@@ -1,14 +1,17 @@
 /**
  * tool-vgca-email.js
  * Logic Tác vụ 3: TỔNG HỢP DANH SÁCH XIN CẤP EMAIL CÔNG VỤ -> Xuất DANH_SACH_EMAIL_CONG_VU.txt
+ * Chuẩn hóa Họ tên, SĐT 10 số, CCCD 12 số, Ghi chú mặc định 'Cấp mới'
  */
 
 async function processVgcaEmail(wordFiles, logFunc = () => {}, progressFunc = () => {}) {
   logFunc("=== BẮT ĐẦU TÁC VỤ 3: TỔNG HỢP DANH SÁCH XIN CẤP EMAIL CÔNG VỤ ===");
   progressFunc(5);
 
+  const orgConfig = ToolVgcaDoiChieu.getOrgConfig();
   const totalFiles = wordFiles.length;
   const records = [];
+  let validCccdCount = 0;
 
   const headers = ["STT", "Họ và tên", "Ngày sinh", "Di động", "Số CCCD", "Đơn vị công tác", "Chức vụ", "Ghi chú"];
 
@@ -42,20 +45,23 @@ async function processVgcaEmail(wordFiles, logFunc = () => {}, progressFunc = ()
           for (let r = 1; r < table.length; r++) {
             const vals = table[r];
             if (vals.length > Math.max(nameIdx, cccdIdx)) {
-              const nameVal = vals[nameIdx];
-              const cccdVal = vals[cccdIdx];
+              const rawName = vals[nameIdx];
+              const rawCccd = vals[cccdIdx];
 
-              if (nameVal && cccdVal && !nameVal.toLowerCase().includes("họ và tên") && !nameVal.toLowerCase().includes("ho va ten")) {
+              if (rawName && rawCccd && !rawName.toLowerCase().includes("họ và tên") && !rawName.toLowerCase().includes("ho va ten")) {
+                const normName = DocxTableParser.normalizePersonName(rawName);
                 const dobVal = dobIdx !== -1 && dobIdx < vals.length ? DocxTableParser.normalizeDate(vals[dobIdx]) : "";
-                const phoneVal = phoneIdx !== -1 && phoneIdx < vals.length ? DocxTableParser.cleanText(vals[phoneIdx]) : "";
-                const cccdValFmt = DocxTableParser.formatCccdOutput(cccdVal);
-                const unitVal = unitIdx !== -1 && unitIdx < vals.length && vals[unitIdx] ? DocxTableParser.cleanText(vals[unitIdx]) : DEFAULT_ORG3;
-                const posVal = posIdx !== -1 && posIdx < vals.length && vals[posIdx] ? DocxTableParser.cleanText(vals[posIdx]) : "Nhân viên";
-                let noteVal = noteIdx !== -1 && noteIdx < vals.length && vals[noteIdx] ? DocxTableParser.cleanText(vals[noteIdx]) : "Cấp mới";
+                const phoneVal = phoneIdx !== -1 && phoneIdx < vals.length ? DocxTableParser.normalizePhoneNumber(vals[phoneIdx]) : "";
+                const cccdValFmt = DocxTableParser.formatCccdOutput(rawCccd);
+                const unitVal = unitIdx !== -1 && unitIdx < vals.length ? DocxTableParser.normalizeUnitName(vals[unitIdx], orgConfig.org3) : orgConfig.org3;
+                const posVal = posIdx !== -1 && posIdx < vals.length ? DocxTableParser.normalizePosition(vals[posIdx]) : "Nhân viên";
+                let noteVal = noteIdx !== -1 && noteIdx < vals.length ? DocxTableParser.cleanText(vals[noteIdx]) : "Cấp mới";
                 if (!noteVal) noteVal = "Cấp mới";
 
-                records.push([nameVal, dobVal, phoneVal, cccdValFmt, unitVal, posVal, noteVal]);
-                logFunc(`  + Lấy được Email: ${nameVal} - CCCD: ${cccdValFmt} - Đơn vị: ${unitVal}`);
+                if (DocxTableParser.isValidCccd(cccdValFmt)) validCccdCount++;
+
+                records.push([normName, dobVal, phoneVal, cccdValFmt, unitVal, posVal, noteVal]);
+                logFunc(`  + [${normName}] - CCCD: ${cccdValFmt} - Đơn vị: ${unitVal}`);
               }
             }
           }
@@ -72,12 +78,10 @@ async function processVgcaEmail(wordFiles, logFunc = () => {}, progressFunc = ()
 
   logFunc(`\n==========================================`);
   logFunc(`🎉 ĐÃ XUẤT THÀNH CÔNG FILE EMAIL CÔNG VỤ: ${records.length} bản ghi`);
+  logFunc(`  - CCCD hợp lệ: ${validCccdCount} / ${records.length}`);
   logFunc(`==========================================`);
   progressFunc(100);
 
-  const txtBlob = ToolVgcaCks ? ToolVgcaCks.processVgcaCks : null;
-  
-  // Build CSV
   const escapeCsv = (val) => {
     if (val === null || val === undefined) return '""';
     const s = String(val).replace(/"/g, '""');
@@ -97,6 +101,8 @@ async function processVgcaEmail(wordFiles, logFunc = () => {}, progressFunc = ()
     blob,
     headers,
     totalRecords: records.length,
+    validCccdCount,
+    invalidCccdCount: records.length - validCccdCount,
     previewRows
   };
 }

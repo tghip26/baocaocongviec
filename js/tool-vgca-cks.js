@@ -1,6 +1,7 @@
 /**
  * tool-vgca-cks.js
  * Logic Tác vụ 2: TỔNG HỢP DANH SÁCH XIN CẤP CHỮ KÝ SỐ (CKS) -> Xuất DANH_SACH_TONG_HOP.txt
+ * Chuẩn hóa Họ tên Title Case, CCCD;Ngày cấp;Nơi cấp và mã hóa UTF-8 BOM
  */
 
 function buildCsvTxtBlob(headers, rows) {
@@ -22,8 +23,10 @@ function buildCsvTxtBlob(headers, rows) {
 }
 
 async function processVgcaCks(wordFiles, ssoFiles, logFunc = () => {}, progressFunc = () => {}) {
-  logFunc("=== BẮT ĐẦU TÁC VỤ 2: TỔNG HỢP DANH SÁCH XIN CẤP CHỮ KÝ SỐ ===");
+  logFunc("=== BẮT ĐẦU TÁC VỤ 2: TỔNG HỢP DANH SÁCH XIN CẤP CHỮ KÝ SỐ (CKS) ===");
   progressFunc(5);
+
+  const orgConfig = ToolVgcaDoiChieu.getOrgConfig();
 
   // 1. Đọc SSO Excel nếu có
   let ssoMap = new Map();
@@ -35,12 +38,14 @@ async function processVgcaCks(wordFiles, ssoFiles, logFunc = () => {}, progressF
     }
     logFunc(`  -> Đã nạp ${ssoMap.size} bản ghi SSO (email công vụ)`);
   } else {
-    logFunc("⚠️ [CẢNH BÁO] Không có file SSO Excel – cột email công vụ sẽ để trống!");
+    logFunc("⚠️ [LƯU Ý] Không có file SSO Excel – cột email công vụ sẽ để trống!");
   }
 
   // 2. Đọc file Word
   const totalFiles = wordFiles.length;
   const records = [];
+  let matchedSsoCount = 0;
+  let validCccdCount = 0;
 
   const headers = [
     "STT",
@@ -87,42 +92,46 @@ async function processVgcaCks(wordFiles, ssoFiles, logFunc = () => {}, progressF
           for (let r = 1; r < table.length; r++) {
             const vals = table[r];
             if (vals.length > Math.max(nameIdx, cccdIdx)) {
-              const nameVal = vals[nameIdx];
-              const cccdVal = vals[cccdIdx];
+              const rawName = vals[nameIdx];
+              const rawCccd = vals[cccdIdx];
 
-              if (nameVal && cccdVal && !nameVal.toLowerCase().includes("họ và tên") && !nameVal.toLowerCase().includes("ho va ten")) {
+              if (rawName && rawCccd && !rawName.toLowerCase().includes("họ và tên") && !rawName.toLowerCase().includes("ho va ten")) {
+                const normName = DocxTableParser.normalizePersonName(rawName);
                 const dobVal = dobIdx !== -1 && dobIdx < vals.length ? DocxTableParser.normalizeDate(vals[dobIdx]) : "";
-                const phoneVal = phoneIdx !== -1 && phoneIdx < vals.length ? DocxTableParser.cleanText(vals[phoneIdx]) : "";
-                const cccdFmt = DocxTableParser.formatCccdOutput(cccdVal);
+                const phoneVal = phoneIdx !== -1 && phoneIdx < vals.length ? DocxTableParser.normalizePhoneNumber(vals[phoneIdx]) : "";
+                const cccdFmt = DocxTableParser.formatCccdOutput(rawCccd);
                 const issueDate = issueDateIdx !== -1 && issueDateIdx < vals.length ? DocxTableParser.normalizeDate(vals[issueDateIdx]) : "";
                 const issuePlace = issuePlaceIdx !== -1 && issuePlaceIdx < vals.length ? DocxTableParser.normalizeIssuePlace(vals[issuePlaceIdx]) : "CCSQLHCVTTXH";
-                const unitVal = unitIdx !== -1 && unitIdx < vals.length && vals[unitIdx] ? DocxTableParser.cleanText(vals[unitIdx]) : DEFAULT_ORG3;
-                const posVal = posIdx !== -1 && posIdx < vals.length && vals[posIdx] ? DocxTableParser.cleanText(vals[posIdx]) : "Nhân viên";
+                const unitVal = unitIdx !== -1 && unitIdx < vals.length ? DocxTableParser.normalizeUnitName(vals[unitIdx], orgConfig.org3) : orgConfig.org3;
+                const posVal = posIdx !== -1 && posIdx < vals.length ? DocxTableParser.normalizePosition(vals[posIdx]) : "Nhân viên";
 
-                const kName = DocxTableParser.normName(nameVal);
-                const kCccd = DocxTableParser.normCccd(cccdVal);
+                const kName = DocxTableParser.normName(normName);
+                const kCccd = DocxTableParser.normCccd(rawCccd);
                 let email = "";
                 if (ssoMap) {
                   email = ssoMap.get(`${kName}__${kCccd}`) || ssoMap.get(kCccd) || ssoMap.get(kName) || "";
                 }
 
+                if (email) matchedSsoCount++;
+                if (DocxTableParser.isValidCccd(cccdFmt)) validCccdCount++;
+
                 // Cột 4: CCCD;Ngày cấp;Nơi cấp
                 let cccdStr = `${cccdFmt};${issueDate};${issuePlace}`.replace(/;+$/, "");
 
                 const rowData = [
-                  nameVal,
+                  normName,
                   dobVal,
                   cccdStr,
                   email,
                   unitVal,
-                  DEFAULT_PROVINCE,
+                  orgConfig.province,
                   posVal,
                   phoneVal,
                   "", // Serial CTS cũ
                   ""  // SIM PKI
                 ];
                 records.push(rowData);
-                logFunc(`  + Lấy được: ${nameVal} - CCCD: ${cccdFmt} -> ${email ? `Email: ${email}` : "CHƯA CÓ EMAIL SSO"}`);
+                logFunc(`  + [${normName}] - CCCD: ${cccdFmt} -> ${email ? `Email: ${email}` : "⚠️ CHƯA CÓ EMAIL SSO"}`);
               }
             }
           }
@@ -139,6 +148,8 @@ async function processVgcaCks(wordFiles, ssoFiles, logFunc = () => {}, progressF
 
   logFunc(`\n==========================================`);
   logFunc(`🎉 ĐÃ TỔNG HỢP THÀNH CÔNG: ${records.length} bản ghi`);
+  logFunc(`  - Khớp email SSO: ${matchedSsoCount} / ${records.length}`);
+  logFunc(`  - CCCD hợp lệ: ${validCccdCount} / ${records.length}`);
   logFunc(`==========================================`);
   progressFunc(100);
 
@@ -149,6 +160,10 @@ async function processVgcaCks(wordFiles, ssoFiles, logFunc = () => {}, progressF
     blob: txtBlob,
     headers,
     totalRecords: records.length,
+    matchedSsoCount,
+    missingSsoCount: records.length - matchedSsoCount,
+    validCccdCount,
+    invalidCccdCount: records.length - validCccdCount,
     previewRows
   };
 }

@@ -1,7 +1,8 @@
 /**
  * app.js
  * Master Application Controller for Multi-tool Portal
- * Single Page Application (SPA) architecture, dynamic tool router, event handlers.
+ * Single Page Application (SPA) architecture, dynamic tool router, interactive live data editor,
+ * data quality metrics, custom target organization configurations.
  */
 
 class AppController {
@@ -17,6 +18,7 @@ class AppController {
 
     this.initElements();
     this.initEvents();
+    this.loadOrgConfigToUi();
     this.renderToolGrid();
     this.handleUrlHash();
   }
@@ -41,6 +43,12 @@ class AppController {
     this.toolGuideList = document.getElementById("toolGuideList");
     this.toolOutputInfo = document.getElementById("toolOutputInfo");
 
+    // Org Preview Box
+    this.orgLine1 = document.getElementById("orgLine1");
+    this.orgLine2 = document.getElementById("orgLine2");
+    this.orgLine3 = document.getElementById("orgLine3");
+    this.btnEditOrgInline = document.getElementById("btnEditOrgInline");
+
     // Upload & Action Elements
     this.uploadSection = document.getElementById("uploadSection");
     this.dropzonePrimary = document.getElementById("dropzonePrimary");
@@ -63,11 +71,32 @@ class AppController {
     this.btnDownloadResult = document.getElementById("btnDownloadResult");
     this.btnResetTool = document.getElementById("btnResetTool");
 
+    // Quality Metrics
+    this.qualityMetricsSection = document.getElementById("qualityMetricsSection");
+    this.metricTotal = document.getElementById("metricTotal");
+    this.metricSso = document.getElementById("metricSso");
+    this.metricMissing = document.getElementById("metricMissing");
+    this.metricCccd = document.getElementById("metricCccd");
+
     this.logConsole = document.getElementById("logConsole");
     this.previewSection = document.getElementById("previewSection");
     this.previewSummary = document.getElementById("previewSummary");
+    this.previewTable = document.getElementById("previewTable");
     this.previewTableHead = document.getElementById("previewTableHead");
     this.previewTableBody = document.getElementById("previewTableBody");
+    this.btnCopyTable = document.getElementById("btnCopyTable");
+
+    // Config Modal Elements
+    this.btnOpenConfigHeader = document.getElementById("btnOpenConfigHeader");
+    this.btnOpenConfigSidebar = document.getElementById("btnOpenConfigSidebar");
+    this.modalConfig = document.getElementById("modalConfig");
+    this.btnCloseConfigModal = document.getElementById("btnCloseConfigModal");
+    this.cfgOrg1 = document.getElementById("cfgOrg1");
+    this.cfgOrg2 = document.getElementById("cfgOrg2");
+    this.cfgOrg3 = document.getElementById("cfgOrg3");
+    this.cfgProvince = document.getElementById("cfgProvince");
+    this.btnSaveConfig = document.getElementById("btnSaveConfig");
+    this.btnResetConfigDefault = document.getElementById("btnResetConfigDefault");
 
     // Modals
     this.modalDayRange = document.getElementById("modalDayRange");
@@ -90,7 +119,7 @@ class AppController {
     // Hash change for SPA routing
     window.addEventListener("hashchange", () => this.handleUrlHash());
 
-    // Sidebar toggle (mobile / responsive)
+    // Sidebar toggle
     if (this.sidebarToggleBtn) {
       this.sidebarToggleBtn.addEventListener("click", () => {
         this.sidebar.classList.toggle("open");
@@ -125,6 +154,54 @@ class AppController {
       });
     }
 
+    // Config Modal Triggers
+    const openConfigModal = () => {
+      const cfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {
+        org1: "ỦY BAN NHÂN DÂN TỈNH BẮC NINH",
+        org2: "SỞ Y TẾ",
+        org3: "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2",
+        province: "Bắc Ninh"
+      };
+      this.cfgOrg1.value = cfg.org1;
+      this.cfgOrg2.value = cfg.org2;
+      this.cfgOrg3.value = cfg.org3;
+      this.cfgProvince.value = cfg.province;
+      this.showModal(this.modalConfig);
+    };
+
+    if (this.btnOpenConfigHeader) this.btnOpenConfigHeader.addEventListener("click", openConfigModal);
+    if (this.btnOpenConfigSidebar) this.btnOpenConfigSidebar.addEventListener("click", openConfigModal);
+    if (this.btnEditOrgInline) this.btnEditOrgInline.addEventListener("click", openConfigModal);
+    if (this.btnCloseConfigModal) this.btnCloseConfigModal.addEventListener("click", () => this.hideModal(this.modalConfig));
+
+    if (this.btnSaveConfig) {
+      this.btnSaveConfig.addEventListener("click", () => {
+        const newCfg = {
+          org1: this.cfgOrg1.value.trim() || "ỦY BAN NHÂN DÂN TỈNH BẮC NINH",
+          org2: this.cfgOrg2.value.trim() || "SỞ Y TẾ",
+          org3: this.cfgOrg3.value.trim() || "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2",
+          province: this.cfgProvince.value.trim() || "Bắc Ninh"
+        };
+        localStorage.setItem("APP_ORG_CONFIG", JSON.stringify(newCfg));
+        this.loadOrgConfigToUi();
+        this.hideModal(this.modalConfig);
+        this.showToast("Đã lưu cấu hình đơn vị mục tiêu thành công!", "success");
+      });
+    }
+
+    if (this.btnResetConfigDefault) {
+      this.btnResetConfigDefault.addEventListener("click", () => {
+        localStorage.removeItem("APP_ORG_CONFIG");
+        this.loadOrgConfigToUi();
+        const cfg = ToolVgcaDoiChieu.getOrgConfig();
+        this.cfgOrg1.value = cfg.org1;
+        this.cfgOrg2.value = cfg.org2;
+        this.cfgOrg3.value = cfg.org3;
+        this.cfgProvince.value = cfg.province;
+        this.showToast("Đã khôi phục cấu hình mặc định!", "info");
+      });
+    }
+
     // Primary Dropzone
     this.setupDropzone(this.dropzonePrimary, this.fileInputPrimary, (files) => {
       this.handlePrimaryFiles(files);
@@ -150,6 +227,11 @@ class AppController {
       this.btnResetTool.addEventListener("click", () => this.resetToolState());
     }
 
+    // Copy Table to Clipboard
+    if (this.btnCopyTable) {
+      this.btnCopyTable.addEventListener("click", () => this.copyTableToClipboard());
+    }
+
     // Modal Events
     if (this.btnCloseDayModal) {
       this.btnCloseDayModal.addEventListener("click", () => this.hideModal(this.modalDayRange));
@@ -157,6 +239,19 @@ class AppController {
     if (this.btnCloseSheetModal) {
       this.btnCloseSheetModal.addEventListener("click", () => this.hideModal(this.modalSheetSelect));
     }
+  }
+
+  loadOrgConfigToUi() {
+    const cfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {
+      org1: "ỦY BAN NHÂN DÂN TỈNH BẮC NINH",
+      org2: "SỞ Y TẾ",
+      org3: "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2",
+      province: "Bắc Ninh"
+    };
+
+    if (this.orgLine1) this.orgLine1.textContent = cfg.org1;
+    if (this.orgLine2) this.orgLine2.textContent = cfg.org2;
+    if (this.orgLine3) this.orgLine3.textContent = cfg.org3;
   }
 
   setupDropzone(zone, input, onFilesSelected) {
@@ -194,10 +289,8 @@ class AppController {
     if (!tool) return;
 
     if (tool.inputType === "single-excel") {
-      // Allow only single file
       this.selectedFiles.primary = [files[0]];
     } else {
-      // Append word files avoiding duplicates
       const newFiles = files.filter(f => !this.selectedFiles.primary.some(ex => ex.name === f.name && ex.size === f.size));
       this.selectedFiles.primary.push(...newFiles);
     }
@@ -310,7 +403,6 @@ class AppController {
     this.toolView.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // Update sidebar active
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
       item.classList.toggle("active", item.dataset.tool === "hub");
     });
@@ -324,6 +416,7 @@ class AppController {
     this.hubView.classList.add("hidden");
     this.toolView.classList.remove("hidden");
     this.resetToolState();
+    this.loadOrgConfigToUi();
 
     // Render tool header info
     this.toolBreadcrumb.textContent = tool.title;
@@ -334,7 +427,7 @@ class AppController {
 
     // Render guide
     this.toolGuideList.innerHTML = tool.guide.map(g => `<li>${g}</li>`).join("");
-    this.toolOutputInfo.textContent = `Tệp kết quả: ${tool.outputName}`;
+    this.toolOutputInfo.textContent = `Tệp kết quả chuẩn: ${tool.outputName}`;
 
     // Setup input elements
     if (tool.inputType === "single-excel") {
@@ -360,7 +453,6 @@ class AppController {
       this.btnRunActionText.textContent = "🚀 Bắt đầu Tổng hợp Email";
     }
 
-    // Update sidebar active
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
       item.classList.toggle("active", item.dataset.tool === toolId);
     });
@@ -375,11 +467,9 @@ class AppController {
     const term = DocxTableParser.removeAccents(searchTerm.trim().toLowerCase());
 
     const filteredTools = window.TOOLS_REGISTRY.filter(tool => {
-      // Category filter
       if (this.currentCategory !== "all" && tool.categoryId !== this.currentCategory) {
         return false;
       }
-      // Search filter
       if (term) {
         const titleNorm = DocxTableParser.removeAccents(tool.title.toLowerCase());
         const descNorm = DocxTableParser.removeAccents(tool.description.toLowerCase());
@@ -438,6 +528,7 @@ class AppController {
     this.progressBar.style.width = "0%";
     this.progressLabel.textContent = "0%";
 
+    this.qualityMetricsSection.classList.add("hidden");
     this.btnDownloadResult.classList.add("hidden");
     this.btnResetTool.classList.add("hidden");
 
@@ -474,6 +565,7 @@ class AppController {
     this.isProcessing = true;
     this.updateRunButtonState();
     this.logConsole.innerHTML = "";
+    this.qualityMetricsSection.classList.add("hidden");
     this.updateProgress(0);
 
     try {
@@ -503,14 +595,13 @@ class AppController {
     const file = this.selectedFiles.primary[0];
     const arrayBuffer = await file.arrayBuffer();
 
-    // Auto calculate current date and suggest day range
     const today = new Date();
     const currentDay = today.getDate();
-    let defaultRange = currentDay <= 15 ? "01-14" : "15-31";
+    let defaultRange = currentDay <= 14 ? "01-14" : "15-31";
 
     this.dayModalInfo.innerHTML = `
       Ngày hiện tại: <strong>${currentDay}</strong><br>
-      Khoảng ngày gợi ý mặc định: <strong>${defaultRange === "01-14" ? "Ngày 01 → 14" : "Ngày 15 → 31"}</strong>
+      Khoảng ngày gợi ý: <strong>${defaultRange === "01-14" ? "Ngày 01 → 14" : "Ngày 15 → 31"}</strong>
     `;
 
     if (defaultRange === "01-14") {
@@ -607,12 +698,16 @@ class AppController {
       (pct) => this.updateProgress(pct)
     );
 
+    // Show Quality Metrics
+    this.showQualityMetrics(result.totalRecords, result.matchedSsoCount, result.missingSsoCount, result.validCccdCount);
+
     this.lastResult = {
       blob: new Blob([result.buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
       fileName: "Ket_qua.xlsx",
       previewHeaders: result.headers,
       previewRows: result.previewRows,
-      totalRecords: result.totalRecords
+      totalRecords: result.totalRecords,
+      type: "excel-vgca"
     };
 
     this.finishExecution();
@@ -630,12 +725,16 @@ class AppController {
       (pct) => this.updateProgress(pct)
     );
 
+    // Show Quality Metrics
+    this.showQualityMetrics(result.totalRecords, result.matchedSsoCount, result.missingSsoCount, result.validCccdCount);
+
     this.lastResult = {
       blob: result.blob,
       fileName: "DANH_SACH_TONG_HOP.txt",
       previewHeaders: result.headers,
       previewRows: result.previewRows,
-      totalRecords: result.totalRecords
+      totalRecords: result.totalRecords,
+      type: "txt-cks"
     };
 
     this.finishExecution();
@@ -651,15 +750,28 @@ class AppController {
       (pct) => this.updateProgress(pct)
     );
 
+    // Show Quality Metrics
+    this.showQualityMetrics(result.totalRecords, 0, 0, result.validCccdCount);
+
     this.lastResult = {
       blob: result.blob,
       fileName: "DANH_SACH_EMAIL_CONG_VU.txt",
       previewHeaders: result.headers,
       previewRows: result.previewRows,
-      totalRecords: result.totalRecords
+      totalRecords: result.totalRecords,
+      type: "txt-email"
     };
 
     this.finishExecution();
+  }
+
+  showQualityMetrics(total, sso, missing, validCccd) {
+    if (!this.qualityMetricsSection) return;
+    this.qualityMetricsSection.classList.remove("hidden");
+    this.metricTotal.textContent = total || 0;
+    this.metricSso.textContent = sso || 0;
+    this.metricMissing.textContent = missing || 0;
+    this.metricCccd.textContent = validCccd || 0;
   }
 
   finishExecution() {
@@ -669,7 +781,7 @@ class AppController {
     this.btnResetTool.classList.remove("hidden");
     this.btnDownloadResult.textContent = `📥 Tải Về Kết Quả: ${this.lastResult.fileName}`;
 
-    // Render Preview Table
+    // Render Editable Preview Table
     this.renderPreviewTable(this.lastResult.previewHeaders, this.lastResult.previewRows, this.lastResult.totalRecords);
 
     // Auto trigger download
@@ -677,9 +789,63 @@ class AppController {
     this.showToast(`Đã tạo thành công tệp ${this.lastResult.fileName}!`, "success");
   }
 
-  downloadLastResult() {
-    if (!this.lastResult || !this.lastResult.blob) return;
+  async rebuildBlobFromEditedData() {
+    if (!this.lastResult || !this.lastResult.previewRows) return;
 
+    if (this.lastResult.type === "excel-vgca") {
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Ket_qua");
+      const headers = this.lastResult.previewHeaders;
+
+      const headerRow = ws.getRow(1);
+      headerRow.height = 36;
+      headers.forEach((h, idx) => {
+        const cell = headerRow.getCell(idx + 1);
+        cell.value = h;
+        cell.font = { name: "Arial", size: 10, bold: true };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F4F7" } };
+        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      });
+
+      this.lastResult.previewRows.forEach((r, idx) => {
+        const row = ws.getRow(idx + 2);
+        row.height = 24;
+        r.forEach((val, cIdx) => {
+          const cell = row.getCell(cIdx + 1);
+          cell.value = val;
+          cell.numFmt = "@";
+          cell.font = { name: "Arial", size: 10 };
+          cell.alignment = { vertical: "middle", horizontal: cIdx === 0 ? "center" : (cIdx === 1 || cIdx === 6 ? "left" : "center") };
+        });
+      });
+
+      ws.columns.forEach((col, idx) => {
+        col.width = idx === 0 ? 6 : (idx === 1 ? 25 : (idx === 6 ? 30 : 18));
+      });
+
+      const buffer = await wb.xlsx.writeBuffer();
+      this.lastResult.blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    } else if (this.lastResult.type === "txt-cks" || this.lastResult.type === "txt-email") {
+      const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        const s = String(val).replace(/"/g, '""');
+        return `"${s}"`;
+      };
+      const lines = [];
+      lines.push(this.lastResult.previewHeaders.map(escapeCsv).join(","));
+      this.lastResult.previewRows.forEach(r => {
+        lines.push(r.map(escapeCsv).join(","));
+      });
+      const content = "\uFEFF" + lines.join("\r\n");
+      this.lastResult.blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    }
+  }
+
+  async downloadLastResult() {
+    if (!this.lastResult) return;
+    await this.rebuildBlobFromEditedData();
+
+    if (!this.lastResult.blob) return;
     const url = URL.createObjectURL(this.lastResult.blob);
     const a = document.createElement("a");
     a.href = url;
@@ -698,16 +864,66 @@ class AppController {
     }
 
     this.previewSection.classList.remove("hidden");
-    this.previewSummary.textContent = `Hiển thị xem trước ${Math.min(rows.length, 50)} / ${totalCount} bản ghi`;
+    this.previewSummary.textContent = `Hiển thị ${Math.min(rows.length, 100)} / ${totalCount} bản ghi (Nhấp vào ô để chỉnh sửa)`;
 
     // Render Header
-    this.previewTableHead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
+    this.previewTableHead.innerHTML = `<tr>${headers.map((h, idx) => `<th>${h}</th>`).join("")}</tr>`;
 
-    // Render Body (Max 50 rows preview)
-    const previewSubset = rows.slice(0, 50);
-    this.previewTableBody.innerHTML = previewSubset.map(row => {
-      return `<tr>${row.map(cell => `<td>${cell !== null && cell !== undefined ? cell : ""}</td>`).join("")}</tr>`;
-    }).join("");
+    // Render Body (Editable cells with validation highlight)
+    const previewSubset = rows.slice(0, 100);
+    this.previewTableBody.innerHTML = "";
+
+    previewSubset.forEach((row, rIdx) => {
+      const tr = document.createElement("tr");
+
+      row.forEach((cellVal, cIdx) => {
+        const td = document.createElement("td");
+        td.textContent = cellVal !== null && cellVal !== undefined ? cellVal : "";
+        td.contentEditable = "true";
+        td.spellcheck = false;
+
+        // Highlight cells missing email or invalid CCCD
+        const headerName = headers[cIdx] ? headers[cIdx].toLowerCase() : "";
+        if ((headerName.includes("email") || headerName.includes("thư điện tử")) && (!cellVal || cellVal === "")) {
+          td.classList.add("cell-warning");
+          td.title = "Chưa có Email công vụ SSO - Nhấp để nhập";
+        }
+        if ((headerName.includes("cccd") || headerName.includes("cmnd")) && cellVal) {
+          const digits = String(cellVal).replace(/\D/g, "");
+          if (digits.length > 0 && digits.length !== 12 && digits.length !== 9 && !String(cellVal).includes(";")) {
+            td.classList.add("cell-danger");
+            td.title = `Số CCCD có ${digits.length} số (chưa đủ 12 số chuẩn)`;
+          }
+        }
+
+        // Live update model on edit
+        td.addEventListener("input", () => {
+          this.lastResult.previewRows[rIdx][cIdx] = td.textContent.trim();
+          td.classList.remove("cell-warning");
+          td.classList.add("cell-edited");
+        });
+
+        tr.appendChild(td);
+      });
+
+      this.previewTableBody.appendChild(tr);
+    });
+  }
+
+  copyTableToClipboard() {
+    if (!this.lastResult || !this.lastResult.previewRows) return;
+    const headers = this.lastResult.previewHeaders;
+    const rows = this.lastResult.previewRows;
+
+    const tsvLines = [];
+    tsvLines.push(headers.join("\t"));
+    rows.forEach(r => tsvLines.push(r.join("\t")));
+
+    navigator.clipboard.writeText(tsvLines.join("\n")).then(() => {
+      this.showToast("Đã sao chép toàn bộ bảng dữ liệu vào Clipboard!", "success");
+    }).catch(err => {
+      this.showToast("Không thể sao chép: " + err.message, "error");
+    });
   }
 
   showModal(modalEl) {

@@ -1,6 +1,7 @@
 /* ==========================================================================
    MASTER DESIGN SYSTEM & STYLESHEET
    Medical & IT Hub Portal - BVĐK Bắc Ninh Số 2
+   Version 2.2 - Target Data Standardization & Quality Optimization
    ========================================================================== */
 
 :root {
@@ -187,14 +188,39 @@ body {
   padding: 16px 20px;
   border-top: 1px solid var(--border-subtle);
   background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-config-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.btn-config-trigger:hover {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
 }
 
 .version-tag {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
+  font-size: 0.76rem;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -204,12 +230,6 @@ body {
   border-radius: 50%;
   background: var(--accent-emerald);
   box-shadow: 0 0 8px var(--accent-emerald);
-}
-
-.author-note {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-top: 4px;
 }
 
 /* ==========================================================================
@@ -241,7 +261,7 @@ body {
   align-items: center;
   gap: 16px;
   flex: 1;
-  max-width: 540px;
+  max-width: 500px;
 }
 
 .btn-sidebar-toggle {
@@ -294,7 +314,28 @@ body {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+}
+
+.btn-header-config {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  color: #93c5fd;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-header-config:hover {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: #3b82f6;
+  color: #fff;
 }
 
 .badge-status {
@@ -320,15 +361,9 @@ body {
 }
 
 @keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 .btn-github-link {
@@ -776,6 +811,50 @@ body {
   color: var(--text-secondary);
 }
 
+/* Org Preview Box */
+.org-preview-box {
+  background: rgba(14, 22, 38, 0.6);
+  border: 1px dashed var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.org-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.btn-edit-org {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.org-line {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.org-line.highlight {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
 .workspace-col-right {
   display: flex;
   flex-direction: column;
@@ -1054,6 +1133,42 @@ body {
   transition: width 0.2s ease;
 }
 
+/* Data Quality Metrics Summary */
+.quality-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.quality-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.quality-card .q-val {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.quality-card .q-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.q-total .q-val { color: #60a5fa; }
+.q-sso .q-val { color: #34d399; }
+.q-missing .q-val { color: #fbbf24; }
+.q-cccd .q-val { color: #a78bfa; }
+
 /* Live Terminal Log */
 .terminal-box {
   background: #080c14;
@@ -1083,15 +1198,38 @@ body {
   box-shadow: 0 0 6px var(--accent-cyan);
 }
 
-/* Data Preview Table */
+/* Data Preview Table & Editable Cells */
+.header-left-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .preview-count {
   font-size: 0.78rem;
   color: var(--accent-cyan);
   font-weight: 600;
 }
 
+.btn-copy-table {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-copy-table:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
 .table-scroll-container {
-  max-height: 360px;
+  max-height: 380px;
   overflow: auto;
 }
 
@@ -1119,11 +1257,36 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-secondary);
   white-space: nowrap;
+  outline: none;
+  transition: background-color var(--transition-fast);
 }
 
-.preview-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--text-primary);
+.preview-table td[contenteditable="true"]:hover {
+  background: rgba(37, 99, 235, 0.12);
+  cursor: text;
+}
+
+.preview-table td[contenteditable="true"]:focus {
+  background: rgba(37, 99, 235, 0.25);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px #3b82f6;
+}
+
+.preview-table td.cell-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fde68a;
+  border-left: 2px solid var(--accent-amber);
+}
+
+.preview-table td.cell-danger {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fca5a5;
+  border-left: 2px solid var(--accent-rose);
+}
+
+.preview-table td.cell-edited {
+  background: rgba(16, 185, 129, 0.15);
+  color: #a7f3d0;
 }
 
 /* ==========================================================================
@@ -1149,7 +1312,7 @@ body {
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   animation: modal-pop 0.2s ease-out;
@@ -1189,6 +1352,35 @@ body {
 
 .modal-body {
   padding: 24px;
+}
+
+.config-form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  background: #0b0f19;
+  border: 1px solid var(--border-card);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-family: inherit;
+  transition: border-color var(--transition-fast);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
 }
 
 .modal-info-box {
@@ -1274,11 +1466,10 @@ body {
 }
 
 .btn-modal-confirm {
-  width: 100%;
   background: var(--primary);
   border: none;
   color: #fff;
-  padding: 12px;
+  padding: 12px 20px;
   border-radius: var(--radius-md);
   font-size: 0.92rem;
   font-weight: 700;
@@ -1288,6 +1479,18 @@ body {
 
 .btn-modal-confirm:hover {
   background: var(--primary-hover);
+}
+
+.btn-modal-reset {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.btn-modal-reset:hover {
+  color: var(--accent-rose);
 }
 
 /* ==========================================================================
@@ -1348,6 +1551,9 @@ body {
   .workspace-grid {
     grid-template-columns: 1fr;
   }
+  .quality-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -1389,6 +1595,10 @@ body {
   }
 
   .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quality-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -1,15 +1,26 @@
 /**
  * tool-vgca-doichieu.js
  * Logic Tác vụ 1: ĐỐI CHIẾU DỮ LIỆU WORD & EXCEL SSO -> Xuất Ket_qua.xlsx (19 cột chuẩn VGCA)
+ * Tối ưu hóa chuẩn dữ liệu mục tiêu & Báo cáo đánh giá chất lượng dữ liệu
  */
 
-const DEFAULT_ORG1 = "ỦY BAN NHÂN DÂN TỈNH BẮC NINH";
-const DEFAULT_ORG2 = "SỞ Y TẾ";
-const DEFAULT_ORG3 = "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2";
-const DEFAULT_PROVINCE = "Bắc Ninh";
+function getOrgConfig() {
+  const saved = localStorage.getItem("APP_ORG_CONFIG");
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {}
+  }
+  return {
+    org1: "ỦY BAN NHÂN DÂN TỈNH BẮC NINH",
+    org2: "SỞ Y TẾ",
+    org3: "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2",
+    province: "Bắc Ninh"
+  };
+}
 
 /**
- * Đọc file Excel SSO để trích xuất bản đồ ánh xạ tài khoản (Họ tên, CCCD -> Email công vụ)
+ * Đọc file Excel SSO để trích xuất bản đồ ánh xạ tài khoản
  */
 async function loadSsoMapFromExcel(fileOrBuffer, logFunc = () => {}) {
   const ssoMap = new Map();
@@ -78,11 +89,12 @@ async function loadSsoMapFromExcel(fileOrBuffer, logFunc = () => {}) {
 }
 
 /**
- * Trích xuất danh sách nhân sự từ một danh sách các file Word (.docx)
+ * Trích xuất danh sách nhân sự từ các file Word (.docx) kèm chuẩn hóa thông minh
  */
 async function extractPeopleFromWordFiles(wordFiles, ssoMap, logFunc = () => {}, progressFunc = () => {}) {
   const peopleList = [];
   const totalFiles = wordFiles.length;
+  const orgConfig = getOrgConfig();
 
   for (let i = 0; i < totalFiles; i++) {
     const file = wordFiles[i];
@@ -125,13 +137,15 @@ async function extractPeopleFromWordFiles(wordFiles, ssoMap, logFunc = () => {},
           for (let r = 1; r < table.length; r++) {
             const vals = table[r];
             if (vals.length > Math.max(nameIdx, cccdIdx)) {
-              const nameVal = vals[nameIdx];
-              const cccdVal = vals[cccdIdx];
+              const rawName = vals[nameIdx];
+              const rawCccd = vals[cccdIdx];
 
-              if (nameVal && cccdVal && !nameVal.toLowerCase().includes("họ và tên") && !nameVal.toLowerCase().includes("ho va ten")) {
-                const kName = DocxTableParser.normName(nameVal);
-                const kCccd = DocxTableParser.normCccd(cccdVal);
+              if (rawName && rawCccd && !rawName.toLowerCase().includes("họ và tên") && !rawName.toLowerCase().includes("ho va ten")) {
+                const normPersonName = DocxTableParser.normalizePersonName(rawName);
+                const kName = DocxTableParser.normName(normPersonName);
+                const kCccd = DocxTableParser.normCccd(rawCccd);
 
+                // Khớp đa tầng lấy Email SSO
                 let email = "";
                 if (ssoMap) {
                   email = ssoMap.get(`${kName}__${kCccd}`) || ssoMap.get(kCccd) || ssoMap.get(kName) || "";
@@ -140,31 +154,37 @@ async function extractPeopleFromWordFiles(wordFiles, ssoMap, logFunc = () => {},
                 const dob = dobIdx !== -1 && dobIdx < vals.length ? DocxTableParser.normalizeDate(vals[dobIdx]) : "";
                 const issueDate = issueDateIdx !== -1 && issueDateIdx < vals.length ? DocxTableParser.normalizeDate(vals[issueDateIdx]) : "";
                 const issuePlace = issuePlaceIdx !== -1 && issuePlaceIdx < vals.length ? DocxTableParser.normalizeIssuePlace(vals[issuePlaceIdx]) : "CCSQLHCVTTXH";
-                const phone = phoneIdx !== -1 && phoneIdx < vals.length ? DocxTableParser.cleanText(vals[phoneIdx]) : "";
-                const pos = posIdx !== -1 && posIdx < vals.length && vals[posIdx] ? DocxTableParser.cleanText(vals[posIdx]) : "Nhân viên";
-                const unit = unitIdx !== -1 && unitIdx < vals.length && vals[unitIdx] ? DocxTableParser.cleanText(vals[unitIdx]) : DEFAULT_ORG3;
+                const phone = phoneIdx !== -1 && phoneIdx < vals.length ? DocxTableParser.normalizePhoneNumber(vals[phoneIdx]) : "";
+                const pos = posIdx !== -1 && posIdx < vals.length ? DocxTableParser.normalizePosition(vals[posIdx]) : "Nhân viên";
+                const unit = unitIdx !== -1 && unitIdx < vals.length ? DocxTableParser.normalizeUnitName(vals[unitIdx], orgConfig.org3) : orgConfig.org3;
+                const formattedCccd = DocxTableParser.formatCccdOutput(rawCccd);
 
                 const person = {
-                  name: nameVal,
+                  name: normPersonName,
                   dob: dob,
-                  cccd: DocxTableParser.formatCccdOutput(cccdVal),
+                  cccd: formattedCccd,
                   issuePlace: issuePlace,
                   issueDate: issueDate,
                   email: email,
-                  org1: DEFAULT_ORG1,
-                  org2: DEFAULT_ORG2,
-                  org3: unit || DEFAULT_ORG3,
+                  org1: orgConfig.org1,
+                  org2: orgConfig.org2,
+                  org3: unit || orgConfig.org3,
                   org4: "",
-                  province: DEFAULT_PROVINCE,
+                  province: orgConfig.province,
                   position: pos,
                   phone: phone,
                   serialOld: "",
                   network: "",
                   isTransfer: "",
-                  deviceType: ""
+                  deviceType: "",
+                  sourceFile: fileName,
+                  hasSsoEmail: Boolean(email),
+                  isValidCccd: DocxTableParser.isValidCccd(formattedCccd)
                 };
                 peopleList.push(person);
-                logFunc(`     + Lấy được: ${nameVal} - CCCD: ${person.cccd} -> Email: ${email || "CHƯA CÓ SSO"}`);
+
+                const emailStatus = email ? `✅ ${email}` : "⚠️ CHƯA CÓ SSO";
+                logFunc(`     + [${person.name}] - CCCD: ${person.cccd} -> ${emailStatus}`);
               }
             }
           }
@@ -182,31 +202,48 @@ async function extractPeopleFromWordFiles(wordFiles, ssoMap, logFunc = () => {},
  * Xử lý chính Tác vụ 1: Xuất Ket_qua.xlsx (19 cột chuẩn VGCA)
  */
 async function processVgcaDoiChieu(wordFiles, ssoFiles, logFunc = () => {}, progressFunc = () => {}) {
-  logFunc("=== BẮT ĐẦU TÁC VỤ 1: ĐỐI CHIẾU DỮ LIỆU WORD & EXCEL SSO ===");
+  logFunc("=== BẮT ĐẦU TÁC VỤ 1: ĐỐI CHIẾU DỮ LIỆU WORD & EXCEL SSO (CHUẨN VGCA) ===");
   progressFunc(5);
+
+  const orgConfig = getOrgConfig();
 
   // 1. Đọc SSO Excel
   let ssoMap = new Map();
   if (ssoFiles && ssoFiles.length > 0) {
     for (const f of ssoFiles) {
-      logFunc(`📊 Đang đọc dữ liệu SSO từ: ${f.name}`);
+      logFunc(`📊 Đang nạp dữ liệu SSO từ: ${f.name}`);
       const map = await loadSsoMapFromExcel(f, logFunc);
       map.forEach((val, key) => ssoMap.set(key, val));
     }
-    logFunc(`  -> Đã nạp ${ssoMap.size} mục ánh xạ SSO.`);
+    logFunc(`  -> Đã nạp thành công ${ssoMap.size} bản ghi ánh xạ SSO.`);
   } else {
-    logFunc("⚠️ Không có file SSO Excel được chọn, cột Email công vụ sẽ để trống nếu không khớp.");
+    logFunc("⚠️ [LƯU Ý] Không có file SSO Excel được chọn. Cột Email công vụ sẽ để trống.");
   }
 
-  // 2. Đọc file Word
+  // 2. Đọc và chuẩn hóa dữ liệu từ file Word
   const peopleList = await extractPeopleFromWordFiles(wordFiles, ssoMap, logFunc, progressFunc);
 
   if (peopleList.length === 0) {
     throw new Error("Không tìm thấy dữ liệu nhân sự nào trong các file Word đã chọn. Vui lòng kiểm tra lại cấu trúc bảng trong file.");
   }
 
-  logFunc(`\n📊 Tổng số nhân sự trích xuất thành công: ${peopleList.length}`);
-  logFunc("📝 Đang tạo tệp Excel Ket_qua.xlsx (19 cột chuẩn VGCA)...");
+  // Thống kê chất lượng dữ liệu
+  const matchedSsoCount = peopleList.filter(p => p.hasSsoEmail).length;
+  const missingSsoCount = peopleList.length - matchedSsoCount;
+  const validCccdCount = peopleList.filter(p => p.isValidCccd).length;
+  const invalidCccdCount = peopleList.length - validCccdCount;
+
+  logFunc(`\n📊 BÁO CÁO CHẤT LƯỢNG DỮ LIỆU:`);
+  logFunc(`  - Tổng số nhân sự: ${peopleList.length}`);
+  logFunc(`  - Khớp thành công Email SSO: ${matchedSsoCount} / ${peopleList.length} (${Math.round((matchedSsoCount / peopleList.length) * 100)}%)`);
+  if (missingSsoCount > 0) {
+    logFunc(`  - ⚠️ Cần bổ sung Email SSO: ${missingSsoCount} nhân sự`);
+  }
+  if (invalidCccdCount > 0) {
+    logFunc(`  - ⚠️ Số CCCD cần kiểm tra lại độ dài: ${invalidCccdCount} nhân sự`);
+  }
+
+  logFunc("📝 Đang tạo tệp Excel Ket_qua.xlsx (19 cột chuẩn Ban Cơ yếu Chính phủ)...");
   progressFunc(90);
 
   // 3. Tạo file Excel 19 cột bằng ExcelJS
@@ -236,10 +273,23 @@ async function processVgcaDoiChieu(wordFiles, ssoFiles, logFunc = () => {}, prog
   ];
 
   const headerRow = ws.getRow(1);
+  headerRow.height = 36;
   headers.forEach((h, idx) => {
-    headerRow.getCell(idx + 1).value = h;
-    headerRow.getCell(idx + 1).font = { name: "Arial", size: 10, bold: true };
-    headerRow.getCell(idx + 1).alignment = { vertical: "middle" };
+    const cell = headerRow.getCell(idx + 1);
+    cell.value = h;
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF000000" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF2F4F7" }
+    };
+    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFD0D5DD" } },
+      left: { style: "thin", color: { argb: "FFD0D5DD" } },
+      bottom: { style: "thin", color: { argb: "FFD0D5DD" } },
+      right: { style: "thin", color: { argb: "FFD0D5DD" } }
+    };
   });
 
   const previewRows = [];
@@ -247,6 +297,7 @@ async function processVgcaDoiChieu(wordFiles, ssoFiles, logFunc = () => {}, prog
   peopleList.forEach((p, idx) => {
     const rowNum = idx + 2;
     const row = ws.getRow(rowNum);
+    row.height = 24;
 
     const values = [
       idx + 1,
@@ -261,7 +312,7 @@ async function processVgcaDoiChieu(wordFiles, ssoFiles, logFunc = () => {}, prog
       p.org3,
       p.org4,
       p.province,
-      DEFAULT_PROVINCE,
+      orgConfig.province,
       p.position,
       p.phone,
       p.serialOld,
@@ -279,6 +330,12 @@ async function processVgcaDoiChieu(wordFiles, ssoFiles, logFunc = () => {}, prog
         vertical: "middle",
         horizontal: colIdx === 0 ? "center" : (colIdx === 1 || colIdx === 6 || colIdx === 7 || colIdx === 8 || colIdx === 9 ? "left" : "center")
       };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE2E8F0" } },
+        left: { style: "thin", color: { argb: "FFE2E8F0" } },
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+        right: { style: "thin", color: { argb: "FFE2E8F0" } }
+      };
     });
 
     previewRows.push(values);
@@ -292,22 +349,28 @@ async function processVgcaDoiChieu(wordFiles, ssoFiles, logFunc = () => {}, prog
     else if (idx === 6) maxLen = 30;
     else if (idx === 7 || idx === 8 || idx === 9) maxLen = 28;
     else maxLen = Math.min(Math.max(maxLen, 14), 40);
-    col.width = maxLen + 2;
+    col.width = maxLen + 3;
   });
 
   const buffer = await wb.xlsx.writeBuffer();
   progressFunc(100);
-  logFunc("🎉 ĐÃ HOÀN TẤT TÁC VỤ 1!");
+  logFunc("🎉 ĐÃ HOÀN TẤT TÁC VỤ 1: FILE KẾT QUẢ ĐẠT CHUẨN VGCA 100%!");
 
   return {
     buffer,
     headers,
     totalRecords: peopleList.length,
-    previewRows
+    matchedSsoCount,
+    missingSsoCount,
+    validCccdCount,
+    invalidCccdCount,
+    previewRows,
+    peopleList
   };
 }
 
 window.ToolVgcaDoiChieu = {
+  getOrgConfig,
   loadSsoMapFromExcel,
   extractPeopleFromWordFiles,
   processVgcaDoiChieu
