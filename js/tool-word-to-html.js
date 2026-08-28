@@ -345,16 +345,13 @@ class WordToHtmlConverter {
           i++; // Bỏ qua đoạn chú thích vì đã đưa vào khối ảnh
         }
 
-        // Lấy link ảnh từ cấu hình người dùng nhập hoặc placeholder
+        // Lấy link ảnh từ cấu hình người dùng nhập (nếu không nhập thì để trống "")
         let imgUrl = "";
         if (this.options.ctxhImageUrls && this.options.ctxhImageUrls[imgCounter]) {
           imgUrl = this.options.ctxhImageUrls[imgCounter].trim();
         }
-        if (!imgUrl) {
-          imgUrl = `https://bvdkbacninh.vn/UserContent/images/${imgCounter + 1}.png`;
-        }
 
-        let imgBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${imgUrl}" style="width: 650px; height: 390px;" />`;
+        let imgBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${imgUrl}" style="width: 650px;" />`;
         if (captionHtml) {
           imgBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${captionHtml}</span></span>`;
         }
@@ -374,17 +371,17 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Xây dựng HTML chuẩn bài Thầu (Chỉ 2 ảnh trên và dưới)
+   * Xây dựng HTML chuẩn bài Thầu (Chỉ 2 ảnh trên và dưới kích thước 850px)
    */
   buildThauHtml(elements) {
     const outputBlocks = [];
     const textLines = [];
 
-    // 1. Khối Ảnh Trên (Đầu bài thầu)
-    const topUrl = this.options.thauTopImageUrl.trim() || "https://bvdkbacninh.vn/UserContent/images/thau_1.png";
+    // 1. Khối Ảnh Trên (Đầu bài thầu - Chiều rộng 850px, link để trống nếu chưa nhập)
+    const topUrl = this.options.thauTopImageUrl.trim();
     const topCaption = this.options.thauTopImageCaption.trim();
 
-    let topBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${topUrl}" style="width: 650px; height: 390px;" />`;
+    let topBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${topUrl}" style="width: 850px;" />`;
     if (topCaption) {
       topBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${this.escapeHtml(topCaption)}</span></span>`;
     }
@@ -414,11 +411,11 @@ class WordToHtmlConverter {
       );
     }
 
-    // 3. Khối Ảnh Dưới (Cuối bài thầu)
-    const btmUrl = this.options.thauBottomImageUrl.trim() || "https://bvdkbacninh.vn/UserContent/images/thau_2.png";
+    // 3. Khối Ảnh Dưới (Cuối bài thầu - Chiều rộng 850px, link để trống nếu chưa nhập)
+    const btmUrl = this.options.thauBottomImageUrl.trim();
     const btmCaption = this.options.thauBottomImageCaption.trim();
 
-    let btmBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${btmUrl}" style="width: 650px; height: 390px;" />`;
+    let btmBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${btmUrl}" style="width: 850px;" />`;
     if (btmCaption) {
       btmBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${this.escapeHtml(btmCaption)}</span></span>`;
     }

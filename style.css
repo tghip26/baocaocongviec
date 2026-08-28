@@ -2662,15 +2662,30 @@ body {
 
 .w2h-article-sheet {
   background: #ffffff;
-  color: #333333;
+  color: #000000;
   width: 100%;
-  max-width: 860px;
+  max-width: 900px;
   min-height: 520px;
   padding: 40px 48px;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   overflow-wrap: break-word;
   line-height: 1.6;
+}
+
+.w2h-article-sheet img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.w2h-article-sheet img:not([src]), 
+.w2h-article-sheet img[src=""] {
+  min-height: 180px;
+  background: #f8fafc repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px);
+  border: 2px dashed #94a3b8;
+  display: inline-block;
 }
 
 /* Code Box Container */
