@@ -12,7 +12,7 @@ window.TOOLS_CATEGORIES = [
   },
   {
     id: "web-cms",
-    name: "Chuyển Đổi Word sang HTML (Đăng Web)",
+    name: "Đăng Bài Website & CMS",
     icon: "code"
   },
   {
@@ -38,7 +38,7 @@ window.TOOLS_REGISTRY = [
     categoryId: "web-cms",
     title: "Chuyển Đổi Word sang HTML & CSS Inline",
     subtitle: "Trích xuất văn bản, bảng biểu, hình ảnh từ Word sang HTML chuẩn CMS",
-    description: "Tự động trích xuất toàn bộ văn bản, hình ảnh nhúng (Base64), bảng biểu và danh sách từ file Word (.docx) sang mã HTML kèm CSS Inline chuẩn đẹp. Tùy chỉnh màu chữ, font chữ, cỡ chữ, căn lề, độ giãn dòng và kiểu bảng trước khi chuyển đổi để dán trực tiếp vào tab [Mã HTML] của trình soạn thảo website.",
+    description: "Tự động trích xuất toàn bộ văn bản, hình ảnh nhúng (Base64), bảng biểu và danh sách từ file Word (.docx) sang mã HTML kèm CSS Inline chuẩn đẹp. Tự động nhận diện cặp ảnh 2 cột, loại bỏ header/footer hành chính để dán trực tiếp vào tab [Mã HTML] của CMS website.",
     badge: "Đăng Bài Web / CMS",
     badgeColor: "indigo",
     icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>`,
@@ -47,11 +47,31 @@ window.TOOLS_REGISTRY = [
     outputName: "Bai_viet_Website.html",
     guide: [
       "Bước 1: Chọn hoặc kéo thả tệp Word (.docx) bài viết, thông báo hoặc công văn vào khung tải tệp.",
-      "Bước 2: Tùy chỉnh các thông số trước khi chuyển đổi (Font chữ, cỡ chữ, màu sắc, căn lề, viền bảng, nhúng ảnh Base64...).",
-      "Bước 3: Xem trước bài viết trực tiếp hoặc chuyển sang tab [Mã HTML] để lấy mã nguồn chuẩn.",
+      "Bước 2: Hệ thống tự động chuyển đổi thành mã HTML chuẩn CMS kèm ảnh Base64 và căn lề sắc nét.",
+      "Bước 3: Xem trước bài viết trực tiếp hoặc chỉnh sửa trực tiếp trên tab [✏️ Sửa Mã HTML].",
       "Bước 4: Nhấn '📋 Sao chép mã HTML' và dán thẳng vào ô [Mã HTML / Source] của trình soạn thảo CMS website."
     ],
     executeKey: "openWordToHtml"
+  },
+  {
+    id: "pdf-to-image",
+    categoryId: "web-cms",
+    title: "Xuất Ảnh Từng Trang File PDF (Đăng Web / Báo Cáo)",
+    subtitle: "Trích xuất nhiều trang PDF thành ảnh PNG/JPG cùng lúc, tải trọn bộ ZIP",
+    description: "Chuyển đổi từng trang hoặc nhiều trang tùy chọn trong file PDF thành hình ảnh sắc nét cao (PNG, JPG, WebP) với độ phân giải lên đến 300 DPI (2.0x, 3.0x). Hỗ trợ tải về trọn bộ file ZIP, tải từng trang riêng lẻ, sao chép ảnh vào Clipboard hoặc sao chép mã HTML thẻ <img> để đăng lên website.",
+    badge: "Xuất Ảnh PDF Đa Năng",
+    badgeColor: "emerald",
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"/></svg>`,
+    inputType: "pdf-to-image-interactive",
+    acceptPdf: ".pdf",
+    outputName: "PDF_Images.zip",
+    guide: [
+      "Bước 1: Kéo thả hoặc chọn tệp PDF cần trích xuất ảnh.",
+      "Bước 2: Chọn các trang muốn xuất (Tất cả, Trang lẻ, Trang chẵn hoặc chọn từng ô checkbox).",
+      "Bước 3: Tùy chỉnh định dạng (PNG, JPG, WebP) và độ sắc nét (1.0x, 1.5x, 2.0x - 300 DPI, 3.0x).",
+      "Bước 4: Nhấn '📦 Tải Tất Cả Trang Đã Chọn (.ZIP)' để tải trọn bộ ảnh cùng lúc, hoặc tải nhanh từng trang."
+    ],
+    executeKey: "openPdfToImage"
   },
   {
     id: "schema-lookup",

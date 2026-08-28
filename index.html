@@ -15,6 +15,13 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <!-- PDF.js CDN for Client-side PDF Rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 
   <!-- Master Stylesheet -->
   <link rel="stylesheet" href="style.css" />
@@ -61,6 +68,13 @@
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
           </span>
           <span class="nav-text">Chuyển Word &rarr; HTML/CSS</span>
+        </a>
+
+        <a href="#pdf-to-image" class="nav-item" data-tool="pdf-to-image">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"/></svg>
+          </span>
+          <span class="nav-text">Xuất Ảnh Từng Trang PDF</span>
         </a>
 
         <div class="nav-section-title">CƠ SỞ DỮ LIỆU & SCHEMA</div>
@@ -193,6 +207,9 @@
             <div class="cat-filter-group" id="categoryFilter">
               <button type="button" class="cat-btn active" data-cat="all">
                 <span>📁 Tất cả công cụ</span>
+              </button>
+              <button type="button" class="cat-btn" data-cat="web-cms">
+                <span>🌐 Đăng Bài Web & Xuất Ảnh PDF</span>
               </button>
               <button type="button" class="cat-btn" data-cat="schema">
                 <span>🗄️ Tra cứu Schema VIMES</span>
@@ -391,7 +408,21 @@
             <div class="breadcrumb-trail">
               <a href="#hub" class="trail-link">Cổng công cụ</a>
               <span class="trail-sep">&rsaquo;</span>
-              <span class="trail-current">Chuyển Đổi Word sang HTML & CSS Inline (Đăng Web / CMS)</span>
+              <a href="#hub" class="trail-link" data-cat-nav="web-cms">Đăng bài Website & CMS</a>
+              <span class="trail-sep">&rsaquo;</span>
+              <span class="trail-current">Chuyển Đổi Word sang HTML/CSS</span>
+            </div>
+
+            <!-- Quick Hub Category Switcher -->
+            <div class="web-cms-switcher-bar">
+              <a href="#word-to-html" class="cms-switch-link active">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span>Chuyển Word &rarr; HTML</span>
+              </a>
+              <a href="#pdf-to-image" class="cms-switch-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/></svg>
+                <span>Xuất Ảnh PDF (PNG/JPG)</span>
+              </a>
             </div>
           </div>
 
@@ -684,6 +715,256 @@ https://domain.com/images/anh2.jpg"></textarea>
 
           </div>
         </section>
+
+        <!-- VIEW 2.2: PDF TO IMAGE EXPORTER WORKSPACE (Client-side High-DPI PDF to PNG/JPG) -->
+        <section class="pdf-workspace hidden" id="pdfToImageView">
+          
+          <!-- Workspace Header Navigation -->
+          <div class="workspace-nav">
+            <button type="button" class="btn-back" id="btnBackToHubFromPdf" title="Quay về trang chủ danh mục công cụ">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              <span class="btn-back-text">Quay lại Hub</span>
+            </button>
+            <div class="breadcrumb-trail">
+              <a href="#hub" class="trail-link">Cổng công cụ</a>
+              <span class="trail-sep">&rsaquo;</span>
+              <a href="#hub" class="trail-link" data-cat-nav="web-cms">Đăng bài Website & CMS</a>
+              <span class="trail-sep">&rsaquo;</span>
+              <span class="trail-current">Xuất Ảnh Từng Trang File PDF</span>
+            </div>
+            
+            <!-- Quick Hub Category Switcher -->
+            <div class="web-cms-switcher-bar">
+              <a href="#word-to-html" class="cms-switch-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span>Chuyển Word &rarr; HTML</span>
+              </a>
+              <a href="#pdf-to-image" class="cms-switch-link active">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/></svg>
+                <span>Xuất Ảnh PDF (PNG/JPG)</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Hero Section Header -->
+          <div class="w2h-hero-header">
+            <div class="w2h-title-group">
+              <div class="w2h-badge-row">
+                <span class="w2h-tool-badge bg-emerald">🖼️ XUẤT ẢNH PDF CHẤT LƯỢNG CAO</span>
+                <span class="w2h-status-badge">⚡ Xử lý 100% trên trình duyệt • Độ nét 300 DPI</span>
+              </div>
+              <h1 class="w2h-main-title">Trích Xuất & Lưu Từng Trang PDF Thành Hình Ảnh</h1>
+              <p class="w2h-subtitle">Chuyển đổi từng trang hoặc hàng loạt trang đã chọn trong file PDF thành ảnh PNG/JPG sắc nét, tải trọn bộ tệp nén ZIP hoặc copy trực tiếp đăng Website.</p>
+            </div>
+          </div>
+
+          <!-- Main Layout Grid: Left Settings & Right Preview Gallery -->
+          <div class="pdf-layout-grid" id="pdfLayoutGrid">
+            
+            <!-- LEFT PANEL: Upload & Export Controls -->
+            <div class="pdf-control-panel" id="pdfControlPanel">
+              
+              <!-- 1. PDF File Dropzone -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">📂</span>
+                  <h3>1. Chọn Tệp PDF</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="w2h-dropzone" id="pdfDropzone">
+                    <input type="file" id="pdfFilePicker" accept=".pdf,application/pdf" class="hidden-input" />
+                    <div class="dropzone-icon">📑</div>
+                    <div class="dropzone-text">
+                      <span class="dropzone-main-txt">Kéo & thả file PDF vào đây</span>
+                      <span class="dropzone-sub-txt">hoặc <strong class="highlight-link">nhấn để duyệt file từ máy tính</strong></span>
+                    </div>
+                    <span class="dropzone-badge">Hỗ trợ tệp .PDF mọi dung lượng</span>
+                  </div>
+
+                  <!-- Loaded File Info Card -->
+                  <div class="pdf-file-info-card hidden" id="pdfFileInfoCard">
+                    <div class="pdf-file-icon">📄</div>
+                    <div class="pdf-file-meta">
+                      <span class="pdf-file-name" id="pdfFileNameDisplay">document.pdf</span>
+                      <div class="pdf-file-badges">
+                        <span class="pdf-badge" id="pdfFileSizeDisplay">0 KB</span>
+                        <span class="pdf-badge bg-blue" id="pdfPageCountDisplay">0 trang</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-remove-pdf" id="btnRemovePdf" title="Chọn file khác">&times;</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Page Selection Box -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">📑</span>
+                  <h3>2. Chọn Phạm Vi Trang</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <!-- Quick Preset Range Buttons -->
+                  <div class="pdf-quick-range-row">
+                    <button type="button" class="btn-range-quick active" id="btnPdfSelectAll">Tất cả trang</button>
+                    <button type="button" class="btn-range-quick" id="btnPdfDeselectAll">Bỏ chọn</button>
+                    <button type="button" class="btn-range-quick" id="btnPdfSelectOdd">Trang lẻ (1, 3...)</button>
+                    <button type="button" class="btn-range-quick" id="btnPdfSelectEven">Trang chẵn (2, 4...)</button>
+                  </div>
+
+                  <!-- Manual Range Input -->
+                  <div class="pdf-custom-range-wrap">
+                    <label class="setting-lbl">Hoặc nhập khoảng trang tùy ý:</label>
+                    <div class="pdf-range-input-group">
+                      <input type="text" id="pdfRangeInput" class="w2h-text-input" placeholder="Ví dụ: 1-3, 5, 8-10..." />
+                      <button type="button" class="btn-apply-range" id="btnPdfApplyRange">Áp dụng</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Export Image Format & DPI Settings -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">⚙️</span>
+                  <h3>3. Cài Đặt Chất Lượng Ảnh</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="w2h-setting-row-2">
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">🖼️ Định dạng ảnh:</label>
+                      <select id="pdfExportFormat" class="w2h-select">
+                        <option value="image/png" selected>PNG (Sắc nét 100% - Khuyên dùng)</option>
+                        <option value="image/jpeg">JPG (Dung lượng nhẹ)</option>
+                        <option value="image/webp">WebP (Siêu nén hiện đại)</option>
+                      </select>
+                    </div>
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">📐 Độ phân giải / DPI:</label>
+                      <select id="pdfExportScale" class="w2h-select">
+                        <option value="1.0">1.0x (Chuẩn Web ~ 96 DPI)</option>
+                        <option value="1.5">1.5x (Rõ nét ~ 150 DPI)</option>
+                        <option value="2.0" selected>2.0x (Siêu sắc nét ~ 300 DPI)</option>
+                        <option value="3.0">3.0x (Cực nét Ultra HD)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="w2h-setting-row-2">
+                    <div class="w2h-setting-group" id="groupPdfQuality">
+                      <label class="setting-lbl">🎚️ Chất lượng nén:</label>
+                      <select id="pdfExportQuality" class="w2h-select">
+                        <option value="0.92" selected>92% (Cân bằng tốt)</option>
+                        <option value="1.0">100% (Cao nhất)</option>
+                        <option value="0.8">80% (Tiết kiệm bộ nhớ)</option>
+                      </select>
+                    </div>
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">🏷️ Tiền tố tên file ảnh:</label>
+                      <input type="text" id="pdfFilenamePrefix" class="w2h-text-input" placeholder="Trang" value="Trang" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Batch Actions Box -->
+              <div class="pdf-batch-actions-card">
+                <button type="button" class="btn-pdf-batch-primary" id="btnPdfDownloadZip">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>📦 TẢI TẤT CẢ TRANG ĐÃ CHỌN (.ZIP)</span>
+                </button>
+                <div class="pdf-batch-btn-row">
+                  <button type="button" class="btn-pdf-batch-secondary" id="btnPdfDownloadIndividual" title="Tải riêng lẻ từng ảnh các trang đã chọn">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Tải từng trang lẻ</span>
+                  </button>
+                  <button type="button" class="btn-pdf-batch-secondary" id="btnPdfCopyHtmlImg" title="Tạo mã HTML thẻ <img> các trang đã chọn">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <span>Sao chép mã thẻ &lt;img&gt;</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: Visual Pages Gallery Grid -->
+            <div class="pdf-main-panel" id="pdfMainPanel">
+              
+              <!-- Toolbar -->
+              <div class="w2h-output-toolbar">
+                <div class="pdf-stats-row" id="pdfStatsBar">
+                  <span class="stats-icon">📊</span>
+                  <span class="stats-title" id="pdfStatsSummary">Chưa có tệp PDF nào được nạp</span>
+                </div>
+
+                <div class="w2h-action-btns">
+                  <button type="button" class="btn-w2h-action btn-toggle-sidebar" id="btnToggleSidebarPdf" title="Thu gọn/mở rộng cột cài đặt">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                    <span id="txtToggleSidebarPdf">◀ Thu gọn cài đặt</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action btn-fullscreen" id="btnToggleFullscreenPdf" title="Phóng to toàn màn hình">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+                    <span id="txtFullscreenPdf">⛶ Phóng to</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Progress Bar Container -->
+              <div class="pdf-progress-wrap hidden" id="pdfProgressBarContainer">
+                <div class="pdf-progress-info">
+                  <span id="pdfProgressLabel">Đang kết xuất hình ảnh...</span>
+                  <span id="pdfProgressPercent">0%</span>
+                </div>
+                <div class="pdf-progress-bar-bg">
+                  <div class="pdf-progress-bar-fill" id="pdfProgressBarFill"></div>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div class="pdf-empty-state" id="pdfEmptyState">
+                <div class="empty-icon">🖼️</div>
+                <h3>Chưa có tệp PDF nào được tải lên</h3>
+                <p>Hãy kéo & thả file PDF vào khung bên trái để tự động xem trước từng trang và xuất ảnh hàng loạt chất lượng cao.</p>
+              </div>
+
+              <!-- Rendered Page Cards Grid -->
+              <div class="pdf-page-grid hidden" id="pdfPageGrid">
+                <!-- Injected dynamically by JS -->
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- MODAL: Lightbox Xem Chi Tiết Ảnh PDF Toàn Màn Hình -->
+        <div class="modal-overlay hidden" id="modalPdfLightbox">
+          <div class="pdf-lightbox-card">
+            <div class="pdf-lightbox-header">
+              <div class="pdf-lightbox-title-wrap">
+                <span class="pdf-lightbox-page-tag" id="lightboxPageTag">Trang 1 / 1</span>
+                <span class="pdf-lightbox-filename" id="lightboxFilename">document.pdf</span>
+              </div>
+              <div class="pdf-lightbox-tools">
+                <button type="button" class="btn-lightbox-action" id="btnLightboxDownload" title="Tải ảnh trang này">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Tải ảnh</span>
+                </button>
+                <button type="button" class="btn-lightbox-action" id="btnLightboxCopy" title="Sao chép ảnh vào Clipboard">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copy ảnh</span>
+                </button>
+                <button type="button" class="modal-close" id="btnClosePdfLightbox">&times;</button>
+              </div>
+            </div>
+            <div class="pdf-lightbox-body" id="pdfLightboxBody">
+              <button type="button" class="btn-lightbox-nav prev" id="btnLightboxPrev" title="Trang trước">&#10094;</button>
+              <div class="pdf-lightbox-img-wrapper" id="pdfLightboxImgWrapper">
+                <img id="pdfLightboxImg" alt="Xem trước trang PDF" src="" />
+              </div>
+              <button type="button" class="btn-lightbox-nav next" id="btnLightboxNext" title="Trang kế tiếp">&#10095;</button>
+            </div>
+          </div>
+        </div>
 
         <!-- VIEW 3: STANDARD TOOL EXECUTION WORKSPACE (Dynamic Single Page View) -->
         <section class="tool-workspace hidden" id="toolView">
@@ -985,6 +1266,7 @@ https://domain.com/images/anh2.jpg"></textarea>
   <script src="js/tools-registry.js"></script>
   <script src="js/tool-schema-lookup.js"></script>
   <script src="js/tool-word-to-html.js"></script>
+  <script src="js/tool-pdf-to-image.js"></script>
   <script src="js/tool-giamdinh.js"></script>
   <script src="js/tool-vgca-doichieu.js"></script>
   <script src="js/tool-vgca-cks.js"></script>

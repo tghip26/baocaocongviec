@@ -27,6 +27,12 @@ class AppController {
     this.currentW2hHtmlOutput = "";
     this.w2hCurrentTab = "visual"; // "visual" | "code"
 
+    // PDF to Image Converter State
+    this.pdfConverter = new PdfToImageConverter();
+    this.currentPdfBuffer = null;
+    this.currentPdfFileName = "";
+    this.currentLightboxPage = 1;
+
     this.initElements();
     this.initEvents();
     this.loadOrgConfigToUi();
@@ -45,9 +51,64 @@ class AppController {
     this.toolView = document.getElementById("toolView");
     this.schemaView = document.getElementById("schemaView");
     this.wordToHtmlView = document.getElementById("wordToHtmlView");
+    this.pdfToImageView = document.getElementById("pdfToImageView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
+
+    // PDF to Image Elements
+    this.btnBackToHubFromPdf = document.getElementById("btnBackToHubFromPdf");
+    this.pdfLayoutGrid = document.getElementById("pdfLayoutGrid");
+    this.pdfControlPanel = document.getElementById("pdfControlPanel");
+    this.pdfDropzone = document.getElementById("pdfDropzone");
+    this.pdfFilePicker = document.getElementById("pdfFilePicker");
+    this.pdfFileInfoCard = document.getElementById("pdfFileInfoCard");
+    this.pdfFileNameDisplay = document.getElementById("pdfFileNameDisplay");
+    this.pdfFileSizeDisplay = document.getElementById("pdfFileSizeDisplay");
+    this.pdfPageCountDisplay = document.getElementById("pdfPageCountDisplay");
+    this.btnRemovePdf = document.getElementById("btnRemovePdf");
+
+    this.btnPdfSelectAll = document.getElementById("btnPdfSelectAll");
+    this.btnPdfDeselectAll = document.getElementById("btnPdfDeselectAll");
+    this.btnPdfSelectOdd = document.getElementById("btnPdfSelectOdd");
+    this.btnPdfSelectEven = document.getElementById("btnPdfSelectEven");
+    this.pdfRangeInput = document.getElementById("pdfRangeInput");
+    this.btnPdfApplyRange = document.getElementById("btnPdfApplyRange");
+
+    this.pdfExportFormat = document.getElementById("pdfExportFormat");
+    this.pdfExportScale = document.getElementById("pdfExportScale");
+    this.pdfExportQuality = document.getElementById("pdfExportQuality");
+    this.groupPdfQuality = document.getElementById("groupPdfQuality");
+    this.pdfFilenamePrefix = document.getElementById("pdfFilenamePrefix");
+
+    this.btnPdfDownloadZip = document.getElementById("btnPdfDownloadZip");
+    this.btnPdfDownloadIndividual = document.getElementById("btnPdfDownloadIndividual");
+    this.btnPdfCopyHtmlImg = document.getElementById("btnPdfCopyHtmlImg");
+
+    this.pdfStatsSummary = document.getElementById("pdfStatsSummary");
+    this.btnToggleSidebarPdf = document.getElementById("btnToggleSidebarPdf");
+    this.txtToggleSidebarPdf = document.getElementById("txtToggleSidebarPdf");
+    this.btnToggleFullscreenPdf = document.getElementById("btnToggleFullscreenPdf");
+    this.txtFullscreenPdf = document.getElementById("txtFullscreenPdf");
+
+    this.pdfProgressBarContainer = document.getElementById("pdfProgressBarContainer");
+    this.pdfProgressLabel = document.getElementById("pdfProgressLabel");
+    this.pdfProgressPercent = document.getElementById("pdfProgressPercent");
+    this.pdfProgressBarFill = document.getElementById("pdfProgressBarFill");
+
+    this.pdfEmptyState = document.getElementById("pdfEmptyState");
+    this.pdfPageGrid = document.getElementById("pdfPageGrid");
+
+    // PDF Lightbox Modal
+    this.modalPdfLightbox = document.getElementById("modalPdfLightbox");
+    this.lightboxPageTag = document.getElementById("lightboxPageTag");
+    this.lightboxFilename = document.getElementById("lightboxFilename");
+    this.pdfLightboxImg = document.getElementById("pdfLightboxImg");
+    this.btnLightboxDownload = document.getElementById("btnLightboxDownload");
+    this.btnLightboxCopy = document.getElementById("btnLightboxCopy");
+    this.btnClosePdfLightbox = document.getElementById("btnClosePdfLightbox");
+    this.btnLightboxPrev = document.getElementById("btnLightboxPrev");
+    this.btnLightboxNext = document.getElementById("btnLightboxNext");
 
     // Tool View Elements
     this.btnBackToHub = document.getElementById("btnBackToHub");
@@ -687,6 +748,154 @@ class AppController {
     if (this.btnDownloadHtml) {
       this.btnDownloadHtml.addEventListener("click", () => this.downloadW2hHtml());
     }
+
+    // ==========================================
+    // PDF TO IMAGE EXPORTER EVENTS
+    // ==========================================
+    if (this.btnBackToHubFromPdf) {
+      this.btnBackToHubFromPdf.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+
+    if (this.pdfDropzone && this.pdfFilePicker) {
+      this.pdfDropzone.addEventListener("click", () => this.pdfFilePicker.click());
+      this.pdfFilePicker.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handlePdfFileInput(e.target.files[0]);
+        }
+      });
+
+      this.pdfDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        this.pdfDropzone.classList.add("dragover");
+      });
+      this.pdfDropzone.addEventListener("dragleave", () => {
+        this.pdfDropzone.classList.remove("dragover");
+      });
+      this.pdfDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        this.pdfDropzone.classList.remove("dragover");
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.handlePdfFileInput(e.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    if (this.btnRemovePdf) {
+      this.btnRemovePdf.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.resetPdfToolState();
+      });
+    }
+
+    // Range Quick Buttons
+    const rangeBtns = [
+      { btn: this.btnPdfSelectAll, action: () => { this.pdfConverter.selectAllPages(); this.onPdfSelectionChanged(); } },
+      { btn: this.btnPdfDeselectAll, action: () => { this.pdfConverter.deselectAllPages(); this.onPdfSelectionChanged(); } },
+      { btn: this.btnPdfSelectOdd, action: () => { this.pdfConverter.selectOddPages(); this.onPdfSelectionChanged(); } },
+      { btn: this.btnPdfSelectEven, action: () => { this.pdfConverter.selectEvenPages(); this.onPdfSelectionChanged(); } }
+    ];
+
+    rangeBtns.forEach(({ btn, action }) => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".btn-range-quick").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          action();
+        });
+      }
+    });
+
+    if (this.btnPdfApplyRange && this.pdfRangeInput) {
+      this.btnPdfApplyRange.addEventListener("click", () => {
+        const val = this.pdfRangeInput.value.trim();
+        if (!val) return;
+        this.pdfConverter.selectByRangeString(val);
+        document.querySelectorAll(".btn-range-quick").forEach(b => b.classList.remove("active"));
+        this.onPdfSelectionChanged();
+        this.showToast(`Đã chọn ${this.pdfConverter.selectedPages.size} trang theo khoảng: ${val}`, "info");
+      });
+    }
+
+    // Format & Scale Changes
+    const pdfSettings = [this.pdfExportFormat, this.pdfExportScale, this.pdfExportQuality, this.pdfFilenamePrefix];
+    pdfSettings.forEach(el => {
+      if (el) {
+        el.addEventListener("change", () => {
+          this.applyPdfSettings();
+        });
+      }
+    });
+
+    if (this.pdfExportFormat) {
+      this.pdfExportFormat.addEventListener("change", () => {
+        const isJpgOrWebp = this.pdfExportFormat.value === "image/jpeg" || this.pdfExportFormat.value === "image/webp";
+        if (this.groupPdfQuality) {
+          this.groupPdfQuality.style.display = isJpgOrWebp ? "flex" : "none";
+        }
+      });
+    }
+
+    // Batch Action Buttons
+    if (this.btnPdfDownloadZip) {
+      this.btnPdfDownloadZip.addEventListener("click", () => this.downloadPdfSelectedZip());
+    }
+    if (this.btnPdfDownloadIndividual) {
+      this.btnPdfDownloadIndividual.addEventListener("click", () => this.downloadPdfIndividualPages());
+    }
+    if (this.btnPdfCopyHtmlImg) {
+      this.btnPdfCopyHtmlImg.addEventListener("click", () => this.copyPdfHtmlTags());
+    }
+
+    // Toggle Sidebar & Fullscreen for PDF
+    if (this.btnToggleSidebarPdf) {
+      this.btnToggleSidebarPdf.addEventListener("click", () => {
+        if (!this.pdfLayoutGrid) return;
+        const isCollapsed = this.pdfLayoutGrid.classList.toggle("sidebar-collapsed");
+        if (this.txtToggleSidebarPdf) {
+          this.txtToggleSidebarPdf.textContent = isCollapsed ? "▶ Mở cài đặt" : "◀ Thu gọn cài đặt";
+        }
+        this.btnToggleSidebarPdf.classList.toggle("active", isCollapsed);
+      });
+    }
+
+    if (this.btnToggleFullscreenPdf) {
+      this.btnToggleFullscreenPdf.addEventListener("click", () => {
+        if (!this.pdfToImageView) return;
+        const isFull = this.pdfToImageView.classList.toggle("pdf-fullscreen-active");
+        if (this.txtFullscreenPdf) {
+          this.txtFullscreenPdf.textContent = isFull ? "🗗 Thu nhỏ" : "⛶ Phóng to";
+        }
+        this.btnToggleFullscreenPdf.classList.toggle("active", isFull);
+      });
+    }
+
+    // Lightbox Controls
+    if (this.btnClosePdfLightbox) {
+      this.btnClosePdfLightbox.addEventListener("click", () => this.hideModal(this.modalPdfLightbox));
+    }
+    if (this.btnLightboxPrev) {
+      this.btnLightboxPrev.addEventListener("click", () => this.navigatePdfLightbox(-1));
+    }
+    if (this.btnLightboxNext) {
+      this.btnLightboxNext.addEventListener("click", () => this.navigatePdfLightbox(1));
+    }
+    if (this.btnLightboxDownload) {
+      this.btnLightboxDownload.addEventListener("click", () => {
+        this.pdfConverter.downloadSinglePage(this.currentLightboxPage);
+      });
+    }
+    if (this.btnLightboxCopy) {
+      this.btnLightboxCopy.addEventListener("click", async () => {
+        try {
+          await this.pdfConverter.copyPageImageToClipboard(this.currentLightboxPage);
+          this.showToast(`Đã sao chép ảnh Trang ${this.currentLightboxPage} vào Clipboard!`, "success");
+        } catch (err) {
+          this.showToast("Lỗi sao chép: " + err.message, "error");
+        }
+      });
+    }
   }
 
   loadOrgConfigToUi() {
@@ -839,11 +1048,15 @@ class AppController {
       this.showSchemaView();
     } else if (hash === "word-to-html") {
       this.showWordToHtmlView();
+    } else if (hash === "pdf-to-image") {
+      this.showPdfToImageView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
         if (tool.id === "word-to-html") {
           this.showWordToHtmlView();
+        } else if (tool.id === "pdf-to-image") {
+          this.showPdfToImageView();
         } else {
           this.showToolView(tool.id);
         }
@@ -859,6 +1072,7 @@ class AppController {
     this.toolView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -871,6 +1085,7 @@ class AppController {
     this.hubView.classList.add("hidden");
     this.toolView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     this.schemaView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -878,7 +1093,6 @@ class AppController {
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-    // Khởi tạo chế độ Tra cứu theo Tên Bảng lên đầu và ô tìm kiếm hoàn toàn trống
     this.schemaSearchMode = "table";
     if (this.btnModeTable) this.btnModeTable.classList.add("active");
     if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
@@ -895,10 +1109,26 @@ class AppController {
     this.hubView.classList.add("hidden");
     this.toolView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
       item.classList.toggle("active", item.dataset.tool === "word-to-html");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  showPdfToImageView() {
+    this.currentToolId = "pdf-to-image";
+    this.hubView.classList.add("hidden");
+    this.toolView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "pdf-to-image");
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -913,11 +1143,20 @@ class AppController {
       this.showWordToHtmlView();
       return;
     }
+    if (toolId === "pdf-to-image") {
+      this.showPdfToImageView();
+      return;
+    }
 
     const tool = window.getToolById(toolId);
     if (!tool) return;
 
     this.currentToolId = toolId;
+    this.hubView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    this.toolView.classList.remove("hidden");
     this.hubView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
@@ -1985,6 +2224,332 @@ ${this.currentW2hHtmlOutput}
 
       this.previewTableBody.appendChild(tr);
     });
+  }
+
+  // ==========================================
+  // PDF TO IMAGE EXPORTER WORKSPACE METHODS
+  // ==========================================
+  async handlePdfFileInput(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      this.showToast("Vui lòng chọn tệp định dạng PDF (.pdf)!", "warning");
+      return;
+    }
+
+    this.currentPdfFileName = file.name;
+    this.pdfFileNameDisplay.textContent = file.name;
+    this.pdfFileSizeDisplay.textContent = this.formatFileSize(file.size);
+    this.pdfFileInfoCard.classList.remove("hidden");
+    this.pdfDropzone.classList.add("hidden");
+
+    if (this.pdfFilenamePrefix) {
+      this.pdfFilenamePrefix.value = file.name.replace(/\.[^/.]+$/, "");
+    }
+
+    this.applyPdfSettings();
+
+    try {
+      this.showToast(`Đang nạp và giải mã tài liệu ${file.name}...`, "info");
+      this.currentPdfBuffer = await file.arrayBuffer();
+      const res = await this.pdfConverter.loadPdf(this.currentPdfBuffer, file.name);
+      
+      this.pdfPageCountDisplay.textContent = `${res.totalPages} trang`;
+      this.pdfEmptyState.classList.add("hidden");
+      this.pdfPageGrid.classList.remove("hidden");
+
+      await this.renderPdfPageGrid();
+      this.updatePdfStatsBar();
+      this.showToast(`Đã nạp thành công ${res.totalPages} trang PDF!`, "success");
+    } catch (err) {
+      console.error(err);
+      this.showToast("Lỗi nạp file PDF: " + err.message, "error");
+      this.resetPdfToolState();
+    }
+  }
+
+  applyPdfSettings() {
+    if (!this.pdfConverter) return;
+    const format = this.pdfExportFormat ? this.pdfExportFormat.value : "image/png";
+    const scale = this.pdfExportScale ? parseFloat(this.pdfExportScale.value) : 2.0;
+    const quality = this.pdfExportQuality ? parseFloat(this.pdfExportQuality.value) : 0.92;
+    const filenamePrefix = this.pdfFilenamePrefix ? this.pdfFilenamePrefix.value.trim() : "Trang";
+
+    this.pdfConverter.setOptions({
+      format,
+      scale,
+      quality,
+      filenamePrefix
+    });
+
+    this.updatePdfStatsBar();
+  }
+
+  async renderPdfPageGrid() {
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) return;
+    this.pdfPageGrid.innerHTML = "";
+
+    const total = this.pdfConverter.totalPages;
+
+    // Show Progress Bar while rendering thumbnails
+    if (this.pdfProgressBarContainer) {
+      this.pdfProgressBarContainer.classList.remove("hidden");
+      this.pdfProgressLabel.textContent = `Đang kết xuất ${total} trang...`;
+      this.pdfProgressPercent.textContent = `0%`;
+      this.pdfProgressBarFill.style.width = `0%`;
+    }
+
+    for (let p = 1; p <= total; p++) {
+      const isSelected = this.pdfConverter.selectedPages.has(p);
+
+      const card = document.createElement("div");
+      card.className = `pdf-page-card ${isSelected ? "selected" : ""}`;
+      card.dataset.pageNum = p;
+
+      card.innerHTML = `
+        <div class="pdf-card-header">
+          <label class="pdf-card-checkbox-label">
+            <input type="checkbox" class="pdf-card-checkbox" data-page="${p}" ${isSelected ? "checked" : ""} />
+            <span>Trang ${p} / ${total}</span>
+          </label>
+          <span class="pdf-card-dim" id="pdfDim_${p}">Đang tải...</span>
+        </div>
+        <div class="pdf-card-preview-box" data-page="${p}">
+          <div class="pdf-card-hover-overlay">
+            <button type="button" class="btn-overlay-zoom">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              <span>Phóng to</span>
+            </button>
+          </div>
+        </div>
+        <div class="pdf-card-footer">
+          <button type="button" class="btn-card-action btn-card-download" data-page="${p}" title="Tải ảnh trang này">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Tải ảnh</span>
+          </button>
+          <button type="button" class="btn-card-action btn-card-copy" data-page="${p}" title="Sao chép ảnh vào Clipboard">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          </button>
+        </div>
+      `;
+
+      this.pdfPageGrid.appendChild(card);
+
+      // Render thumbnail asynchronously
+      try {
+        const pageData = await this.pdfConverter.renderPageToCanvas(p, this.pdfConverter.options.scale);
+        const previewBox = card.querySelector(".pdf-card-preview-box");
+        const dimSpan = card.querySelector(`#pdfDim_${p}`);
+
+        if (dimSpan) {
+          dimSpan.textContent = `${Math.round(pageData.width)} × ${Math.round(pageData.height)} px`;
+        }
+
+        pageData.canvas.className = "pdf-card-canvas";
+        previewBox.prepend(pageData.canvas);
+      } catch (err) {
+        console.error(`Lỗi render trang ${p}:`, err);
+      }
+
+      // Update progress
+      const percent = Math.round((p / total) * 100);
+      if (this.pdfProgressBarFill) this.pdfProgressBarFill.style.width = `${percent}%`;
+      if (this.pdfProgressPercent) this.pdfProgressPercent.textContent = `${percent}%`;
+    }
+
+    if (this.pdfProgressBarContainer) {
+      setTimeout(() => this.pdfProgressBarContainer.classList.add("hidden"), 500);
+    }
+
+    // Attach card events
+    this.pdfPageGrid.querySelectorAll(".pdf-card-checkbox").forEach(cb => {
+      cb.addEventListener("change", (e) => {
+        const p = parseInt(e.target.dataset.page, 10);
+        const isChecked = e.target.checked;
+        this.pdfConverter.togglePageSelection(p, isChecked);
+        const card = this.pdfPageGrid.querySelector(`.pdf-page-card[data-page-num="${p}"]`);
+        if (card) card.classList.toggle("selected", isChecked);
+        this.updatePdfStatsBar();
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".pdf-card-preview-box").forEach(box => {
+      box.addEventListener("click", () => {
+        const p = parseInt(box.dataset.page, 10);
+        this.openPdfLightbox(p);
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".btn-card-download").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const p = parseInt(btn.dataset.page, 10);
+        this.pdfConverter.downloadSinglePage(p);
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".btn-card-copy").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const p = parseInt(btn.dataset.page, 10);
+        try {
+          await this.pdfConverter.copyPageImageToClipboard(p);
+          this.showToast(`Đã sao chép ảnh Trang ${p} vào Clipboard!`, "success");
+        } catch (err) {
+          this.showToast("Không thể sao chép: " + err.message, "error");
+        }
+      });
+    });
+  }
+
+  onPdfSelectionChanged() {
+    if (!this.pdfPageGrid) return;
+    const selectedSet = this.pdfConverter.selectedPages;
+
+    this.pdfPageGrid.querySelectorAll(".pdf-page-card").forEach(card => {
+      const p = parseInt(card.dataset.pageNum, 10);
+      const isSelected = selectedSet.has(p);
+      card.classList.toggle("selected", isSelected);
+      const cb = card.querySelector(".pdf-card-checkbox");
+      if (cb) cb.checked = isSelected;
+    });
+
+    this.updatePdfStatsBar();
+  }
+
+  updatePdfStatsBar() {
+    if (!this.pdfStatsSummary) return;
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) {
+      this.pdfStatsSummary.textContent = "Chưa có tệp PDF nào được nạp";
+      return;
+    }
+
+    const total = this.pdfConverter.totalPages;
+    const selected = this.pdfConverter.selectedPages.size;
+    const fmt = this.pdfConverter.getFileExtension().toUpperCase();
+    const scale = this.pdfConverter.options.scale;
+    const dpi = scale === 2.0 ? "300 DPI" : (scale === 1.0 ? "96 DPI" : (scale === 3.0 ? "4K" : "150 DPI"));
+
+    this.pdfStatsSummary.textContent = `Tổng cộng: ${total} trang • Đã chọn: ${selected} trang • Định dạng: ${fmt} (${scale}x - ${dpi})`;
+  }
+
+  async downloadPdfSelectedZip() {
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) {
+      this.showToast("Vui lòng tải lên file PDF trước khi xuất ảnh!", "warning");
+      return;
+    }
+
+    if (this.pdfConverter.selectedPages.size === 0) {
+      this.showToast("Vui lòng chọn ít nhất một trang để xuất!", "warning");
+      return;
+    }
+
+    try {
+      if (this.pdfProgressBarContainer) {
+        this.pdfProgressBarContainer.classList.remove("hidden");
+      }
+
+      this.showToast("Đang nén toàn bộ các trang đã chọn thành file ZIP...", "info");
+      const res = await this.pdfConverter.exportSelectedPagesAsZip((cur, total, msg) => {
+        const percent = Math.round((cur / total) * 100);
+        if (this.pdfProgressLabel) this.pdfProgressLabel.textContent = msg;
+        if (this.pdfProgressPercent) this.pdfProgressPercent.textContent = `${percent}%`;
+        if (this.pdfProgressBarFill) this.pdfProgressBarFill.style.width = `${percent}%`;
+      });
+
+      if (this.pdfProgressBarContainer) {
+        setTimeout(() => this.pdfProgressBarContainer.classList.add("hidden"), 500);
+      }
+
+      this.showToast(`Đã tải về thành công file ${res.zipFileName} (${res.count} trang ảnh)!`, "success");
+    } catch (err) {
+      this.showToast("Lỗi xuất file ZIP: " + err.message, "error");
+      if (this.pdfProgressBarContainer) this.pdfProgressBarContainer.classList.add("hidden");
+    }
+  }
+
+  async downloadPdfIndividualPages() {
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) {
+      this.showToast("Vui lòng tải lên file PDF trước khi xuất ảnh!", "warning");
+      return;
+    }
+
+    const pages = Array.from(this.pdfConverter.selectedPages).sort((a, b) => a - b);
+    if (pages.length === 0) {
+      this.showToast("Vui lòng chọn ít nhất một trang!", "warning");
+      return;
+    }
+
+    this.showToast(`Đang tải ${pages.length} trang ảnh về máy tính...`, "info");
+    for (const p of pages) {
+      await this.pdfConverter.downloadSinglePage(p);
+      await new Promise(r => setTimeout(r, 200)); // Slight delay between downloads
+    }
+    this.showToast(`Đã xuất xong ${pages.length} trang ảnh!`, "success");
+  }
+
+  copyPdfHtmlTags() {
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) {
+      this.showToast("Vui lòng tải lên file PDF trước!", "warning");
+      return;
+    }
+
+    const html = this.pdfConverter.generateHtmlImageTags();
+    if (!html) {
+      this.showToast("Chưa chọn trang nào để sinh mã HTML!", "warning");
+      return;
+    }
+
+    navigator.clipboard.writeText(html).then(() => {
+      this.showToast("Đã sao chép mã HTML thẻ <img> các trang PDF vào Clipboard!", "success");
+    }).catch(err => {
+      this.showToast("Lỗi sao chép: " + err.message, "error");
+    });
+  }
+
+  openPdfLightbox(pageNum) {
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) return;
+    this.currentLightboxPage = pageNum;
+    this.updatePdfLightboxContent();
+    this.showModal(this.modalPdfLightbox);
+  }
+
+  updatePdfLightboxContent() {
+    const p = this.currentLightboxPage;
+    const total = this.pdfConverter.totalPages;
+
+    if (this.lightboxPageTag) this.lightboxPageTag.textContent = `Trang ${p} / ${total}`;
+    if (this.lightboxFilename) this.lightboxFilename.textContent = this.pdfConverter.pdfFileName + ".pdf";
+
+    const pageData = this.pdfConverter.renderedPages.get(p);
+    if (pageData && this.pdfLightboxImg) {
+      this.pdfLightboxImg.src = pageData.dataUrl;
+    }
+
+    if (this.btnLightboxPrev) this.btnLightboxPrev.disabled = (p <= 1);
+    if (this.btnLightboxNext) this.btnLightboxNext.disabled = (p >= total);
+  }
+
+  navigatePdfLightbox(direction) {
+    const target = this.currentLightboxPage + direction;
+    if (target >= 1 && target <= this.pdfConverter.totalPages) {
+      this.currentLightboxPage = target;
+      this.updatePdfLightboxContent();
+    }
+  }
+
+  resetPdfToolState() {
+    this.currentPdfBuffer = null;
+    this.currentPdfFileName = "";
+    if (this.pdfFilePicker) this.pdfFilePicker.value = "";
+    if (this.pdfFileInfoCard) this.pdfFileInfoCard.classList.add("hidden");
+    if (this.pdfDropzone) this.pdfDropzone.classList.remove("hidden");
+    if (this.pdfPageGrid) {
+      this.pdfPageGrid.innerHTML = "";
+      this.pdfPageGrid.classList.add("hidden");
+    }
+    if (this.pdfEmptyState) this.pdfEmptyState.classList.remove("hidden");
+    this.updatePdfStatsBar();
   }
 
   copyTableToClipboard() {
