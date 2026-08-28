@@ -1,29 +1,29 @@
 /**
  * tool-word-to-html.js
  * Advanced Word (.docx) to Clean HTML & Inline CSS Converter for CMS & Website Publishing.
- * 100% Client-side, ultra-optimized typography, precise layout normalization & smart spacing engine.
+ * Specially optimized for CKEditor, TinyMCE, WordPress and Web CMS with clean, unnested markup.
  */
 
 class WordToHtmlConverter {
   constructor(options = {}) {
     this.options = Object.assign({
-      preset: "article", // "article" | "admin" | "medical" | "compact" | "custom"
-      fontFamily: "Arial, sans-serif",
+      preset: "article",
+      fontFamily: "'Times New Roman', Times, serif",
       baseFontSize: "16px",
       textColor: "#333333",
       textAlign: "justify", // "justify" | "left" | "center" | "inherit"
       lineHeight: "1.6",
-      paragraphMarginBottom: "10px",
+      paragraphMarginBottom: "6px",
       textIndent: "none", // "none" | "1.5em" | "2em" | "inherit"
       tableFullBorder: true,
       tableHeaderBg: "#f1f5f9",
       tableZebra: false,
       tableFullWidth: true,
-      preserveLayoutTables: true, // Preserve borderless layout tables (Quốc hiệu, Tiêu ngữ, Chữ ký)
+      preserveLayoutTables: true,
       embedImagesBase64: true,
       cleanEmptyParagraphs: true,
       collapseSpaces: true,
-      autoHeading: true
+      autoHeading: false
     }, options);
 
     this.stats = {
@@ -39,91 +39,8 @@ class WordToHtmlConverter {
     this.options = Object.assign(this.options, newOptions);
   }
 
-  applyPreset(presetName) {
-    if (presetName === "article") {
-      this.setOptions({
-        preset: "article",
-        fontFamily: "Arial, sans-serif",
-        baseFontSize: "16px",
-        textColor: "#333333",
-        textAlign: "justify",
-        lineHeight: "1.6",
-        paragraphMarginBottom: "10px",
-        textIndent: "none",
-        tableFullBorder: true,
-        tableHeaderBg: "#f1f5f9",
-        tableZebra: false,
-        tableFullWidth: true,
-        preserveLayoutTables: true,
-        cleanEmptyParagraphs: true,
-        collapseSpaces: true,
-        autoHeading: true
-      });
-    } else if (presetName === "admin") {
-      // Văn bản hành chính / Công văn theo Nghị định 30
-      this.setOptions({
-        preset: "admin",
-        fontFamily: "'Times New Roman', Times, serif",
-        baseFontSize: "15px",
-        textColor: "#000000",
-        textAlign: "justify",
-        lineHeight: "1.45",
-        paragraphMarginBottom: "6px",
-        textIndent: "1.5em",
-        tableFullBorder: true,
-        tableHeaderBg: "#f8fafc",
-        tableZebra: false,
-        tableFullWidth: true,
-        preserveLayoutTables: true,
-        cleanEmptyParagraphs: true,
-        collapseSpaces: true,
-        autoHeading: false
-      });
-    } else if (presetName === "medical") {
-      // Tài liệu y tế / Phác đồ điều trị
-      this.setOptions({
-        preset: "medical",
-        fontFamily: "Arial, sans-serif",
-        baseFontSize: "15px",
-        textColor: "#1e293b",
-        textAlign: "justify",
-        lineHeight: "1.55",
-        paragraphMarginBottom: "8px",
-        textIndent: "none",
-        tableFullBorder: true,
-        tableHeaderBg: "#f0fdf4",
-        tableZebra: true,
-        tableFullWidth: true,
-        preserveLayoutTables: true,
-        cleanEmptyParagraphs: true,
-        collapseSpaces: true,
-        autoHeading: true
-      });
-    } else if (presetName === "compact") {
-      // Tối giản / Siêu gọn
-      this.setOptions({
-        preset: "compact",
-        fontFamily: "Arial, sans-serif",
-        baseFontSize: "14px",
-        textColor: "#222222",
-        textAlign: "left",
-        lineHeight: "1.4",
-        paragraphMarginBottom: "4px",
-        textIndent: "none",
-        tableFullBorder: true,
-        tableHeaderBg: "#f1f5f9",
-        tableZebra: false,
-        tableFullWidth: true,
-        preserveLayoutTables: true,
-        cleanEmptyParagraphs: true,
-        collapseSpaces: true,
-        autoHeading: true
-      });
-    }
-  }
-
   /**
-   * Convert Word (.docx) file data to HTML string with Inline CSS
+   * Convert Word (.docx) file data to clean, standard HTML string
    */
   async convertDocxToHtml(fileData, fileName = "") {
     if (!window.JSZip) {
@@ -205,13 +122,12 @@ class WordToHtmlConverter {
       throw new Error("Không tìm thấy cấu trúc nội dung trong file Word.");
     }
 
-    // 4. Generate HTML elements with Inline CSS
+    // 4. Generate Clean HTML
     const htmlChunks = [];
     const childNodes = bodyNode.childNodes;
 
     let inList = false;
     let listType = "ul";
-    let lastWasEmptyParagraph = false;
 
     for (let i = 0; i < childNodes.length; i++) {
       const node = childNodes[i];
@@ -223,31 +139,21 @@ class WordToHtmlConverter {
           if (!inList) {
             inList = true;
             listType = isListItem.type || "ul";
-            htmlChunks.push(`<${listType} style="margin: 0 0 ${this.options.paragraphMarginBottom} 20px; padding-left: 10px; font-family: ${this.options.fontFamily}; color: ${this.options.textColor}; line-height: ${this.options.lineHeight}; font-size: ${this.options.baseFontSize};">`);
+            const listStyles = this.buildParagraphStyles({ isListContainer: true });
+            htmlChunks.push(`<${listType} style="${listStyles}">`);
           }
-          const liHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: true, inTable: false });
+          const liHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: true });
           if (liHtml && liHtml.trim()) {
-            htmlChunks.push(`<li style="margin-bottom: 4px; line-height: ${this.options.lineHeight};">${liHtml}</li>`);
+            htmlChunks.push(`  <li style="margin-bottom: 4px; line-height: ${this.options.lineHeight};">${liHtml}</li>`);
           }
-          lastWasEmptyParagraph = false;
         } else {
           if (inList) {
             htmlChunks.push(`</${listType}>`);
             inList = false;
           }
           const pHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: false, inTable: false });
-          if (pHtml !== null) {
-            // Collapse multiple consecutive empty paragraphs
-            const isEmptyP = pHtml.includes("&nbsp;") && pHtml.length < 200;
-            if (isEmptyP) {
-              if (!lastWasEmptyParagraph && !this.options.cleanEmptyParagraphs) {
-                htmlChunks.push(pHtml);
-                lastWasEmptyParagraph = true;
-              }
-            } else {
-              htmlChunks.push(pHtml);
-              lastWasEmptyParagraph = false;
-            }
+          if (pHtml !== null && pHtml.trim().length > 0) {
+            htmlChunks.push(pHtml);
           }
         }
       } else if (nodeName === "w:tbl" || nodeName === "tbl") {
@@ -260,7 +166,6 @@ class WordToHtmlConverter {
           htmlChunks.push(tblHtml);
           this.stats.tableCount++;
         }
-        lastWasEmptyParagraph = false;
       }
     }
 
@@ -289,6 +194,60 @@ class WordToHtmlConverter {
   }
 
   /**
+   * Build clean, unnested CSS style string for <p> or list
+   */
+  buildParagraphStyles(opts = {}) {
+    const styles = [];
+
+    // 1. Text Align
+    const align = opts.textAlign || (this.options.textAlign === "inherit" ? "" : this.options.textAlign);
+    if (align) {
+      styles.push(`text-align: ${align}`);
+    }
+
+    // 2. Font Family
+    if (this.options.fontFamily && this.options.fontFamily !== "inherit") {
+      styles.push(`font-family: ${this.options.fontFamily}`);
+    }
+
+    // 3. Font Size
+    if (this.options.baseFontSize && this.options.baseFontSize !== "inherit") {
+      styles.push(`font-size: ${this.options.baseFontSize}`);
+    }
+
+    // 4. Line Height
+    if (this.options.lineHeight) {
+      styles.push(`line-height: ${this.options.lineHeight}`);
+    }
+
+    // 5. Text Color
+    if (this.options.textColor && this.options.textColor !== "inherit") {
+      styles.push(`color: ${this.options.textColor}`);
+    }
+
+    // 6. Margins
+    if (opts.isListContainer) {
+      styles.push(`margin: 0 0 ${this.options.paragraphMarginBottom} 24px; padding: 0`);
+    } else if (opts.inTable) {
+      styles.push(`margin: 0 0 2px 0`);
+    } else {
+      const mBottom = opts.isZeroSpacing ? "2px" : this.options.paragraphMarginBottom;
+      styles.push(`margin: 0 0 ${mBottom} 0`);
+    }
+
+    // 7. Text Indent
+    if (!opts.inTable && !opts.isListContainer) {
+      if (this.options.textIndent !== "none" && (align === "justify" || align === "left")) {
+        styles.push(`text-indent: ${this.options.textIndent}`);
+      } else if (opts.hasWordIndent && (align === "justify" || align === "left")) {
+        styles.push(`text-indent: 1.5em`);
+      }
+    }
+
+    return styles.join("; ");
+  }
+
+  /**
    * Parse a single Word paragraph <w:p>
    */
   parseParagraph(pNode, relsMap, mediaMap, ctx = {}) {
@@ -297,7 +256,7 @@ class WordToHtmlConverter {
 
     const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
     
-    let textAlign = this.options.textAlign === "inherit" ? "" : this.options.textAlign;
+    let textAlign = "";
     let headingTag = "";
     let isBoldHeading = false;
     let hasWordIndent = false;
@@ -313,21 +272,18 @@ class WordToHtmlConverter {
         else if (val === "left") textAlign = "left";
       }
 
-      // Check Indent
       const indNode = this.findChild(pPr, ["w:ind", "ind"]);
       if (indNode) {
         const fLine = parseInt(indNode.getAttribute("w:firstLine") || indNode.getAttribute("firstLine") || "0", 10);
         if (fLine > 200) hasWordIndent = true;
       }
 
-      // Check Spacing
       const spNode = this.findChild(pPr, ["w:spacing", "spacing"]);
       if (spNode) {
         const after = parseInt(spNode.getAttribute("w:after") || spNode.getAttribute("after") || "100", 10);
         if (after === 0) isZeroSpacing = true;
       }
 
-      // Check Heading Style
       const pStyle = this.findChild(pPr, ["w:pStyle", "pStyle"]);
       if (pStyle) {
         const sVal = (pStyle.getAttribute("w:val") || pStyle.getAttribute("val") || "").toLowerCase();
@@ -337,64 +293,109 @@ class WordToHtmlConverter {
       }
     }
 
-    // Traverse runs inside paragraph
-    const innerParts = [];
-    let hasTextContent = false;
-    let hasImage = false;
-
+    // Extract Runs & Raw Data
+    const rawRuns = [];
     const childNodes = pNode.childNodes;
+
     for (let i = 0; i < childNodes.length; i++) {
       const child = childNodes[i];
       const cName = child.nodeName.toLowerCase();
 
       if (cName === "w:r" || cName === "r") {
-        const runResult = this.parseRun(child, relsMap, mediaMap);
-        if (runResult.html) {
-          innerParts.push(runResult.html);
-          if (runResult.hasText) hasTextContent = true;
-          if (runResult.hasImage) hasImage = true;
-          if (runResult.isLargeHeading) isBoldHeading = true;
+        const rData = this.extractRunData(child, relsMap, mediaMap);
+        if (rData.text || rData.imageHtml) {
+          rawRuns.push(rData);
+          if (rData.isLargeHeading) isBoldHeading = true;
         }
       } else if (cName === "w:hyperlink" || cName === "hyperlink") {
         const rId = child.getAttribute("r:id") || child.getAttribute("id");
-        let linkUrl = "#";
-        if (rId && relsMap[rId]) {
-          linkUrl = relsMap[rId].target || "#";
-        }
-        const linkParts = [];
+        const linkUrl = (rId && relsMap[rId]) ? relsMap[rId].target || "#" : "#";
         const linkRuns = child.childNodes;
         for (let j = 0; j < linkRuns.length; j++) {
           if (linkRuns[j].nodeName.toLowerCase() === "w:r" || linkRuns[j].nodeName.toLowerCase() === "r") {
-            const rRes = this.parseRun(linkRuns[j], relsMap, mediaMap);
-            if (rRes.html) linkParts.push(rRes.html);
+            const rData = this.extractRunData(linkRuns[j], relsMap, mediaMap);
+            if (rData.text) {
+              rData.linkUrl = linkUrl;
+              rawRuns.push(rData);
+            }
           }
-        }
-        const linkInner = linkParts.join("");
-        if (linkInner.trim()) {
-          innerParts.push(`<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: 500;">${linkInner}</a>`);
-          hasTextContent = true;
         }
       } else if (cName === "w:drawing" || cName === "drawing") {
         const imgHtml = this.extractImageFromDrawing(child, relsMap, mediaMap);
         if (imgHtml) {
-          innerParts.push(imgHtml);
-          hasImage = true;
+          rawRuns.push({ text: "", imageHtml: imgHtml, isImage: true });
         }
       }
     }
 
-    let innerHtml = innerParts.join("");
-    
-    // Collapse multiple consecutive spaces if requested
-    if (this.options.collapseSpaces) {
-      innerHtml = innerHtml.replace(/[ \t]{2,}/g, " ");
+    if (rawRuns.length === 0) {
+      if (this.options.cleanEmptyParagraphs || inTable) return null;
+      const pStyles = this.buildParagraphStyles({ textAlign, inTable, isZeroSpacing });
+      return `<p style="${pStyles}">&nbsp;</p>`;
     }
 
-    const plainText = innerHtml.replace(/<[^>]*>/g, "").trim();
+    // Merge adjacent runs with identical styling to eliminate fragmented <span> tags
+    const mergedRuns = this.mergeAdjacentRuns(rawRuns);
 
-    if (!hasTextContent && !hasImage) {
+    // Build inner HTML string
+    let innerHtml = "";
+    let plainText = "";
+
+    for (const run of mergedRuns) {
+      if (run.isImage) {
+        innerHtml += run.imageHtml;
+        continue;
+      }
+
+      let runStr = run.text;
+      if (this.options.collapseSpaces) {
+        runStr = runStr.replace(/[ \t]{2,}/g, " ");
+      }
+      plainText += runStr;
+
+      if (run.isBold) runStr = `<strong>${runStr}</strong>`;
+      if (run.isItalic) runStr = `<em>${runStr}</em>`;
+      if (run.isUnderline) runStr = `<u>${runStr}</u>`;
+      if (run.isStrike) runStr = `<s>${runStr}</s>`;
+      if (run.isSub) runStr = `<sub>${runStr}</sub>`;
+      if (run.isSup) runStr = `<sup>${runStr}</sup>`;
+
+      // Only add <span> if run has distinct custom styling differing from paragraph base
+      const spanStyles = [];
+      if (run.customColor && run.customColor.toLowerCase() !== this.options.textColor.toLowerCase()) {
+        spanStyles.push(`color: ${run.customColor}`);
+      }
+      if (run.customBg) {
+        spanStyles.push(`background-color: ${run.customBg}`);
+      }
+      if (run.customFontSize) {
+        spanStyles.push(`font-size: ${run.customFontSize}`);
+      }
+      if (run.customFontFamily) {
+        spanStyles.push(`font-family: ${run.customFontFamily}`);
+      }
+
+      if (spanStyles.length > 0) {
+        runStr = `<span style="${spanStyles.join('; ')};">${runStr}</span>`;
+      }
+
+      if (run.linkUrl) {
+        runStr = `<a href="${run.linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">${runStr}</a>`;
+      }
+
+      if (run.imageHtml) {
+        runStr += run.imageHtml;
+      }
+
+      innerHtml += runStr;
+    }
+
+    plainText = plainText.trim();
+
+    if (!plainText && !rawRuns.some(r => r.isImage || r.imageHtml)) {
       if (this.options.cleanEmptyParagraphs || inTable) return null;
-      return `<p style="margin: 0 0 6px 0; line-height: 1.2; font-size: ${this.options.baseFontSize};">&nbsp;</p>`;
+      const pStyles = this.buildParagraphStyles({ textAlign, inTable, isZeroSpacing });
+      return `<p style="${pStyles}">&nbsp;</p>`;
     }
 
     // Update stats
@@ -409,57 +410,31 @@ class WordToHtmlConverter {
       return innerHtml;
     }
 
-    // Paragraph INSIDE Table Cell -> Tighter margins to prevent bloated table rows
-    if (inTable) {
-      const cellPStyles = [
-        "margin: 0 0 4px 0",
-        `line-height: ${Math.min(parseFloat(this.options.lineHeight), 1.45)}`,
-        `font-family: inherit`,
-        `color: inherit`
-      ];
-      if (textAlign && textAlign !== "justify") cellPStyles.push(`text-align: ${textAlign}`);
-      return `<p style="${cellPStyles.join('; ')};">${innerHtml}</p>`;
-    }
-
-    // Determine Headings
-    if (this.options.autoHeading && (headingTag || (isBoldHeading && plainText.length < 120 && !plainText.endsWith(".")))) {
+    // Determine Headings if autoHeading is enabled
+    if (this.options.autoHeading && (headingTag || (isBoldHeading && plainText.length < 100 && !plainText.endsWith(".")))) {
       const tag = headingTag || "h3";
       const hColor = this.options.textColor === "#333333" ? "#1e293b" : this.options.textColor;
-      const hSize = tag === "h2" ? "1.32em" : "1.16em";
-      const hMargin = tag === "h2" ? "18px 0 8px 0" : "14px 0 6px 0";
+      const hSize = tag === "h2" ? "18px" : "16px";
+      const hMargin = tag === "h2" ? "16px 0 8px 0" : "12px 0 6px 0";
+      const font = this.options.fontFamily || "inherit";
 
-      return `<${tag} style="font-family: ${this.options.fontFamily}; color: ${hColor}; font-size: ${hSize}; font-weight: 700; margin: ${hMargin}; line-height: 1.35; text-align: ${textAlign || 'left'};">${innerHtml}</${tag}>`;
+      return `<${tag} style="font-family: ${font}; color: ${hColor}; font-size: ${hSize}; font-weight: bold; margin: ${hMargin}; line-height: 1.35; text-align: ${textAlign || 'left'};">${innerHtml}</${tag}>`;
     }
 
-    // Margin bottom calculation: Zero spacing if Word explicitly set 0pt after
-    const pMarginBottom = isZeroSpacing ? "3px" : this.options.paragraphMarginBottom;
+    const pStyles = this.buildParagraphStyles({
+      textAlign: textAlign || (this.options.textAlign === "inherit" ? "" : this.options.textAlign),
+      inTable,
+      isZeroSpacing,
+      hasWordIndent
+    });
 
-    const styles = [
-      `font-family: ${this.options.fontFamily}`,
-      `font-size: ${this.options.baseFontSize}`,
-      `color: ${this.options.textColor}`,
-      `line-height: ${this.options.lineHeight}`,
-      `margin: 0 0 ${pMarginBottom} 0`
-    ];
-
-    if (textAlign) {
-      styles.push(`text-align: ${textAlign}`);
-    }
-
-    // Apply text indent if enabled or present in Word
-    if (this.options.textIndent !== "none" && (textAlign === "justify" || textAlign === "left")) {
-      styles.push(`text-indent: ${this.options.textIndent}`);
-    } else if (hasWordIndent && (textAlign === "justify" || textAlign === "left")) {
-      styles.push(`text-indent: 1.5em`);
-    }
-
-    return `<p style="${styles.join('; ')};">${innerHtml}</p>`;
+    return `<p style="${pStyles};">${innerHtml}</p>`;
   }
 
   /**
-   * Parse a Word Run <w:r>
+   * Extract raw attributes from a Run <w:r>
    */
-  parseRun(rNode, relsMap, mediaMap) {
+  extractRunData(rNode, relsMap, mediaMap) {
     const rPr = this.findChild(rNode, ["w:rPr", "rPr"]);
     
     let isBold = false;
@@ -520,12 +495,11 @@ class WordToHtmlConverter {
       const rFonts = this.findChild(rPr, ["w:rFonts", "rFonts"]);
       if (rFonts && this.options.fontFamily === "inherit") {
         const fAscii = rFonts.getAttribute("w:ascii") || rFonts.getAttribute("w:hAnsi");
-        if (fAscii) customFontFamily = `${fAscii}, sans-serif`;
+        if (fAscii) customFontFamily = `${fAscii}, serif`;
       }
     }
 
-    let textContent = "";
-    let hasImage = false;
+    let text = "";
     let imageHtml = "";
 
     const childNodes = rNode.childNodes;
@@ -534,65 +508,74 @@ class WordToHtmlConverter {
       const cName = child.nodeName.toLowerCase();
 
       if (cName === "w:t" || cName === "t") {
-        textContent += this.escapeHtml(child.textContent);
+        text += this.escapeHtml(child.textContent);
       } else if (cName === "w:br" || cName === "br") {
-        textContent += "<br/>";
+        text += "<br/>";
       } else if (cName === "w:tab" || cName === "tab") {
-        textContent += "&emsp;&emsp;";
+        text += "&emsp;&emsp;";
       } else if (cName === "w:drawing" || cName === "drawing") {
         const img = this.extractImageFromDrawing(child, relsMap, mediaMap);
-        if (img) {
-          imageHtml += img;
-          hasImage = true;
-        }
+        if (img) imageHtml += img;
       }
     }
 
-    if (!textContent && !hasImage) {
-      return { html: "", hasText: false, hasImage: false, isLargeHeading: false };
-    }
-
-    let runHtml = textContent;
-
-    if (isBold) runHtml = `<strong>${runHtml}</strong>`;
-    if (isItalic) runHtml = `<em>${runHtml}</em>`;
-    if (isUnderline) runHtml = `<u>${runHtml}</u>`;
-    if (isStrike) runHtml = `<s>${runHtml}</s>`;
-    if (isSub) runHtml = `<sub>${runHtml}</sub>`;
-    if (isSup) runHtml = `<sup>${runHtml}</sup>`;
-
-    const spanStyles = [];
-    if (customColor && customColor.toLowerCase() !== this.options.textColor.toLowerCase()) {
-      spanStyles.push(`color: ${customColor}`);
-    }
-    if (customBg) {
-      spanStyles.push(`background-color: ${customBg}`, `padding: 1px 3px`, `border-radius: 2px`);
-    }
-    if (customFontSize) {
-      spanStyles.push(`font-size: ${customFontSize}`);
-    }
-    if (customFontFamily) {
-      spanStyles.push(`font-family: ${customFontFamily}`);
-    }
-
-    if (spanStyles.length > 0) {
-      runHtml = `<span style="${spanStyles.join('; ')};">${runHtml}</span>`;
-    }
-
-    if (imageHtml) {
-      runHtml += imageHtml;
-    }
-
     return {
-      html: runHtml,
-      hasText: textContent.trim().length > 0,
-      hasImage,
-      isLargeHeading
+      text,
+      imageHtml,
+      isBold,
+      isItalic,
+      isUnderline,
+      isStrike,
+      isSub,
+      isSup,
+      customColor,
+      customBg,
+      customFontSize,
+      customFontFamily,
+      isLargeHeading,
+      linkUrl: null
     };
   }
 
   /**
-   * Extract image from <w:drawing> node
+   * Group adjacent runs that have identical formatting to avoid messy <span> tags
+   */
+  mergeAdjacentRuns(runs) {
+    if (runs.length <= 1) return runs;
+
+    const merged = [];
+    let current = Object.assign({}, runs[0]);
+
+    for (let i = 1; i < runs.length; i++) {
+      const next = runs[i];
+      const isSameFormat =
+        !current.isImage && !next.isImage &&
+        current.isBold === next.isBold &&
+        current.isItalic === next.isItalic &&
+        current.isUnderline === next.isUnderline &&
+        current.isStrike === next.isStrike &&
+        current.isSub === next.isSub &&
+        current.isSup === next.isSup &&
+        current.customColor === next.customColor &&
+        current.customBg === next.customBg &&
+        current.customFontSize === next.customFontSize &&
+        current.customFontFamily === next.customFontFamily &&
+        current.linkUrl === next.linkUrl;
+
+      if (isSameFormat) {
+        current.text += next.text;
+        if (next.imageHtml) current.imageHtml = (current.imageHtml || "") + next.imageHtml;
+      } else {
+        merged.push(current);
+        current = Object.assign({}, next);
+      }
+    }
+    merged.push(current);
+    return merged;
+  }
+
+  /**
+   * Extract image from drawing node
    */
   extractImageFromDrawing(drawingNode, relsMap, mediaMap) {
     const blipNodes = drawingNode.getElementsByTagName("a:blip").length > 0
@@ -611,27 +594,18 @@ class WordToHtmlConverter {
     let imgDataUri = mediaMap[target] || mediaMap[`media/${baseName}`] || mediaMap[baseName] || "";
     if (!imgDataUri) return "";
 
-    const imgStyles = [
-      "max-width: 100%",
-      "height: auto",
-      "display: block",
-      "margin: 14px auto",
-      "border-radius: 4px",
-      "box-shadow: 0 1px 6px rgba(0,0,0,0.12)"
-    ];
-
-    return `<div style="text-align: center; margin: 14px 0;"><img src="${imgDataUri}" alt="Hình ảnh bài viết" style="${imgStyles.join('; ')};" loading="lazy" /></div>`;
+    return `<p style="text-align: center; margin: 12px 0;"><img src="${imgDataUri}" alt="Hình ảnh bài viết" style="max-width: 100%; height: auto; display: inline-block; margin: 0 auto;" /></p>`;
   }
 
   /**
-   * Check if a table is a borderless layout table (Letterheads, signatures, 2-column info)
+   * Check if table is a borderless layout table (Letterheads, signatures)
    */
   isTableBorderless(tblNode) {
     const tblPr = this.findChild(tblNode, ["w:tblPr", "tblPr"]);
     if (!tblPr) return false;
 
     const tblBorders = this.findChild(tblPr, ["w:tblBorders", "tblBorders"]);
-    if (!tblBorders) return true; // No borders defined -> layout table
+    if (!tblBorders) return true;
 
     let hasVisibleBorder = false;
     const borderEdges = ["top", "left", "bottom", "right", "insideH", "insideV"];
@@ -650,7 +624,7 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Parse a Word Table <w:tbl> with smart layout detection
+   * Parse a Word Table <w:tbl> cleanly into standard HTML <table>
    */
   parseTable(tblNode, relsMap, mediaMap) {
     const trNodes = tblNode.getElementsByTagName("w:tr").length > 0
@@ -661,25 +635,23 @@ class WordToHtmlConverter {
 
     const isLayoutTable = this.options.preserveLayoutTables && this.isTableBorderless(tblNode);
 
-    const rowsHtml = [];
     const tblStyles = [
+      "width: 100%",
       "border-collapse: collapse",
-      "margin: 12px 0",
-      `font-family: ${this.options.fontFamily}`,
-      `font-size: ${this.options.baseFontSize}`,
-      `color: ${this.options.textColor}`,
-      "line-height: 1.45"
+      `font-family: ${this.options.fontFamily || 'inherit'}`,
+      `font-size: ${this.options.baseFontSize || '16px'}`,
+      `color: ${this.options.textColor || '#333333'}`,
+      "line-height: 1.4",
+      "margin: 8px 0"
     ];
-
-    if (this.options.tableFullWidth || isLayoutTable) {
-      tblStyles.push("width: 100%");
-    }
 
     if (!isLayoutTable && this.options.tableFullBorder) {
       tblStyles.push("border: 1px solid #cbd5e1");
     } else if (isLayoutTable) {
       tblStyles.push("border: none");
     }
+
+    const rowsHtml = [];
 
     for (let r = 0; r < trNodes.length; r++) {
       const trNode = trNodes[r];
@@ -714,17 +686,13 @@ class WordToHtmlConverter {
 
           const tcW = this.findChild(tcPr, ["w:tcW", "tcW"]);
           if (tcW) {
-            const wType = tcW.getAttribute("w:type") || tcW.getAttribute("type");
             const wVal = parseInt(tcW.getAttribute("w:val") || tcW.getAttribute("val") || "0", 10);
-            if (wType === "pct" && wVal > 0) {
-              cellWidth = `${(wVal / 50).toFixed(0)}%`;
-            } else if (wVal > 0 && isLayoutTable && tcNodes.length === 2) {
-              cellWidth = c === 0 ? "50%" : "50%";
+            if (wVal > 0 && isLayoutTable && tcNodes.length === 2) {
+              cellWidth = "50%";
             }
           }
         }
 
-        // Parse cell content with inTable flag to keep line-height tight
         const pNodes = tcNode.getElementsByTagName("w:p").length > 0
           ? tcNode.getElementsByTagName("w:p")
           : tcNode.getElementsByTagName("p");
@@ -740,7 +708,7 @@ class WordToHtmlConverter {
 
         const cellTag = isHeaderRow ? "th" : "td";
         const cellStyles = [
-          isLayoutTable ? "padding: 4px 8px" : "padding: 8px 12px",
+          isLayoutTable ? "padding: 4px 6px" : "padding: 6px 10px",
           "vertical-align: top"
         ];
 
@@ -755,7 +723,7 @@ class WordToHtmlConverter {
         }
 
         if (isHeaderRow) {
-          cellStyles.push(`background-color: ${cellBg || this.options.tableHeaderBg}`, "font-weight: 700", "text-align: center");
+          cellStyles.push(`background-color: ${cellBg || this.options.tableHeaderBg}`, "font-weight: bold", "text-align: center");
         } else {
           if (cellBg) {
             cellStyles.push(`background-color: ${cellBg}`);
@@ -765,14 +733,15 @@ class WordToHtmlConverter {
         }
 
         const spanAttr = colSpan > 1 ? ` colspan="${colSpan}"` : "";
-        cellsHtml.push(`<${cellTag}${spanAttr} style="${cellStyles.join('; ')};">${cellInner}</${cellTag}>`);
+        cellsHtml.push(`    <${cellTag}${spanAttr} style="${cellStyles.join('; ')};">${cellInner}</${cellTag}>`);
       }
 
       const rowBg = isHeaderRow ? `background-color: ${this.options.tableHeaderBg};` : "";
-      rowsHtml.push(`  <tr style="${rowBg}">\n    ${cellsHtml.join("\n    ")}\n  </tr>`);
+      rowsHtml.push(`  <tr style="${rowBg}">\n${cellsHtml.join("\n")}\n  </tr>`);
     }
 
-    return `<div style="overflow-x: auto; margin: ${isLayoutTable ? '6px 0' : '14px 0'};"><table style="${tblStyles.join('; ')};">\n${rowsHtml.join("\n")}\n</table></div>`;
+    const borderAttr = !isLayoutTable && this.options.tableFullBorder ? ' border="1"' : ' border="0"';
+    return `<table${borderAttr} cellpadding="6" cellspacing="0" style="${tblStyles.join('; ')};">\n${rowsHtml.join("\n")}\n</table>`;
   }
 
   findChild(node, names) {
