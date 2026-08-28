@@ -188,6 +188,13 @@ class AppController {
     this.w2hThauBottomImageCaption = document.getElementById("w2hThauBottomImageCaption");
     this.w2hCtxhImageUrls = document.getElementById("w2hCtxhImageUrls");
 
+    this.btnToggleFullscreenW2h = document.getElementById("btnToggleFullscreenW2h");
+    this.txtFullscreenBtn = document.getElementById("txtFullscreenBtn");
+    this.btnToggleSidebarW2h = document.getElementById("btnToggleSidebarW2h");
+    this.txtToggleSidebar = document.getElementById("txtToggleSidebar");
+    this.w2hLayoutGrid = document.querySelector(".w2h-layout-grid");
+    this.wordToHtmlView = document.getElementById("wordToHtmlView");
+
     this.btnTabW2hVisual = document.getElementById("btnTabW2hVisual");
     this.btnTabW2hCode = document.getElementById("btnTabW2hCode");
     this.btnTabW2hSplit = document.getElementById("btnTabW2hSplit");
@@ -597,6 +604,39 @@ class AppController {
         this.revertToOriginalWordHtml();
       });
     }
+
+    // Toggle Fullscreen Editor
+    if (this.btnToggleFullscreenW2h) {
+      this.btnToggleFullscreenW2h.addEventListener("click", () => {
+        if (!this.wordToHtmlView) return;
+        const isFull = this.wordToHtmlView.classList.toggle("w2h-fullscreen-active");
+        if (this.txtFullscreenBtn) {
+          this.txtFullscreenBtn.textContent = isFull ? "🗗 Thu nhỏ" : "⛶ Phóng to";
+        }
+        this.btnToggleFullscreenW2h.classList.toggle("active", isFull);
+      });
+    }
+
+    // Toggle Left Settings Sidebar
+    if (this.btnToggleSidebarW2h) {
+      this.btnToggleSidebarW2h.addEventListener("click", () => {
+        if (!this.w2hLayoutGrid) return;
+        const isCollapsed = this.w2hLayoutGrid.classList.toggle("sidebar-collapsed");
+        if (this.txtToggleSidebar) {
+          this.txtToggleSidebar.textContent = isCollapsed ? "▶ Mở cài đặt" : "◀ Thu gọn cài đặt";
+        }
+        this.btnToggleSidebarW2h.classList.toggle("active", isCollapsed);
+      });
+    }
+
+    // ESC key exits Fullscreen
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.wordToHtmlView && this.wordToHtmlView.classList.contains("w2h-fullscreen-active")) {
+        this.wordToHtmlView.classList.remove("w2h-fullscreen-active");
+        if (this.txtFullscreenBtn) this.txtFullscreenBtn.textContent = "⛶ Phóng to";
+        if (this.btnToggleFullscreenW2h) this.btnToggleFullscreenW2h.classList.remove("active");
+      }
+    });
 
     // Action buttons
     if (this.btnCopyHtmlCode) {
