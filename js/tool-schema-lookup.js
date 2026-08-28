@@ -7,7 +7,7 @@
 class SchemaLookupEngine {
   constructor() {
     this.schema = window.VIMES_SCHEMA || { metadata: {}, sections: [], tables: [] };
-    this.searchMode = "column"; // "column" | "table"
+    this.searchMode = "table"; // "table" | "column"
     this.selectedSection = "all";
     this.selectedPrefix = "all";
     this.currentTable = null;

@@ -16,8 +16,8 @@ class AppController {
     this.isProcessing = false;
     this.lastResult = null;
 
-    // Schema Explorer State
-    this.schemaSearchMode = "column"; // "column" | "table"
+    // Schema Explorer State (Mặc định: Tra cứu theo Tên Bảng lên đầu)
+    this.schemaSearchMode = "table"; // "table" | "column"
     this.currentInspectedTable = null;
 
     this.initElements();
@@ -558,8 +558,14 @@ class AppController {
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-    // Khởi tạo ô tìm kiếm hoàn toàn trống
-    this.schemaSearchInput.value = "";
+    // Khởi tạo chế độ Tra cứu theo Tên Bảng lên đầu và ô tìm kiếm hoàn toàn trống
+    this.schemaSearchMode = "table";
+    if (this.btnModeTable) this.btnModeTable.classList.add("active");
+    if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+    if (this.schemaSearchInput) {
+      this.schemaSearchInput.value = "";
+      this.schemaSearchInput.placeholder = "Nhập tên bảng hoặc chủ đề (ví dụ: hms_patient, hms_doc, m_transaction, sys_user, viện phí, kho dược)...";
+    }
     if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.add("hidden");
     this.performSchemaSearch();
   }
