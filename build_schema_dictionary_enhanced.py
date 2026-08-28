@@ -2,278 +2,324 @@ import os
 import re
 import json
 
-def get_table_topic_and_description(tbl_name, section_name, section_id):
+def get_vimes_ui_module(tbl_name, section_id):
+    t = tbl_name.lower()
+    
+    # 1. Tiếp đón bệnh nhân
+    if t in ["hms_patient", "hms_doc", "hms_relative", "hms_birthcertificate", "hms_patientdeath", "hms_patient_files", "hms_patient_record", "qms_patient", "hiv_patient", "portal_patient_profiles"]:
+        return "ui_tiepdon", "Tiếp đón bệnh nhân (Giao diện Tiếp nhận, Quản lý Tiếp đón)"
+    
+    # 2. Quản lý khám bệnh
+    if t in ["hms_outpatient", "hms_outpatient_record", "hms_html_view_exam", "hms_patient_tmp"] or t.startswith("hms_exam") or t.startswith("hms_opd"):
+        return "ui_khambenh", "Quản lý khám bệnh (Phòng khám ngoại trú, Khám chuyên khoa)"
+        
+    # 3. Quản lý điều trị nội trú
+    if t in ["hms_treatment_record", "hms_clinical_record", "emr_document", "emr_sign", "emr_template", "nrs_care_record", "nrs_infusion_orders", "nrs_infusion_bags", "hms_operation", "chemo_optimizer_patient"] or t.startswith("emr_") or t.startswith("nrs_") or t.startswith("hms_treat") or t.startswith("hms_inpatient"):
+        return "ui_noitru", "Quản lý điều trị nội trú (Bệnh án nội trú, Y lệnh, Chăm sóc EMR)"
+        
+    # 4. Quản lý dược
+    if t.startswith("m_") and not t.startswith("m_asset"):
+        return "ui_duoc", "Quản lý dược (Bán hàng, Đơn thuốc, Tủ trực, Xuất - Nhập kho)"
+        
+    # 5. Quản lý viện phí
+    if t.startswith("hms_fee") or t in ["hms_fee", "hms_fee_invoice", "hms_fee_deposit", "hms_fee_refund", "hms_fee_detail", "hms_fee_list", "hms_fee_exempt", "hms_fee_discount"]:
+        return "ui_vienphi", "Quản lý viện phí (Thu phí, Hóa đơn, Tạm ứng, Hoàn ứng, Bảng kê)"
+        
+    # 6. Quản lý chẩn đoán hình ảnh
+    if t.startswith("pacs_") or t.startswith("dicom_") or "pacs" in t or "imaging" in t or "xray" in t:
+        return "ui_cdha", "Quản lý chẩn đoán hình ảnh (X-quang, CT, MRI, Siêu âm, PACS/RIS)"
+        
+    # 7. Quản lý xét nghiệm
+    if t.startswith("lims_") or "lab" in t or "test" in t or "xetnghiem" in t:
+        return "ui_xetnghiem", "Quản lý xét nghiệm (Huyết học, Sinh hóa, Vi sinh, LIS)"
+        
+    # 8. Quản lý vật tư
+    if "vattu" in t or "asset" in t or t.startswith("fam_") or "equipment" in t or "material" in t:
+        return "ui_vattu", "Quản lý vật tư & Thiết bị y tế (Vật tư tiêu hao, Tài sản, Thiết bị)"
+        
+    # 9. Báo cáo thống kê & BHYT
+    if t.startswith("bh_") or t.startswith("bhyt") or "statistic" in t or "report" in t:
+        return "ui_baocao", "Báo cáo thống kê & Cổng BHYT (XML 1-5, Báo cáo KCB, Giám định)"
+        
+    # 10. Thiết lập bệnh viện
+    if t.startswith("sys_") or t.startswith("system_") or "config" in t or "setting" in t:
+        return "ui_thietlap", "Thiết lập bệnh viện & Hệ thống (Khoa phòng, Người dùng, Phân quyền)"
+
+    # Fallbacks based on section
+    if section_id == "patient": return "ui_tiepdon", "Tiếp đón bệnh nhân (Giao diện Tiếp nhận)"
+    if section_id == "clinical": return "ui_noitru", "Quản lý điều trị nội trú (EMR & Bệnh án)"
+    if section_id == "pharmacy": return "ui_duoc", "Quản lý dược (Kho dược & Đơn thuốc)"
+    if section_id == "paraclinical": return "ui_xetnghiem", "Quản lý cận lâm sàng (Xét nghiệm & CĐHA)"
+    if section_id == "billing": return "ui_vienphi", "Quản lý viện phí (Thu phí & BHYT)"
+    if section_id == "system": return "ui_thietlap", "Thiết lập bệnh viện (Danh mục & Hệ thống)"
+    if section_id == "integration": return "ui_baocao", "Báo cáo & Tích hợp Cổng Quốc gia"
+    
+    return "ui_thietlap", "Thiết lập bệnh viện & Mở rộng"
+
+def get_table_details(tbl_name, section_name, section_id):
     t_lower = tbl_name.lower()
     
-    # Pre-defined mapping for standard tables
     known_tables = {
-        "hms_patient": ("Danh mục Hồ sơ Bệnh nhân", "Quản lý Bệnh nhân & Tiếp đón", "Lưu trữ thông tin định danh người bệnh (Mã bệnh nhân, họ tên, ngày sinh, CCCD, địa chỉ, nghề nghiệp, nơi làm việc)"),
-        "hms_doc": ("Hồ sơ Khám bệnh & Tiếp đón", "Quản lý Bệnh nhân & Tiếp đón", "Lưu thông tin mỗi lượt tiếp đón/khám bệnh của bệnh nhân (Số hồ sơ, ngày tiếp đón, đối tượng BHYT, khoa phòng)"),
-        "hms_outpatient": ("Hồ sơ Khám Ngoại trú", "Quản lý Bệnh nhân & Tiếp đón", "Thông tin đợt khám và điều trị ngoại trú của người bệnh"),
-        "hms_outpatient_record": ("Phiếu Khám Ngoại trú", "Hồ sơ Bệnh án & EMR", "Chi tiết diễn biến khám, kết quả khám lâm sàng ngoại trú"),
-        "hms_birthcertificate": ("Giấy Chứng sinh", "Quản lý Bệnh nhân & Tiếp đón", "Quản lý dữ liệu chứng sinh trẻ sơ sinh, cấp mã định danh và liên thông cổng DVC"),
-        "hms_patientdeath": ("Giấy Báo tử & Trích lục Tử vong", "Quản lý Bệnh nhân & Tiếp đón", "Lưu trữ hồ sơ tử vong, nguyên nhân tử vong và trích lục hộ tịch"),
-        "hms_relative": ("Thông tin Thân nhân Bệnh nhân", "Quản lý Bệnh nhân & Tiếp đón", "Người liên hệ khẩn cấp, bố mẹ, người giám hộ của bệnh nhân"),
-        "hiv_patient": ("Hồ sơ Bệnh nhân Điều trị HIV/ARV", "Quản lý Bệnh nhân & Tiếp đón", "Theo dõi bệnh nhân HIV, phác đồ ARV và nơi đăng ký điều trị"),
-        "chemo_optimizer_patient": ("Hồ sơ Phác đồ Hóa chất Ung bướu", "Hồ sơ Bệnh án & EMR", "Tối ưu hóa và kiểm soát liều lượng phác đồ hóa trị cho bệnh nhân ung bướu"),
-        "hms_clinical_record": ("Bệnh án Lâm sàng", "Hồ sơ Bệnh án & EMR", "Tổng hợp bệnh án, tiền sử bệnh, quá trình điều trị của bệnh nhân"),
-        "hms_treatment_record": ("Phiếu Điều trị Nội trú", "Hồ sơ Bệnh án & EMR", "Theo dõi y lệnh, diễn biến bệnh hàng ngày của bệnh nhân nội trú"),
-        "hms_operation": ("Phiếu Phẫu thuật - Thủ thuật (PTTT)", "Hồ sơ Bệnh án & EMR", "Biên bản phẫu thuật, phương pháp vô cảm, kíp mổ và tường trình phẫu thuật"),
-        "m_productitem": ("Danh mục Thuốc, Vật tư & Hóa chất", "Dược, Kê đơn & Kho Dược", "Bảng dữ liệu gốc thuốc, vật tư y tế, hoạt chất, hàm lượng, đường dùng"),
-        "m_transaction": ("Phiếu Giao dịch Nhập - Xuất Kho Dược", "Dược, Kê đơn & Kho Dược", "Quản lý phiếu nhập kho từ nhà cung cấp, xuất khoa phòng, chuyển kho, xuất bệnh nhân"),
-        "m_transaction_line": ("Chi tiết Mặt hàng Giao dịch Kho Dược", "Dược, Kê đơn & Kho Dược", "Từng mặt hàng thuốc/vật tư trong phiếu nhập xuất, số lượng, đơn giá, số lô, hạn dùng"),
-        "m_storage": ("Danh mục Kho Dược & Tủ trực", "Dược, Kê đơn & Kho Dược", "Danh sách các kho thuốc chẵn, kho lẻ, kho vật tư và tủ trực khoa phòng"),
-        "m_productitem_storage": ("Tồn kho Thuốc & Vật tư", "Dược, Kê đơn & Kho Dược", "Theo dõi số lượng tồn kho thực tế của từng loại thuốc tại từng kho"),
-        "m_price": ("Bảng giá Thuốc & Vật tư y tế", "Dược, Kê đơn & Kho Dược", "Quản lý các mức giá mua, giá bán BHYT và giá bán viện phí dịch vụ"),
-        "m_supplier": ("Danh mục Nhà cung cấp / Công ty Dược", "Dược, Kê đơn & Kho Dược", "Thông tin các nhà thầu, công ty cung ứng dược phẩm"),
-        "m_manufacture": ("Danh mục Hãng sản xuất Thuốc", "Dược, Kê đơn & Kho Dược", "Danh sách nhà sản xuất dược phẩm và trang thiết bị"),
-        "m_unit": ("Danh mục Đơn vị tính Dược", "Dược, Kê đơn & Kho Dược", "Đơn vị tính: Viên, Lọ, Ống, Hộp, Vỉ, Gói, Chai..."),
-        "hms_fee": ("Tổng hợp Viện phí & Chi phí Khám chữa bệnh", "Viện phí & BHYT", "Bảng tổng hợp viện phí của bệnh nhân theo từng đợt khám"),
-        "hms_fee_invoice": ("Hóa đơn Thu Viện phí & Đồng chi trả", "Viện phí & BHYT", "Quản lý biên lai, hóa đơn điện tử thu tiền khám chữa bệnh"),
-        "hms_fee_deposit": ("Phiếu Thu Tạm ứng Viện phí", "Viện phí & BHYT", "Quản lý tiền tạm ứng nội trú, hoàn ứng và thanh toán ra viện"),
-        "hms_fee_refund": ("Phiếu Hoàn trả Viện phí", "Viện phí & BHYT", "Quản lý các khoản hoàn tiền cho người bệnh"),
-        "hms_fee_list": ("Danh mục Bảng giá Dịch vụ Kỹ thuật", "Viện phí & BHYT", "Bảng giá khám bệnh, xét nghiệm, chẩn đoán hình ảnh, thủ thuật"),
-        "hms_fee_detail": ("Chi tiết Chỉ định & Bảng kê Chi phí", "Viện phí & BHYT", "Từng dịch vụ bệnh nhân sử dụng kèm mức hưởng BHYT và viện phí"),
-        "sys_user": ("Tài khoản Người dùng Hệ thống", "Danh mục Dùng chung & Cấu hình", "Quản lý tài khoản đăng nhập cán bộ, bác sĩ, điều dưỡng, thu ngân"),
-        "sys_dept": ("Danh mục Khoa / Phòng ban", "Danh mục Dùng chung & Cấu hình", "Danh sách các khoa lâm sàng, cận lâm sàng và phòng ban chức năng"),
-        "sys_room": ("Danh mục Buồng bệnh / Phòng khám", "Danh mục Dùng chung & Cấu hình", "Quản lý danh sách phòng khám, buồng điều trị, giường bệnh"),
-        "sys_company": ("Thông tin Bệnh viện / Cơ sở Y tế", "Danh mục Dùng chung & Cấu hình", "Tên cơ sở, mã cơ sở KCB BHYT, địa chỉ, cơ quan chủ quản"),
-        "sys_permission": ("Phân quyền Chức năng Hệ thống", "Danh mục Dùng chung & Cấu hình", "Bảng phân quyền chi tiết các chức năng cho từng nhóm người dùng"),
-        "emr_document": ("Hồ sơ Bệnh án Điện tử (EMR)", "Hồ sơ Bệnh án & EMR", "Văn bản, biểu mẫu bệnh án điện tử tích hợp ký số"),
-        "emr_sign": ("Thông tin Ký số Bệnh án Điện tử", "Hồ sơ Bệnh án & EMR", "Chứng thư số, thời gian ký, trạng thái ký số của bác sĩ"),
-        "nrs_care_record": ("Phiếu Chăm sóc Điều dưỡng", "Hồ sơ Bệnh án & EMR", "Theo dõi dấu hiệu sinh tồn, y lệnh điều dưỡng, chăm sóc bệnh nhân"),
-        "nrs_infusion_orders": ("Y lệnh Truyền dịch", "Hồ sơ Bệnh án & EMR", "Quản lý y lệnh truyền dịch, tốc độ truyền, thời gian bắt đầu/kết thúc"),
-        "bh_xml1": ("Dữ liệu XML1 BHYT - Tổng hợp Khám chữa bệnh", "Viện phí & BHYT", "Dữ liệu XML1 gửi cổng giám định BHYT theo QĐ 4210 / QĐ 130"),
-        "bh_xml2": ("Dữ liệu XML2 BHYT - Chi tiết Thuốc", "Viện phí & BHYT", "Bảng kê chi tiết thuốc BHYT thanh toán gửi cổng giám định"),
-        "bh_xml3": ("Dữ liệu XML3 BHYT - Chi tiết Dịch vụ Kỹ thuật & Vật tư", "Viện phí & BHYT", "Bảng kê DVKT, xét nghiệm, CĐHA gửi cổng giám định BHYT"),
-        "bh_xml4": ("Dữ liệu XML4 BHYT - Chi tiết Diễn biến Lâm sàng", "Viện phí & BHYT", "Thông tin diễn biến lâm sàng của bệnh nhân gửi cổng BHYT"),
-        "bh_xml5": ("Dữ liệu XML5 BHYT - Chi tiết Diễn biến Cận lâm sàng", "Viện phí & BHYT", "Kết quả xét nghiệm, CĐHA liên thông giám định BHYT"),
-        "lims_order": ("Chỉ định Xét nghiệm (LIS)", "Cận lâm sàng, LIS & PACS", "Phiếu chỉ định xét nghiệm từ bác sĩ sang hệ thống LIS"),
-        "lims_result": ("Kết quả Xét nghiệm (LIS)", "Cận lâm sàng, LIS & PACS", "Kết quả đo chỉ số xét nghiệm huyết học, sinh hóa, vi sinh"),
-        "pacs_study": ("Ca chụp Chẩn đoán Hình ảnh (PACS)", "Cận lâm sàng, LIS & PACS", "Thông tin chỉ định chụp X-quang, CT, MRI, Siêu âm và kết luận"),
-        "hrm_employee": ("Hồ sơ Nhân sự & Cán bộ Y tế", "Phân hệ Mở rộng Khác", "Quản lý lý lịch, chứng chỉ hành nghề, chức danh cán bộ y tế"),
-        "fam_asset": ("Quản lý Tài sản & Trang thiết bị Y tế", "Phân hệ Mở rộng Khác", "Danh mục máy móc thiết bị y tế, tình trạng sử dụng, bảo dưỡng")
+        "hms_patient": ("Danh mục Hồ sơ Bệnh nhân", "Tiếp đón bệnh nhân", "Giao diện Quản lý Tiếp đón: Lưu trữ thông tin định danh người bệnh (Mã BN, Họ tên, Ngày sinh, CCCD, Địa chỉ, Nghề nghiệp, SĐT, Nơi làm việc)"),
+        "hms_doc": ("Hồ sơ Khám bệnh & Tiếp đón", "Tiếp đón bệnh nhân", "Giao diện Quản lý Tiếp đón: Lưu thông tin lượt tiếp nhận khám bệnh (Số HS, Thẻ BHYT, Đối tượng, Ngày giờ tiếp đón, Phòng khám, Bác sĩ tiếp đón, Tình trạng BN)"),
+        "hms_outpatient": ("Hồ sơ Khám Ngoại trú", "Quản lý khám bệnh", "Giao diện Khám Ngoại trú: Quản lý đợt khám chuyên khoa ngoại trú của người bệnh"),
+        "hms_outpatient_record": ("Phiếu Khám Ngoại trú", "Quản lý khám bệnh", "Giao diện Khám Ngoại trú: Chi tiết diễn biến khám, kết quả khám lâm sàng ngoại trú"),
+        "hms_birthcertificate": ("Giấy Chứng sinh", "Tiếp đón bệnh nhân", "Giao diện Tiếp đón: Quản lý chứng sinh trẻ sơ sinh, cấp mã định danh và liên thông cổng DVC"),
+        "hms_patientdeath": ("Giấy Báo tử & Trích lục Tử vong", "Tiếp đón bệnh nhân", "Giao diện Tiếp đón: Lưu trữ hồ sơ tử vong, nguyên nhân và trích lục tử vong"),
+        "hms_relative": ("Thông tin Thân nhân Bệnh nhân", "Tiếp đón bệnh nhân", "Giao diện Quản lý Tiếp đón: Người thân, Người liên hệ, Quan hệ, Địa chỉ và SĐT người thân"),
+        "hiv_patient": ("Hồ sơ Bệnh nhân Điều trị HIV/ARV", "Tiếp đón bệnh nhân", "Giao diện Khám chuyên khoa: Theo dõi bệnh nhân HIV, phác đồ ARV"),
+        "chemo_optimizer_patient": ("Hồ sơ Phác đồ Hóa chất Ung bướu", "Quản lý điều trị nội trú", "Giao diện Nội trú: Tối ưu hóa và kiểm soát liều lượng phác đồ hóa trị"),
+        "hms_clinical_record": ("Bệnh án Lâm sàng", "Quản lý điều trị nội trú", "Giao diện Bệnh án: Tổng hợp bệnh án, tiền sử bệnh, quá trình điều trị"),
+        "hms_treatment_record": ("Phiếu Điều trị Nội trú", "Quản lý điều trị nội trú", "Giao diện Điều trị Nội trú: Bệnh án, Y lệnh F3, Chăm sóc F4, Bệnh trình điều trị, Theo dõi truyền dịch, CĐ bệnh chính, Bệnh kèm theo"),
+        "hms_operation": ("Phiếu Phẫu thuật - Thủ thuật (PTTT)", "Quản lý điều trị nội trú", "Giao diện Điều trị Nội trú: Biên bản PTTT, phương pháp vô cảm, kíp mổ"),
+        "m_productitem": ("Danh mục Thuốc, Vật tư & Hóa chất", "Quản lý dược", "Giao diện Quản lý Dược: Danh mục gốc thuốc/vật tư, Tên thuốc/HL, Nước SX, Đơn vị tính, Đường dùng"),
+        "m_transaction": ("Phiếu Giao dịch Nhập - Xuất Kho Dược", "Quản lý dược", "Giao diện Quản lý Dược: Bán hàng, Mua hàng, Nhập kho, Xuất khoa phòng, Trả lại thuốc, Đơn bán lẻ"),
+        "m_transaction_line": ("Chi tiết Đơn thuốc / Mặt hàng Kho Dược", "Quản lý dược", "Giao diện Đơn thuốc: Tên thuốc /HL, Đơn vị, Số lượng, Đơn giá, Thành tiền, Nước SX, Số lô, Hạn dùng"),
+        "m_storage": ("Danh mục Kho Dược & Tủ trực", "Quản lý dược", "Giao diện Kho hàng: Danh mục Kho chẵn, Kho lẻ, Kho bán lẻ và Tủ trực khoa phòng"),
+        "m_productitem_storage": ("Tồn kho Thuốc & Vật tư", "Quản lý dược", "Giao diện Kho hàng: Số lượng tồn thực tế của từng thuốc tại từng kho"),
+        "m_price": ("Bảng giá Thuốc & Vật tư y tế", "Quản lý dược", "Giao diện Dược: Quản lý giá mua thầu, giá bán BHYT và giá dịch vụ"),
+        "m_supplier": ("Danh mục Nhà cung cấp / Công ty Dược", "Quản lý dược", "Giao diện Mua hàng: Thông tin nhà thầu, công ty cung ứng dược phẩm"),
+        "m_manufacture": ("Danh mục Hãng sản xuất Thuốc", "Quản lý dược", "Giao diện Quản trị Dược: Danh sách hãng sản xuất"),
+        "m_unit": ("Danh mục Đơn vị tính Dược", "Quản lý dược", "Giao diện Dược: Đơn vị tính (Viên, Lọ, Ống, Hộp, Vỉ, Gói, Chai...)"),
+        "hms_fee": ("Tổng hợp Viện phí & Chi phí Khám chữa bệnh", "Quản lý viện phí", "Giao diện Quản lý Viện phí: Tổng chi phí, Tổng BH/CS trả, BN Cùng chi trả, Trả chênh lệch, Tổng phải trả, Tổng tạm gửi (A), Tiền chế độ (B), Số tiền thanh toán"),
+        "hms_fee_invoice": ("Hóa đơn Thu Viện phí & Đồng chi trả", "Quản lý viện phí", "Giao diện Phiếu thu: Thu phí F2, Quyết toán F3, Tạo HĐĐT, Số hóa đơn, Ngày, Thành tiền, Người thu"),
+        "hms_fee_deposit": ("Phiếu Thu Tạm ứng Viện phí", "Quản lý viện phí", "Giao diện Tạm ứng: Quản lý tiền tạm ứng nội trú, hoàn ứng khi ra viện"),
+        "hms_fee_refund": ("Phiếu Hoàn trả Viện phí", "Quản lý viện phí", "Giao diện Quản lý Viện phí: Hoàn trả tiền thừa cho người bệnh"),
+        "hms_fee_list": ("Danh mục Bảng giá Dịch vụ Kỹ thuật", "Quản lý viện phí", "Giao diện Thiết lập viện phí: Bảng giá khám, xét nghiệm, CĐHA, PTTT"),
+        "hms_fee_detail": ("Chi tiết Chi phí Bệnh nhân (Bảng kê)", "Quản lý viện phí", "Giao diện Thông tin phí bệnh nhân: STT, Diễn giải dịch vụ, Đơn vị, Số lượng, Đơn giá, Thành tiền, Thành tiền BH, BH trả, Chênh lệch, Cùng chi trả"),
+        "sys_user": ("Tài khoản Người dùng Hệ thống", "Thiết lập bệnh viện", "Giao diện Thiết lập: Tài khoản Bác sĩ, Điều dưỡng, Thu ngân, Dược sĩ, UserID, Mật khẩu, Quyền hạn"),
+        "sys_dept": ("Danh mục Khoa / Phòng ban", "Thiết lập bệnh viện", "Giao diện Thiết lập: Danh sách khoa Lâm sàng, Cận lâm sàng, Phòng ban"),
+        "sys_room": ("Danh mục Buồng bệnh / Phòng khám", "Thiết lập bệnh viện", "Giao diện Thiết lập: Phòng khám tiếp đón, Buồng điều trị, Giường bệnh"),
+        "sys_company": ("Thông tin Bệnh viện / Cơ sở Y tế", "Thiết lập bệnh viện", "Giao diện Thiết lập: Tên bệnh viện (BVĐK Bắc Ninh Số 2), Mã KCB, Địa chỉ"),
+        "sys_permission": ("Phân quyền Chức năng Hệ thống", "Thiết lập bệnh viện", "Giao diện Quản trị: Phân quyền chức năng theo vai trò người dùng"),
+        "emr_document": ("Hồ sơ Bệnh án Điện tử (EMR)", "Quản lý điều trị nội trú", "Giao diện Bệnh án EMR: Văn bản, phiếu khám, biểu mẫu bệnh án số hóa"),
+        "emr_sign": ("Thông tin Ký số Bệnh án Điện tử", "Quản lý điều trị nội trú", "Giao diện Trình ký: Chữ ký số Bác sĩ, Trưởng khoa, Giám đốc"),
+        "nrs_care_record": ("Phiếu Chăm sóc Điều dưỡng", "Quản lý điều trị nội trú", "Giao diện Phiếu chăm sóc (F4): Diễn biến, Dấu hiệu sinh tồn, Thực hiện y lệnh"),
+        "nrs_infusion_orders": ("Y lệnh Truyền dịch", "Quản lý điều trị nội trú", "Giao diện Theo dõi truyền dịch: Tên dịch truyền, Tốc độ giọt/phút, Thời gian bắt đầu/kết thúc"),
+        "bh_xml1": ("Dữ liệu XML1 BHYT - Tổng hợp KCB", "Báo cáo thống kê", "Giao diện Báo cáo BHYT: Dữ liệu XML1 liên thông Cổng Giám định BHYT theo QĐ 130/4210"),
+        "bh_xml2": ("Dữ liệu XML2 BHYT - Bảng kê Thuốc", "Báo cáo thống kê", "Giao diện Báo cáo BHYT: Chi tiết thuốc BHYT thanh toán"),
+        "bh_xml3": ("Dữ liệu XML3 BHYT - Bảng kê DVKT & Vật tư", "Báo cáo thống kê", "Giao diện Báo cáo BHYT: Chi tiết DVKT, xét nghiệm, CĐHA, vật tư y tế"),
+        "bh_xml4": ("Dữ liệu XML4 BHYT - Diễn biến Lâm sàng", "Báo cáo thống kê", "Giao diện Báo cáo BHYT: Thông tin diễn biến lâm sàng người bệnh"),
+        "bh_xml5": ("Dữ liệu XML5 BHYT - Diễn biến Cận lâm sàng", "Báo cáo thống kê", "Giao diện Báo cáo BHYT: Kết quả xét nghiệm, CĐHA gửi cổng giám định"),
+        "lims_order": ("Chỉ định Xét nghiệm (LIS)", "Quản lý xét nghiệm", "Giao diện Quản lý Xét nghiệm: Phiếu chỉ định từ Bác sĩ chuyển sang hệ thống LIS"),
+        "lims_result": ("Kết quả Xét nghiệm (LIS)", "Quản lý xét nghiệm", "Giao diện Quản lý Xét nghiệm: Kết quả đo chỉ số huyết học, sinh hóa, vi sinh"),
+        "pacs_study": ("Ca chụp Chẩn đoán Hình ảnh (PACS)", "Quản lý chẩn đoán hình ảnh", "Giao diện Quản lý CĐHA: Chỉ định chụp X-quang, CT, MRI, Siêu âm, DICOM"),
+        "hrm_employee": ("Hồ sơ Nhân sự & Cán bộ Y tế", "Thiết lập bệnh viện", "Giao diện Nhân sự: Lý lịch, Bằng cấp, Chứng chỉ hành nghề cán bộ y tế"),
+        "fam_asset": ("Quản lý Tài sản & Thiết bị Y tế", "Quản lý vật tư", "Giao diện Quản lý Thiết bị: Danh mục máy móc, thiết bị y tế, bảo dưỡng")
     }
 
     if t_lower in known_tables:
-        return known_tables[t_lower]
+        vn_name, topic, desc = known_tables[t_lower]
+        ui_id, ui_name = get_vimes_ui_module(tbl_name, section_id)
+        return vn_name, topic, desc, ui_id, ui_name
 
-    # Smart pattern inference for tables
-    topic = section_name
+    ui_id, ui_name = get_vimes_ui_module(tbl_name, section_id)
+    topic = ui_name.split("(")[0].strip()
     vn_name = tbl_name
-    desc = f"Bảng dữ liệu thuộc phân hệ {section_name}"
+    desc = f"Bảng dữ liệu thuộc phân hệ {ui_name}"
 
     if t_lower.startswith("hms_"):
-        suffix = t_lower[4:]
-        topic = "Quản lý Bệnh viện (HMS)"
-        vn_name = f"Quản lý {suffix.replace('_', ' ').title()}"
-        desc = f"Bảng lưu trữ thông tin nghiệp vụ khám chữa bệnh ({suffix})"
+        suffix = t_lower[4:].replace("_", " ").title()
+        vn_name = f"Quản lý Bệnh viện - {suffix}"
     elif t_lower.startswith("m_"):
-        suffix = t_lower[2:]
-        topic = "Dược, Vật tư & Kho (Pharmacy)"
-        vn_name = f"Dược phẩm & Kho - {suffix.replace('_', ' ').title()}"
-        desc = f"Bảng dữ liệu quản lý thuốc, vật tư y tế và kho vận ({suffix})"
+        suffix = t_lower[2:].replace("_", " ").title()
+        vn_name = f"Dược & Kho - {suffix}"
     elif t_lower.startswith("sys_") or t_lower.startswith("system_"):
-        suffix = t_lower[4:] if t_lower.startswith("sys_") else t_lower[7:]
-        topic = "Hệ thống & Danh mục Dùng chung"
-        vn_name = f"Cấu hình Hệ thống - {suffix.replace('_', ' ').title()}"
-        desc = f"Bảng danh mục dùng chung hoặc cấu hình hệ thống ({suffix})"
+        suffix = (t_lower[4:] if t_lower.startswith("sys_") else t_lower[7:]).replace("_", " ").title()
+        vn_name = f"Thiết lập Hệ thống - {suffix}"
     elif t_lower.startswith("emr_"):
-        suffix = t_lower[4:]
-        topic = "Bệnh án Điện tử (EMR)"
-        vn_name = f"Bệnh án Điện tử - {suffix.replace('_', ' ').title()}"
-        desc = f"Bảng quản lý dữ liệu bệnh án điện tử và mẫu biểu số hóa ({suffix})"
+        suffix = t_lower[4:].replace("_", " ").title()
+        vn_name = f"Bệnh án Điện tử - {suffix}"
     elif t_lower.startswith("nrs_"):
-        suffix = t_lower[4:]
-        topic = "Y lệnh & Điều dưỡng (Nursing)"
-        vn_name = f"Nghiệp vụ Điều dưỡng - {suffix.replace('_', ' ').title()}"
-        desc = f"Bảng theo dõi chăm sóc bệnh nhân và y lệnh điều dưỡng ({suffix})"
-    elif t_lower.startswith("bh_") or "bhyt" in t_lower:
-        topic = "Bảo Hiểm Y Tế & Giám Định"
-        vn_name = f"Liên thông BHYT - {tbl_name}"
-        desc = "Bảng dữ liệu phục vụ đối soát, giám định và gửi cổng BHYT quốc gia"
+        suffix = t_lower[4:].replace("_", " ").title()
+        vn_name = f"Điều dưỡng & Chăm sóc - {suffix}"
+    elif t_lower.startswith("bh_"):
+        vn_name = f"Dữ liệu BHYT - {tbl_name}"
     elif t_lower.startswith("lims_"):
-        topic = "Xét nghiệm Y khoa (LIS)"
-        vn_name = f"Hệ thống Xét nghiệm - {tbl_name[5:].replace('_', ' ').title()}"
-        desc = "Bảng lưu trữ kết nối máy xét nghiệm, chỉ định và kết quả LIS"
+        vn_name = f"Xét nghiệm LIS - {tbl_name[5:].replace('_', ' ').title()}"
     elif t_lower.startswith("pacs_") or t_lower.startswith("dicom_"):
-        topic = "Chẩn đoán Hình ảnh (PACS/RIS)"
-        vn_name = f"Chẩn đoán Hình ảnh - {tbl_name}"
-        desc = "Bảng lưu thông tin chỉ định hình ảnh, lưu trữ DICOM và kết luận"
-    elif t_lower.startswith("hrm_"):
-        topic = "Nhân sự & Tiền lương (HRM)"
-        vn_name = f"Quản lý Nhân sự - {tbl_name[4:].replace('_', ' ').title()}"
-        desc = "Bảng dữ liệu thông tin nhân viên, cán bộ, bằng cấp, chấm công"
-    elif t_lower.startswith("fam_"):
-        topic = "Quản lý Tài sản & Thiết bị (FAM)"
-        vn_name = f"Quản lý Tài sản - {tbl_name[4:].replace('_', ' ').title()}"
-        desc = "Bảng dữ liệu tài sản, máy móc y tế, khấu hao và bảo trì"
-    elif t_lower.startswith("hiv_"):
-        topic = "Điều trị HIV/ARV"
-        vn_name = f"Chuyên khoa HIV - {tbl_name}"
-        desc = "Bảng theo dõi hồ sơ bệnh nhân và thuốc điều trị ARV"
-    elif t_lower.startswith("chemo_"):
-        topic = "Ung bướu & Hóa trị"
-        vn_name = f"Phác đồ Hóa trị - {tbl_name}"
-        desc = "Bảng dữ liệu thuốc hóa chất và phác đồ ung bướu"
-    elif t_lower.startswith("portal_"):
-        topic = "Cổng Thông tin Bệnh nhân (Portal)"
-        vn_name = f"Cổng Dịch vụ Bệnh nhân - {tbl_name}"
-        desc = "Bảng tích hợp tra cứu kết quả trực tuyến cho người bệnh"
-    elif t_lower.startswith("qms_"):
-        topic = "Xếp hàng Tự động (QMS)"
-        vn_name = f"Hệ thống Xếp hàng - {tbl_name}"
-        desc = "Bảng quản lý cấp số thứ tự khám bệnh và gọi loa tự động"
+        vn_name = f"Hình ảnh PACS - {tbl_name}"
 
-    return vn_name, topic, desc
+    return vn_name, topic, desc, ui_id, ui_name
 
 def get_column_vietnamese_description(col_name, tbl_name):
     c_lower = col_name.lower()
     
-    # Exact / common column names
     col_dict = {
-        # Patient identifiers & demographic
-        "hp_patientno": "Mã định danh bệnh nhân (Patient ID)",
-        "patientno": "Mã bệnh nhân",
-        "patient_id": "Mã bệnh nhân",
-        "patient_name": "Họ và tên bệnh nhân",
+        # UI Tiếp đón bệnh nhân
+        "hp_patientno": "Mã bệnh nhân (Mã BN trên giao diện Tiếp đón & Viện phí)",
+        "patientno": "Mã bệnh nhân (Mã BN)",
+        "patient_id": "Mã định danh bệnh nhân",
+        "patient_name": "Tên bệnh nhân (Họ và tên người bệnh)",
         "hp_surname": "Họ và tên đệm bệnh nhân",
         "hp_midname": "Tên đệm bệnh nhân",
         "hp_firstname": "Tên bệnh nhân",
-        "hp_birthdate": "Ngày sinh bệnh nhân",
-        "hp_sex": "Giới tính (M: Nam, F: Nữ)",
-        "sex": "Giới tính (M/F)",
+        "hp_birthdate": "Ngày sinh / Tuổi bệnh nhân",
+        "hp_sex": "Giới tính (Nam / Nữ trên form tiếp đón)",
+        "sex": "Giới tính (M: Nam, F: Nữ)",
         "gender": "Giới tính",
-        "hp_idcard": "Số Căn cước công dân (CCCD) / CMND",
-        "idcard": "Số CCCD / CMND",
-        "id_card": "Số CCCD / CMND",
-        "hp_address": "Địa chỉ thường trú người bệnh",
+        "hp_idcard": "Số CMND / CCCD (Số Căn cước công dân)",
+        "idcard": "Số CMND / CCCD",
+        "id_card": "Số CMND / CCCD",
+        "hp_address": "Địa chỉ chi tiết người bệnh",
         "address": "Địa chỉ",
         "hp_career": "Nghề nghiệp người bệnh",
         "career": "Nghề nghiệp",
-        "hp_ethnic": "Dân tộc",
+        "hp_ethnic": "Dân tộc (Kinh, Tày, Nùng...)",
         "ethnic": "Dân tộc",
-        "hp_phone": "Số điện thoại liên hệ",
+        "hp_phone": "Điện thoại liên hệ",
         "phone": "Số điện thoại",
         "phone_number": "Số điện thoại",
-        "hp_workplace": "Nơi làm việc / Cơ quan công tác",
+        "hp_workplace": "Nơi làm việc",
         "workplace": "Nơi làm việc",
-        "hp_provinceno": "Mã Tỉnh / Thành phố",
-        "hp_districtno": "Mã Quận / Huyện",
-        "hp_wardno": "Mã Xã / Phường",
-        "provinceno": "Mã Tỉnh / Thành phố",
-        "districtno": "Mã Quận / Huyện",
-        "wardno": "Mã Xã / Phường",
+        "hp_provinceno": "Tỉnh / Thành phố",
+        "hp_districtno": "Quận / Huyện",
+        "hp_wardno": "Phường / Xã",
+        "provinceno": "Tỉnh / Thành phố",
+        "districtno": "Quận / Huyện",
+        "wardno": "Phường / Xã",
+        "idcard_date": "Ngày cấp CMND / CCCD",
+        "ngaycap": "Ngày cấp CMND / CCCD",
         
-        # Admission & clinical visit (hd_)
-        "hd_docno": "Số hồ sơ khám bệnh / Mã đợt tiếp đón",
-        "docno": "Số hồ sơ khám bệnh / Đợt tiếp đón",
+        # Thân nhân (hms_relative)
+        "hr_name": "Họ tên Người thân / Người liên hệ",
+        "hr_relationship": "Mối quan hệ với bệnh nhân (Bố, Mẹ, Vợ, Chồng...)",
+        "hr_address": "Địa chỉ liên hệ người thân",
+        "hr_phone": "SĐT người thân",
+
+        # UI Khám bệnh & Tiếp đón (hms_doc)
+        "hd_docno": "Số HS (Số hồ sơ khám bệnh / Mã đợt tiếp đón)",
+        "docno": "Số hồ sơ khám (Số HS)",
         "doc_no": "Số hồ sơ khám bệnh",
-        "hd_patientno": "Mã bệnh nhân trong hồ sơ khám",
-        "hd_admitdate": "Ngày giờ tiếp đón / Vào viện",
-        "admitdate": "Ngày giờ tiếp đón vào viện",
-        "admit_date": "Ngày giờ vào viện",
+        "hd_patientno": "Mã BN trong hồ sơ khám",
+        "hd_admitdate": "Ngày giờ tiếp đón vào viện",
+        "admitdate": "Ngày giờ tiếp đón",
+        "admit_date": "Ngày tiếp đón",
         "hd_enddate": "Ngày giờ kết thúc khám / Ra viện",
-        "enddate": "Ngày giờ kết thúc đợt khám",
-        "end_date": "Ngày giờ kết thúc",
+        "enddate": "Ngày kết thúc đợt khám",
         "hd_status": "Trạng thái hồ sơ khám (Chờ khám, Đang khám, Đã khám...)",
         "status": "Trạng thái xử lý",
-        "hd_icd": "Mã chẩn đoán bệnh chính (ICD-10)",
+        "hd_icd": "Mã ICD-10 bệnh chính (CĐ. Bệnh chính)",
         "icd10": "Mã bệnh theo chuẩn ICD-10",
         "icd_code": "Mã bệnh ICD-10",
-        "hd_diagnostic": "Chẩn đoán ban đầu của Bác sĩ",
+        "hd_diagnostic": "Chẩn đoán bệnh của Bác sĩ",
         "diagnostic": "Chẩn đoán bệnh",
         "diagnosis": "Chẩn đoán bệnh",
-        "hd_deptid": "Mã khoa tiếp nhận khám",
-        "hd_roomid": "Mã phòng khám chỉ định",
-        "hd_doctor": "Mã / Tên Bác sĩ tiếp đón khám",
+        "hd_deptid": "Mã Khoa khám chỉ định",
+        "hd_roomid": "Phòng khám chỉ định (Phòng)",
+        "hd_doctor": "Bác sĩ tiếp đón / khám",
         "doctor_id": "Mã định danh Bác sĩ",
         "doctor_name": "Họ tên Bác sĩ",
         "doctor": "Bác sĩ phụ trách",
-        "hd_object": "Đối tượng khám (1: BHYT, 2: Viện phí, 3: Dịch vụ...)",
-        "hd_cardno": "Mã thẻ Bảo hiểm Y tế (BHYT)",
-        "cardno": "Mã số thẻ BHYT",
-        "card_id": "Mã thẻ / ID định danh thẻ",
-        "card_no": "Mã thẻ BHYT",
-        "hfe_invoiceno": "Số hóa đơn thu viện phí",
+        "hd_object": "Đối tượng bệnh nhân (Dịch vụ, BHYT, Khám SK...)",
+        "hd_cardno": "Số thẻ Bảo hiểm Y tế (Thẻ / Số thẻ)",
+        "cardno": "Số thẻ BHYT",
+        "card_id": "Mã thẻ / ID thẻ",
+        "card_no": "Số thẻ BHYT",
+        "hd_patientstatus": "T/trạng BN (Tình trạng bệnh nhân khi đến khám)",
+        "hd_exam_type": "Kiểu khám bệnh",
+        "hd_referral_hospital": "Bệnh viện chuyển tuyến đến",
+        "hd_referral_no": "Số GCV / Giấy hẹn chuyển tuyến",
+
+        # UI Điều trị nội trú (hms_treatment_record)
+        "htr_idx": "Mã đợt điều trị nội trú",
+        "htr_status": "Trạng thái điều trị nội trú",
+        "htr_doctor": "Bác sĩ điều trị phụ trách",
+        "htr_admitdate": "Ngày vào viện điều trị",
+        "htr_dischargedate": "Ngày ra viện",
+        "htr_icd": "CĐ. Bệnh chính (Mã ICD bệnh chính khi vào khoa)",
+        "htr_subicd": "Mã ICD Bệnh kèm theo",
+        "htr_diagnostic": "Chẩn đoán bệnh chính nội trú",
+        "htr_subdiagnostic": "Chẩn đoán bệnh kèm theo",
+        "htr_treatment_direction": "Hướng điều trị nội trú",
+        "htr_enddate": "Ngày kết thúc hồ sơ bệnh án",
+        "htr_roomid": "Buồng bệnh điều trị",
+        "htr_bedno": "Số giường bệnh",
+
+        # UI Quản lý Viện phí (hms_fee, hms_fee_invoice, hms_fee_detail)
+        "hfe_invoiceno": "Số Hóa Đơn thu viện phí (Số phiếu thu)",
         "invoiceno": "Số hóa đơn thu viện phí",
         "invoice_no": "Số hóa đơn",
         "invoicedate": "Ngày lập hóa đơn viện phí",
-        
-        # Fee & Billing
-        "hfe_amount": "Tổng số tiền viện phí phát sinh",
-        "amount": "Số tiền / Tổng tiền",
+        "hfe_amount": "Tổng chi phí viện phí phát sinh (VNĐ)",
+        "amount": "Số tiền / Thành tiền",
         "total_amount": "Tổng thành tiền",
-        "hfe_insurance_amount": "Số tiền Quỹ BHYT thanh toán",
+        "hfe_insurance_amount": "Tổng BH / CS trả (Quỹ BHYT thanh toán)",
         "insurance_amount": "Số tiền BHYT chi trả",
-        "hfe_patient_amount": "Số tiền Người bệnh cùng chi trả",
-        "patient_amount": "Số tiền người bệnh phải thanh toán",
-        "hfe_deposit_amount": "Số tiền người bệnh tạm ứng",
-        "deposit_amount": "Số tiền tạm ứng",
-        "hfe_exempt_amount": "Số tiền được miễn giảm",
-        "exempt_amount": "Số tiền miễn giảm",
+        "hfe_patient_amount": "BN Cùng chi trả (Người bệnh thanh toán)",
+        "patient_amount": "Tiền người bệnh cùng chi trả",
+        "hfe_deposit_amount": "Tổng tạm gửi (A) - Tiền tạm ứng viện phí",
+        "deposit_amount": "Tiền tạm ứng",
+        "hfe_exempt_amount": "Tiền chế độ (B) - Miễn giảm viện phí",
+        "exempt_amount": "Tiền miễn giảm viện phí",
         "price": "Đơn giá",
         "unit_price": "Đơn giá",
         "unitprice": "Đơn giá",
         "quantity": "Số lượng",
         "qty": "Số lượng",
-        
-        # Pharmacy & Inventory (m_)
-        "m_productitem_id": "Mã định danh thuốc / vật tư y tế",
-        "productitem_id": "Mã thuốc / vật tư y tế",
-        "product_id": "Mã sản phẩm / thuốc",
-        "product_name": "Tên thuốc / hoạt chất / vật tư",
+        "created_by": "Người thu / Người tạo phiếu (UserID)",
+        "created_date": "Ngày giờ lập phiếu / Ngày tạo",
+        "create_date": "Ngày tạo phiếu",
+        "create_user": "Người tạo",
+
+        # UI Quản lý Dược phẩm (m_productitem, m_transaction, m_transaction_line)
+        "m_productitem_id": "Mã thuốc / vật tư y tế",
+        "productitem_id": "Mã định danh thuốc / vật tư",
+        "product_id": "Mã thuốc / sản phẩm",
+        "product_name": "Tên thuốc / HL (Tên hoạt chất & Hàm lượng)",
         "product_code": "Mã quản lý thuốc",
-        "m_product_name": "Tên thuốc / hóa chất / vật tư y tế",
-        "m_storage_id": "Mã kho dược lưu trữ",
-        "storage_id": "Mã kho dược",
-        "storage_name": "Tên kho dược",
+        "m_product_name": "Tên thuốc / HL (Tên thuốc, hàm lượng, biệt dược)",
+        "m_storage_id": "Kho (Mã kho dược xuất / nhập)",
+        "storage_id": "Kho dược",
+        "storage_name": "Tên kho dược (Kho chẵn, Kho lẻ, Tủ trực)",
         "m_lot_number": "Số lô sản xuất của thuốc",
         "lot_number": "Số lô thuốc",
         "lotno": "Số lô sản xuất",
-        "m_exp_date": "Hạn sử dụng của thuốc / vật tư",
-        "exp_date": "Hạn sử dụng",
+        "m_exp_date": "Hạn dùng (Hạn sử dụng của thuốc)",
+        "exp_date": "Hạn dùng của thuốc",
         "expire_date": "Hạn sử dụng",
-        "m_manufacture_id": "Mã nhà sản xuất thuốc",
-        "m_supplier_id": "Mã nhà cung ứng / công ty thầu",
-        "supplier_id": "Mã nhà cung cấp",
-        "m_unit_id": "Mã đơn vị tính (Viên, Hộp, Chai...)",
+        "m_country_id": "Nước SX (Nước sản xuất dược phẩm)",
+        "country_name": "Nước sản xuất",
+        "m_manufacture_id": "Hãng sản xuất thuốc",
+        "m_supplier_id": "Nhà cung cấp / Công ty Dược",
+        "supplier_id": "Nhà cung cấp",
+        "m_unit_id": "Đơn vị (Đơn vị tính: Viên, Ống, Lọ, Chai...)",
         "unit_id": "Mã đơn vị tính",
-        "unit_name": "Tên đơn vị tính",
-        
-        # Department & Room
+        "unit_name": "Đơn vị tính thuốc",
+        "m_transaction_id": "Số phiếu giao dịch kho / Đơn thuốc",
+        "transaction_no": "Số phiếu giao dịch kho",
+
+        # UI Thiết lập bệnh viện (sys_dept, sys_room, sys_user)
         "deptid": "Mã Khoa / Phòng ban",
         "dept_id": "Mã Khoa / Phòng ban",
         "dept_name": "Tên Khoa / Phòng ban",
         "sd_id": "Mã Khoa phòng",
         "sd_name": "Tên Khoa phòng",
-        "roomid": "Mã Phòng khám / Buồng bệnh",
-        "room_id": "Mã Phòng khám / Buồng bệnh",
+        "roomid": "Phòng (Mã Phòng khám / Buồng bệnh)",
+        "room_id": "Mã Buồng bệnh / Phòng khám",
         "room_name": "Tên Phòng khám / Buồng bệnh",
         "sr_id": "Mã Buồng phòng",
         "sr_name": "Tên Buồng phòng",
+        "su_id": "UserID (Tên đăng nhập người dùng)",
+        "su_username": "Tên đăng nhập hệ thống",
+        "su_name": "Họ và tên nhân viên / Bác sĩ",
         
-        # System & Audit
-        "created_by": "Người tạo bản ghi (Tài khoản)",
-        "created_date": "Ngày giờ tạo bản ghi",
-        "create_date": "Ngày giờ tạo",
-        "create_user": "Người tạo",
-        "modified_by": "Người cập nhật bản ghi gần nhất",
+        # System Audit & notes
+        "modified_by": "Người sửa đổi bản ghi gần nhất",
         "modified_date": "Ngày giờ cập nhật gần nhất",
-        "update_date": "Ngày giờ cập nhật",
+        "update_date": "Ngày cập nhật",
         "update_user": "Người cập nhật",
-        "is_active": "Trạng thái kích hoạt (Y: Có hiệu lực, N: Hết hiệu lực)",
+        "is_active": "Trạng thái kích hoạt (Y/N)",
         "active": "Trạng thái kích hoạt",
         "note": "Ghi chú / Diễn giải nghiệp vụ",
         "notes": "Ghi chú bổ sung",
         "remark": "Ghi chú diễn giải",
-        "description": "Mô tả chi tiết"
+        "description": "Diễn giải chi tiết"
     }
 
     if c_lower in col_dict:
         return col_dict[c_lower]
 
-    # Rule-based generator for remaining fields
     if c_lower.endswith("_id") or c_lower.endswith("id"):
         base = c_lower.replace("_id", "").replace("id", "").replace("_", " ")
         return f"Mã định danh {base}"
@@ -304,7 +350,7 @@ def get_column_vietnamese_description(col_name, tbl_name):
     
     return f"Trường dữ liệu {col_name}"
 
-def build_enhanced_schema():
+def build_vimes_schema():
     dict_file = "DATABASE_SCHEMA_DICTIONARY.md"
     if not os.path.exists(dict_file):
         print(f"Error: {dict_file} not found.")
@@ -313,25 +359,19 @@ def build_enhanced_schema():
     with open(dict_file, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
-    section_map = {
-        "1": ("patient", "Phần 1: Quản lý Bệnh nhân & Tiếp đón", "Quản lý Bệnh nhân, lượt khám, nhân thân, giấy tờ hộ tịch"),
-        "2": ("clinical", "Phần 2: Hồ sơ Bệnh án & EMR", "Bệnh án điện tử, phiếu khám, điều trị, phẫu thuật thủ thuật"),
-        "3": ("pharmacy", "Phần 3: Dược, Kê đơn & Kho Dược", "Thuốc, vật tư, kho dược, nhập xuất tồn, đơn thuốc"),
-        "4": ("paraclinical", "Phần 4: Cận lâm sàng, LIS & PACS", "Xét nghiệm, Chẩn đoán hình ảnh, X-quang, CT, Siêu âm, DICOM"),
-        "5": ("billing", "Phần 5: Viện phí & BHYT", "Hóa đơn, tạm ứng, miễn giảm, chi phí điều trị, liên thông BHYT"),
-        "6": ("system", "Phần 6: Danh mục Dùng chung & Cấu hình", "Khoa phòng, phòng khám, người dùng, quyền hạn, danh mục hệ thống"),
-        "7": ("integration", "Phần 7: Tích hợp & Cổng Quốc gia", "API tích hợp bên thứ 3, liên thông cổng sức khỏe sinh sản, ký số"),
-        "8": ("other", "Phần 8: Phân hệ Mở rộng Khác", "Nhân sự HRM, Quản lý tài sản FAM, Đào tạo chỉ đạo tuyến")
-    }
-
-    sections = []
-    for num, (s_id, s_name, s_desc) in section_map.items():
-        sections.append({
-            "id": s_id,
-            "number": num,
-            "name": s_name,
-            "description": s_desc
-        })
+    vimes_modules = [
+        {"id": "all", "name": "Tất cả 10 Phân hệ Giao diện VIMES", "icon": "grid"},
+        {"id": "ui_tiepdon", "name": "1. Giao diện Tiếp đón bệnh nhân", "icon": "user-check"},
+        {"id": "ui_khambenh", "name": "2. Giao diện Quản lý khám bệnh", "icon": "stethoscope"},
+        {"id": "ui_noitru", "name": "3. Giao diện Quản lý điều trị nội trú", "icon": "bed"},
+        {"id": "ui_duoc", "name": "4. Giao diện Quản lý dược & Kho thuốc", "icon": "pill"},
+        {"id": "ui_vienphi", "name": "5. Giao diện Quản lý viện phí & BHYT", "icon": "credit-card"},
+        {"id": "ui_cdha", "name": "6. Giao diện Quản lý chẩn đoán hình ảnh (PACS)", "icon": "camera"},
+        {"id": "ui_xetnghiem", "name": "7. Giao diện Quản lý xét nghiệm (LIS)", "icon": "flask-conical"},
+        {"id": "ui_vattu", "name": "8. Giao diện Quản lý vật tư & Thiết bị", "icon": "box"},
+        {"id": "ui_baocao", "name": "9. Giao diện Báo cáo thống kê & Cổng BHYT", "icon": "bar-chart"},
+        {"id": "ui_thietlap", "name": "10. Giao diện Thiết lập bệnh viện & Hệ thống", "icon": "settings"}
+    ]
 
     tables = []
     current_section_id = "patient"
@@ -341,31 +381,41 @@ def build_enhanced_schema():
     for line in lines:
         line_s = line.strip()
 
-        # Match section header: ## 📁 Phần 1: ...
         sec_match = re.search(r"##\s*📁?\s*Phần\s*(\d+)\s*:\s*(.*)", line_s)
         if sec_match:
             sec_num = sec_match.group(1)
-            if sec_num in section_map:
-                current_section_id, current_section_name, _ = section_map[sec_num]
+            sec_map = {
+                "1": ("patient", "Phần 1: Quản lý Bệnh nhân & Tiếp đón"),
+                "2": ("clinical", "Phần 2: Hồ sơ Bệnh án & EMR"),
+                "3": ("pharmacy", "Phần 3: Dược, Kê đơn & Kho Dược"),
+                "4": ("paraclinical", "Phần 4: Cận lâm sàng, LIS & PACS"),
+                "5": ("billing", "Phần 5: Viện phí & BHYT"),
+                "6": ("system", "Phần 6: Danh mục Dùng chung & Cấu hình"),
+                "7": ("integration", "Phần 7: Tích hợp & Cổng Quốc gia"),
+                "8": ("other", "Phần 8: Phân hệ Mở rộng Khác")
+            }
+            if sec_num in sec_map:
+                current_section_id, current_section_name = sec_map[sec_num]
             else:
                 current_section_id = f"sec_{sec_num}"
                 current_section_name = sec_match.group(2).strip()
             continue
 
-        # Match table header: #### 📋 Bảng: `table_name` (BASE TABLE / VIEW)
         if "Bảng:" in line_s or "B\u1ea3ng:" in line_s:
             tbl_match = re.search(r"B[aả]ng:\s*`([^`]+)`\s*\(([^)]+)\)", line_s)
             if tbl_match:
                 tbl_name = tbl_match.group(1).strip()
                 tbl_type = tbl_match.group(2).strip()
 
-                vn_name, topic, desc = get_table_topic_and_description(tbl_name, current_section_name, current_section_id)
+                vn_name, topic, desc, ui_id, ui_name = get_table_details(tbl_name, current_section_name, current_section_id)
 
                 current_table = {
                     "name": tbl_name,
                     "title": vn_name,
                     "topic": topic,
                     "description": desc,
+                    "uiModuleId": ui_id,
+                    "uiModuleName": ui_name,
                     "type": tbl_type,
                     "sectionId": current_section_id,
                     "section": current_section_name,
@@ -374,7 +424,6 @@ def build_enhanced_schema():
                 tables.append(current_table)
                 continue
 
-        # Match column row in table
         if current_table and line_s.startswith("|") and not line_s.startswith("| :---") and not line_s.startswith("| STT") and not line_s.startswith("|STT"):
             parts = [p.strip() for p in line_s.split("|")]
             if len(parts) >= 5:
@@ -398,21 +447,21 @@ def build_enhanced_schema():
                     })
 
     total_cols = sum(len(t["columns"]) for t in tables)
-    print(f"Enhanced Schema: {len(tables)} tables, {total_cols} columns with Vietnamese descriptions & topics.")
+    print(f"VIMES Complete Schema: {len(tables)} tables, {total_cols} columns mapped to 10 VIMES UI Modules.")
 
     data_payload = {
         "metadata": {
-            "title": "Từ Điển Schema Cơ Sở Dữ Liệu VIMES (Chi Tiết Ghi Chú & Chủ Đề)",
-            "version": "2.0",
+            "title": "Từ Điển Schema Cơ Sở Dữ Liệu VIMES HIS (Khớp 10 Phân Hệ Giao Diện Ứng Dụng)",
+            "version": "3.0",
             "totalTables": len(tables),
             "totalColumns": total_cols
         },
-        "sections": sections,
+        "vimesModules": vimes_modules,
         "tables": tables
     }
 
     with open("js/vimes-schema-data.js", "w", encoding="utf-8") as out_js:
-        out_js.write("/** Auto-generated VIMES Database Schema Dictionary with Semantic Vietnamese Descriptions **/\n")
+        out_js.write("/** Auto-generated VIMES Database Schema Dictionary - 10 UI Module Mapping **/\n")
         out_js.write("window.VIMES_SCHEMA = ")
         json.dump(data_payload, out_js, ensure_ascii=False, indent=None)
         out_js.write(";\n")
@@ -420,4 +469,4 @@ def build_enhanced_schema():
     print("Saved to js/vimes-schema-data.js successfully.")
 
 if __name__ == "__main__":
-    build_enhanced_schema()
+    build_vimes_schema()

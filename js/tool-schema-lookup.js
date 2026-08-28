@@ -57,7 +57,7 @@ class SchemaLookupEngine {
     const matchedItems = [];
 
     this.schema.tables.forEach(table => {
-      if (sectionFilter !== "all" && table.sectionId !== sectionFilter) return;
+      if (sectionFilter !== "all" && table.sectionId !== sectionFilter && table.uiModuleId !== sectionFilter) return;
       if (prefixFilter !== "all" && !table.name.startsWith(prefixFilter)) return;
 
       const tNameNorm = DocxTableParser ? DocxTableParser.removeAccents(table.name.toLowerCase()) : table.name.toLowerCase();
@@ -88,6 +88,8 @@ class SchemaLookupEngine {
             tableDesc: table.description || "",
             tableSection: table.section,
             tableSectionId: table.sectionId,
+            uiModuleId: table.uiModuleId,
+            uiModuleName: table.uiModuleName,
             tableType: table.type,
             colName: col.name,
             colDesc: col.description || `Trường dữ liệu ${col.name}`,
@@ -121,7 +123,7 @@ class SchemaLookupEngine {
     const matchedTables = [];
 
     this.schema.tables.forEach(table => {
-      if (sectionFilter !== "all" && table.sectionId !== sectionFilter) return;
+      if (sectionFilter !== "all" && table.sectionId !== sectionFilter && table.uiModuleId !== sectionFilter) return;
       if (prefixFilter !== "all" && !table.name.startsWith(prefixFilter)) return;
 
       if (!rawQ) {
