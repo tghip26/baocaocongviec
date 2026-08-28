@@ -438,14 +438,12 @@
                 </div>
 
                 <div class="w2h-settings-body">
-                  <!-- Preset Style Buttons -->
+                  <!-- 2 Presets: Bài CTXH vs Bài Thầu -->
                   <div class="w2h-setting-group">
-                    <label class="setting-lbl">📑 Kiểu bố cục mẫu nhanh (1-Click Preset):</label>
-                    <div class="w2h-preset-grid">
-                      <button type="button" class="btn-preset active" data-preset="article">📰 Bài Báo / Tin Tức</button>
-                      <button type="button" class="btn-preset" data-preset="admin">📜 Văn Bản / Công Văn</button>
-                      <button type="button" class="btn-preset" data-preset="medical">🏥 Tài Liệu Y Tế</button>
-                      <button type="button" class="btn-preset" data-preset="compact">📐 Siêu Gọn (Compact)</button>
+                    <label class="setting-lbl">📑 Kiểu bố cục mẫu nhanh (2 Dạng Chuẩn):</label>
+                    <div class="w2h-preset-grid-2">
+                      <button type="button" class="btn-preset active" data-preset="ctxh">📢 Bài CTXH</button>
+                      <button type="button" class="btn-preset" data-preset="thau">📑 Bài Thầu</button>
                     </div>
                   </div>
 
@@ -453,62 +451,50 @@
                   <div class="w2h-setting-group">
                     <label class="setting-lbl">🔤 Phông chữ chính (Font Family):</label>
                     <select id="w2hFontFamily" class="w2h-select">
-                      <option value="'Times New Roman', Times, serif" selected>Times New Roman (Chuẩn văn bản & Cổng Website)</option>
-                      <option value="Arial, sans-serif">Arial (Chuẩn Web)</option>
-                      <option value="Roboto, sans-serif">Roboto (Hiện đại)</option>
-                      <option value="'Open Sans', sans-serif">Open Sans</option>
-                      <option value="Tahoma, sans-serif">Tahoma</option>
-                      <option value="'Segoe UI', sans-serif">Segoe UI</option>
-                      <option value="inherit">Giữ nguyên font gốc từng đoạn trong Word</option>
+                      <option value="'Times New Roman', Times, serif" selected>Times New Roman (Chuẩn văn bản)</option>
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="Roboto, sans-serif">Roboto</option>
+                      <option value="inherit">Giữ nguyên font gốc trong Word</option>
                     </select>
                   </div>
 
-                  <!-- Setting: Font Size -->
-                  <div class="w2h-setting-group">
-                    <label class="setting-lbl">📏 Cỡ chữ bài viết (Base Font Size):</label>
-                    <select id="w2hFontSize" class="w2h-select">
-                      <option value="16px" selected>16px (Khuyên dùng - Đọc rõ trên Web & Mobile)</option>
-                      <option value="15px">15px (Văn bản hành chính chuẩn)</option>
-                      <option value="14px">14px (Chuẩn báo chí nhỏ)</option>
-                      <option value="18px">18px (Cỡ chữ lớn)</option>
-                      <option value="inherit">Giữ nguyên cỡ chữ gốc trong Word</option>
-                    </select>
-                  </div>
-
-                  <!-- Setting: Text Color -->
-                  <div class="w2h-setting-group">
-                    <label class="setting-lbl">🎨 Màu chữ chính (Text Color):</label>
-                    <div class="color-picker-row">
-                      <input type="color" id="w2hTextColorPicker" value="#333333" class="color-input-field" />
-                      <input type="text" id="w2hTextColorText" value="#333333" class="color-text-field" />
+                  <!-- Setting: Font Size & Text Color -->
+                  <div class="w2h-setting-row-2">
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">📏 Cỡ chữ:</label>
+                      <select id="w2hFontSize" class="w2h-select">
+                        <option value="16px" selected>16px (Chuẩn)</option>
+                        <option value="15px">15px</option>
+                        <option value="14px">14px</option>
+                        <option value="18px">18px</option>
+                        <option value="inherit">Theo Word gốc</option>
+                      </select>
                     </div>
-                    <div class="quick-color-chips">
-                      <button type="button" class="chip-color active" data-color="#333333" style="background: #333333;" title="Đen xám chống mỏi mắt (#333333)"></button>
-                      <button type="button" class="chip-color" data-color="#000000" style="background: #000000;" title="Đen tuyền (#000000)"></button>
-                      <button type="button" class="chip-color" data-color="#1e293b" style="background: #1e293b;" title="Xanh than hiện đại (#1e293b)"></button>
-                      <button type="button" class="chip-color" data-color="#0f172a" style="background: #0f172a;" title="Tối đậm (#0f172a)"></button>
-                      <button type="button" class="chip-color" data-color="#047857" style="background: #047857;" title="Xanh lục y tế (#047857)"></button>
-                      <button type="button" class="chip-color" data-color="#1d4ed8" style="background: #1d4ed8;" title="Xanh dương (#1d4ed8)"></button>
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">🎨 Màu chữ:</label>
+                      <div class="color-picker-row">
+                        <input type="color" id="w2hTextColorPicker" value="#000000" class="color-input-field" />
+                        <input type="text" id="w2hTextColorText" value="#000000" class="color-text-field" />
+                      </div>
                     </div>
                   </div>
 
                   <!-- Setting: Text Align & Indent in 2 columns -->
                   <div class="w2h-setting-row-2">
                     <div class="w2h-setting-group">
-                      <label class="setting-lbl">📐 Căn lề đoạn văn:</label>
+                      <label class="setting-lbl">📐 Căn lề văn bản:</label>
                       <select id="w2hTextAlign" class="w2h-select">
-                        <option value="justify" selected>Căn đều 2 bên (Justify)</option>
-                        <option value="left">Căn lề trái (Left)</option>
-                        <option value="center">Căn giữa (Center)</option>
+                        <option value="justify" selected>Căn đều 2 bên (Thẳng đầu dòng)</option>
+                        <option value="left">Căn lề trái (Thẳng đầu dòng)</option>
+                        <option value="center">Căn giữa</option>
                         <option value="inherit">Theo Word gốc</option>
                       </select>
                     </div>
                     <div class="w2h-setting-group">
                       <label class="setting-lbl">👉 Thụt đầu dòng:</label>
                       <select id="w2hTextIndent" class="w2h-select">
-                        <option value="none" selected>Không thụt</option>
-                        <option value="1.5em">Thụt 1.5em (Nghị định 30)</option>
-                        <option value="2em">Thụt sâu 2em</option>
+                        <option value="none" selected>Không thụt (Thẳng hàng)</option>
+                        <option value="1.5em">Thụt 1.5em</option>
                         <option value="inherit">Theo Word gốc</option>
                       </select>
                     </div>
@@ -520,27 +506,55 @@
                       <label class="setting-lbl">↕️ Giãn dòng:</label>
                       <select id="w2hLineHeight" class="w2h-select">
                         <option value="1.6" selected>1.6 (Chuẩn)</option>
-                        <option value="1.5">1.5 (Gọn)</option>
-                        <option value="1.45">1.45 (Công văn)</option>
-                        <option value="1.8">1.8 (Thoáng)</option>
-                        <option value="1.4">1.4 (Sát)</option>
+                        <option value="1.5">1.5</option>
+                        <option value="1.45">1.45</option>
+                        <option value="1.4">1.4</option>
                       </select>
                     </div>
                     <div class="w2h-setting-group">
-                      <label class="setting-lbl">↔️ Giãn đoạn (Margin):</label>
+                      <label class="setting-lbl">↔️ Giãn đoạn:</label>
                       <select id="w2hMarginBottom" class="w2h-select">
-                        <option value="10px" selected>10px (Chuẩn)</option>
-                        <option value="6px">6px (Công văn / Báo cáo)</option>
-                        <option value="4px">4px (Gọn gàng)</option>
-                        <option value="14px">14px (Thoáng)</option>
-                        <option value="0px">0px (Sát nhau)</option>
+                        <option value="6px" selected>6px (Chuẩn)</option>
+                        <option value="4px">4px</option>
+                        <option value="10px">10px</option>
+                        <option value="0px">0px</option>
                       </select>
                     </div>
                   </div>
 
-                  <!-- Tùy chọn Bảng biểu & Nâng cao -->
+                  <!-- KHỐI QUẢN LÝ LINK ẢNH (Không dùng Base64) -->
+                  <div class="w2h-image-manager-card">
+                    <div class="image-manager-header">
+                      <span class="setting-section-title">🖼️ Quản lý Link Ảnh (URL thường):</span>
+                    </div>
+
+                    <!-- Trường nhập Link Ảnh riêng cho BÀI THẦU (2 ảnh trên và dưới) -->
+                    <div id="w2hThauImageControls" class="thau-image-box hidden">
+                      <div class="thau-img-field-group">
+                        <label class="thau-img-lbl">⬆️ Link Ảnh Trên (Đầu bài thầu):</label>
+                        <input type="text" id="w2hThauTopImageUrl" class="w2h-input-text" placeholder="Dán link ảnh trên (VD: https://.../thau_trang1.jpg)" />
+                        <input type="text" id="w2hThauTopImageCaption" class="w2h-input-text sub-caption" placeholder="Tiêu đề / Chú thích ảnh trên (căn giữa)" />
+                      </div>
+                      <div class="thau-img-field-group">
+                        <label class="thau-img-lbl">⬇️ Link Ảnh Dưới (Cuối bài thầu):</label>
+                        <input type="text" id="w2hThauBottomImageUrl" class="w2h-input-text" placeholder="Dán link ảnh dưới (VD: https://.../thau_trang2.jpg)" />
+                        <input type="text" id="w2hThauBottomImageCaption" class="w2h-input-text sub-caption" placeholder="Tiêu đề / Chú thích ảnh dưới (căn giữa)" />
+                      </div>
+                    </div>
+
+                    <!-- Trường nhập Link Ảnh cho BÀI CTXH (Nhiều ảnh theo danh sách URL) -->
+                    <div id="w2hCtxhImageControls" class="ctxh-image-box">
+                      <label class="thau-img-lbl">🔗 Danh sách Link Ảnh (Mỗi dòng 1 link URL):</label>
+                      <textarea id="w2hCtxhImageUrls" class="w2h-textarea-urls" rows="3" placeholder="Dán các link ảnh thường vào đây, mỗi link 1 dòng:
+https://domain.com/images/anh1.jpg
+https://domain.com/images/anh2.jpg"></textarea>
+                      <span class="img-hint-note">💡 Ảnh & tiêu đề ảnh sẽ tự động căn giữa. Nếu để trống sẽ dùng link vị trí ảnh tự động.</span>
+                    </div>
+                  </div>
+
+                  <!-- Tùy chọn Bảng biểu & Tinh gọn -->
                   <div class="w2h-checkbox-group-wrap">
-                    <label class="setting-section-title">📊 Định dạng Bảng biểu:</label>
+                    <label class="setting-section-title">📊 Tùy chọn nâng cao:</label>
                     <label class="w2h-checkbox-label">
                       <input type="checkbox" id="w2hPreserveLayoutTables" checked />
                       <span>Bảo toàn bảng thể thức không viền (Quốc hiệu, Tiêu ngữ, Chữ ký)</span>
@@ -550,37 +564,12 @@
                       <span>Kẻ viền rõ nét cho bảng dữ liệu (Border 1px)</span>
                     </label>
                     <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hTableHeaderBg" checked />
-                      <span>Màu nền tiêu đề bảng (#f1f5f9)</span>
-                    </label>
-                    <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hTableWidth" checked />
-                      <span>Bảng tự co giãn 100% chiều rộng</span>
-                    </label>
-                    <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hTableZebra" />
-                      <span>Xen kẽ màu dòng chẵn/lẻ (Zebra)</span>
-                    </label>
-                  </div>
-
-                  <!-- Tùy chọn Ảnh & Tối ưu -->
-                  <div class="w2h-checkbox-group-wrap">
-                    <label class="setting-section-title">🖼️ Xử lý Ảnh & Tinh gọn mã:</label>
-                    <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hEmbedImages" checked />
-                      <span>Tự động nhúng ảnh Base64 (Dán vào là hiện ảnh ngay)</span>
-                    </label>
-                    <label class="w2h-checkbox-label">
                       <input type="checkbox" id="w2hCleanEmpty" checked />
                       <span>Tự động xóa các đoạn trắng rỗng thừa</span>
                     </label>
                     <label class="w2h-checkbox-label">
                       <input type="checkbox" id="w2hCollapseSpaces" checked />
-                      <span>Tự động gộp các khoảng trắng/dấu cách thừa</span>
-                    </label>
-                    <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hAutoHeading" checked />
-                      <span>Tự động chuẩn hóa Heading &lt;h2&gt;, &lt;h3&gt;</span>
+                      <span>Tự động gộp khoảng trắng thừa</span>
                     </label>
                   </div>
 

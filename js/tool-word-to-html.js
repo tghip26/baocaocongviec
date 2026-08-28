@@ -1,29 +1,34 @@
 /**
  * tool-word-to-html.js
  * Advanced Word (.docx) to Clean HTML & Inline CSS Converter for CMS & Website Publishing.
- * Specially optimized for CKEditor, TinyMCE, WordPress and Web CMS with clean, unnested markup.
+ * Specialized for:
+ * 1. Bài CTXH (Công Tác Xã Hội / Tin tức sự kiện - Font Times New Roman 16px, #000000, thẳng đầu dòng, ảnh & tiêu đề ảnh căn giữa)
+ * 2. Bài Thầu (Thông báo thầu - Font Times New Roman 16px, #000000, thẳng đầu dòng, chỉ có 2 ảnh trên và dưới căn giữa)
+ * 100% Link ảnh thường URL (Không mã hóa Base64).
  */
 
 class WordToHtmlConverter {
   constructor(options = {}) {
     this.options = Object.assign({
-      preset: "article",
+      preset: "ctxh", // "ctxh" | "thau"
       fontFamily: "'Times New Roman', Times, serif",
       baseFontSize: "16px",
-      textColor: "#333333",
-      textAlign: "justify", // "justify" | "left" | "center" | "inherit"
+      textColor: "#000000",
+      textAlign: "justify", // "justify" | "left" | "center"
       lineHeight: "1.6",
       paragraphMarginBottom: "6px",
-      textIndent: "none", // "none" | "1.5em" | "2em" | "inherit"
+      textIndent: "none",
       tableFullBorder: true,
-      tableHeaderBg: "#f1f5f9",
-      tableZebra: false,
-      tableFullWidth: true,
       preserveLayoutTables: true,
-      embedImagesBase64: true,
       cleanEmptyParagraphs: true,
       collapseSpaces: true,
-      autoHeading: false
+
+      // Image URL Controls (Không dùng Base64)
+      ctxhImageUrls: [], // Mảng URL ảnh do người dùng nhập cho bài CTXH
+      thauTopImageUrl: "",
+      thauTopImageCaption: "",
+      thauBottomImageUrl: "",
+      thauBottomImageCaption: ""
     }, options);
 
     this.stats = {
@@ -75,39 +80,14 @@ class WordToHtmlConverter {
       }
     }
 
-    // 2. Extract Embedded Media Images into Base64 Data URIs
-    const mediaMap = {};
-    const extractedImages = [];
+    // 2. Count media images
     const mediaFiles = zip.folder("word/media");
+    const extractedImageNames = [];
     if (mediaFiles) {
       for (const relativePath in mediaFiles.files) {
-        const fileObj = mediaFiles.files[relativePath];
-        if (!fileObj.dir) {
-          const extMatch = relativePath.match(/\.([a-zA-Z0-9]+)$/);
-          const ext = extMatch ? extMatch[1].toLowerCase() : "png";
-          let mimeType = "image/png";
-          if (ext === "jpg" || ext === "jpeg") mimeType = "image/jpeg";
-          else if (ext === "gif") mimeType = "image/gif";
-          else if (ext === "webp") mimeType = "image/webp";
-          else if (ext === "svg") mimeType = "image/svg+xml";
-
-          try {
-            const base64Data = await fileObj.async("base64");
-            const dataUri = `data:${mimeType};base64,${base64Data}`;
-            const baseName = relativePath.split("/").pop();
-            mediaMap[relativePath] = dataUri;
-            mediaMap[`media/${baseName}`] = dataUri;
-            mediaMap[baseName] = dataUri;
-
-            extractedImages.push({
-              name: baseName,
-              dataUri,
-              sizeBytes: base64Data.length * 0.75
-            });
-            this.stats.imageCount++;
-          } catch (e) {
-            console.warn("Lỗi trích xuất ảnh media:", relativePath, e);
-          }
+        if (!mediaFiles.files[relativePath].dir) {
+          extractedImageNames.push(relativePath.split("/").pop());
+          this.stats.imageCount++;
         }
       }
     }
@@ -128,6 +108,20 @@ class WordToHtmlConverter {
 
     let inList = false;
     let listType = "ul";
+    let imgCounter = 0;
+
+    const isThau = this.options.preset === "thau";
+
+    // NẾU LÀ BÀI THẦU: Chèn Ảnh Trên cùng (Đầu bài thầu)
+    if (isThau) {
+      const topUrl = this.options.thauTopImageUrl.trim() || "https://yourwebsite.com/images/thong-bao-thau-1.jpg";
+      const topCaption = this.options.thauTopImageCaption.trim();
+
+      htmlChunks.push(`<p style="text-align: center; margin: 12px 0 4px 0;"><img src="${topUrl}" alt="Ảnh thông báo thầu đầu bài" style="max-width: 100%; height: auto;" /></p>`);
+      if (topCaption) {
+        htmlChunks.push(`<p style="text-align: center; font-style: italic; font-size: 15px; margin: 0 0 14px 0; color: ${this.options.textColor};"><em>${this.escapeHtml(topCaption)}</em></p>`);
+      }
+    }
 
     for (let i = 0; i < childNodes.length; i++) {
       const node = childNodes[i];
@@ -142,7 +136,7 @@ class WordToHtmlConverter {
             const listStyles = this.buildParagraphStyles({ isListContainer: true });
             htmlChunks.push(`<${listType} style="${listStyles}">`);
           }
-          const liHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: true });
+          const liHtml = this.parseParagraph(node, relsMap, { isLi: true, imgIndex: imgCounter });
           if (liHtml && liHtml.trim()) {
             htmlChunks.push(`  <li style="margin-bottom: 4px; line-height: ${this.options.lineHeight};">${liHtml}</li>`);
           }
@@ -151,9 +145,21 @@ class WordToHtmlConverter {
             htmlChunks.push(`</${listType}>`);
             inList = false;
           }
-          const pHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: false, inTable: false });
-          if (pHtml !== null && pHtml.trim().length > 0) {
-            htmlChunks.push(pHtml);
+
+          // Đối với bài thầu, không chèn ảnh xen kẽ ở giữa
+          const pHtml = this.parseParagraph(node, relsMap, {
+            isLi: false,
+            inTable: false,
+            skipImages: isThau,
+            imgIndex: imgCounter
+          });
+
+          if (pHtml && pHtml.isImage) {
+            imgCounter++;
+          }
+
+          if (pHtml && pHtml.html && pHtml.html.trim().length > 0) {
+            htmlChunks.push(pHtml.html);
           }
         }
       } else if (nodeName === "w:tbl" || nodeName === "tbl") {
@@ -161,7 +167,7 @@ class WordToHtmlConverter {
           htmlChunks.push(`</${listType}>`);
           inList = false;
         }
-        const tblHtml = this.parseTable(node, relsMap, mediaMap);
+        const tblHtml = this.parseTable(node, relsMap);
         if (tblHtml) {
           htmlChunks.push(tblHtml);
           this.stats.tableCount++;
@@ -173,11 +179,22 @@ class WordToHtmlConverter {
       htmlChunks.push(`</${listType}>`);
     }
 
+    // NẾU LÀ BÀI THẦU: Chèn Ảnh Dưới cùng (Cuối bài thầu)
+    if (isThau) {
+      const btmUrl = this.options.thauBottomImageUrl.trim() || "https://yourwebsite.com/images/thong-bao-thau-2.jpg";
+      const btmCaption = this.options.thauBottomImageCaption.trim();
+
+      htmlChunks.push(`<p style="text-align: center; margin: 16px 0 4px 0;"><img src="${btmUrl}" alt="Ảnh thông báo thầu cuối bài" style="max-width: 100%; height: auto;" /></p>`);
+      if (btmCaption) {
+        htmlChunks.push(`<p style="text-align: center; font-style: italic; font-size: 15px; margin: 0 0 12px 0; color: ${this.options.textColor};"><em>${this.escapeHtml(btmCaption)}</em></p>`);
+      }
+    }
+
     const fullHtml = htmlChunks.join("\n");
     return {
       html: fullHtml,
       stats: this.stats,
-      images: extractedImages
+      images: extractedImageNames
     };
   }
 
@@ -194,12 +211,12 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Build clean, unnested CSS style string for <p> or list
+   * Build clean, unnested CSS style string for <p>
    */
   buildParagraphStyles(opts = {}) {
     const styles = [];
 
-    // 1. Text Align
+    // 1. Text Align: default left/justify (thẳng đầu dòng)
     const align = opts.textAlign || (this.options.textAlign === "inherit" ? "" : this.options.textAlign);
     if (align) {
       styles.push(`text-align: ${align}`);
@@ -237,10 +254,8 @@ class WordToHtmlConverter {
 
     // 7. Text Indent
     if (!opts.inTable && !opts.isListContainer) {
-      if (this.options.textIndent !== "none" && (align === "justify" || align === "left")) {
+      if (this.options.textIndent && this.options.textIndent !== "none" && (align === "justify" || align === "left")) {
         styles.push(`text-indent: ${this.options.textIndent}`);
-      } else if (opts.hasWordIndent && (align === "justify" || align === "left")) {
-        styles.push(`text-indent: 1.5em`);
       }
     }
 
@@ -250,16 +265,15 @@ class WordToHtmlConverter {
   /**
    * Parse a single Word paragraph <w:p>
    */
-  parseParagraph(pNode, relsMap, mediaMap, ctx = {}) {
+  parseParagraph(pNode, relsMap, ctx = {}) {
     const isLi = ctx.isLi || false;
     const inTable = ctx.inTable || false;
+    const skipImages = ctx.skipImages || false;
+    const imgIndex = ctx.imgIndex || 0;
 
     const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
     
     let textAlign = "";
-    let headingTag = "";
-    let isBoldHeading = false;
-    let hasWordIndent = false;
     let isZeroSpacing = false;
 
     if (pPr) {
@@ -272,40 +286,27 @@ class WordToHtmlConverter {
         else if (val === "left") textAlign = "left";
       }
 
-      const indNode = this.findChild(pPr, ["w:ind", "ind"]);
-      if (indNode) {
-        const fLine = parseInt(indNode.getAttribute("w:firstLine") || indNode.getAttribute("firstLine") || "0", 10);
-        if (fLine > 200) hasWordIndent = true;
-      }
-
       const spNode = this.findChild(pPr, ["w:spacing", "spacing"]);
       if (spNode) {
         const after = parseInt(spNode.getAttribute("w:after") || spNode.getAttribute("after") || "100", 10);
         if (after === 0) isZeroSpacing = true;
-      }
-
-      const pStyle = this.findChild(pPr, ["w:pStyle", "pStyle"]);
-      if (pStyle) {
-        const sVal = (pStyle.getAttribute("w:val") || pStyle.getAttribute("val") || "").toLowerCase();
-        if (sVal.includes("heading1") || sVal.includes("title") || sVal.includes("tieude1") || sVal === "1") headingTag = "h2";
-        else if (sVal.includes("heading2") || sVal.includes("tieude2") || sVal === "2") headingTag = "h3";
-        else if (sVal.includes("heading3") || sVal.includes("tieude3") || sVal === "3") headingTag = "h4";
       }
     }
 
     // Extract Runs & Raw Data
     const rawRuns = [];
     const childNodes = pNode.childNodes;
+    let hasImageInP = false;
 
     for (let i = 0; i < childNodes.length; i++) {
       const child = childNodes[i];
       const cName = child.nodeName.toLowerCase();
 
       if (cName === "w:r" || cName === "r") {
-        const rData = this.extractRunData(child, relsMap, mediaMap);
+        const rData = this.extractRunData(child, relsMap, skipImages, imgIndex);
         if (rData.text || rData.imageHtml) {
           rawRuns.push(rData);
-          if (rData.isLargeHeading) isBoldHeading = true;
+          if (rData.isImage) hasImageInP = true;
         }
       } else if (cName === "w:hyperlink" || cName === "hyperlink") {
         const rId = child.getAttribute("r:id") || child.getAttribute("id");
@@ -313,7 +314,7 @@ class WordToHtmlConverter {
         const linkRuns = child.childNodes;
         for (let j = 0; j < linkRuns.length; j++) {
           if (linkRuns[j].nodeName.toLowerCase() === "w:r" || linkRuns[j].nodeName.toLowerCase() === "r") {
-            const rData = this.extractRunData(linkRuns[j], relsMap, mediaMap);
+            const rData = this.extractRunData(linkRuns[j], relsMap, skipImages, imgIndex);
             if (rData.text) {
               rData.linkUrl = linkUrl;
               rawRuns.push(rData);
@@ -321,23 +322,31 @@ class WordToHtmlConverter {
           }
         }
       } else if (cName === "w:drawing" || cName === "drawing") {
-        const imgHtml = this.extractImageFromDrawing(child, relsMap, mediaMap);
-        if (imgHtml) {
-          rawRuns.push({ text: "", imageHtml: imgHtml, isImage: true });
+        if (!skipImages) {
+          const imgHtml = this.generateImageUrlHtml(imgIndex);
+          if (imgHtml) {
+            rawRuns.push({ text: "", imageHtml: imgHtml, isImage: true });
+            hasImageInP = true;
+          }
         }
       }
     }
 
     if (rawRuns.length === 0) {
-      if (this.options.cleanEmptyParagraphs || inTable) return null;
+      if (this.options.cleanEmptyParagraphs || inTable) return { html: "", isImage: false };
       const pStyles = this.buildParagraphStyles({ textAlign, inTable, isZeroSpacing });
-      return `<p style="${pStyles}">&nbsp;</p>`;
+      return { html: `<p style="${pStyles}">&nbsp;</p>`, isImage: false };
     }
 
-    // Merge adjacent runs with identical styling to eliminate fragmented <span> tags
+    // Merge adjacent runs
     const mergedRuns = this.mergeAdjacentRuns(rawRuns);
 
-    // Build inner HTML string
+    // If paragraph contains ONLY an image
+    if (mergedRuns.length === 1 && mergedRuns[0].isImage) {
+      return { html: mergedRuns[0].imageHtml, isImage: true };
+    }
+
+    // Build inner HTML
     let innerHtml = "";
     let plainText = "";
 
@@ -360,19 +369,13 @@ class WordToHtmlConverter {
       if (run.isSub) runStr = `<sub>${runStr}</sub>`;
       if (run.isSup) runStr = `<sup>${runStr}</sup>`;
 
-      // Only add <span> if run has distinct custom styling differing from paragraph base
+      // Custom span only if needed
       const spanStyles = [];
       if (run.customColor && run.customColor.toLowerCase() !== this.options.textColor.toLowerCase()) {
         spanStyles.push(`color: ${run.customColor}`);
       }
       if (run.customBg) {
         spanStyles.push(`background-color: ${run.customBg}`);
-      }
-      if (run.customFontSize) {
-        spanStyles.push(`font-size: ${run.customFontSize}`);
-      }
-      if (run.customFontFamily) {
-        spanStyles.push(`font-family: ${run.customFontFamily}`);
       }
 
       if (spanStyles.length > 0) {
@@ -392,10 +395,19 @@ class WordToHtmlConverter {
 
     plainText = plainText.trim();
 
-    if (!plainText && !rawRuns.some(r => r.isImage || r.imageHtml)) {
-      if (this.options.cleanEmptyParagraphs || inTable) return null;
+    if (!plainText && !hasImageInP) {
+      if (this.options.cleanEmptyParagraphs || inTable) return { html: "", isImage: false };
       const pStyles = this.buildParagraphStyles({ textAlign, inTable, isZeroSpacing });
-      return `<p style="${pStyles}">&nbsp;</p>`;
+      return { html: `<p style="${pStyles}">&nbsp;</p>`, isImage: false };
+    }
+
+    // Check if paragraph is an Image Caption (italicized or starts with "Ảnh:" / "Hình:") -> Center it!
+    const isImageCaption = (textAlign === "center") ||
+      (mergedRuns.length === 1 && mergedRuns[0].isItalic && plainText.length < 150) ||
+      /^(\*?)(Ảnh|Hình|Ảnh \d|Hình \d|Sơ đồ|Bảng)[\s:]/i.test(plainText);
+
+    if (isImageCaption) {
+      textAlign = "center";
     }
 
     // Update stats
@@ -410,31 +422,24 @@ class WordToHtmlConverter {
       return innerHtml;
     }
 
-    // Determine Headings if autoHeading is enabled
-    if (this.options.autoHeading && (headingTag || (isBoldHeading && plainText.length < 100 && !plainText.endsWith(".")))) {
-      const tag = headingTag || "h3";
-      const hColor = this.options.textColor === "#333333" ? "#1e293b" : this.options.textColor;
-      const hSize = tag === "h2" ? "18px" : "16px";
-      const hMargin = tag === "h2" ? "16px 0 8px 0" : "12px 0 6px 0";
-      const font = this.options.fontFamily || "inherit";
-
-      return `<${tag} style="font-family: ${font}; color: ${hColor}; font-size: ${hSize}; font-weight: bold; margin: ${hMargin}; line-height: 1.35; text-align: ${textAlign || 'left'};">${innerHtml}</${tag}>`;
-    }
-
     const pStyles = this.buildParagraphStyles({
       textAlign: textAlign || (this.options.textAlign === "inherit" ? "" : this.options.textAlign),
       inTable,
-      isZeroSpacing,
-      hasWordIndent
+      isZeroSpacing
     });
 
-    return `<p style="${pStyles};">${innerHtml}</p>`;
+    const captionStyle = isImageCaption ? ' font-style: italic; font-size: 15px;' : '';
+
+    return {
+      html: `<p style="${pStyles};${captionStyle}">${innerHtml}</p>`,
+      isImage: hasImageInP
+    };
   }
 
   /**
    * Extract raw attributes from a Run <w:r>
    */
-  extractRunData(rNode, relsMap, mediaMap) {
+  extractRunData(rNode, relsMap, skipImages = false, imgIndex = 0) {
     const rPr = this.findChild(rNode, ["w:rPr", "rPr"]);
     
     let isBold = false;
@@ -445,9 +450,6 @@ class WordToHtmlConverter {
     let isSup = false;
     let customColor = "";
     let customBg = "";
-    let customFontSize = "";
-    let customFontFamily = "";
-    let isLargeHeading = false;
 
     if (rPr) {
       if (this.findChild(rPr, ["w:b", "b"])) isBold = true;
@@ -475,32 +477,13 @@ class WordToHtmlConverter {
         const hVal = (highlightNode.getAttribute("w:val") || highlightNode.getAttribute("val") || "").toLowerCase();
         if (hVal === "yellow") customBg = "#fef08a";
         else if (hVal === "green") customBg = "#bbf7d0";
-        else if (hVal === "cyan") customBg = "#a5f3fc";
-        else if (hVal === "magenta") customBg = "#fbcfe8";
         else if (hVal !== "none") customBg = "#fef08a";
-      }
-
-      const szNode = this.findChild(rPr, ["w:sz", "sz"]);
-      if (szNode) {
-        const szVal = parseInt(szNode.getAttribute("w:val") || szNode.getAttribute("val") || "0", 10);
-        if (szVal > 0) {
-          const ptSize = szVal / 2;
-          if (ptSize >= 15 && isBold) isLargeHeading = true;
-          if (this.options.baseFontSize === "inherit") {
-            customFontSize = `${ptSize}pt`;
-          }
-        }
-      }
-
-      const rFonts = this.findChild(rPr, ["w:rFonts", "rFonts"]);
-      if (rFonts && this.options.fontFamily === "inherit") {
-        const fAscii = rFonts.getAttribute("w:ascii") || rFonts.getAttribute("w:hAnsi");
-        if (fAscii) customFontFamily = `${fAscii}, serif`;
       }
     }
 
     let text = "";
     let imageHtml = "";
+    let isImage = false;
 
     const childNodes = rNode.childNodes;
     for (let i = 0; i < childNodes.length; i++) {
@@ -514,14 +497,20 @@ class WordToHtmlConverter {
       } else if (cName === "w:tab" || cName === "tab") {
         text += "&emsp;&emsp;";
       } else if (cName === "w:drawing" || cName === "drawing") {
-        const img = this.extractImageFromDrawing(child, relsMap, mediaMap);
-        if (img) imageHtml += img;
+        if (!skipImages) {
+          const img = this.generateImageUrlHtml(imgIndex);
+          if (img) {
+            imageHtml += img;
+            isImage = true;
+          }
+        }
       }
     }
 
     return {
       text,
       imageHtml,
+      isImage,
       isBold,
       isItalic,
       isUnderline,
@@ -530,16 +519,10 @@ class WordToHtmlConverter {
       isSup,
       customColor,
       customBg,
-      customFontSize,
-      customFontFamily,
-      isLargeHeading,
       linkUrl: null
     };
   }
 
-  /**
-   * Group adjacent runs that have identical formatting to avoid messy <span> tags
-   */
   mergeAdjacentRuns(runs) {
     if (runs.length <= 1) return runs;
 
@@ -558,8 +541,6 @@ class WordToHtmlConverter {
         current.isSup === next.isSup &&
         current.customColor === next.customColor &&
         current.customBg === next.customBg &&
-        current.customFontSize === next.customFontSize &&
-        current.customFontFamily === next.customFontFamily &&
         current.linkUrl === next.linkUrl;
 
       if (isSameFormat) {
@@ -575,31 +556,22 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Extract image from drawing node
+   * Generate clean Image HTML using regular URL (Không dùng Base64)
    */
-  extractImageFromDrawing(drawingNode, relsMap, mediaMap) {
-    const blipNodes = drawingNode.getElementsByTagName("a:blip").length > 0
-      ? drawingNode.getElementsByTagName("a:blip")
-      : drawingNode.getElementsByTagName("blip");
+  generateImageUrlHtml(imgIndex) {
+    let imgUrl = "";
 
-    if (blipNodes.length === 0) return "";
+    if (this.options.ctxhImageUrls && this.options.ctxhImageUrls[imgIndex]) {
+      imgUrl = this.options.ctxhImageUrls[imgIndex].trim();
+    }
 
-    const blip = blipNodes[0];
-    const embedId = blip.getAttribute("r:embed") || blip.getAttribute("embed") || "";
-    if (!embedId || !relsMap[embedId]) return "";
+    if (!imgUrl) {
+      imgUrl = `https://yourwebsite.com/images/anh-${imgIndex + 1}.jpg`;
+    }
 
-    const target = relsMap[embedId].target;
-    const baseName = target.split("/").pop();
-
-    let imgDataUri = mediaMap[target] || mediaMap[`media/${baseName}`] || mediaMap[baseName] || "";
-    if (!imgDataUri) return "";
-
-    return `<p style="text-align: center; margin: 12px 0;"><img src="${imgDataUri}" alt="Hình ảnh bài viết" style="max-width: 100%; height: auto; display: inline-block; margin: 0 auto;" /></p>`;
+    return `<p style="text-align: center; margin: 14px 0 4px 0;"><img src="${imgUrl}" alt="Hình ảnh ${imgIndex + 1}" style="max-width: 100%; height: auto; display: inline-block; margin: 0 auto;" /></p>`;
   }
 
-  /**
-   * Check if table is a borderless layout table (Letterheads, signatures)
-   */
   isTableBorderless(tblNode) {
     const tblPr = this.findChild(tblNode, ["w:tblPr", "tblPr"]);
     if (!tblPr) return false;
@@ -623,10 +595,7 @@ class WordToHtmlConverter {
     return !hasVisibleBorder;
   }
 
-  /**
-   * Parse a Word Table <w:tbl> cleanly into standard HTML <table>
-   */
-  parseTable(tblNode, relsMap, mediaMap) {
+  parseTable(tblNode, relsMap) {
     const trNodes = tblNode.getElementsByTagName("w:tr").length > 0
       ? tblNode.getElementsByTagName("w:tr")
       : tblNode.getElementsByTagName("tr");
@@ -638,10 +607,10 @@ class WordToHtmlConverter {
     const tblStyles = [
       "width: 100%",
       "border-collapse: collapse",
-      `font-family: ${this.options.fontFamily || 'inherit'}`,
+      `font-family: ${this.options.fontFamily || "'Times New Roman', Times, serif"}`,
       `font-size: ${this.options.baseFontSize || '16px'}`,
-      `color: ${this.options.textColor || '#333333'}`,
-      "line-height: 1.4",
+      `color: ${this.options.textColor || '#000000'}`,
+      "line-height: 1.45",
       "margin: 8px 0"
     ];
 
@@ -699,8 +668,8 @@ class WordToHtmlConverter {
 
         const cellContentParts = [];
         for (let p = 0; p < pNodes.length; p++) {
-          const pHtml = this.parseParagraph(pNodes[p], relsMap, mediaMap, { isLi: false, inTable: true });
-          if (pHtml) cellContentParts.push(pHtml);
+          const pRes = this.parseParagraph(pNodes[p], relsMap, { isLi: false, inTable: true, skipImages: true });
+          if (pRes && pRes.html) cellContentParts.push(pRes.html);
         }
 
         let cellInner = cellContentParts.join("");
@@ -723,20 +692,16 @@ class WordToHtmlConverter {
         }
 
         if (isHeaderRow) {
-          cellStyles.push(`background-color: ${cellBg || this.options.tableHeaderBg}`, "font-weight: bold", "text-align: center");
-        } else {
-          if (cellBg) {
-            cellStyles.push(`background-color: ${cellBg}`);
-          } else if (!isLayoutTable && this.options.tableZebra && r % 2 === 1) {
-            cellStyles.push("background-color: #f8fafc");
-          }
+          cellStyles.push(`background-color: ${cellBg || '#f1f5f9'}`, "font-weight: bold", "text-align: center");
+        } else if (cellBg) {
+          cellStyles.push(`background-color: ${cellBg}`);
         }
 
         const spanAttr = colSpan > 1 ? ` colspan="${colSpan}"` : "";
         cellsHtml.push(`    <${cellTag}${spanAttr} style="${cellStyles.join('; ')};">${cellInner}</${cellTag}>`);
       }
 
-      const rowBg = isHeaderRow ? `background-color: ${this.options.tableHeaderBg};` : "";
+      const rowBg = isHeaderRow ? 'background-color: #f1f5f9;' : '';
       rowsHtml.push(`  <tr style="${rowBg}">\n${cellsHtml.join("\n")}\n  </tr>`);
     }
 

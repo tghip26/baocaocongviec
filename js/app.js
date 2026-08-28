@@ -175,14 +175,18 @@ class AppController {
     this.w2hMarginBottom = document.getElementById("w2hMarginBottom");
     this.w2hPreserveLayoutTables = document.getElementById("w2hPreserveLayoutTables");
     this.w2hTableBorder = document.getElementById("w2hTableBorder");
-    this.w2hTableHeaderBg = document.getElementById("w2hTableHeaderBg");
-    this.w2hTableWidth = document.getElementById("w2hTableWidth");
-    this.w2hTableZebra = document.getElementById("w2hTableZebra");
-    this.w2hEmbedImages = document.getElementById("w2hEmbedImages");
     this.w2hCleanEmpty = document.getElementById("w2hCleanEmpty");
     this.w2hCollapseSpaces = document.getElementById("w2hCollapseSpaces");
-    this.w2hAutoHeading = document.getElementById("w2hAutoHeading");
     this.btnResetW2hSettings = document.getElementById("btnResetW2hSettings");
+
+    // Image URL controls
+    this.w2hThauImageControls = document.getElementById("w2hThauImageControls");
+    this.w2hCtxhImageControls = document.getElementById("w2hCtxhImageControls");
+    this.w2hThauTopImageUrl = document.getElementById("w2hThauTopImageUrl");
+    this.w2hThauTopImageCaption = document.getElementById("w2hThauTopImageCaption");
+    this.w2hThauBottomImageUrl = document.getElementById("w2hThauBottomImageUrl");
+    this.w2hThauBottomImageCaption = document.getElementById("w2hThauBottomImageCaption");
+    this.w2hCtxhImageUrls = document.getElementById("w2hCtxhImageUrls");
 
     this.btnTabW2hVisual = document.getElementById("btnTabW2hVisual");
     this.btnTabW2hCode = document.getElementById("btnTabW2hCode");
@@ -479,7 +483,7 @@ class AppController {
       });
     }
 
-    // 1-Click Preset Buttons
+    // 1-Click Preset Buttons (Bài CTXH vs Bài Thầu)
     document.querySelectorAll(".btn-preset").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".btn-preset").forEach(b => b.classList.remove("active"));
@@ -489,12 +493,25 @@ class AppController {
       });
     });
 
+    // Image URL text input events -> live update conversion
+    const imgInputs = [
+      this.w2hThauTopImageUrl, this.w2hThauTopImageCaption,
+      this.w2hThauBottomImageUrl, this.w2hThauBottomImageCaption,
+      this.w2hCtxhImageUrls
+    ];
+
+    imgInputs.forEach(inp => {
+      if (inp) {
+        inp.addEventListener("input", () => this.reconvertCurrentW2hDocument());
+      }
+    });
+
     // Setting inputs change events -> re-convert in real-time
     const settingInputs = [
       this.w2hFontFamily, this.w2hFontSize, this.w2hTextColorPicker, this.w2hTextColorText,
       this.w2hTextAlign, this.w2hTextIndent, this.w2hLineHeight, this.w2hMarginBottom,
-      this.w2hPreserveLayoutTables, this.w2hTableBorder, this.w2hTableHeaderBg, this.w2hTableWidth, this.w2hTableZebra,
-      this.w2hEmbedImages, this.w2hCleanEmpty, this.w2hCollapseSpaces, this.w2hAutoHeading
+      this.w2hPreserveLayoutTables, this.w2hTableBorder,
+      this.w2hCleanEmpty, this.w2hCollapseSpaces
     ];
 
     settingInputs.forEach(input => {
@@ -505,8 +522,6 @@ class AppController {
           } else if (input === this.w2hTextColorText) {
             this.w2hTextColorPicker.value = this.w2hTextColorText.value;
           }
-          // Remove active state from preset buttons when user manually changes settings
-          document.querySelectorAll(".btn-preset").forEach(b => b.classList.remove("active"));
           this.reconvertCurrentW2hDocument();
         });
       }
@@ -1196,27 +1211,34 @@ class AppController {
     this.showToast(`Đã xuất từ điển bảng ${table.name}.xlsx thành công!`, "success");
   }
 
-  // =========================================================================
-  // WORD TO HTML CONVERTER METHODS
-  // =========================================================================
   getW2hCurrentOptions() {
+    const activePresetBtn = document.querySelector(".btn-preset.active");
+    const preset = activePresetBtn ? activePresetBtn.dataset.preset : "ctxh";
+
+    const ctxhUrlsRaw = this.w2hCtxhImageUrls ? this.w2hCtxhImageUrls.value : "";
+    const ctxhImageUrls = ctxhUrlsRaw
+      .split("\n")
+      .map(u => u.trim())
+      .filter(u => u.length > 0);
+
     return {
-      fontFamily: this.w2hFontFamily ? this.w2hFontFamily.value : "Arial, sans-serif",
+      preset: preset,
+      fontFamily: this.w2hFontFamily ? this.w2hFontFamily.value : "'Times New Roman', Times, serif",
       baseFontSize: this.w2hFontSize ? this.w2hFontSize.value : "16px",
-      textColor: this.w2hTextColorText ? this.w2hTextColorText.value : "#333333",
+      textColor: this.w2hTextColorText ? this.w2hTextColorText.value : "#000000",
       textAlign: this.w2hTextAlign ? this.w2hTextAlign.value : "justify",
       textIndent: this.w2hTextIndent ? this.w2hTextIndent.value : "none",
       lineHeight: this.w2hLineHeight ? this.w2hLineHeight.value : "1.6",
-      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "10px",
+      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "6px",
       preserveLayoutTables: this.w2hPreserveLayoutTables ? this.w2hPreserveLayoutTables.checked : true,
       tableFullBorder: this.w2hTableBorder ? this.w2hTableBorder.checked : true,
-      tableHeaderBg: this.w2hTableHeaderBg ? (this.w2hTableHeaderBg.checked ? "#f1f5f9" : "") : "#f1f5f9",
-      tableFullWidth: this.w2hTableWidth ? this.w2hTableWidth.checked : true,
-      tableZebra: this.w2hTableZebra ? this.w2hTableZebra.checked : false,
-      embedImagesBase64: this.w2hEmbedImages ? this.w2hEmbedImages.checked : true,
       cleanEmptyParagraphs: this.w2hCleanEmpty ? this.w2hCleanEmpty.checked : true,
       collapseSpaces: this.w2hCollapseSpaces ? this.w2hCollapseSpaces.checked : true,
-      autoHeading: this.w2hAutoHeading ? this.w2hAutoHeading.checked : true
+      ctxhImageUrls: ctxhImageUrls,
+      thauTopImageUrl: this.w2hThauTopImageUrl ? this.w2hThauTopImageUrl.value : "",
+      thauTopImageCaption: this.w2hThauTopImageCaption ? this.w2hThauTopImageCaption.value : "",
+      thauBottomImageUrl: this.w2hThauBottomImageUrl ? this.w2hThauBottomImageUrl.value : "",
+      thauBottomImageCaption: this.w2hThauBottomImageCaption ? this.w2hThauBottomImageCaption.value : ""
     };
   }
 
@@ -1367,102 +1389,47 @@ ${this.currentW2hHtmlOutput}
   }
 
   applyW2hPreset(preset) {
-    if (preset === "article") {
-      if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
-      if (this.w2hFontSize) this.w2hFontSize.value = "16px";
-      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
-      if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
-      if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
-      if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
-      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
-      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "6px";
-      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
-      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
-      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
-      if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
-      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = false;
-    } else if (preset === "admin") {
-      if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
-      if (this.w2hFontSize) this.w2hFontSize.value = "15px";
-      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#000000";
-      if (this.w2hTextColorText) this.w2hTextColorText.value = "#000000";
-      if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
-      if (this.w2hTextIndent) this.w2hTextIndent.value = "1.5em";
-      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.45";
-      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "6px";
-      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
-      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
-      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
-      if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
-      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = false;
-    } else if (preset === "medical") {
-      if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
-      if (this.w2hFontSize) this.w2hFontSize.value = "15px";
-      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#1e293b";
-      if (this.w2hTextColorText) this.w2hTextColorText.value = "#1e293b";
-      if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
-      if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
-      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.55";
-      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "8px";
-      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
-      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
-      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
-      if (this.w2hTableZebra) this.w2hTableZebra.checked = true;
-      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
-    } else if (preset === "compact") {
-      if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
-      if (this.w2hFontSize) this.w2hFontSize.value = "14px";
-      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#222222";
-      if (this.w2hTextColorText) this.w2hTextColorText.value = "#222222";
-      if (this.w2hTextAlign) this.w2hTextAlign.value = "left";
-      if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
-      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.4";
-      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "4px";
-      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
-      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
-      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
-      if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
-      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
-    }
-
-    document.querySelectorAll(".chip-color").forEach(c => {
-      c.classList.toggle("active", c.dataset.color === this.w2hTextColorText.value);
-    });
-
-    this.reconvertCurrentW2hDocument();
-  }
-
-  resetW2hSettings() {
     if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
     if (this.w2hFontSize) this.w2hFontSize.value = "16px";
-    if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
-    if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
+    if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#000000";
+    if (this.w2hTextColorText) this.w2hTextColorText.value = "#000000";
     if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
     if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
     if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
     if (this.w2hMarginBottom) this.w2hMarginBottom.value = "6px";
     if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
     if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
-    if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
-    if (this.w2hTableWidth) this.w2hTableWidth.checked = true;
-    if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
-    if (this.w2hEmbedImages) this.w2hEmbedImages.checked = true;
     if (this.w2hCleanEmpty) this.w2hCleanEmpty.checked = true;
     if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-    if (this.w2hAutoHeading) this.w2hAutoHeading.checked = false;
+
+    if (preset === "thau") {
+      if (this.w2hThauImageControls) this.w2hThauImageControls.classList.remove("hidden");
+      if (this.w2hCtxhImageControls) this.w2hCtxhImageControls.classList.add("hidden");
+    } else {
+      if (this.w2hThauImageControls) this.w2hThauImageControls.classList.add("hidden");
+      if (this.w2hCtxhImageControls) this.w2hCtxhImageControls.classList.remove("hidden");
+    }
 
     document.querySelectorAll(".chip-color").forEach(c => {
-      c.classList.toggle("active", c.dataset.color === "#333333");
+      c.classList.toggle("active", c.dataset.color === "#000000");
     });
 
     document.querySelectorAll(".btn-preset").forEach(b => {
-      b.classList.toggle("active", b.dataset.preset === "article");
+      b.classList.toggle("active", b.dataset.preset === preset);
     });
 
+    this.reconvertCurrentW2hDocument();
+  }
+
+  resetW2hSettings() {
+    if (this.w2hThauTopImageUrl) this.w2hThauTopImageUrl.value = "";
+    if (this.w2hThauTopImageCaption) this.w2hThauTopImageCaption.value = "";
+    if (this.w2hThauBottomImageUrl) this.w2hThauBottomImageUrl.value = "";
+    if (this.w2hThauBottomImageCaption) this.w2hThauBottomImageCaption.value = "";
+    if (this.w2hCtxhImageUrls) this.w2hCtxhImageUrls.value = "";
+
+    this.applyW2hPreset("ctxh");
+    this.showToast("Đã khôi phục cài đặt chuẩn Bài CTXH (Times New Roman 16px, #000000)!", "info");
   }
 
   // =========================================================================
