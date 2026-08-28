@@ -478,83 +478,97 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Xây dựng HTML chuẩn bài CTXH
+   * Xây dựng HTML chuẩn bài CTXH theo đúng định dạng CMS của Bệnh viện
    */
   buildCtxhHtml(elements) {
     const outputBlocks = [];
-    let currentTextBlock = [];
-    let imgCounter = 0;
-
-    const flushTextBlock = () => {
-      if (currentTextBlock.length > 0) {
-        const content = currentTextBlock.join("<br />\n");
-        outputBlocks.push(
-          `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
-        );
-        currentTextBlock = [];
-      }
-    };
+    let pairCounter = 1;
+    let lastContext = "";
 
     for (let i = 0; i < elements.length; i++) {
       const el = elements[i];
 
+      // 1. Xử lý Bảng dữ liệu thực tế (nếu có)
       if (el.type === "table") {
-        flushTextBlock();
         outputBlocks.push(el.html);
         continue;
       }
 
-      // Xử lý khi gặp đối tượng Image riêng lẻ
+      // 2. Xử lý Khối Ảnh (Đơn hoặc Cặp ảnh)
+      let imagesToRender = [];
+      let captionText = "";
+
       if (el.type === "image") {
-        flushTextBlock();
-        const imgSrc = el.src;
-        outputBlocks.push(
-          `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${imgSrc}" style="width: 650px;" /></div>`
-        );
-        imgCounter++;
-        continue;
-      }
+        imagesToRender.push(el.src);
+      } else if (el.hasImage && el.images && el.images.length > 0) {
+        imagesToRender.push(...el.images);
 
-      // Xử lý dòng nguồn / tác giả ở cuối bài
-      if (el.isSource && i >= elements.length - 2) {
-        flushTextBlock();
-        outputBlocks.push(
-          `<div style="overflow-x: auto; margin: 18px 0px; text-align: right;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${el.formattedText}</span></span></div>`
-        );
-        continue;
-      }
-
-      // Xử lý đoạn văn có chứa ảnh nhúng
-      if (el.hasImage && el.images && el.images.length > 0) {
-        flushTextBlock();
-
-        // Kiểm tra xem đoạn tiếp theo có phải chú thích ảnh không
-        let captionHtml = "";
+        // Kiểm tra xem đoạn ngay sau có phải chú thích ảnh không
         if (i + 1 < elements.length && elements[i + 1].type === "paragraph" && elements[i + 1].isCaption) {
-          captionHtml = elements[i + 1].formattedText;
-          i++; // Bỏ qua đoạn chú thích vì đã đưa vào khối ảnh
+          captionText = elements[i + 1].plainText;
+          i++;
         }
+      }
 
-        for (const imgSrc of el.images) {
-          let imgBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${imgSrc}" style="width: 650px;" />`;
-          if (captionHtml) {
-            imgBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${captionHtml}</span></span>`;
+      if (imagesToRender.length > 0) {
+        // Tự động sinh thẻ alt thông minh từ ngữ cảnh đoạn văn liền trước
+        const altDesc = captionText || this.generateAltText(lastContext);
+
+        if (imagesToRender.length >= 2) {
+          // Xuất bản Cặp ảnh 2 cột (Table không viền)
+          const comment = `<!-- Cặp ảnh ${pairCounter} -->`;
+          const tableHtml = `${comment}\n\n<table style="width: 100%; border-collapse: collapse; border: none; margin-top: 15px; margin-bottom: 15px;">\n\t<tbody>\n\t\t<tr>\n\t\t\t<td style="width: 50%; text-align: center; vertical-align: top; padding: 5px; border: none;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[0]}" style="width: 100%; max-width: 420px; height: auto;" /></td>\n\t\t\t<td style="width: 50%; text-align: center; vertical-align: top; padding: 5px; border: none;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[1]}" style="width: 100%; max-width: 420px; height: auto;" /></td>\n\t\t</tr>\n\t</tbody>\n</table>`;
+          outputBlocks.push(tableHtml);
+          pairCounter++;
+
+          // Nếu còn ảnh thứ 3, 4 trong cùng khối
+          for (let k = 2; k < imagesToRender.length; k++) {
+            const singleHtml = `<!-- Ảnh đơn -->\n\n<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[k]}" style="max-width: 420px; width: 100%; height: auto;" /></div>`;
+            outputBlocks.push(singleHtml);
           }
-          imgBlock += `</div>`;
-          outputBlocks.push(imgBlock);
-          imgCounter++;
+        } else {
+          // Xuất bản Ảnh đơn căn giữa
+          const singleHtml = `<!-- Ảnh đơn -->\n\n<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[0]}" style="max-width: 420px; width: 100%; height: auto;" /></div>`;
+          outputBlocks.push(singleHtml);
         }
         continue;
       }
 
-      // Đoạn văn bản bình thường -> gom vào khối text
-      if (el.formattedText) {
-        currentTextBlock.push(el.formattedText);
+      // 3. Xử lý Dòng Nguồn / Tác giả ở cuối bài
+      if (el.isSource && i >= elements.length - 2) {
+        outputBlocks.push(
+          `<div style="text-align: right; margin-bottom: 10px;"><span style="font-size: 16px;"><span style="font-family: times new roman, times, serif; color: #000000;">${el.formattedText}</span></span></div>`
+        );
+        continue;
+      }
+
+      // 4. Đoạn văn bản bình thường (Đúng mẫu 100%)
+      const txt = (el.formattedText || "").trim();
+      if (txt) {
+        lastContext = el.plainText || txt;
+        const blockHtml = `<div style="text-align: justify; margin-bottom: 10px;"><span style="font-size: 16px;"><span style="font-family: times new roman, times, serif; color: #000000;">${txt}</span></span></div>`;
+        outputBlocks.push(blockHtml);
       }
     }
 
-    flushTextBlock();
     return outputBlocks.join("\n\n");
+  }
+
+  /**
+   * Tự động trích xuất chuỗi mô tả alt ngắn gọn từ câu văn liền trước
+   */
+  generateAltText(contextText) {
+    if (!contextText) return "Ảnh hoạt động bài viết";
+    
+    // Tìm các cụm từ ý nghĩa trong câu
+    const clean = contextText.replace(/^[\w\s,]+:\s*/i, "").trim();
+    if (clean.length > 0 && clean.length <= 80) {
+      return clean;
+    }
+    
+    // Cắt ngắn nếu quá dài
+    const firstSentence = clean.split(/[.;]/)[0].trim();
+    return firstSentence.length > 70 ? firstSentence.substring(0, 67) + "..." : firstSentence;
   }
 
   /**
@@ -562,53 +576,32 @@ class WordToHtmlConverter {
    */
   buildThauHtml(elements) {
     const outputBlocks = [];
-    const textLines = [];
 
     // 1. Khối Ảnh Trên (Đầu bài thầu - Chiều rộng 850px)
     const topUrl = this.options.thauTopImageUrl.trim();
     const topCaption = this.options.thauTopImageCaption.trim();
 
     if (topUrl) {
-      let topBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${topUrl}" style="width: 850px;" />`;
-      if (topCaption) {
-        topBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${this.escapeHtml(topCaption)}</span></span>`;
-      }
-      topBlock += `</div>`;
+      let topBlock = `<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(topCaption || 'Thông báo mời thầu')}" src="${topUrl}" style="width: 100%; max-width: 850px; height: auto;" /></div>`;
       outputBlocks.push(topBlock);
     }
 
     // 2. Gom toàn bộ nội dung văn bản từ Word
     for (const el of elements) {
       if (el.type === "paragraph") {
-        if (el.formattedText) textLines.push(el.formattedText);
-      } else if (el.type === "image") {
-        if (textLines.length > 0) {
-          const content = textLines.join("<br />\n");
+        const txt = (el.formattedText || "").trim();
+        if (txt) {
           outputBlocks.push(
-            `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
+            `<div style="text-align: justify; margin-bottom: 10px;"><span style="font-size: 16px;"><span style="font-family: times new roman, times, serif; color: #000000;">${txt}</span></span></div>`
           );
-          textLines.length = 0;
         }
+      } else if (el.type === "image") {
         outputBlocks.push(
-          `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${el.src}" style="width: 850px;" /></div>`
+          `<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="Thông báo thầu" src="${el.src}" style="width: 100%; max-width: 850px; height: auto;" /></div>`
         );
       } else if (el.type === "table") {
-        if (textLines.length > 0) {
-          const content = textLines.join("<br />\n");
-          outputBlocks.push(
-            `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
-          );
-          textLines.length = 0;
-        }
         outputBlocks.push(el.html);
       }
-    }
-
-    if (textLines.length > 0) {
-      const content = textLines.join("<br />\n");
-      outputBlocks.push(
-        `<div style="overflow-x: auto; margin: 18px 0px; text-align: justify;"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${content}</span></span></div>`
-      );
     }
 
     // 3. Khối Ảnh Dưới (Cuối bài thầu - Chiều rộng 850px)
@@ -616,11 +609,7 @@ class WordToHtmlConverter {
     const btmCaption = this.options.thauBottomImageCaption.trim();
 
     if (btmUrl) {
-      let btmBlock = `<div style="overflow-x: auto; margin: 18px 0px; text-align: center;"><img alt="" src="${btmUrl}" style="width: 850px;" />`;
-      if (btmCaption) {
-        btmBlock += `<br />\n<span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${this.escapeHtml(btmCaption)}</span></span>`;
-      }
-      btmBlock += `</div>`;
+      let btmBlock = `<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(btmCaption || 'Thông báo mời thầu')}" src="${btmUrl}" style="width: 100%; max-width: 850px; height: auto;" /></div>`;
       outputBlocks.push(btmBlock);
     }
 
