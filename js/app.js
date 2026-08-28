@@ -170,14 +170,17 @@ class AppController {
     this.w2hTextColorPicker = document.getElementById("w2hTextColorPicker");
     this.w2hTextColorText = document.getElementById("w2hTextColorText");
     this.w2hTextAlign = document.getElementById("w2hTextAlign");
+    this.w2hTextIndent = document.getElementById("w2hTextIndent");
     this.w2hLineHeight = document.getElementById("w2hLineHeight");
     this.w2hMarginBottom = document.getElementById("w2hMarginBottom");
+    this.w2hPreserveLayoutTables = document.getElementById("w2hPreserveLayoutTables");
     this.w2hTableBorder = document.getElementById("w2hTableBorder");
     this.w2hTableHeaderBg = document.getElementById("w2hTableHeaderBg");
     this.w2hTableWidth = document.getElementById("w2hTableWidth");
     this.w2hTableZebra = document.getElementById("w2hTableZebra");
     this.w2hEmbedImages = document.getElementById("w2hEmbedImages");
     this.w2hCleanEmpty = document.getElementById("w2hCleanEmpty");
+    this.w2hCollapseSpaces = document.getElementById("w2hCollapseSpaces");
     this.w2hAutoHeading = document.getElementById("w2hAutoHeading");
     this.btnResetW2hSettings = document.getElementById("btnResetW2hSettings");
 
@@ -476,12 +479,22 @@ class AppController {
       });
     }
 
+    // 1-Click Preset Buttons
+    document.querySelectorAll(".btn-preset").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".btn-preset").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const preset = btn.dataset.preset;
+        this.applyW2hPreset(preset);
+      });
+    });
+
     // Setting inputs change events -> re-convert in real-time
     const settingInputs = [
       this.w2hFontFamily, this.w2hFontSize, this.w2hTextColorPicker, this.w2hTextColorText,
-      this.w2hTextAlign, this.w2hLineHeight, this.w2hMarginBottom,
-      this.w2hTableBorder, this.w2hTableHeaderBg, this.w2hTableWidth, this.w2hTableZebra,
-      this.w2hEmbedImages, this.w2hCleanEmpty, this.w2hAutoHeading
+      this.w2hTextAlign, this.w2hTextIndent, this.w2hLineHeight, this.w2hMarginBottom,
+      this.w2hPreserveLayoutTables, this.w2hTableBorder, this.w2hTableHeaderBg, this.w2hTableWidth, this.w2hTableZebra,
+      this.w2hEmbedImages, this.w2hCleanEmpty, this.w2hCollapseSpaces, this.w2hAutoHeading
     ];
 
     settingInputs.forEach(input => {
@@ -492,6 +505,8 @@ class AppController {
           } else if (input === this.w2hTextColorText) {
             this.w2hTextColorPicker.value = this.w2hTextColorText.value;
           }
+          // Remove active state from preset buttons when user manually changes settings
+          document.querySelectorAll(".btn-preset").forEach(b => b.classList.remove("active"));
           this.reconvertCurrentW2hDocument();
         });
       }
@@ -1190,14 +1205,17 @@ class AppController {
       baseFontSize: this.w2hFontSize ? this.w2hFontSize.value : "16px",
       textColor: this.w2hTextColorText ? this.w2hTextColorText.value : "#333333",
       textAlign: this.w2hTextAlign ? this.w2hTextAlign.value : "justify",
+      textIndent: this.w2hTextIndent ? this.w2hTextIndent.value : "none",
       lineHeight: this.w2hLineHeight ? this.w2hLineHeight.value : "1.6",
-      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "14px",
+      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "10px",
+      preserveLayoutTables: this.w2hPreserveLayoutTables ? this.w2hPreserveLayoutTables.checked : true,
       tableFullBorder: this.w2hTableBorder ? this.w2hTableBorder.checked : true,
       tableHeaderBg: this.w2hTableHeaderBg ? (this.w2hTableHeaderBg.checked ? "#f1f5f9" : "") : "#f1f5f9",
       tableFullWidth: this.w2hTableWidth ? this.w2hTableWidth.checked : true,
       tableZebra: this.w2hTableZebra ? this.w2hTableZebra.checked : false,
       embedImagesBase64: this.w2hEmbedImages ? this.w2hEmbedImages.checked : true,
       cleanEmptyParagraphs: this.w2hCleanEmpty ? this.w2hCleanEmpty.checked : true,
+      collapseSpaces: this.w2hCollapseSpaces ? this.w2hCollapseSpaces.checked : true,
       autoHeading: this.w2hAutoHeading ? this.w2hAutoHeading.checked : true
     };
   }
@@ -1348,24 +1366,101 @@ ${this.currentW2hHtmlOutput}
     this.showToast("Đã tải tệp HTML thành công!", "success");
   }
 
+  applyW2hPreset(preset) {
+    if (preset === "article") {
+      if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+      if (this.w2hFontSize) this.w2hFontSize.value = "16px";
+      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
+      if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
+      if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
+      if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
+      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
+      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "10px";
+      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
+      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
+      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
+      if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
+      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
+      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
+    } else if (preset === "admin") {
+      if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
+      if (this.w2hFontSize) this.w2hFontSize.value = "15px";
+      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#000000";
+      if (this.w2hTextColorText) this.w2hTextColorText.value = "#000000";
+      if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
+      if (this.w2hTextIndent) this.w2hTextIndent.value = "1.5em";
+      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.45";
+      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "6px";
+      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
+      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
+      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
+      if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
+      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
+      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = false;
+    } else if (preset === "medical") {
+      if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+      if (this.w2hFontSize) this.w2hFontSize.value = "15px";
+      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#1e293b";
+      if (this.w2hTextColorText) this.w2hTextColorText.value = "#1e293b";
+      if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
+      if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
+      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.55";
+      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "8px";
+      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
+      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
+      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
+      if (this.w2hTableZebra) this.w2hTableZebra.checked = true;
+      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
+      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
+    } else if (preset === "compact") {
+      if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+      if (this.w2hFontSize) this.w2hFontSize.value = "14px";
+      if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#222222";
+      if (this.w2hTextColorText) this.w2hTextColorText.value = "#222222";
+      if (this.w2hTextAlign) this.w2hTextAlign.value = "left";
+      if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
+      if (this.w2hLineHeight) this.w2hLineHeight.value = "1.4";
+      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "4px";
+      if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
+      if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
+      if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
+      if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
+      if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
+      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
+    }
+
+    document.querySelectorAll(".chip-color").forEach(c => {
+      c.classList.toggle("active", c.dataset.color === this.w2hTextColorText.value);
+    });
+
+    this.reconvertCurrentW2hDocument();
+  }
+
   resetW2hSettings() {
     if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
     if (this.w2hFontSize) this.w2hFontSize.value = "16px";
     if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
     if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
     if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
+    if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
     if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
-    if (this.w2hMarginBottom) this.w2hMarginBottom.value = "14px";
+    if (this.w2hMarginBottom) this.w2hMarginBottom.value = "10px";
+    if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
     if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
     if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
     if (this.w2hTableWidth) this.w2hTableWidth.checked = true;
     if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
     if (this.w2hEmbedImages) this.w2hEmbedImages.checked = true;
     if (this.w2hCleanEmpty) this.w2hCleanEmpty.checked = true;
+    if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
     if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
 
     document.querySelectorAll(".chip-color").forEach(c => {
       c.classList.toggle("active", c.dataset.color === "#333333");
+    });
+
+    document.querySelectorAll(".btn-preset").forEach(b => {
+      b.classList.toggle("active", b.dataset.preset === "article");
     });
 
     this.reconvertCurrentW2hDocument();

@@ -1,24 +1,28 @@
 /**
  * tool-word-to-html.js
  * Advanced Word (.docx) to Clean HTML & Inline CSS Converter for CMS & Website Publishing.
- * 100% Client-side, extracts text, styles, fonts, colors, lists, tables & embedded images (Base64).
+ * 100% Client-side, ultra-optimized typography, precise layout normalization & smart spacing engine.
  */
 
 class WordToHtmlConverter {
   constructor(options = {}) {
     this.options = Object.assign({
-      fontFamily: "Arial, sans-serif", // "Arial, sans-serif" | "Times New Roman, serif" | "Roboto, sans-serif" | "inherit"
-      baseFontSize: "16px", // "14px" | "15px" | "16px" | "18px" | "inherit"
-      textColor: "#333333", // "#333333" | "#000000" | "#1e293b" | custom
+      preset: "article", // "article" | "admin" | "medical" | "compact" | "custom"
+      fontFamily: "Arial, sans-serif",
+      baseFontSize: "16px",
+      textColor: "#333333",
       textAlign: "justify", // "justify" | "left" | "center" | "inherit"
-      lineHeight: "1.6", // "1.4" | "1.5" | "1.6" | "1.8"
-      paragraphMarginBottom: "14px", // "10px" | "14px" | "18px" | "0px"
+      lineHeight: "1.6",
+      paragraphMarginBottom: "10px",
+      textIndent: "none", // "none" | "1.5em" | "2em" | "inherit"
       tableFullBorder: true,
       tableHeaderBg: "#f1f5f9",
       tableZebra: false,
       tableFullWidth: true,
+      preserveLayoutTables: true, // Preserve borderless layout tables (Quốc hiệu, Tiêu ngữ, Chữ ký)
       embedImagesBase64: true,
       cleanEmptyParagraphs: true,
+      collapseSpaces: true,
       autoHeading: true
     }, options);
 
@@ -35,11 +39,91 @@ class WordToHtmlConverter {
     this.options = Object.assign(this.options, newOptions);
   }
 
+  applyPreset(presetName) {
+    if (presetName === "article") {
+      this.setOptions({
+        preset: "article",
+        fontFamily: "Arial, sans-serif",
+        baseFontSize: "16px",
+        textColor: "#333333",
+        textAlign: "justify",
+        lineHeight: "1.6",
+        paragraphMarginBottom: "10px",
+        textIndent: "none",
+        tableFullBorder: true,
+        tableHeaderBg: "#f1f5f9",
+        tableZebra: false,
+        tableFullWidth: true,
+        preserveLayoutTables: true,
+        cleanEmptyParagraphs: true,
+        collapseSpaces: true,
+        autoHeading: true
+      });
+    } else if (presetName === "admin") {
+      // Văn bản hành chính / Công văn theo Nghị định 30
+      this.setOptions({
+        preset: "admin",
+        fontFamily: "'Times New Roman', Times, serif",
+        baseFontSize: "15px",
+        textColor: "#000000",
+        textAlign: "justify",
+        lineHeight: "1.45",
+        paragraphMarginBottom: "6px",
+        textIndent: "1.5em",
+        tableFullBorder: true,
+        tableHeaderBg: "#f8fafc",
+        tableZebra: false,
+        tableFullWidth: true,
+        preserveLayoutTables: true,
+        cleanEmptyParagraphs: true,
+        collapseSpaces: true,
+        autoHeading: false
+      });
+    } else if (presetName === "medical") {
+      // Tài liệu y tế / Phác đồ điều trị
+      this.setOptions({
+        preset: "medical",
+        fontFamily: "Arial, sans-serif",
+        baseFontSize: "15px",
+        textColor: "#1e293b",
+        textAlign: "justify",
+        lineHeight: "1.55",
+        paragraphMarginBottom: "8px",
+        textIndent: "none",
+        tableFullBorder: true,
+        tableHeaderBg: "#f0fdf4",
+        tableZebra: true,
+        tableFullWidth: true,
+        preserveLayoutTables: true,
+        cleanEmptyParagraphs: true,
+        collapseSpaces: true,
+        autoHeading: true
+      });
+    } else if (presetName === "compact") {
+      // Tối giản / Siêu gọn
+      this.setOptions({
+        preset: "compact",
+        fontFamily: "Arial, sans-serif",
+        baseFontSize: "14px",
+        textColor: "#222222",
+        textAlign: "left",
+        lineHeight: "1.4",
+        paragraphMarginBottom: "4px",
+        textIndent: "none",
+        tableFullBorder: true,
+        tableHeaderBg: "#f1f5f9",
+        tableZebra: false,
+        tableFullWidth: true,
+        preserveLayoutTables: true,
+        cleanEmptyParagraphs: true,
+        collapseSpaces: true,
+        autoHeading: true
+      });
+    }
+  }
+
   /**
    * Convert Word (.docx) file data to HTML string with Inline CSS
-   * @param {ArrayBuffer|Blob|File} fileData 
-   * @param {string} fileName 
-   * @returns {Promise<{html: string, stats: object, images: Array}>}
    */
   async convertDocxToHtml(fileData, fileName = "") {
     if (!window.JSZip) {
@@ -59,7 +143,7 @@ class WordToHtmlConverter {
       throw new Error(`Tệp ${fileName} không phải là tài liệu Word (.docx) hợp lệ.`);
     }
 
-    // 1. Extract Relationships (Rels) to map rId to media files & hyperlinks
+    // 1. Extract Relationships (Rels)
     const relsMap = {};
     const relsXmlFile = zip.file("word/_rels/document.xml.rels");
     if (relsXmlFile) {
@@ -93,7 +177,6 @@ class WordToHtmlConverter {
           try {
             const base64Data = await fileObj.async("base64");
             const dataUri = `data:${mimeType};base64,${base64Data}`;
-            // Store by filename and by media path
             const baseName = relativePath.split("/").pop();
             mediaMap[relativePath] = dataUri;
             mediaMap[`media/${baseName}`] = dataUri;
@@ -128,6 +211,7 @@ class WordToHtmlConverter {
 
     let inList = false;
     let listType = "ul";
+    let lastWasEmptyParagraph = false;
 
     for (let i = 0; i < childNodes.length; i++) {
       const node = childNodes[i];
@@ -139,20 +223,31 @@ class WordToHtmlConverter {
           if (!inList) {
             inList = true;
             listType = isListItem.type || "ul";
-            htmlChunks.push(`<${listType} style="margin: 0 0 ${this.options.paragraphMarginBottom} 24px; padding: 0; font-family: ${this.options.fontFamily}; color: ${this.options.textColor}; line-height: ${this.options.lineHeight}; font-size: ${this.options.baseFontSize};">`);
+            htmlChunks.push(`<${listType} style="margin: 0 0 ${this.options.paragraphMarginBottom} 20px; padding-left: 10px; font-family: ${this.options.fontFamily}; color: ${this.options.textColor}; line-height: ${this.options.lineHeight}; font-size: ${this.options.baseFontSize};">`);
           }
-          const liHtml = this.parseParagraph(node, relsMap, mediaMap, true);
-          if (liHtml.trim()) {
-            htmlChunks.push(`<li style="margin-bottom: 6px;">${liHtml}</li>`);
+          const liHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: true, inTable: false });
+          if (liHtml && liHtml.trim()) {
+            htmlChunks.push(`<li style="margin-bottom: 4px; line-height: ${this.options.lineHeight};">${liHtml}</li>`);
           }
+          lastWasEmptyParagraph = false;
         } else {
           if (inList) {
             htmlChunks.push(`</${listType}>`);
             inList = false;
           }
-          const pHtml = this.parseParagraph(node, relsMap, mediaMap, false);
+          const pHtml = this.parseParagraph(node, relsMap, mediaMap, { isLi: false, inTable: false });
           if (pHtml !== null) {
-            htmlChunks.push(pHtml);
+            // Collapse multiple consecutive empty paragraphs
+            const isEmptyP = pHtml.includes("&nbsp;") && pHtml.length < 200;
+            if (isEmptyP) {
+              if (!lastWasEmptyParagraph && !this.options.cleanEmptyParagraphs) {
+                htmlChunks.push(pHtml);
+                lastWasEmptyParagraph = true;
+              }
+            } else {
+              htmlChunks.push(pHtml);
+              lastWasEmptyParagraph = false;
+            }
           }
         }
       } else if (nodeName === "w:tbl" || nodeName === "tbl") {
@@ -165,6 +260,7 @@ class WordToHtmlConverter {
           htmlChunks.push(tblHtml);
           this.stats.tableCount++;
         }
+        lastWasEmptyParagraph = false;
       }
     }
 
@@ -180,9 +276,6 @@ class WordToHtmlConverter {
     };
   }
 
-  /**
-   * Check if paragraph is a list item (bullet / numbered list)
-   */
   checkIsListItem(pNode) {
     const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
     if (!pPr) return false;
@@ -198,13 +291,17 @@ class WordToHtmlConverter {
   /**
    * Parse a single Word paragraph <w:p>
    */
-  parseParagraph(pNode, relsMap, mediaMap, isLi = false) {
+  parseParagraph(pNode, relsMap, mediaMap, ctx = {}) {
+    const isLi = ctx.isLi || false;
+    const inTable = ctx.inTable || false;
+
     const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
     
-    // Paragraph alignment
     let textAlign = this.options.textAlign === "inherit" ? "" : this.options.textAlign;
     let headingTag = "";
     let isBoldHeading = false;
+    let hasWordIndent = false;
+    let isZeroSpacing = false;
 
     if (pPr) {
       const jcNode = this.findChild(pPr, ["w:jc", "jc"]);
@@ -216,7 +313,21 @@ class WordToHtmlConverter {
         else if (val === "left") textAlign = "left";
       }
 
-      // Check heading style
+      // Check Indent
+      const indNode = this.findChild(pPr, ["w:ind", "ind"]);
+      if (indNode) {
+        const fLine = parseInt(indNode.getAttribute("w:firstLine") || indNode.getAttribute("firstLine") || "0", 10);
+        if (fLine > 200) hasWordIndent = true;
+      }
+
+      // Check Spacing
+      const spNode = this.findChild(pPr, ["w:spacing", "spacing"]);
+      if (spNode) {
+        const after = parseInt(spNode.getAttribute("w:after") || spNode.getAttribute("after") || "100", 10);
+        if (after === 0) isZeroSpacing = true;
+      }
+
+      // Check Heading Style
       const pStyle = this.findChild(pPr, ["w:pStyle", "pStyle"]);
       if (pStyle) {
         const sVal = (pStyle.getAttribute("w:val") || pStyle.getAttribute("val") || "").toLowerCase();
@@ -226,7 +337,7 @@ class WordToHtmlConverter {
       }
     }
 
-    // Traverse runs and elements inside paragraph
+    // Traverse runs inside paragraph
     const innerParts = [];
     let hasTextContent = false;
     let hasImage = false;
@@ -272,15 +383,21 @@ class WordToHtmlConverter {
       }
     }
 
-    const innerHtml = innerParts.join("");
+    let innerHtml = innerParts.join("");
+    
+    // Collapse multiple consecutive spaces if requested
+    if (this.options.collapseSpaces) {
+      innerHtml = innerHtml.replace(/[ \t]{2,}/g, " ");
+    }
+
     const plainText = innerHtml.replace(/<[^>]*>/g, "").trim();
 
     if (!hasTextContent && !hasImage) {
-      if (this.options.cleanEmptyParagraphs) return null;
-      return `<p style="margin: 0 0 ${this.options.paragraphMarginBottom} 0; line-height: ${this.options.lineHeight}; font-size: ${this.options.baseFontSize};">&nbsp;</p>`;
+      if (this.options.cleanEmptyParagraphs || inTable) return null;
+      return `<p style="margin: 0 0 6px 0; line-height: 1.2; font-size: ${this.options.baseFontSize};">&nbsp;</p>`;
     }
 
-    // Update word count and stats
+    // Update stats
     if (plainText) {
       const words = plainText.split(/\s+/).filter(w => w.length > 0);
       this.stats.wordCount += words.length;
@@ -292,27 +409,48 @@ class WordToHtmlConverter {
       return innerHtml;
     }
 
-    // Determine if it should be an H2/H3/H4 tag
+    // Paragraph INSIDE Table Cell -> Tighter margins to prevent bloated table rows
+    if (inTable) {
+      const cellPStyles = [
+        "margin: 0 0 4px 0",
+        `line-height: ${Math.min(parseFloat(this.options.lineHeight), 1.45)}`,
+        `font-family: inherit`,
+        `color: inherit`
+      ];
+      if (textAlign && textAlign !== "justify") cellPStyles.push(`text-align: ${textAlign}`);
+      return `<p style="${cellPStyles.join('; ')};">${innerHtml}</p>`;
+    }
+
+    // Determine Headings
     if (this.options.autoHeading && (headingTag || (isBoldHeading && plainText.length < 120 && !plainText.endsWith(".")))) {
       const tag = headingTag || "h3";
       const hColor = this.options.textColor === "#333333" ? "#1e293b" : this.options.textColor;
-      const hSize = tag === "h2" ? "1.35rem" : "1.18rem";
-      const hMargin = tag === "h2" ? "20px 0 10px 0" : "16px 0 8px 0";
+      const hSize = tag === "h2" ? "1.32em" : "1.16em";
+      const hMargin = tag === "h2" ? "18px 0 8px 0" : "14px 0 6px 0";
 
-      return `<${tag} style="font-family: ${this.options.fontFamily}; color: ${hColor}; font-size: ${hSize}; font-weight: 700; margin: ${hMargin}; line-height: 1.4; text-align: ${textAlign || 'left'};">${innerHtml}</${tag}>`;
+      return `<${tag} style="font-family: ${this.options.fontFamily}; color: ${hColor}; font-size: ${hSize}; font-weight: 700; margin: ${hMargin}; line-height: 1.35; text-align: ${textAlign || 'left'};">${innerHtml}</${tag}>`;
     }
 
-    // Standard Paragraph
+    // Margin bottom calculation: Zero spacing if Word explicitly set 0pt after
+    const pMarginBottom = isZeroSpacing ? "3px" : this.options.paragraphMarginBottom;
+
     const styles = [
       `font-family: ${this.options.fontFamily}`,
       `font-size: ${this.options.baseFontSize}`,
       `color: ${this.options.textColor}`,
       `line-height: ${this.options.lineHeight}`,
-      `margin: 0 0 ${this.options.paragraphMarginBottom} 0`
+      `margin: 0 0 ${pMarginBottom} 0`
     ];
 
     if (textAlign) {
       styles.push(`text-align: ${textAlign}`);
+    }
+
+    // Apply text indent if enabled or present in Word
+    if (this.options.textIndent !== "none" && (textAlign === "justify" || textAlign === "left")) {
+      styles.push(`text-indent: ${this.options.textIndent}`);
+    } else if (hasWordIndent && (textAlign === "justify" || textAlign === "left")) {
+      styles.push(`text-indent: 1.5em`);
     }
 
     return `<p style="${styles.join('; ')};">${innerHtml}</p>`;
@@ -352,7 +490,7 @@ class WordToHtmlConverter {
       const colorNode = this.findChild(rPr, ["w:color", "color"]);
       if (colorNode) {
         const cVal = colorNode.getAttribute("w:val") || colorNode.getAttribute("val");
-        if (cVal && cVal !== "auto" && cVal.length === 6) {
+        if (cVal && cVal !== "auto" && cVal.length === 6 && cVal.toLowerCase() !== "000000") {
           customColor = `#${cVal}`;
         }
       }
@@ -400,7 +538,7 @@ class WordToHtmlConverter {
       } else if (cName === "w:br" || cName === "br") {
         textContent += "<br/>";
       } else if (cName === "w:tab" || cName === "tab") {
-        textContent += "&emsp;";
+        textContent += "&emsp;&emsp;";
       } else if (cName === "w:drawing" || cName === "drawing") {
         const img = this.extractImageFromDrawing(child, relsMap, mediaMap);
         if (img) {
@@ -428,7 +566,7 @@ class WordToHtmlConverter {
       spanStyles.push(`color: ${customColor}`);
     }
     if (customBg) {
-      spanStyles.push(`background-color: ${customBg}`, `padding: 1px 4px`, `border-radius: 2px`);
+      spanStyles.push(`background-color: ${customBg}`, `padding: 1px 3px`, `border-radius: 2px`);
     }
     if (customFontSize) {
       spanStyles.push(`font-size: ${customFontSize}`);
@@ -467,7 +605,7 @@ class WordToHtmlConverter {
     const embedId = blip.getAttribute("r:embed") || blip.getAttribute("embed") || "";
     if (!embedId || !relsMap[embedId]) return "";
 
-    const target = relsMap[embedId].target; // e.g. "media/image1.png"
+    const target = relsMap[embedId].target;
     const baseName = target.split("/").pop();
 
     let imgDataUri = mediaMap[target] || mediaMap[`media/${baseName}`] || mediaMap[baseName] || "";
@@ -477,16 +615,42 @@ class WordToHtmlConverter {
       "max-width: 100%",
       "height: auto",
       "display: block",
-      "margin: 16px auto",
-      "border-radius: 6px",
-      "box-shadow: 0 2px 8px rgba(0,0,0,0.12)"
+      "margin: 14px auto",
+      "border-radius: 4px",
+      "box-shadow: 0 1px 6px rgba(0,0,0,0.12)"
     ];
 
-    return `<div style="text-align: center; margin: 16px 0;"><img src="${imgDataUri}" alt="Hình ảnh bài viết" style="${imgStyles.join('; ')};" loading="lazy" /></div>`;
+    return `<div style="text-align: center; margin: 14px 0;"><img src="${imgDataUri}" alt="Hình ảnh bài viết" style="${imgStyles.join('; ')};" loading="lazy" /></div>`;
   }
 
   /**
-   * Parse a Word Table <w:tbl>
+   * Check if a table is a borderless layout table (Letterheads, signatures, 2-column info)
+   */
+  isTableBorderless(tblNode) {
+    const tblPr = this.findChild(tblNode, ["w:tblPr", "tblPr"]);
+    if (!tblPr) return false;
+
+    const tblBorders = this.findChild(tblPr, ["w:tblBorders", "tblBorders"]);
+    if (!tblBorders) return true; // No borders defined -> layout table
+
+    let hasVisibleBorder = false;
+    const borderEdges = ["top", "left", "bottom", "right", "insideH", "insideV"];
+    for (const edge of borderEdges) {
+      const edgeNode = this.findChild(tblBorders, [`w:${edge}`, edge]);
+      if (edgeNode) {
+        const val = edgeNode.getAttribute("w:val") || edgeNode.getAttribute("val");
+        if (val && val !== "none" && val !== "nil") {
+          hasVisibleBorder = true;
+          break;
+        }
+      }
+    }
+
+    return !hasVisibleBorder;
+  }
+
+  /**
+   * Parse a Word Table <w:tbl> with smart layout detection
    */
   parseTable(tblNode, relsMap, mediaMap) {
     const trNodes = tblNode.getElementsByTagName("w:tr").length > 0
@@ -495,27 +659,31 @@ class WordToHtmlConverter {
 
     if (trNodes.length === 0) return "";
 
+    const isLayoutTable = this.options.preserveLayoutTables && this.isTableBorderless(tblNode);
+
     const rowsHtml = [];
     const tblStyles = [
       "border-collapse: collapse",
-      "margin: 16px 0",
+      "margin: 12px 0",
       `font-family: ${this.options.fontFamily}`,
       `font-size: ${this.options.baseFontSize}`,
       `color: ${this.options.textColor}`,
-      "line-height: 1.5"
+      "line-height: 1.45"
     ];
 
-    if (this.options.tableFullWidth) {
+    if (this.options.tableFullWidth || isLayoutTable) {
       tblStyles.push("width: 100%");
     }
 
-    if (this.options.tableFullBorder) {
+    if (!isLayoutTable && this.options.tableFullBorder) {
       tblStyles.push("border: 1px solid #cbd5e1");
+    } else if (isLayoutTable) {
+      tblStyles.push("border: none");
     }
 
     for (let r = 0; r < trNodes.length; r++) {
       const trNode = trNodes[r];
-      const isHeaderRow = r === 0;
+      const isHeaderRow = !isLayoutTable && r === 0;
 
       const tcNodes = trNode.getElementsByTagName("w:tc").length > 0
         ? trNode.getElementsByTagName("w:tc")
@@ -528,7 +696,7 @@ class WordToHtmlConverter {
 
         let colSpan = 1;
         let cellBg = "";
-        let cellAlign = "";
+        let cellWidth = "";
 
         if (tcPr) {
           const gridSpan = this.findChild(tcPr, ["w:gridSpan", "gridSpan"]);
@@ -543,16 +711,27 @@ class WordToHtmlConverter {
               cellBg = `#${fill}`;
             }
           }
+
+          const tcW = this.findChild(tcPr, ["w:tcW", "tcW"]);
+          if (tcW) {
+            const wType = tcW.getAttribute("w:type") || tcW.getAttribute("type");
+            const wVal = parseInt(tcW.getAttribute("w:val") || tcW.getAttribute("val") || "0", 10);
+            if (wType === "pct" && wVal > 0) {
+              cellWidth = `${(wVal / 50).toFixed(0)}%`;
+            } else if (wVal > 0 && isLayoutTable && tcNodes.length === 2) {
+              cellWidth = c === 0 ? "50%" : "50%";
+            }
+          }
         }
 
-        // Parse cell content
+        // Parse cell content with inTable flag to keep line-height tight
         const pNodes = tcNode.getElementsByTagName("w:p").length > 0
           ? tcNode.getElementsByTagName("w:p")
           : tcNode.getElementsByTagName("p");
 
         const cellContentParts = [];
         for (let p = 0; p < pNodes.length; p++) {
-          const pHtml = this.parseParagraph(pNodes[p], relsMap, mediaMap, false);
+          const pHtml = this.parseParagraph(pNodes[p], relsMap, mediaMap, { isLi: false, inTable: true });
           if (pHtml) cellContentParts.push(pHtml);
         }
 
@@ -561,12 +740,18 @@ class WordToHtmlConverter {
 
         const cellTag = isHeaderRow ? "th" : "td";
         const cellStyles = [
-          "padding: 10px 14px",
-          "vertical-align: middle"
+          isLayoutTable ? "padding: 4px 8px" : "padding: 8px 12px",
+          "vertical-align: top"
         ];
 
-        if (this.options.tableFullBorder) {
+        if (cellWidth) {
+          cellStyles.push(`width: ${cellWidth}`);
+        }
+
+        if (!isLayoutTable && this.options.tableFullBorder) {
           cellStyles.push("border: 1px solid #cbd5e1");
+        } else if (isLayoutTable) {
+          cellStyles.push("border: none");
         }
 
         if (isHeaderRow) {
@@ -574,7 +759,7 @@ class WordToHtmlConverter {
         } else {
           if (cellBg) {
             cellStyles.push(`background-color: ${cellBg}`);
-          } else if (this.options.tableZebra && r % 2 === 1) {
+          } else if (!isLayoutTable && this.options.tableZebra && r % 2 === 1) {
             cellStyles.push("background-color: #f8fafc");
           }
         }
@@ -583,10 +768,11 @@ class WordToHtmlConverter {
         cellsHtml.push(`<${cellTag}${spanAttr} style="${cellStyles.join('; ')};">${cellInner}</${cellTag}>`);
       }
 
-      rowsHtml.push(`  <tr style="${isHeaderRow ? 'background-color: ' + this.options.tableHeaderBg + ';' : ''}">\n    ${cellsHtml.join("\n    ")}\n  </tr>`);
+      const rowBg = isHeaderRow ? `background-color: ${this.options.tableHeaderBg};` : "";
+      rowsHtml.push(`  <tr style="${rowBg}">\n    ${cellsHtml.join("\n    ")}\n  </tr>`);
     }
 
-    return `<div style="overflow-x: auto; margin: 18px 0;"><table style="${tblStyles.join('; ')};">\n${rowsHtml.join("\n")}\n</table></div>`;
+    return `<div style="overflow-x: auto; margin: ${isLayoutTable ? '6px 0' : '14px 0'};"><table style="${tblStyles.join('; ')};">\n${rowsHtml.join("\n")}\n</table></div>`;
   }
 
   findChild(node, names) {
