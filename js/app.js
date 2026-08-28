@@ -20,6 +20,13 @@ class AppController {
     this.schemaSearchMode = "table"; // "table" | "column"
     this.currentInspectedTable = null;
 
+    // Word to HTML & Inline CSS Converter State
+    this.w2hConverter = new WordToHtmlConverter();
+    this.currentW2hFileBuffer = null;
+    this.currentW2hFileName = "";
+    this.currentW2hHtmlOutput = "";
+    this.w2hCurrentTab = "visual"; // "visual" | "code"
+
     this.initElements();
     this.initEvents();
     this.loadOrgConfigToUi();
@@ -35,6 +42,7 @@ class AppController {
     this.hubView = document.getElementById("hubView");
     this.toolView = document.getElementById("toolView");
     this.schemaView = document.getElementById("schemaView");
+    this.wordToHtmlView = document.getElementById("wordToHtmlView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
@@ -147,6 +155,49 @@ class AppController {
     this.btnExportTableExcel = document.getElementById("btnExportTableExcel");
     this.inspectorColumnFilterInput = document.getElementById("inspectorColumnFilterInput");
     this.inspectorColumnsBody = document.getElementById("inspectorColumnsBody");
+
+    // Word To HTML Elements
+    this.btnBackToHubFromW2h = document.getElementById("btnBackToHubFromW2h");
+    this.w2hDropzone = document.getElementById("w2hDropzone");
+    this.w2hFilePicker = document.getElementById("w2hFilePicker");
+    this.w2hFileActive = document.getElementById("w2hFileActive");
+    this.w2hFileName = document.getElementById("w2hFileName");
+    this.w2hFileSize = document.getElementById("w2hFileSize");
+    this.btnClearW2hFile = document.getElementById("btnClearW2hFile");
+
+    this.w2hFontFamily = document.getElementById("w2hFontFamily");
+    this.w2hFontSize = document.getElementById("w2hFontSize");
+    this.w2hTextColorPicker = document.getElementById("w2hTextColorPicker");
+    this.w2hTextColorText = document.getElementById("w2hTextColorText");
+    this.w2hTextAlign = document.getElementById("w2hTextAlign");
+    this.w2hLineHeight = document.getElementById("w2hLineHeight");
+    this.w2hMarginBottom = document.getElementById("w2hMarginBottom");
+    this.w2hTableBorder = document.getElementById("w2hTableBorder");
+    this.w2hTableHeaderBg = document.getElementById("w2hTableHeaderBg");
+    this.w2hTableWidth = document.getElementById("w2hTableWidth");
+    this.w2hTableZebra = document.getElementById("w2hTableZebra");
+    this.w2hEmbedImages = document.getElementById("w2hEmbedImages");
+    this.w2hCleanEmpty = document.getElementById("w2hCleanEmpty");
+    this.w2hAutoHeading = document.getElementById("w2hAutoHeading");
+    this.btnResetW2hSettings = document.getElementById("btnResetW2hSettings");
+
+    this.btnTabW2hVisual = document.getElementById("btnTabW2hVisual");
+    this.btnTabW2hCode = document.getElementById("btnTabW2hCode");
+    this.btnCopyHtmlCode = document.getElementById("btnCopyHtmlCode");
+    this.btnCopyRichText = document.getElementById("btnCopyRichText");
+    this.btnDownloadHtml = document.getElementById("btnDownloadHtml");
+
+    this.w2hStatWords = document.getElementById("w2hStatWords");
+    this.w2hStatChars = document.getElementById("w2hStatChars");
+    this.w2hStatParagraphs = document.getElementById("w2hStatParagraphs");
+    this.w2hStatTables = document.getElementById("w2hStatTables");
+    this.w2hStatImages = document.getElementById("w2hStatImages");
+
+    this.w2hVisualContainer = document.getElementById("w2hVisualContainer");
+    this.w2hEmptyState = document.getElementById("w2hEmptyState");
+    this.w2hArticleSheet = document.getElementById("w2hArticleSheet");
+    this.w2hCodeContainer = document.getElementById("w2hCodeContainer");
+    this.w2hHtmlRawTextarea = document.getElementById("w2hHtmlRawTextarea");
 
     // Toast Container
     this.toastContainer = document.getElementById("toastContainer");
@@ -375,6 +426,125 @@ class AppController {
         this.exportTableDictionaryToExcel(this.currentInspectedTable);
       });
     }
+
+    // ==========================================
+    // WORD TO HTML CONVERTER EVENTS
+    // ==========================================
+    if (this.btnBackToHubFromW2h) {
+      this.btnBackToHubFromW2h.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+
+    if (this.w2hDropzone && this.w2hFilePicker) {
+      this.w2hDropzone.addEventListener("click", () => this.w2hFilePicker.click());
+      this.w2hFilePicker.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handleW2hFileInput(e.target.files[0]);
+        }
+      });
+
+      this.w2hDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        this.w2hDropzone.classList.add("dragover");
+      });
+      this.w2hDropzone.addEventListener("dragleave", () => {
+        this.w2hDropzone.classList.remove("dragover");
+      });
+      this.w2hDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        this.w2hDropzone.classList.remove("dragover");
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.handleW2hFileInput(e.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    if (this.btnClearW2hFile) {
+      this.btnClearW2hFile.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.currentW2hFileBuffer = null;
+        this.currentW2hFileName = "";
+        this.currentW2hHtmlOutput = "";
+        if (this.w2hFilePicker) this.w2hFilePicker.value = "";
+        this.w2hFileActive.classList.add("hidden");
+        this.w2hArticleSheet.classList.add("hidden");
+        this.w2hArticleSheet.innerHTML = "";
+        this.w2hHtmlRawTextarea.value = "";
+        this.w2hEmptyState.classList.remove("hidden");
+        this.updateW2hStats({ wordCount: 0, charCount: 0, paragraphCount: 0, tableCount: 0, imageCount: 0 });
+      });
+    }
+
+    // Setting inputs change events -> re-convert in real-time
+    const settingInputs = [
+      this.w2hFontFamily, this.w2hFontSize, this.w2hTextColorPicker, this.w2hTextColorText,
+      this.w2hTextAlign, this.w2hLineHeight, this.w2hMarginBottom,
+      this.w2hTableBorder, this.w2hTableHeaderBg, this.w2hTableWidth, this.w2hTableZebra,
+      this.w2hEmbedImages, this.w2hCleanEmpty, this.w2hAutoHeading
+    ];
+
+    settingInputs.forEach(input => {
+      if (input) {
+        input.addEventListener("change", () => {
+          if (input === this.w2hTextColorPicker) {
+            this.w2hTextColorText.value = this.w2hTextColorPicker.value;
+          } else if (input === this.w2hTextColorText) {
+            this.w2hTextColorPicker.value = this.w2hTextColorText.value;
+          }
+          this.reconvertCurrentW2hDocument();
+        });
+      }
+    });
+
+    // Quick Color Chips
+    document.querySelectorAll(".chip-color").forEach(chip => {
+      chip.addEventListener("click", () => {
+        document.querySelectorAll(".chip-color").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        const color = chip.dataset.color;
+        if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = color;
+        if (this.w2hTextColorText) this.w2hTextColorText.value = color;
+        this.reconvertCurrentW2hDocument();
+      });
+    });
+
+    // Reset settings button
+    if (this.btnResetW2hSettings) {
+      this.btnResetW2hSettings.addEventListener("click", () => this.resetW2hSettings());
+    }
+
+    // Tab Switcher (Visual Preview vs HTML Source Code)
+    if (this.btnTabW2hVisual) {
+      this.btnTabW2hVisual.addEventListener("click", () => {
+        this.w2hCurrentTab = "visual";
+        this.btnTabW2hVisual.classList.add("active");
+        this.btnTabW2hCode.classList.remove("active");
+        this.w2hVisualContainer.classList.remove("hidden");
+        this.w2hCodeContainer.classList.add("hidden");
+      });
+    }
+
+    if (this.btnTabW2hCode) {
+      this.btnTabW2hCode.addEventListener("click", () => {
+        this.w2hCurrentTab = "code";
+        this.btnTabW2hCode.classList.add("active");
+        this.btnTabW2hVisual.classList.remove("active");
+        this.w2hVisualContainer.classList.add("hidden");
+        this.w2hCodeContainer.classList.remove("hidden");
+      });
+    }
+
+    // Action buttons
+    if (this.btnCopyHtmlCode) {
+      this.btnCopyHtmlCode.addEventListener("click", () => this.copyW2hHtmlCode());
+    }
+    if (this.btnCopyRichText) {
+      this.btnCopyRichText.addEventListener("click", () => this.copyW2hRichText());
+    }
+    if (this.btnDownloadHtml) {
+      this.btnDownloadHtml.addEventListener("click", () => this.downloadW2hHtml());
+    }
   }
 
   loadOrgConfigToUi() {
@@ -525,10 +695,16 @@ class AppController {
       this.showHubView();
     } else if (hash === "schema-lookup") {
       this.showSchemaView();
+    } else if (hash === "word-to-html") {
+      this.showWordToHtmlView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
-        this.showToolView(tool.id);
+        if (tool.id === "word-to-html") {
+          this.showWordToHtmlView();
+        } else {
+          this.showToolView(tool.id);
+        }
       } else {
         this.showHubView();
       }
@@ -540,6 +716,7 @@ class AppController {
     this.hubView.classList.remove("hidden");
     this.toolView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -551,6 +728,7 @@ class AppController {
     this.currentToolId = "schema-lookup";
     this.hubView.classList.add("hidden");
     this.toolView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     this.schemaView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -570,9 +748,27 @@ class AppController {
     this.performSchemaSearch();
   }
 
+  showWordToHtmlView() {
+    this.currentToolId = "word-to-html";
+    this.hubView.classList.add("hidden");
+    this.toolView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "word-to-html");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   showToolView(toolId) {
     if (toolId === "schema-lookup") {
       this.showSchemaView();
+      return;
+    }
+    if (toolId === "word-to-html") {
+      this.showWordToHtmlView();
       return;
     }
 
@@ -582,6 +778,7 @@ class AppController {
     this.currentToolId = toolId;
     this.hubView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     this.toolView.classList.remove("hidden");
     this.resetToolState();
     this.loadOrgConfigToUi();
@@ -982,6 +1179,197 @@ class AppController {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 
     this.showToast(`Đã xuất từ điển bảng ${table.name}.xlsx thành công!`, "success");
+  }
+
+  // =========================================================================
+  // WORD TO HTML CONVERTER METHODS
+  // =========================================================================
+  getW2hCurrentOptions() {
+    return {
+      fontFamily: this.w2hFontFamily ? this.w2hFontFamily.value : "Arial, sans-serif",
+      baseFontSize: this.w2hFontSize ? this.w2hFontSize.value : "16px",
+      textColor: this.w2hTextColorText ? this.w2hTextColorText.value : "#333333",
+      textAlign: this.w2hTextAlign ? this.w2hTextAlign.value : "justify",
+      lineHeight: this.w2hLineHeight ? this.w2hLineHeight.value : "1.6",
+      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "14px",
+      tableFullBorder: this.w2hTableBorder ? this.w2hTableBorder.checked : true,
+      tableHeaderBg: this.w2hTableHeaderBg ? (this.w2hTableHeaderBg.checked ? "#f1f5f9" : "") : "#f1f5f9",
+      tableFullWidth: this.w2hTableWidth ? this.w2hTableWidth.checked : true,
+      tableZebra: this.w2hTableZebra ? this.w2hTableZebra.checked : false,
+      embedImagesBase64: this.w2hEmbedImages ? this.w2hEmbedImages.checked : true,
+      cleanEmptyParagraphs: this.w2hCleanEmpty ? this.w2hCleanEmpty.checked : true,
+      autoHeading: this.w2hAutoHeading ? this.w2hAutoHeading.checked : true
+    };
+  }
+
+  async handleW2hFileInput(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".docx")) {
+      this.showToast("Chỉ hỗ trợ tệp định dạng Word (.docx)!", "warning");
+      return;
+    }
+
+    try {
+      this.currentW2hFileName = file.name;
+      this.currentW2hFileBuffer = await file.arrayBuffer();
+
+      if (this.w2hFileName) this.w2hFileName.textContent = file.name;
+      if (this.w2hFileSize) this.w2hFileSize.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+      if (this.w2hFileActive) this.w2hFileActive.classList.remove("hidden");
+
+      await this.reconvertCurrentW2hDocument();
+      this.showToast(`Đã chuyển đổi thành công tệp ${file.name}!`, "success");
+    } catch (err) {
+      console.error("Lỗi đọc file Word:", err);
+      this.showToast(`Lỗi chuyển đổi: ${err.message}`, "error");
+    }
+  }
+
+  async reconvertCurrentW2hDocument() {
+    if (!this.currentW2hFileBuffer) return;
+
+    const options = this.getW2hCurrentOptions();
+    this.w2hConverter.setOptions(options);
+
+    try {
+      const result = await this.w2hConverter.convertDocxToHtml(this.currentW2hFileBuffer, this.currentW2hFileName);
+      this.currentW2hHtmlOutput = result.html;
+
+      // Update Visual Preview Sheet
+      if (this.w2hArticleSheet) {
+        this.w2hArticleSheet.innerHTML = result.html;
+        this.w2hArticleSheet.classList.remove("hidden");
+      }
+      if (this.w2hEmptyState) {
+        this.w2hEmptyState.classList.add("hidden");
+      }
+
+      // Update Raw HTML Code Textarea
+      if (this.w2hHtmlRawTextarea) {
+        this.w2hHtmlRawTextarea.value = result.html;
+      }
+
+      // Update Stats
+      this.updateW2hStats(result.stats);
+    } catch (err) {
+      console.error("Lỗi chuyển đổi Word to HTML:", err);
+      this.showToast(`Lỗi xử lý file: ${err.message}`, "error");
+    }
+  }
+
+  updateW2hStats(stats) {
+    if (this.w2hStatWords) this.w2hStatWords.textContent = (stats.wordCount || 0).toLocaleString("vi-VN");
+    if (this.w2hStatChars) this.w2hStatChars.textContent = (stats.charCount || 0).toLocaleString("vi-VN");
+    if (this.w2hStatParagraphs) this.w2hStatParagraphs.textContent = (stats.paragraphCount || 0).toLocaleString("vi-VN");
+    if (this.w2hStatTables) this.w2hStatTables.textContent = (stats.tableCount || 0).toLocaleString("vi-VN");
+    if (this.w2hStatImages) this.w2hStatImages.textContent = (stats.imageCount || 0).toLocaleString("vi-VN");
+  }
+
+  async copyW2hHtmlCode() {
+    if (!this.currentW2hHtmlOutput) {
+      this.showToast("Chưa có nội dung để sao chép!", "warning");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(this.currentW2hHtmlOutput);
+      this.showToast("Đã sao chép mã HTML & Inline CSS! Dán vào tab [Mã HTML / Source] của CMS.", "success");
+    } catch (err) {
+      if (this.w2hHtmlRawTextarea) {
+        this.w2hHtmlRawTextarea.select();
+        document.execCommand("copy");
+      }
+      this.showToast("Đã sao chép mã HTML vào Clipboard!", "success");
+    }
+  }
+
+  async copyW2hRichText() {
+    if (!this.currentW2hHtmlOutput) {
+      this.showToast("Chưa có nội dung để sao chép!", "warning");
+      return;
+    }
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const blobHtml = new Blob([this.currentW2hHtmlOutput], { type: "text/html" });
+        const blobText = new Blob([this.w2hArticleSheet.innerText || ""], { type: "text/plain" });
+        const item = new ClipboardItem({
+          "text/html": blobHtml,
+          "text/plain": blobText
+        });
+        await navigator.clipboard.write([item]);
+        this.showToast("Đã sao chép Rich Text! Bạn có thể dán trực tiếp vào khung soạn thảo bình thường.", "success");
+      } else {
+        const range = document.createRange();
+        range.selectNodeContents(this.w2hArticleSheet);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand("copy");
+        sel.removeAllRanges();
+        this.showToast("Đã sao chép nội dung định dạng vào Clipboard!", "success");
+      }
+    } catch (err) {
+      console.error("Lỗi copy rich text:", err);
+      this.showToast("Trình duyệt chặn sao chép Rich Text. Vui lòng dùng nút 'Sao chép mã HTML'.", "warning");
+    }
+  }
+
+  downloadW2hHtml() {
+    if (!this.currentW2hHtmlOutput) {
+      this.showToast("Chưa có nội dung để tải về!", "warning");
+      return;
+    }
+    const font = this.w2hFontFamily ? this.w2hFontFamily.value : "Arial, sans-serif";
+    const color = this.w2hTextColorText ? this.w2hTextColorText.value : "#333333";
+    const docTitle = this.currentW2hFileName ? this.currentW2hFileName.replace(/\.docx$/i, "") : "Bai_viet_Website";
+
+    const fullHtmlDoc = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${docTitle}</title>
+</head>
+<body style="margin: 0; padding: 24px; background-color: #f8fafc; display: flex; justify-content: center;">
+  <div style="background: #ffffff; max-width: 860px; width: 100%; padding: 40px 48px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); font-family: ${font}; color: ${color}; line-height: 1.6;">
+${this.currentW2hHtmlOutput}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([fullHtmlDoc], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${docTitle}_Website.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.showToast("Đã tải tệp HTML thành công!", "success");
+  }
+
+  resetW2hSettings() {
+    if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+    if (this.w2hFontSize) this.w2hFontSize.value = "16px";
+    if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
+    if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
+    if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
+    if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
+    if (this.w2hMarginBottom) this.w2hMarginBottom.value = "14px";
+    if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
+    if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
+    if (this.w2hTableWidth) this.w2hTableWidth.checked = true;
+    if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
+    if (this.w2hEmbedImages) this.w2hEmbedImages.checked = true;
+    if (this.w2hCleanEmpty) this.w2hCleanEmpty.checked = true;
+    if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
+
+    document.querySelectorAll(".chip-color").forEach(c => {
+      c.classList.toggle("active", c.dataset.color === "#333333");
+    });
+
+    this.reconvertCurrentW2hDocument();
+    this.showToast("Đã khôi phục cài đặt chuyển đổi mặc định!", "info");
   }
 
   // =========================================================================

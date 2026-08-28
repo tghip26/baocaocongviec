@@ -48,6 +48,15 @@
           <span class="nav-text">Tất cả công cụ (Hub)</span>
         </a>
 
+        <div class="nav-section-title">ĐĂNG BÀI WEBSITE & CMS</div>
+
+        <a href="#word-to-html" class="nav-item" data-tool="word-to-html">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+          </span>
+          <span class="nav-text">Chuyển Word &rarr; HTML/CSS</span>
+        </a>
+
         <div class="nav-section-title">CƠ SỞ DỮ LIỆU & SCHEMA</div>
 
         <a href="#schema-lookup" class="nav-item" data-tool="schema-lookup">
@@ -365,6 +374,257 @@
           </div>
         </section>
 
+        <!-- VIEW: CHUYỂN ĐỔI WORD SANG HTML & CSS INLINE (ĐĂNG BÀI WEBSITE / CMS) -->
+        <section class="word-to-html-view hidden" id="wordToHtmlView">
+          <!-- Workspace Header Navigation -->
+          <div class="workspace-nav">
+            <button type="button" class="btn-back" id="btnBackToHubFromW2h">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Quay lại Danh sách công cụ</span>
+            </button>
+            <div class="breadcrumb-trail">
+              <a href="#hub">Cổng công cụ</a>
+              <span class="trail-sep">&rsaquo;</span>
+              <span class="trail-current">Chuyển Đổi Word sang HTML & CSS Inline (Đăng Web / CMS)</span>
+            </div>
+          </div>
+
+          <!-- Workspace Header Details -->
+          <div class="workspace-header">
+            <div class="workspace-header-info">
+              <div class="title-with-badge">
+                <h1 class="workspace-title">Chuyển Đổi Word sang HTML & CSS Inline</h1>
+                <span class="tool-badge badge-indigo">Đăng Bài Web & CMS</span>
+              </div>
+              <p class="workspace-subtitle">Tự động trích xuất toàn bộ văn bản, hình ảnh nhúng Base64, bảng biểu từ file Word (.docx) sang mã HTML kèm CSS Inline chuẩn đẹp, tương thích 100% trình soạn thảo web (CKEditor, TinyMCE, WordPress, CMS).</p>
+            </div>
+          </div>
+
+          <!-- Main Layout Grid: Left (Controls & Settings) | Right (Preview & Code) -->
+          <div class="w2h-layout-grid">
+            
+            <!-- LEFT PANEL: Upload & Pre-Conversion Settings -->
+            <div class="w2h-sidebar-panel">
+              
+              <!-- Upload Box -->
+              <div class="w2h-upload-card">
+                <div class="w2h-dropzone" id="w2hDropzone">
+                  <input type="file" id="w2hFilePicker" accept=".docx" class="file-input-hidden" />
+                  <div class="w2h-dropzone-icon">
+                    <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                  </div>
+                  <h4 class="w2h-drop-title">Kéo & thả tệp Word (.docx) vào đây</h4>
+                  <p class="w2h-drop-sub">Hoặc bấm vào để duyệt chọn file từ máy tính</p>
+                </div>
+
+                <!-- Active File Info -->
+                <div class="w2h-file-active hidden" id="w2hFileActive">
+                  <div class="file-icon-badge">DOCX</div>
+                  <div class="file-meta-wrap">
+                    <span class="file-active-name" id="w2hFileName">Bai_viet.docx</span>
+                    <span class="file-active-size" id="w2hFileSize">0 KB</span>
+                  </div>
+                  <button type="button" class="btn-clear-w2h-file" id="btnClearW2hFile" title="Đổi file khác">&times;</button>
+                </div>
+              </div>
+
+              <!-- Pre-Conversion Settings Accordion / Box -->
+              <div class="w2h-settings-card">
+                <div class="w2h-settings-header">
+                  <div class="settings-header-title">
+                    <span>⚙️ Cài đặt định dạng trước khi chuyển:</span>
+                  </div>
+                  <button type="button" class="btn-reset-w2h-settings" id="btnResetW2hSettings" title="Khôi phục mặc định">Mặc định</button>
+                </div>
+
+                <div class="w2h-settings-body">
+                  <!-- Setting: Font Family -->
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">🔤 Phông chữ chính (Font Family):</label>
+                    <select id="w2hFontFamily" class="w2h-select">
+                      <option value="Arial, sans-serif" selected>Arial (Phổ biến chuẩn Web)</option>
+                      <option value="'Times New Roman', Times, serif">Times New Roman (Văn bản hành chính)</option>
+                      <option value="Roboto, sans-serif">Roboto (Hiện đại)</option>
+                      <option value="'Open Sans', sans-serif">Open Sans</option>
+                      <option value="Tahoma, sans-serif">Tahoma</option>
+                      <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                      <option value="inherit">Giữ nguyên font gốc từng đoạn trong Word</option>
+                    </select>
+                  </div>
+
+                  <!-- Setting: Font Size -->
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">📏 Cỡ chữ bài viết (Base Font Size):</label>
+                    <select id="w2hFontSize" class="w2h-select">
+                      <option value="16px" selected>16px (Khuyên dùng - Đọc rõ trên Web & Mobile)</option>
+                      <option value="15px">15px (Vừa phải)</option>
+                      <option value="14px">14px (Chuẩn báo chí nhỏ)</option>
+                      <option value="18px">18px (Cỡ chữ lớn)</option>
+                      <option value="inherit">Giữ nguyên cỡ chữ gốc trong Word</option>
+                    </select>
+                  </div>
+
+                  <!-- Setting: Text Color -->
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">🎨 Màu chữ chính (Text Color):</label>
+                    <div class="color-picker-row">
+                      <input type="color" id="w2hTextColorPicker" value="#333333" class="color-input-field" />
+                      <input type="text" id="w2hTextColorText" value="#333333" class="color-text-field" />
+                    </div>
+                    <div class="quick-color-chips">
+                      <button type="button" class="chip-color active" data-color="#333333" style="background: #333333;" title="Đen xám chống mỏi mắt (#333333)"></button>
+                      <button type="button" class="chip-color" data-color="#000000" style="background: #000000;" title="Đen tuyền (#000000)"></button>
+                      <button type="button" class="chip-color" data-color="#1e293b" style="background: #1e293b;" title="Xanh than hiện đại (#1e293b)"></button>
+                      <button type="button" class="chip-color" data-color="#0f172a" style="background: #0f172a;" title="Tối đậm (#0f172a)"></button>
+                      <button type="button" class="chip-color" data-color="#047857" style="background: #047857;" title="Xanh lục y tế (#047857)"></button>
+                      <button type="button" class="chip-color" data-color="#1d4ed8" style="background: #1d4ed8;" title="Xanh dương (#1d4ed8)"></button>
+                    </div>
+                  </div>
+
+                  <!-- Setting: Text Align -->
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">📐 Căn lề đoạn văn (Text Alignment):</label>
+                    <select id="w2hTextAlign" class="w2h-select">
+                      <option value="justify" selected>Căn đều 2 bên (Justify - Đẹp chuẩn bài báo)</option>
+                      <option value="left">Căn lề trái (Left)</option>
+                      <option value="center">Căn giữa (Center)</option>
+                      <option value="inherit">Theo căn lề gốc trong file Word</option>
+                    </select>
+                  </div>
+
+                  <!-- Setting: Line Spacing & Paragraph Spacing in 2 columns -->
+                  <div class="w2h-setting-row-2">
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">↕️ Giãn dòng:</label>
+                      <select id="w2hLineHeight" class="w2h-select">
+                        <option value="1.6" selected>1.6 (Chuẩn)</option>
+                        <option value="1.5">1.5 (Gọn)</option>
+                        <option value="1.8">1.8 (Thoáng)</option>
+                        <option value="1.4">1.4</option>
+                      </select>
+                    </div>
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">↔️ Giãn đoạn:</label>
+                      <select id="w2hMarginBottom" class="w2h-select">
+                        <option value="14px" selected>14px (Chuẩn)</option>
+                        <option value="10px">10px</option>
+                        <option value="18px">18px</option>
+                        <option value="0px">0px</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Tùy chọn Bảng biểu & Nâng cao -->
+                  <div class="w2h-checkbox-group-wrap">
+                    <label class="setting-section-title">📊 Định dạng Bảng biểu:</label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hTableBorder" checked />
+                      <span>Kẻ viền bảng rõ ràng (Border 1px)</span>
+                    </label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hTableHeaderBg" checked />
+                      <span>Màu nền tiêu đề bảng (#f1f5f9)</span>
+                    </label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hTableWidth" checked />
+                      <span>Bảng tự co giãn 100% chiều rộng</span>
+                    </label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hTableZebra" />
+                      <span>Xen kẽ màu dòng chẵn/lẻ (Zebra)</span>
+                    </label>
+                  </div>
+
+                  <!-- Tùy chọn Ảnh & Tối ưu -->
+                  <div class="w2h-checkbox-group-wrap">
+                    <label class="setting-section-title">🖼️ Xử lý Ảnh & Tinh gọn mã:</label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hEmbedImages" checked />
+                      <span>Tự động nhúng ảnh Base64 (Dán vào là hiện ảnh ngay)</span>
+                    </label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hCleanEmpty" checked />
+                      <span>Tự động xóa các đoạn trắng rỗng thừa</span>
+                    </label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hAutoHeading" checked />
+                      <span>Tự động chuẩn hóa Heading &lt;h2&gt;, &lt;h3&gt;</span>
+                    </label>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: Live Visual Preview & HTML Source Code Dual Tabs -->
+            <div class="w2h-main-panel">
+              
+              <!-- Top Toolbar: Tabs & Copy Actions -->
+              <div class="w2h-output-toolbar">
+                <div class="w2h-tab-switcher">
+                  <button type="button" class="w2h-tab-btn active" id="btnTabW2hVisual">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>👁️ Xem Trước Bài Viết (Visual Preview)</span>
+                  </button>
+                  <button type="button" class="w2h-tab-btn" id="btnTabW2hCode">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <span>💻 Mã HTML & Inline CSS (Source Code)</span>
+                  </button>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="w2h-action-btns">
+                  <button type="button" class="btn-w2h-action btn-copy-html" id="btnCopyHtmlCode" title="Sao chép mã HTML để dán vào tab [Mã HTML] của CMS">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    <span>📋 Sao chép mã HTML</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action" id="btnCopyRichText" title="Sao chép văn bản định dạng Rich Text">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                    <span>📄 Sao chép Rich Text</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action" id="btnDownloadHtml" title="Tải tệp HTML về máy">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>💾 Tải .html</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Article Statistics Bar -->
+              <div class="w2h-stats-bar" id="w2hStatsBar">
+                <div class="stat-pill"><span class="stat-num" id="w2hStatWords">0</span> từ</div>
+                <div class="stat-pill"><span class="stat-num" id="w2hStatChars">0</span> ký tự</div>
+                <div class="stat-pill"><span class="stat-num" id="w2hStatParagraphs">0</span> đoạn văn</div>
+                <div class="stat-pill"><span class="stat-num" id="w2hStatTables">0</span> bảng biểu</div>
+                <div class="stat-pill"><span class="stat-num" id="w2hStatImages">0</span> ảnh nhúng (Base64)</div>
+              </div>
+
+              <!-- Output Container: Visual Preview Screen -->
+              <div class="w2h-visual-container" id="w2hVisualContainer">
+                <div class="w2h-empty-state" id="w2hEmptyState">
+                  <div class="empty-icon">📝</div>
+                  <h3>Chưa có tài liệu Word nào được tải lên</h3>
+                  <p>Hãy kéo & thả file Word (.docx) bài viết hoặc công văn vào khung bên trái để tự động tạo mã HTML & CSS Inline chuẩn đăng website.</p>
+                </div>
+                <div class="w2h-article-sheet hidden" id="w2hArticleSheet">
+                  <!-- Rendered Article HTML injected here -->
+                </div>
+              </div>
+
+              <!-- Output Container: HTML Code Box -->
+              <div class="w2h-code-container hidden" id="w2hCodeContainer">
+                <div class="code-box-header">
+                  <span class="code-lang-tag">HTML + Inline CSS</span>
+                  <span class="code-note-tag">💡 Dán trực tiếp vào tab <strong>[Mã HTML / Source]</strong> của trình soạn thảo CMS website</span>
+                </div>
+                <textarea id="w2hHtmlRawTextarea" class="w2h-code-textarea" readonly spellcheck="false" placeholder="Mã HTML & CSS Inline sẽ xuất hiện tại đây..."></textarea>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
         <!-- VIEW 3: STANDARD TOOL EXECUTION WORKSPACE (Dynamic Single Page View) -->
         <section class="tool-workspace hidden" id="toolView">
           <!-- Workspace Header Navigation -->
@@ -664,6 +924,7 @@
   <script src="js/docx-parser.js"></script>
   <script src="js/tools-registry.js"></script>
   <script src="js/tool-schema-lookup.js"></script>
+  <script src="js/tool-word-to-html.js"></script>
   <script src="js/tool-giamdinh.js"></script>
   <script src="js/tool-vgca-doichieu.js"></script>
   <script src="js/tool-vgca-cks.js"></script>

@@ -11,6 +11,11 @@ window.TOOLS_CATEGORIES = [
     icon: "grid"
   },
   {
+    id: "web-cms",
+    name: "Chuyển Đổi Word sang HTML (Đăng Web)",
+    icon: "code"
+  },
+  {
     id: "schema",
     name: "Tra Cứu Database Schema VIMES",
     icon: "database"
@@ -28,6 +33,26 @@ window.TOOLS_CATEGORIES = [
 ];
 
 window.TOOLS_REGISTRY = [
+  {
+    id: "word-to-html",
+    categoryId: "web-cms",
+    title: "Chuyển Đổi Word sang HTML & CSS Inline",
+    subtitle: "Trích xuất văn bản, bảng biểu, hình ảnh từ Word sang HTML chuẩn CMS",
+    description: "Tự động trích xuất toàn bộ văn bản, hình ảnh nhúng (Base64), bảng biểu và danh sách từ file Word (.docx) sang mã HTML kèm CSS Inline chuẩn đẹp. Tùy chỉnh màu chữ, font chữ, cỡ chữ, căn lề, độ giãn dòng và kiểu bảng trước khi chuyển đổi để dán trực tiếp vào tab [Mã HTML] của trình soạn thảo website.",
+    badge: "Đăng Bài Web / CMS",
+    badgeColor: "indigo",
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>`,
+    inputType: "word-to-html-interactive",
+    acceptWord: ".docx",
+    outputName: "Bai_viet_Website.html",
+    guide: [
+      "Bước 1: Chọn hoặc kéo thả tệp Word (.docx) bài viết, thông báo hoặc công văn vào khung tải tệp.",
+      "Bước 2: Tùy chỉnh các thông số trước khi chuyển đổi (Font chữ, cỡ chữ, màu sắc, căn lề, viền bảng, nhúng ảnh Base64...).",
+      "Bước 3: Xem trước bài viết trực tiếp hoặc chuyển sang tab [Mã HTML] để lấy mã nguồn chuẩn.",
+      "Bước 4: Nhấn '📋 Sao chép mã HTML' và dán thẳng vào ô [Mã HTML / Source] của trình soạn thảo CMS website."
+    ],
+    executeKey: "openWordToHtml"
+  },
   {
     id: "schema-lookup",
     categoryId: "schema",
