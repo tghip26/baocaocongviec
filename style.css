@@ -2892,9 +2892,15 @@ body {
 }
 
 /* ==========================================================================
-   RESPONSIVE DESIGN (Tablets & Mobile)
+   RESPONSIVE DESIGN (Tablets & Mobile Optimization)
    ========================================================================== */
+
+/* Tablets & Small Laptops (<= 1024px) */
 @media (max-width: 1024px) {
+  .w2h-layout-grid {
+    grid-template-columns: 320px 1fr;
+    gap: 16px;
+  }
   .workspace-grid, .schema-explorer-layout {
     grid-template-columns: 1fr;
   }
@@ -2902,18 +2908,23 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
   .schema-results-pane, .schema-inspector-pane {
-    height: 480px;
+    height: 440px;
   }
 }
 
+/* Mobile Devices & Small Tablets (<= 768px) */
 @media (max-width: 768px) {
+  /* App Shell & Navigation */
   .app-sidebar {
     position: fixed;
     left: 0;
     top: 0;
     bottom: 0;
+    width: 280px;
+    z-index: 9999;
     transform: translateX(-100%);
-    box-shadow: var(--shadow-lg);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+    transition: transform var(--transition-normal);
   }
 
   .app-sidebar.open {
@@ -2925,27 +2936,31 @@ body {
   }
 
   .app-content {
-    padding: 16px;
+    padding: 12px 10px;
   }
 
+  /* Hub Hero */
   .hub-hero {
     flex-direction: column;
-    padding: 24px;
+    padding: 18px 16px;
+    gap: 14px;
   }
 
   .hero-stats {
     width: 100%;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
 
   .stat-card {
     min-width: 0;
-    flex: 1;
-    padding: 10px;
+    padding: 10px 8px;
   }
 
   .tool-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .quality-grid {
@@ -2955,5 +2970,187 @@ body {
   .schema-filters-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 8px;
+  }
+
+  /* Word to HTML Converter Mobile Layout */
+  .w2h-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .w2h-sidebar-panel {
+    order: 2; /* Move settings below editor on mobile when needed, or compact */
+  }
+
+  .w2h-main-panel {
+    order: 1;
+    min-height: auto;
+  }
+
+  .w2h-output-toolbar {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .w2h-tab-switcher {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .w2h-tab-btn {
+    padding: 7px 4px;
+    font-size: 0.72rem;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .w2h-tab-btn svg {
+    display: none; /* Hide icon on small mobile tabs to prevent text truncation */
+  }
+
+  .w2h-action-btns {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .btn-w2h-action {
+    justify-content: center;
+    padding: 7px 6px;
+    font-size: 0.72rem;
+    min-height: 38px;
+  }
+
+  .btn-toggle-sidebar {
+    grid-column: span 2; /* Full width for sidebar toggle */
+  }
+
+  /* Sleek Stats Bar on Mobile */
+  .w2h-stats-bar {
+    padding: 8px 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .stats-pills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .stat-pill {
+    font-size: 0.72rem;
+  }
+
+  /* Paper Sheet Canvas on Mobile */
+  .w2h-visual-container {
+    padding: 12px 6px;
+    min-height: 320px;
+  }
+
+  .w2h-article-sheet {
+    padding: 20px 14px;
+    font-size: 15px !important;
+    max-width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  }
+
+  .w2h-article-sheet img {
+    max-width: 100% !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+
+  .w2h-article-sheet table {
+    display: block;
+    width: 100% !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Split Mode on Mobile (Stacked Vertically) */
+  .w2h-display-workspace.split-mode {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .w2h-display-workspace.split-mode .w2h-visual-container {
+    max-height: 320px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .w2h-display-workspace.split-mode .w2h-code-container {
+    max-height: 320px;
+  }
+
+  /* Code Textarea on Mobile */
+  .w2h-code-textarea {
+    min-height: 320px;
+    font-size: 0.78rem;
+    padding: 12px;
+  }
+
+  /* Fullscreen on Mobile */
+  #wordToHtmlView.w2h-fullscreen-active {
+    padding: 6px 8px !important;
+  }
+
+  #wordToHtmlView.w2h-fullscreen-active .w2h-layout-grid {
+    height: calc(100vh - 12px) !important;
+  }
+
+  #wordToHtmlView.w2h-fullscreen-active .w2h-display-workspace {
+    height: calc(100vh - 180px) !important;
+  }
+}
+
+/* Small Smartphone Screens (<= 480px) */
+@media (max-width: 480px) {
+  .w2h-action-btns {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-toggle-sidebar {
+    grid-column: span 1;
+  }
+
+  .w2h-preset-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .w2h-setting-row-2 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .w2h-dropzone {
+    padding: 18px 10px;
+  }
+
+  .w2h-drop-title {
+    font-size: 0.86rem;
+  }
+
+  .stat-card {
+    padding: 8px 4px;
+  }
+
+  .stat-card .stat-val {
+    font-size: 1.1rem;
+  }
+
+  .stat-card .stat-lbl {
+    font-size: 0.64rem;
   }
 }
