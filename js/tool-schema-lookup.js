@@ -1,7 +1,7 @@
 /**
  * tool-schema-lookup.js
- * Comprehensive Database Schema & Column Variable Lookup Engine for VIMES (1,170 tables, 20,852 columns).
- * Ultra-fast client-side search, multi-mode filter, reverse variable search, SQL generator.
+ * Comprehensive Semantic Database Schema & Column Variable Lookup Engine for VIMES.
+ * Fast multi-dimensional search: variable name, Vietnamese description, table name, topic & prefix conventions.
  */
 
 class SchemaLookupEngine {
@@ -27,10 +27,14 @@ class SchemaLookupEngine {
         }
         this.columnInvertedIndex.get(cLower).push({
           tableName: table.name,
+          tableTitle: table.title || table.name,
+          tableTopic: table.topic || table.section,
+          tableDesc: table.description || "",
           tableSection: table.section,
           tableSectionId: table.sectionId,
           tableType: table.type,
           colName: col.name,
+          colDesc: col.description || `Trường ${col.name}`,
           colType: col.type,
           isPk: col.isPk,
           nullable: col.nullable,
@@ -41,56 +45,120 @@ class SchemaLookupEngine {
   }
 
   /**
-   * Search by column / variable name
+   * Search by column name OR column Vietnamese description / meaning
    */
   searchByColumn(query, sectionFilter = "all", prefixFilter = "all") {
-    const q = (query || "").trim().toLowerCase();
-    if (!q) return [];
+    const rawQ = (query || "").trim();
+    if (!rawQ) return [];
 
-    const results = [];
-    this.columnInvertedIndex.forEach((matches, colNameLower) => {
-      if (colNameLower.includes(q)) {
-        matches.forEach(item => {
-          if (sectionFilter !== "all" && item.tableSectionId !== sectionFilter) return;
-          if (prefixFilter !== "all" && !item.tableName.startsWith(prefixFilter)) return;
-          results.push(item);
-        });
-      }
+    const q = rawQ.toLowerCase();
+    const qNorm = DocxTableParser ? DocxTableParser.removeAccents(q) : q;
+
+    const matchedItems = [];
+
+    this.schema.tables.forEach(table => {
+      if (sectionFilter !== "all" && table.sectionId !== sectionFilter) return;
+      if (prefixFilter !== "all" && !table.name.startsWith(prefixFilter)) return;
+
+      const tNameNorm = DocxTableParser ? DocxTableParser.removeAccents(table.name.toLowerCase()) : table.name.toLowerCase();
+      const tTitleNorm = DocxTableParser ? DocxTableParser.removeAccents((table.title || "").toLowerCase()) : (table.title || "").toLowerCase();
+      const tTopicNorm = DocxTableParser ? DocxTableParser.removeAccents((table.topic || "").toLowerCase()) : (table.topic || "").toLowerCase();
+
+      table.columns.forEach(col => {
+        const cNameLower = col.name.toLowerCase();
+        const cDescLower = (col.description || "").toLowerCase();
+        const cNameNorm = DocxTableParser ? DocxTableParser.removeAccents(cNameLower) : cNameLower;
+        const cDescNorm = DocxTableParser ? DocxTableParser.removeAccents(cDescLower) : cDescLower;
+
+        let matchScore = 0;
+
+        if (cNameLower === q) matchScore = 100;
+        else if (cNameLower.startsWith(q)) matchScore = 80;
+        else if (cNameLower.includes(q)) matchScore = 60;
+        else if (cDescNorm.includes(qNorm)) matchScore = 50;
+        else if (cNameNorm.includes(qNorm)) matchScore = 40;
+        else if (tNameNorm.includes(qNorm) || tTitleNorm.includes(qNorm) || tTopicNorm.includes(qNorm)) matchScore = 30;
+
+        if (matchScore > 0) {
+          matchedItems.push({
+            score: matchScore,
+            tableName: table.name,
+            tableTitle: table.title || table.name,
+            tableTopic: table.topic || table.section,
+            tableDesc: table.description || "",
+            tableSection: table.section,
+            tableSectionId: table.sectionId,
+            tableType: table.type,
+            colName: col.name,
+            colDesc: col.description || `Trường dữ liệu ${col.name}`,
+            colType: col.type,
+            isPk: col.isPk,
+            nullable: col.nullable,
+            defaultVal: col.default
+          });
+        }
+      });
     });
 
-    // Sort: Exact match first, then startsWith, then alphabetical
-    results.sort((a, b) => {
-      const aExact = a.colName.toLowerCase() === q;
-      const bExact = b.colName.toLowerCase() === q;
-      if (aExact && !bExact) return -1;
-      if (!aExact && bExact) return 1;
-
-      const aStarts = a.colName.toLowerCase().startsWith(q);
-      const bStarts = b.colName.toLowerCase().startsWith(q);
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-
+    matchedItems.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.isPk && !b.isPk) return -1;
+      if (!a.isPk && b.isPk) return 1;
       return a.tableName.localeCompare(b.tableName);
     });
 
-    return results;
+    return matchedItems;
   }
 
   /**
-   * Search by table name
+   * Search by table name, table Vietnamese title, topic or description
    */
   searchByTable(query, sectionFilter = "all", prefixFilter = "all") {
-    const q = (query || "").trim().toLowerCase();
+    const rawQ = (query || "").trim();
+    const q = rawQ.toLowerCase();
+    const qNorm = DocxTableParser ? DocxTableParser.removeAccents(q) : q;
 
-    return this.schema.tables.filter(table => {
+    const matchedTables = [];
+
+    this.schema.tables.forEach(table => {
       if (sectionFilter !== "all" && table.sectionId !== sectionFilter) return;
       if (prefixFilter !== "all" && !table.name.startsWith(prefixFilter)) return;
-      if (!q) return true;
 
-      const tName = table.name.toLowerCase();
-      const secName = (table.section || "").toLowerCase();
-      return tName.includes(q) || secName.includes(q);
+      if (!rawQ) {
+        matchedTables.push({ score: 1, ...table });
+        return;
+      }
+
+      const tNameLower = table.name.toLowerCase();
+      const tTitleLower = (table.title || "").toLowerCase();
+      const tTopicLower = (table.topic || "").toLowerCase();
+      const tDescLower = (table.description || "").toLowerCase();
+
+      const tNameNorm = DocxTableParser ? DocxTableParser.removeAccents(tNameLower) : tNameLower;
+      const tTitleNorm = DocxTableParser ? DocxTableParser.removeAccents(tTitleLower) : tTitleLower;
+      const tTopicNorm = DocxTableParser ? DocxTableParser.removeAccents(tTopicLower) : tTopicLower;
+      const tDescNorm = DocxTableParser ? DocxTableParser.removeAccents(tDescLower) : tDescLower;
+
+      let score = 0;
+      if (tNameLower === q) score = 100;
+      else if (tNameLower.startsWith(q)) score = 80;
+      else if (tNameLower.includes(q)) score = 60;
+      else if (tTitleNorm.includes(qNorm)) score = 50;
+      else if (tTopicNorm.includes(qNorm)) score = 40;
+      else if (tDescNorm.includes(qNorm)) score = 30;
+      else if (tNameNorm.includes(qNorm)) score = 20;
+
+      if (score > 0) {
+        matchedTables.push({ score, ...table });
+      }
     });
+
+    matchedTables.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.name.localeCompare(b.name);
+    });
+
+    return matchedTables;
   }
 
   getTableByName(tableName) {
@@ -99,16 +167,17 @@ class SchemaLookupEngine {
     return this.schema.tables.find(t => t.name.toLowerCase() === tLower) || null;
   }
 
-  /**
-   * Generate SQL SELECT Template
-   */
   generateSelectSql(table) {
     if (!table || !table.columns) return "";
-    const colList = table.columns.map(c => `  ${c.name}`).join(",\n");
+    const colList = table.columns.map(c => `  ${c.name} -- ${c.description || ''}`).join(",\n");
     const pkCols = table.columns.filter(c => c.isPk).map(c => `${c.name} = ?`);
-    const whereClause = pkCols.length > 0 ? `WHERE ${pkCols.join(" AND ")}` : "-- WHERE condition";
+    const whereClause = pkCols.length > 0 ? `WHERE ${pkCols.join(" AND ")}` : "-- WHERE điều kiện";
 
-    return `-- Truy vấn dữ liệu bảng: ${table.name} (${table.columns.length} cột)
+    return `-- ===============================================================
+-- Bảng: ${table.name} (${table.title || ''})
+-- Chủ đề: ${table.topic || table.section}
+-- Tổng số cột/biến: ${table.columns.length} cột
+-- ===============================================================
 SELECT
 ${colList}
 FROM ${table.name}

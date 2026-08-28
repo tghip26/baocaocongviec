@@ -884,12 +884,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .item-col-name {
   font-family: var(--font-mono);
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   color: #fff;
 }
 
@@ -897,9 +897,16 @@ body {
   color: #fbbf24;
 }
 
+.item-card-desc {
+  font-size: 0.8rem;
+  color: #67e8f9;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
 .item-tbl-title {
   font-family: var(--font-mono);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #fff;
 }
 
@@ -918,13 +925,28 @@ body {
   justify-content: space-between;
   font-size: 0.74rem;
   color: var(--text-muted);
+  gap: 8px;
 }
 
 .item-tbl-name {
   font-family: var(--font-mono);
   color: #93c5fd;
   font-weight: 500;
-  max-width: 200px;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-topic-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.15);
+  color: #93c5fd;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  padding: 2px 8px;
+  border-radius: 10px;
+  max-width: 170px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -989,7 +1011,7 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   background: rgba(255, 255, 255, 0.02);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
@@ -1014,6 +1036,21 @@ body {
   color: #fff;
 }
 
+.inspector-tbl-vntitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #67e8f9;
+  margin-bottom: 4px;
+}
+
+.inspector-tbl-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
 .inspector-badge {
   font-size: 0.68rem;
   font-weight: 700;
@@ -1024,9 +1061,25 @@ body {
   border-radius: 12px;
 }
 
+.inspector-topic-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(139, 92, 246, 0.15);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
 .inspector-section-tag {
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+.col-vn-desc {
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  font-weight: 500;
 }
 
 .inspector-col-count {

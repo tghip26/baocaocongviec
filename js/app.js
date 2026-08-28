@@ -138,8 +138,10 @@ class AppController {
     this.inspectorEmptyState = document.getElementById("inspectorEmptyState");
     this.inspectorContent = document.getElementById("inspectorContent");
     this.inspectorTableName = document.getElementById("inspectorTableName");
+    this.inspectorTableVnTitle = document.getElementById("inspectorTableVnTitle");
+    this.inspectorTableTopic = document.getElementById("inspectorTableTopic");
+    this.inspectorTableDesc = document.getElementById("inspectorTableDesc");
     this.inspectorTableType = document.getElementById("inspectorTableType");
-    this.inspectorTableSection = document.getElementById("inspectorTableSection");
     this.inspectorTableColCount = document.getElementById("inspectorTableColCount");
     this.btnCopySqlSelect = document.getElementById("btnCopySqlSelect");
     this.btnExportTableExcel = document.getElementById("btnExportTableExcel");
@@ -694,13 +696,13 @@ class AppController {
       if (results.length === 0) {
         this.schemaResultsList.innerHTML = `
           <div class="schema-no-results">
-            <span>🔍 Không tìm thấy biến nào có tên chứa "<strong>${query}</strong>"</span>
+            <span>🔍 Không tìm thấy biến hoặc ý nghĩa nào chứa "<strong>${query}</strong>"</span>
           </div>
         `;
         return;
       }
 
-      // Group or display results
+      // Render column cards with Vietnamese meaning and topic
       results.slice(0, 200).forEach(item => {
         const row = document.createElement("div");
         row.className = "schema-item-card";
@@ -711,9 +713,12 @@ class AppController {
             </span>
             <span class="item-type-badge type-${this.getTypeClass(item.colType)}">${item.colType}</span>
           </div>
+          <div class="item-card-desc">
+            <span>💡 <strong>${item.colDesc}</strong></span>
+          </div>
           <div class="item-card-bottom">
-            <span class="item-tbl-name">📋 ${item.tableName}</span>
-            <span class="item-sec-name">${item.tableSection}</span>
+            <span class="item-tbl-name" title="${item.tableName} (${item.tableTitle})">📋 ${item.tableName} &bull; ${item.tableTitle}</span>
+            <span class="item-topic-badge">${item.tableTopic}</span>
           </div>
         `;
 
@@ -726,7 +731,6 @@ class AppController {
         this.schemaResultsList.appendChild(row);
       });
 
-      // Automatically inspect first result if none currently inspected
       if (!this.currentInspectedTable && results.length > 0) {
         this.inspectTable(results[0].tableName, results[0].colName);
         this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
@@ -740,7 +744,7 @@ class AppController {
       if (results.length === 0) {
         this.schemaResultsList.innerHTML = `
           <div class="schema-no-results">
-            <span>🔍 Không tìm thấy bảng nào có tên chứa "<strong>${query}</strong>"</span>
+            <span>🔍 Không tìm thấy bảng nào chứa "<strong>${query}</strong>"</span>
           </div>
         `;
         return;
@@ -754,9 +758,12 @@ class AppController {
             <span class="item-tbl-title">📋 <strong>${tbl.name}</strong></span>
             <span class="item-col-badge">${tbl.columns.length} cột</span>
           </div>
+          <div class="item-card-desc">
+            <span>🏢 <strong>${tbl.title || tbl.name}</strong></span>
+          </div>
           <div class="item-card-bottom">
+            <span class="item-topic-badge">${tbl.topic || tbl.section}</span>
             <span class="item-badge-type">${tbl.type}</span>
-            <span class="item-sec-name">${tbl.section}</span>
           </div>
         `;
 
@@ -785,8 +792,10 @@ class AppController {
     this.inspectorContent.classList.remove("hidden");
 
     this.inspectorTableName.textContent = table.name;
+    this.inspectorTableVnTitle.textContent = table.title || table.name;
+    this.inspectorTableTopic.textContent = table.topic || table.section;
+    this.inspectorTableDesc.textContent = table.description || `Bảng dữ liệu ${table.name}`;
     this.inspectorTableType.textContent = table.type;
-    this.inspectorTableSection.textContent = table.section;
     this.inspectorTableColCount.textContent = `Tổng cộng: ${table.columns.length} cột / biến`;
 
     this.inspectorColumnFilterInput.value = "";
@@ -804,11 +813,14 @@ class AppController {
       }
 
       tr.innerHTML = `
-        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+        <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${idx + 1}</td>
         <td>
           <span class="col-name-link ${col.isPk ? 'is-pk' : ''}" title="Bấm để tìm tất cả bảng có chứa biến ${col.name}">
             ${col.isPk ? '🔑 ' : ''}<strong>${col.name}</strong>
           </span>
+        </td>
+        <td>
+          <span class="col-vn-desc">${col.description || 'Trường dữ liệu'}</span>
         </td>
         <td>
           <span class="col-type-tag type-${this.getTypeClass(col.type)}">${col.type}</span>
@@ -836,8 +848,14 @@ class AppController {
   filterInspectorColumns(filterText) {
     if (!this.currentInspectedTable) return;
     const term = (filterText || "").trim().toLowerCase();
+    const termNorm = DocxTableParser ? DocxTableParser.removeAccents(term) : term;
+
     const filtered = this.currentInspectedTable.columns.filter(c => {
-      return c.name.toLowerCase().includes(term) || c.type.toLowerCase().includes(term);
+      const cNameNorm = DocxTableParser ? DocxTableParser.removeAccents(c.name.toLowerCase()) : c.name.toLowerCase();
+      const cDescNorm = DocxTableParser ? DocxTableParser.removeAccents((c.description || "").toLowerCase()) : (c.description || "").toLowerCase();
+      const cTypeNorm = (c.type || "").toLowerCase();
+
+      return cNameNorm.includes(termNorm) || cDescNorm.includes(termNorm) || cTypeNorm.includes(term);
     });
     this.renderInspectorColumns(filtered);
   }
@@ -858,9 +876,14 @@ class AppController {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet(table.name.slice(0, 30));
 
+    // Title Row
+    ws.addRow([`TỪ ĐIỂN CẤU TRÚC BẢNG: ${table.name} - ${table.title || ''}`]);
+    ws.addRow([`Chủ đề: ${table.topic || table.section} | Tổng số cột: ${table.columns.length}`]);
+    ws.addRow([]);
+
     // Headers
-    ws.addRow(["STT", "Tên Biến / Tên Cột", "Kiểu Dữ Liệu", "Khóa Chính (PK)", "Cho Phép NULL", "Giá Trị Mặc Định"]);
-    const headerRow = ws.getRow(1);
+    ws.addRow(["STT", "Tên Biến / Cột", "Ý Nghĩa / Ghi Chú Nghiệp Vụ (Tiếng Việt)", "Kiểu Dữ Liệu", "Khóa Chính (PK)", "Cho Phép NULL", "Giá Trị Mặc Định"]);
+    const headerRow = ws.getRow(4);
     headerRow.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
     headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } };
     headerRow.alignment = { vertical: "middle", horizontal: "center" };
@@ -870,6 +893,7 @@ class AppController {
       const row = ws.addRow([
         idx + 1,
         c.name,
+        c.description || "",
         c.type,
         c.isPk ? "YES (PK)" : "NO",
         c.nullable ? "YES" : "NO",
@@ -878,17 +902,18 @@ class AppController {
       row.font = { name: "Arial", size: 10 };
       row.alignment = { vertical: "middle" };
       row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
-      row.getCell(4).alignment = { vertical: "middle", horizontal: "center" };
       row.getCell(5).alignment = { vertical: "middle", horizontal: "center" };
+      row.getCell(6).alignment = { vertical: "middle", horizontal: "center" };
     });
 
     ws.columns = [
       { width: 8 },
-      { width: 30 },
-      { width: 25 },
+      { width: 28 },
+      { width: 45 },
+      { width: 22 },
       { width: 16 },
       { width: 16 },
-      { width: 40 }
+      { width: 35 }
     ];
 
     const buffer = await wb.xlsx.writeBuffer();
