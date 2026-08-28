@@ -1368,20 +1368,20 @@ ${this.currentW2hHtmlOutput}
 
   applyW2hPreset(preset) {
     if (preset === "article") {
-      if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+      if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
       if (this.w2hFontSize) this.w2hFontSize.value = "16px";
       if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
       if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
       if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
       if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
       if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
-      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "10px";
+      if (this.w2hMarginBottom) this.w2hMarginBottom.value = "6px";
       if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
       if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
       if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
       if (this.w2hTableZebra) this.w2hTableZebra.checked = false;
       if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
+      if (this.w2hAutoHeading) this.w2hAutoHeading.checked = false;
     } else if (preset === "admin") {
       if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
       if (this.w2hFontSize) this.w2hFontSize.value = "15px";
@@ -1413,7 +1413,7 @@ ${this.currentW2hHtmlOutput}
       if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
       if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
     } else if (preset === "compact") {
-      if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+      if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
       if (this.w2hFontSize) this.w2hFontSize.value = "14px";
       if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#222222";
       if (this.w2hTextColorText) this.w2hTextColorText.value = "#222222";
@@ -1437,14 +1437,14 @@ ${this.currentW2hHtmlOutput}
   }
 
   resetW2hSettings() {
-    if (this.w2hFontFamily) this.w2hFontFamily.value = "Arial, sans-serif";
+    if (this.w2hFontFamily) this.w2hFontFamily.value = "'Times New Roman', Times, serif";
     if (this.w2hFontSize) this.w2hFontSize.value = "16px";
     if (this.w2hTextColorPicker) this.w2hTextColorPicker.value = "#333333";
     if (this.w2hTextColorText) this.w2hTextColorText.value = "#333333";
     if (this.w2hTextAlign) this.w2hTextAlign.value = "justify";
     if (this.w2hTextIndent) this.w2hTextIndent.value = "none";
     if (this.w2hLineHeight) this.w2hLineHeight.value = "1.6";
-    if (this.w2hMarginBottom) this.w2hMarginBottom.value = "10px";
+    if (this.w2hMarginBottom) this.w2hMarginBottom.value = "6px";
     if (this.w2hPreserveLayoutTables) this.w2hPreserveLayoutTables.checked = true;
     if (this.w2hTableBorder) this.w2hTableBorder.checked = true;
     if (this.w2hTableHeaderBg) this.w2hTableHeaderBg.checked = true;
@@ -1453,7 +1453,7 @@ ${this.currentW2hHtmlOutput}
     if (this.w2hEmbedImages) this.w2hEmbedImages.checked = true;
     if (this.w2hCleanEmpty) this.w2hCleanEmpty.checked = true;
     if (this.w2hCollapseSpaces) this.w2hCollapseSpaces.checked = true;
-    if (this.w2hAutoHeading) this.w2hAutoHeading.checked = true;
+    if (this.w2hAutoHeading) this.w2hAutoHeading.checked = false;
 
     document.querySelectorAll(".chip-color").forEach(c => {
       c.classList.toggle("active", c.dataset.color === "#333333");
@@ -1463,8 +1463,6 @@ ${this.currentW2hHtmlOutput}
       b.classList.toggle("active", b.dataset.preset === "article");
     });
 
-    this.reconvertCurrentW2hDocument();
-    this.showToast("Đã khôi phục cài đặt chuyển đổi mặc định!", "info");
   }
 
   // =========================================================================
