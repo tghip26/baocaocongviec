@@ -190,6 +190,8 @@ class AppController {
 
     this.btnTabW2hVisual = document.getElementById("btnTabW2hVisual");
     this.btnTabW2hCode = document.getElementById("btnTabW2hCode");
+    this.btnTabW2hSplit = document.getElementById("btnTabW2hSplit");
+    this.btnRevertOriginalHtml = document.getElementById("btnRevertOriginalHtml");
     this.btnCopyHtmlCode = document.getElementById("btnCopyHtmlCode");
     this.btnCopyRichText = document.getElementById("btnCopyRichText");
     this.btnDownloadHtml = document.getElementById("btnDownloadHtml");
@@ -200,6 +202,7 @@ class AppController {
     this.w2hStatTables = document.getElementById("w2hStatTables");
     this.w2hStatImages = document.getElementById("w2hStatImages");
 
+    this.w2hDisplayWorkspace = document.getElementById("w2hDisplayWorkspace");
     this.w2hVisualContainer = document.getElementById("w2hVisualContainer");
     this.w2hEmptyState = document.getElementById("w2hEmptyState");
     this.w2hArticleSheet = document.getElementById("w2hArticleSheet");
@@ -544,12 +547,14 @@ class AppController {
       this.btnResetW2hSettings.addEventListener("click", () => this.resetW2hSettings());
     }
 
-    // Tab Switcher (Visual Preview vs HTML Source Code)
+    // Tab Switcher (Visual Preview vs HTML Code Editor vs Split View)
     if (this.btnTabW2hVisual) {
       this.btnTabW2hVisual.addEventListener("click", () => {
         this.w2hCurrentTab = "visual";
         this.btnTabW2hVisual.classList.add("active");
-        this.btnTabW2hCode.classList.remove("active");
+        if (this.btnTabW2hCode) this.btnTabW2hCode.classList.remove("active");
+        if (this.btnTabW2hSplit) this.btnTabW2hSplit.classList.remove("active");
+        if (this.w2hDisplayWorkspace) this.w2hDisplayWorkspace.classList.remove("split-mode");
         this.w2hVisualContainer.classList.remove("hidden");
         this.w2hCodeContainer.classList.add("hidden");
       });
@@ -559,9 +564,37 @@ class AppController {
       this.btnTabW2hCode.addEventListener("click", () => {
         this.w2hCurrentTab = "code";
         this.btnTabW2hCode.classList.add("active");
-        this.btnTabW2hVisual.classList.remove("active");
+        if (this.btnTabW2hVisual) this.btnTabW2hVisual.classList.remove("active");
+        if (this.btnTabW2hSplit) this.btnTabW2hSplit.classList.remove("active");
+        if (this.w2hDisplayWorkspace) this.w2hDisplayWorkspace.classList.remove("split-mode");
         this.w2hVisualContainer.classList.add("hidden");
         this.w2hCodeContainer.classList.remove("hidden");
+      });
+    }
+
+    if (this.btnTabW2hSplit) {
+      this.btnTabW2hSplit.addEventListener("click", () => {
+        this.w2hCurrentTab = "split";
+        this.btnTabW2hSplit.classList.add("active");
+        if (this.btnTabW2hVisual) this.btnTabW2hVisual.classList.remove("active");
+        if (this.btnTabW2hCode) this.btnTabW2hCode.classList.remove("active");
+        if (this.w2hDisplayWorkspace) this.w2hDisplayWorkspace.classList.add("split-mode");
+        this.w2hVisualContainer.classList.remove("hidden");
+        this.w2hCodeContainer.classList.remove("hidden");
+      });
+    }
+
+    // Direct Live HTML Code Edit Event
+    if (this.w2hHtmlRawTextarea) {
+      this.w2hHtmlRawTextarea.addEventListener("input", () => {
+        this.handleDirectHtmlCodeEdit();
+      });
+    }
+
+    // Revert Original Word Code Button
+    if (this.btnRevertOriginalHtml) {
+      this.btnRevertOriginalHtml.addEventListener("click", () => {
+        this.revertToOriginalWordHtml();
       });
     }
 
@@ -1274,6 +1307,7 @@ class AppController {
     try {
       const result = await this.w2hConverter.convertDocxToHtml(this.currentW2hFileBuffer, this.currentW2hFileName);
       this.currentW2hHtmlOutput = result.html;
+      this.originalWordHtml = result.html; // Lưu giữ bản sao mã gốc ban đầu từ Word
 
       // Update Visual Preview Sheet
       if (this.w2hArticleSheet) {
@@ -1295,6 +1329,66 @@ class AppController {
       console.error("Lỗi chuyển đổi Word to HTML:", err);
       this.showToast(`Lỗi xử lý file: ${err.message}`, "error");
     }
+  }
+
+  handleDirectHtmlCodeEdit() {
+    if (!this.w2hHtmlRawTextarea) return;
+
+    const editedCode = this.w2hHtmlRawTextarea.value;
+    this.currentW2hHtmlOutput = editedCode;
+
+    // Cập nhật ngay lập tức sang khung Visual Preview theo thời gian thực
+    if (this.w2hArticleSheet) {
+      this.w2hArticleSheet.innerHTML = editedCode;
+      this.w2hArticleSheet.classList.remove("hidden");
+    }
+    if (this.w2hEmptyState) {
+      this.w2hEmptyState.classList.toggle("hidden", !!editedCode.trim());
+    }
+
+    // Tự động tính toán lại thống kê (từ, ký tự, đoạn văn, bảng, ảnh)
+    try {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = editedCode;
+      const text = tempDiv.innerText || "";
+      const words = text.split(/\s+/).filter(w => w.length > 0);
+      const paragraphs = tempDiv.querySelectorAll("p, div, li").length;
+      const tables = tempDiv.querySelectorAll("table").length;
+      const images = tempDiv.querySelectorAll("img").length;
+
+      this.updateW2hStats({
+        wordCount: words.length,
+        charCount: text.length,
+        paragraphCount: paragraphs,
+        tableCount: tables,
+        imageCount: images
+      });
+    } catch (e) {
+      // Bỏ qua lỗi parsing tạm thời khi đang gõ dở
+    }
+  }
+
+  revertToOriginalWordHtml() {
+    if (!this.originalWordHtml) {
+      this.showToast("Chưa có đoạn mã gốc từ file Word để khôi phục!", "warning");
+      return;
+    }
+
+    this.currentW2hHtmlOutput = this.originalWordHtml;
+
+    if (this.w2hHtmlRawTextarea) {
+      this.w2hHtmlRawTextarea.value = this.originalWordHtml;
+    }
+    if (this.w2hArticleSheet) {
+      this.w2hArticleSheet.innerHTML = this.originalWordHtml;
+      this.w2hArticleSheet.classList.remove("hidden");
+    }
+    if (this.w2hEmptyState) {
+      this.w2hEmptyState.classList.add("hidden");
+    }
+
+    this.handleDirectHtmlCodeEdit();
+    this.showToast("Đã khôi phục lại đoạn mã ban đầu của file Word!", "success");
   }
 
   updateW2hStats(stats) {

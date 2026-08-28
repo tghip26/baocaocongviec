@@ -582,20 +582,29 @@ https://domain.com/images/anh2.jpg"></textarea>
             <div class="w2h-main-panel">
               
               <!-- Top Toolbar: Tabs & Copy Actions -->
+              <!-- Top Toolbar: Tabs & Copy Actions -->
               <div class="w2h-output-toolbar">
                 <div class="w2h-tab-switcher">
                   <button type="button" class="w2h-tab-btn active" id="btnTabW2hVisual">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <span>👁️ Xem Trước Bài Viết (Visual Preview)</span>
+                    <span>👁️ Xem Trước (Preview)</span>
                   </button>
                   <button type="button" class="w2h-tab-btn" id="btnTabW2hCode">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    <span>💻 Mã HTML & Inline CSS (Source Code)</span>
+                    <span>✏️ Sửa Mã HTML (Code Editor)</span>
+                  </button>
+                  <button type="button" class="w2h-tab-btn" id="btnTabW2hSplit">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                    <span>⚡ Chia Đôi (Split View)</span>
                   </button>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="w2h-action-btns">
+                  <button type="button" class="btn-w2h-action btn-revert-original" id="btnRevertOriginalHtml" title="Khôi phục về đoạn mã HTML ban đầu được tạo từ file Word">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+                    <span>🔄 Mã gốc ban đầu</span>
+                  </button>
                   <button type="button" class="btn-w2h-action btn-copy-html" id="btnCopyHtmlCode" title="Sao chép mã HTML để dán vào tab [Mã HTML] của CMS">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     <span>📋 Sao chép mã HTML</span>
@@ -617,28 +626,35 @@ https://domain.com/images/anh2.jpg"></textarea>
                 <div class="stat-pill"><span class="stat-num" id="w2hStatChars">0</span> ký tự</div>
                 <div class="stat-pill"><span class="stat-num" id="w2hStatParagraphs">0</span> đoạn văn</div>
                 <div class="stat-pill"><span class="stat-num" id="w2hStatTables">0</span> bảng biểu</div>
-                <div class="stat-pill"><span class="stat-num" id="w2hStatImages">0</span> ảnh nhúng (Base64)</div>
+                <div class="stat-pill"><span class="stat-num" id="w2hStatImages">0</span> ảnh</div>
               </div>
 
-              <!-- Output Container: Visual Preview Screen -->
-              <div class="w2h-visual-container" id="w2hVisualContainer">
-                <div class="w2h-empty-state" id="w2hEmptyState">
-                  <div class="empty-icon">📝</div>
-                  <h3>Chưa có tài liệu Word nào được tải lên</h3>
-                  <p>Hãy kéo & thả file Word (.docx) bài viết hoặc công văn vào khung bên trái để tự động tạo mã HTML & CSS Inline chuẩn đăng website.</p>
+              <!-- Output Workspace: Holds Visual Preview and/or Code Editor -->
+              <div class="w2h-display-workspace" id="w2hDisplayWorkspace">
+                
+                <!-- Visual Preview Screen -->
+                <div class="w2h-visual-container" id="w2hVisualContainer">
+                  <div class="w2h-empty-state" id="w2hEmptyState">
+                    <div class="empty-icon">📝</div>
+                    <h3>Chưa có tài liệu Word nào được tải lên</h3>
+                    <p>Hãy kéo & thả file Word (.docx) bài viết hoặc công văn vào khung bên trái để tự động tạo mã HTML & CSS Inline chuẩn đăng website.</p>
+                  </div>
+                  <div class="w2h-article-sheet hidden" id="w2hArticleSheet">
+                    <!-- Rendered Article HTML injected here -->
+                  </div>
                 </div>
-                <div class="w2h-article-sheet hidden" id="w2hArticleSheet">
-                  <!-- Rendered Article HTML injected here -->
-                </div>
-              </div>
 
-              <!-- Output Container: HTML Code Box -->
-              <div class="w2h-code-container hidden" id="w2hCodeContainer">
-                <div class="code-box-header">
-                  <span class="code-lang-tag">HTML + Inline CSS</span>
-                  <span class="code-note-tag">💡 Dán trực tiếp vào tab <strong>[Mã HTML / Source]</strong> của trình soạn thảo CMS website</span>
+                <!-- HTML Code Box with Direct Live Edit -->
+                <div class="w2h-code-container hidden" id="w2hCodeContainer">
+                  <div class="code-box-header">
+                    <div class="code-header-left">
+                      <span class="code-lang-tag">HTML + Inline CSS</span>
+                      <span class="code-note-tag">✏️ Sửa trực tiếp code dưới đây - Xem trước cập nhật ngay!</span>
+                    </div>
+                  </div>
+                  <textarea id="w2hHtmlRawTextarea" class="w2h-code-textarea" spellcheck="false" placeholder="Mã HTML & CSS Inline sẽ xuất hiện tại đây. Bạn có thể sửa trực tiếp bất cứ lúc nào..."></textarea>
                 </div>
-                <textarea id="w2hHtmlRawTextarea" class="w2h-code-textarea" readonly spellcheck="false" placeholder="Mã HTML & CSS Inline sẽ xuất hiện tại đây..."></textarea>
+
               </div>
 
             </div>
