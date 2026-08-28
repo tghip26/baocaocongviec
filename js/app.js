@@ -558,10 +558,9 @@ class AppController {
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
-    if (!this.schemaSearchInput.value) {
-      this.schemaSearchInput.value = "patientno";
-      if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.remove("hidden");
-    }
+    // Khởi tạo ô tìm kiếm hoàn toàn trống
+    this.schemaSearchInput.value = "";
+    if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.add("hidden");
     this.performSchemaSearch();
   }
 
@@ -689,9 +688,58 @@ class AppController {
 
     this.schemaResultsList.innerHTML = "";
 
+    // KHI Ô TÌM KIẾM TRỐNG: Hiển thị đầy đủ toàn bộ danh sách các bảng dữ liệu
+    if (!query) {
+      const allTables = window.schemaLookupEngine.searchByTable("", section, prefix);
+      this.schemaResultCount.textContent = `Danh sách toàn bộ ${allTables.length} bảng CSDL VIMES (Nhập từ khóa để tìm biến hoặc bảng)`;
+
+      if (allTables.length === 0) {
+        this.schemaResultsList.innerHTML = `
+          <div class="schema-no-results">
+            <span>🔍 Không có bảng nào phù hợp với bộ lọc phân hệ/tiền tố</span>
+          </div>
+        `;
+        return;
+      }
+
+      allTables.forEach((tbl, idx) => {
+        const row = document.createElement("div");
+        row.className = "schema-item-card";
+        row.innerHTML = `
+          <div class="item-card-top">
+            <span class="item-tbl-title">📋 <strong>${tbl.name}</strong></span>
+            <span class="item-col-badge">${tbl.columns.length} cột</span>
+          </div>
+          <div class="item-card-desc">
+            <span>🏢 <strong>${tbl.title || tbl.name}</strong></span>
+          </div>
+          <div class="item-card-bottom">
+            <span class="item-topic-badge">${tbl.topic || tbl.section}</span>
+            <span class="item-badge-type">${tbl.type}</span>
+          </div>
+        `;
+
+        row.addEventListener("click", () => {
+          this.inspectTable(tbl.name);
+          this.schemaResultsList.querySelectorAll(".schema-item-card").forEach(c => c.classList.remove("selected"));
+          row.classList.add("selected");
+        });
+
+        this.schemaResultsList.appendChild(row);
+      });
+
+      // Tự động kiểm tra bảng đầu tiên nếu chưa có bảng nào được chọn
+      if (!this.currentInspectedTable && allTables.length > 0) {
+        this.inspectTable(allTables[0].name);
+        this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
+      }
+      return;
+    }
+
+    // KHI CÓ TỪ KHÓA TÌM KIẾM:
     if (this.schemaSearchMode === "column") {
       const results = window.schemaLookupEngine.searchByColumn(query, section, prefix);
-      this.schemaResultCount.textContent = `Tìm thấy ${results.length} vị trí biến khớp từ khóa`;
+      this.schemaResultCount.textContent = `Tìm thấy ${results.length} vị trí biến khớp từ khóa "${query}"`;
 
       if (results.length === 0) {
         this.schemaResultsList.innerHTML = `
@@ -731,7 +779,7 @@ class AppController {
         this.schemaResultsList.appendChild(row);
       });
 
-      if (!this.currentInspectedTable && results.length > 0) {
+      if (results.length > 0) {
         this.inspectTable(results[0].tableName, results[0].colName);
         this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
       }
@@ -739,7 +787,7 @@ class AppController {
     } else {
       // Table search mode
       const results = window.schemaLookupEngine.searchByTable(query, section, prefix);
-      this.schemaResultCount.textContent = `Tìm thấy ${results.length} bảng khớp từ khóa`;
+      this.schemaResultCount.textContent = `Tìm thấy ${results.length} bảng khớp từ khóa "${query}"`;
 
       if (results.length === 0) {
         this.schemaResultsList.innerHTML = `
@@ -776,7 +824,7 @@ class AppController {
         this.schemaResultsList.appendChild(row);
       });
 
-      if (!this.currentInspectedTable && results.length > 0) {
+      if (results.length > 0) {
         this.inspectTable(results[0].name);
         this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
       }
