@@ -684,9 +684,97 @@ body {
   transition: transform var(--transition-fast);
 }
 
-.tool-card:hover .btn-open-tool {
-  transform: translateX(4px);
+/* ==========================================================================
+   WORKSPACE NAVIGATION & BREADCRUMBS
+   ========================================================================== */
+.workspace-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 4px 0 12px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.btn-back {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.btn-back:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: #818cf8;
+  color: #fff;
+  transform: translateX(-2px);
+}
+
+.breadcrumb-trail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.trail-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color var(--transition-fast);
+}
+
+.trail-link:hover {
+  color: #fff;
+}
+
+.trail-sep {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.trail-current {
   color: #93c5fd;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Text Truncation Utility Helpers */
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ==========================================================================
@@ -3108,6 +3196,46 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+  }
+
+  /* Workspace Nav & Breadcrumb on Mobile with Ellipsis */
+  .workspace-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 2px 0 10px 0;
+    min-width: 0;
+    flex-wrap: nowrap;
+  }
+
+  .btn-back {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+
+  .breadcrumb-trail {
+    font-size: 0.75rem;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .breadcrumb-trail .trail-link,
+  .breadcrumb-trail .trail-sep {
+    display: none; /* Hide parent link on mobile to maximize title space with ellipsis */
+  }
+
+  .trail-current {
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    min-width: 0;
   }
 
   /* Workspace Header Titles */

@@ -51,6 +51,7 @@ class AppController {
 
     // Tool View Elements
     this.btnBackToHub = document.getElementById("btnBackToHub");
+    this.btnBackToHubFromW2h = document.getElementById("btnBackToHubFromW2h");
     this.toolBreadcrumb = document.getElementById("toolBreadcrumb");
     this.toolHeaderTitle = document.getElementById("toolHeaderTitle");
     this.toolHeaderSubtitle = document.getElementById("toolHeaderSubtitle");
@@ -272,6 +273,11 @@ class AppController {
     }
     if (this.btnBackFromSchema) {
       this.btnBackFromSchema.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+    if (this.btnBackToHubFromW2h) {
+      this.btnBackToHubFromW2h.addEventListener("click", () => {
         window.location.hash = "";
       });
     }
