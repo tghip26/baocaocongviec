@@ -38,6 +38,8 @@ class AppController {
     // Navigation & Views
     this.sidebar = document.getElementById("sidebar");
     this.sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+    this.btnSidebarClose = document.getElementById("btnSidebarClose");
+    this.sidebarBackdrop = document.getElementById("sidebarBackdrop");
     this.sidebarNav = document.getElementById("sidebarNav");
     this.hubView = document.getElementById("hubView");
     this.toolView = document.getElementById("toolView");
@@ -224,10 +226,41 @@ class AppController {
     // Hash change for SPA routing
     window.addEventListener("hashchange", () => this.handleUrlHash());
 
-    // Sidebar toggle
+    // Mobile Sidebar Drawer Toggle
     if (this.sidebarToggleBtn) {
       this.sidebarToggleBtn.addEventListener("click", () => {
-        this.sidebar.classList.toggle("open");
+        if (!this.sidebar) return;
+        const isOpen = this.sidebar.classList.toggle("open");
+        if (this.sidebarBackdrop) {
+          this.sidebarBackdrop.classList.toggle("active", isOpen);
+        }
+      });
+    }
+
+    // Mobile Sidebar Close Button
+    if (this.btnSidebarClose) {
+      this.btnSidebarClose.addEventListener("click", () => {
+        if (this.sidebar) this.sidebar.classList.remove("open");
+        if (this.sidebarBackdrop) this.sidebarBackdrop.classList.remove("active");
+      });
+    }
+
+    // Tap outside (backdrop) to close sidebar
+    if (this.sidebarBackdrop) {
+      this.sidebarBackdrop.addEventListener("click", () => {
+        if (this.sidebar) this.sidebar.classList.remove("open");
+        this.sidebarBackdrop.classList.remove("active");
+      });
+    }
+
+    // Auto-close sidebar on mobile when any menu link is tapped
+    if (this.sidebarNav) {
+      this.sidebarNav.addEventListener("click", (e) => {
+        const navItem = e.target.closest(".nav-item");
+        if (navItem && window.innerWidth <= 768) {
+          if (this.sidebar) this.sidebar.classList.remove("open");
+          if (this.sidebarBackdrop) this.sidebarBackdrop.classList.remove("active");
+        }
       });
     }
 

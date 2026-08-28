@@ -97,9 +97,52 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 24px 20px;
+  padding: 20px 18px;
   border-bottom: 1px solid var(--border-subtle);
   background: linear-gradient(180deg, rgba(37, 99, 235, 0.08) 0%, transparent 100%);
+  position: relative;
+}
+
+.btn-sidebar-close {
+  display: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all var(--transition-fast);
+}
+
+.btn-sidebar-close:hover {
+  background: rgba(248, 113, 113, 0.2);
+  color: #f87171;
+  border-color: #f87171;
+}
+
+/* Mobile Backdrop Overlay */
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9998;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-normal);
+}
+
+.sidebar-backdrop.active {
+  opacity: 1;
+  visibility: visible;
 }
 
 .brand-logo {
@@ -2895,6 +2938,17 @@ body {
    RESPONSIVE DESIGN (Tablets & Mobile Optimization)
    ========================================================================== */
 
+/* ==========================================================================
+   RESPONSIVE DESIGN (Tablets & Mobile Optimization)
+   ========================================================================== */
+
+/* Fluid Typography for headings across all screen sizes */
+h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
 /* Tablets & Small Laptops (<= 1024px) */
 @media (max-width: 1024px) {
   .w2h-layout-grid {
@@ -2914,16 +2968,17 @@ body {
 
 /* Mobile Devices & Small Tablets (<= 768px) */
 @media (max-width: 768px) {
-  /* App Shell & Navigation */
+  /* App Shell & Mobile Drawer */
   .app-sidebar {
     position: fixed;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 280px;
-    z-index: 9999;
+    width: 290px;
+    max-width: 85vw;
+    z-index: 99999;
     transform: translateX(-100%);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+    box-shadow: 6px 0 30px rgba(0, 0, 0, 0.7);
     transition: transform var(--transition-normal);
   }
 
@@ -2933,34 +2988,116 @@ body {
 
   .btn-sidebar-toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-sidebar-close {
+    display: flex;
+  }
+
+  /* App Header Bar */
+  .app-header {
+    padding: 10px 12px;
+    height: auto;
+    min-height: 54px;
+    gap: 8px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .header-search {
+    display: none; /* Hide heavy search bar on mobile header to prevent breaking header layout */
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .btn-header-config span {
+    display: none; /* Hide text on small screens, keep icon */
+  }
+
+  .badge-status {
+    padding: 3px 8px;
+    font-size: 0.7rem;
+  }
+
+  .btn-github-link {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  .btn-github-link span {
+    display: none;
   }
 
   .app-content {
     padding: 12px 10px;
   }
 
-  /* Hub Hero */
+  /* Hub Hero Typography & Layout */
   .hub-hero {
     flex-direction: column;
-    padding: 18px 16px;
+    padding: 18px 14px;
     gap: 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .hero-title {
+    font-size: clamp(1.2rem, 5.2vw, 1.55rem) !important;
+    line-height: 1.35 !important;
+    letter-spacing: -0.3px !important;
+    word-break: normal !important;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(0.78rem, 3.4vw, 0.88rem) !important;
+    line-height: 1.55 !important;
+    word-break: normal !important;
   }
 
   .hero-stats {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    gap: 6px;
   }
 
   .stat-card {
     min-width: 0;
-    padding: 10px 8px;
+    padding: 8px 6px;
+  }
+
+  .stat-val {
+    font-size: 1.25rem !important;
+  }
+
+  .stat-lbl {
+    font-size: 0.64rem !important;
   }
 
   .tool-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .tool-card {
+    padding: 16px;
+  }
+
+  .tool-card-title {
+    font-size: clamp(0.95rem, 4vw, 1.1rem) !important;
+    line-height: 1.35 !important;
+    word-break: normal !important;
+  }
+
+  .tool-card-desc {
+    font-size: 0.78rem !important;
+    line-height: 1.5 !important;
+    word-break: normal !important;
   }
 
   .quality-grid {
@@ -2973,6 +3110,19 @@ body {
     gap: 8px;
   }
 
+  /* Workspace Header Titles */
+  .workspace-title {
+    font-size: clamp(1.1rem, 4.5vw, 1.45rem) !important;
+    line-height: 1.35 !important;
+    word-break: normal !important;
+  }
+
+  .workspace-subtitle {
+    font-size: clamp(0.76rem, 2.8vw, 0.85rem) !important;
+    line-height: 1.5 !important;
+    word-break: normal !important;
+  }
+
   /* Word to HTML Converter Mobile Layout */
   .w2h-layout-grid {
     grid-template-columns: 1fr;
@@ -2980,7 +3130,7 @@ body {
   }
 
   .w2h-sidebar-panel {
-    order: 2; /* Move settings below editor on mobile when needed, or compact */
+    order: 2;
   }
 
   .w2h-main-panel {
@@ -3011,7 +3161,7 @@ body {
   }
 
   .w2h-tab-btn svg {
-    display: none; /* Hide icon on small mobile tabs to prevent text truncation */
+    display: none;
   }
 
   .w2h-action-btns {
@@ -3029,7 +3179,7 @@ body {
   }
 
   .btn-toggle-sidebar {
-    grid-column: span 2; /* Full width for sidebar toggle */
+    grid-column: span 2;
   }
 
   /* Sleek Stats Bar on Mobile */
