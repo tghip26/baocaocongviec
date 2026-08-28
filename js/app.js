@@ -1,8 +1,8 @@
 /**
  * app.js
- * Master Application Controller for Multi-tool Portal
+ * Master Application Controller for Multi-tool Portal & VIMES Schema Explorer
  * Single Page Application (SPA) architecture, dynamic tool router, interactive live data editor,
- * data quality metrics, custom target organization configurations.
+ * VIMES Schema variable & table lookup engine, SQL generator.
  */
 
 class AppController {
@@ -10,11 +10,15 @@ class AppController {
     this.currentToolId = null;
     this.currentCategory = "all";
     this.selectedFiles = {
-      primary: [], // Single Excel or Multi Word
-      secondary: [] // SSO Excel files if applicable
+      primary: [],
+      secondary: []
     };
     this.isProcessing = false;
     this.lastResult = null;
+
+    // Schema Explorer State
+    this.schemaSearchMode = "column"; // "column" | "table"
+    this.currentInspectedTable = null;
 
     this.initElements();
     this.initEvents();
@@ -30,6 +34,7 @@ class AppController {
     this.sidebarNav = document.getElementById("sidebarNav");
     this.hubView = document.getElementById("hubView");
     this.toolView = document.getElementById("toolView");
+    this.schemaView = document.getElementById("schemaView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
@@ -98,6 +103,13 @@ class AppController {
     this.btnSaveConfig = document.getElementById("btnSaveConfig");
     this.btnResetConfigDefault = document.getElementById("btnResetConfigDefault");
 
+    // SQL Modal Elements
+    this.modalSqlView = document.getElementById("modalSqlView");
+    this.sqlModalTitle = document.getElementById("sqlModalTitle");
+    this.sqlCodeContent = document.getElementById("sqlCodeContent");
+    this.btnCopySqlInModal = document.getElementById("btnCopySqlInModal");
+    this.btnCloseSqlModal = document.getElementById("btnCloseSqlModal");
+
     // Modals
     this.modalDayRange = document.getElementById("modalDayRange");
     this.dayModalInfo = document.getElementById("dayModalInfo");
@@ -110,6 +122,29 @@ class AppController {
     this.sheetDropdown = document.getElementById("sheetDropdown");
     this.btnConfirmSheet = document.getElementById("btnConfirmSheet");
     this.btnCloseSheetModal = document.getElementById("btnCloseSheetModal");
+
+    // Schema Explorer Elements
+    this.btnBackFromSchema = document.getElementById("btnBackFromSchema");
+    this.btnModeColumn = document.getElementById("btnModeColumn");
+    this.btnModeTable = document.getElementById("btnModeTable");
+    this.schemaSearchInput = document.getElementById("schemaSearchInput");
+    this.btnClearSchemaSearch = document.getElementById("btnClearSchemaSearch");
+    this.selectSchemaSection = document.getElementById("selectSchemaSection");
+    this.selectSchemaPrefix = document.getElementById("selectSchemaPrefix");
+    this.popularTagsList = document.getElementById("popularTagsList");
+    this.schemaResultCount = document.getElementById("schemaResultCount");
+    this.schemaResultsList = document.getElementById("schemaResultsList");
+
+    this.inspectorEmptyState = document.getElementById("inspectorEmptyState");
+    this.inspectorContent = document.getElementById("inspectorContent");
+    this.inspectorTableName = document.getElementById("inspectorTableName");
+    this.inspectorTableType = document.getElementById("inspectorTableType");
+    this.inspectorTableSection = document.getElementById("inspectorTableSection");
+    this.inspectorTableColCount = document.getElementById("inspectorTableColCount");
+    this.btnCopySqlSelect = document.getElementById("btnCopySqlSelect");
+    this.btnExportTableExcel = document.getElementById("btnExportTableExcel");
+    this.inspectorColumnFilterInput = document.getElementById("inspectorColumnFilterInput");
+    this.inspectorColumnsBody = document.getElementById("inspectorColumnsBody");
 
     // Toast Container
     this.toastContainer = document.getElementById("toastContainer");
@@ -132,8 +167,13 @@ class AppController {
         window.location.hash = "";
       });
     }
+    if (this.btnBackFromSchema) {
+      this.btnBackFromSchema.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
 
-    // Search input
+    // Global Search input
     if (this.globalSearchInput) {
       this.globalSearchInput.addEventListener("input", (e) => {
         this.renderToolGrid(e.target.value);
@@ -233,11 +273,105 @@ class AppController {
     }
 
     // Modal Events
-    if (this.btnCloseDayModal) {
-      this.btnCloseDayModal.addEventListener("click", () => this.hideModal(this.modalDayRange));
+    if (this.btnCloseDayModal) this.btnCloseDayModal.addEventListener("click", () => this.hideModal(this.modalDayRange));
+    if (this.btnCloseSheetModal) this.btnCloseSheetModal.addEventListener("click", () => this.hideModal(this.modalSheetSelect));
+
+    // SQL Modal Events
+    if (this.btnCloseSqlModal) this.btnCloseSqlModal.addEventListener("click", () => this.hideModal(this.modalSqlView));
+    if (this.btnCopySqlInModal) {
+      this.btnCopySqlInModal.addEventListener("click", () => {
+        navigator.clipboard.writeText(this.sqlCodeContent.textContent).then(() => {
+          this.showToast("Đã sao chép câu lệnh SQL vào Clipboard!", "success");
+        });
+      });
     }
-    if (this.btnCloseSheetModal) {
-      this.btnCloseSheetModal.addEventListener("click", () => this.hideModal(this.modalSheetSelect));
+
+    // ==========================================
+    // SCHEMA LOOKUP EVENTS
+    // ==========================================
+    if (this.btnModeColumn) {
+      this.btnModeColumn.addEventListener("click", () => {
+        this.schemaSearchMode = "column";
+        this.btnModeColumn.classList.add("active");
+        this.btnModeTable.classList.remove("active");
+        this.schemaSearchInput.placeholder = "Nhập tên biến/cột (ví dụ: patientno, docno, invoiceno, doctor_id, card_id, roomid, icd10)...";
+        this.performSchemaSearch();
+      });
+    }
+
+    if (this.btnModeTable) {
+      this.btnModeTable.addEventListener("click", () => {
+        this.schemaSearchMode = "table";
+        this.btnModeTable.classList.add("active");
+        this.btnModeColumn.classList.remove("active");
+        this.schemaSearchInput.placeholder = "Nhập tên bảng (ví dụ: hms_patient, hms_doc, m_transaction, sys_user, hms_fee)...";
+        this.performSchemaSearch();
+      });
+    }
+
+    if (this.schemaSearchInput) {
+      this.schemaSearchInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim();
+        if (this.btnClearSchemaSearch) {
+          this.btnClearSchemaSearch.classList.toggle("hidden", !val);
+        }
+        this.performSchemaSearch();
+      });
+    }
+
+    if (this.btnClearSchemaSearch) {
+      this.btnClearSchemaSearch.addEventListener("click", () => {
+        this.schemaSearchInput.value = "";
+        this.btnClearSchemaSearch.classList.add("hidden");
+        this.schemaSearchInput.focus();
+        this.performSchemaSearch();
+      });
+    }
+
+    if (this.selectSchemaSection) {
+      this.selectSchemaSection.addEventListener("change", () => this.performSchemaSearch());
+    }
+
+    if (this.selectSchemaPrefix) {
+      this.selectSchemaPrefix.addEventListener("change", () => this.performSchemaSearch());
+    }
+
+    if (this.popularTagsList) {
+      this.popularTagsList.addEventListener("click", (e) => {
+        const tagBtn = e.target.closest(".pop-tag");
+        if (tagBtn) {
+          const val = tagBtn.dataset.val;
+          this.schemaSearchMode = "column";
+          this.btnModeColumn.classList.add("active");
+          this.btnModeTable.classList.remove("active");
+          this.schemaSearchInput.value = val;
+          if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.remove("hidden");
+          this.performSchemaSearch();
+        }
+      });
+    }
+
+    if (this.inspectorColumnFilterInput) {
+      this.inspectorColumnFilterInput.addEventListener("input", (e) => {
+        this.filterInspectorColumns(e.target.value);
+      });
+    }
+
+    if (this.btnCopySqlSelect) {
+      this.btnCopySqlSelect.addEventListener("click", () => {
+        if (!this.currentInspectedTable) return;
+        const sql = window.schemaLookupEngine.generateSelectSql(this.currentInspectedTable);
+        this.sqlModalTitle.textContent = `CÂU LỆNH SQL SELECT: ${this.currentInspectedTable.name}`;
+        this.sqlCodeContent.textContent = sql;
+        this.showModal(this.modalSqlView);
+      });
+    }
+
+    if (this.btnExportTableExcel) {
+      this.btnExportTableExcel.addEventListener("click", () => {
+        if (!this.currentInspectedTable) return;
+        this.exportTableDictionaryToExcel(this.currentInspectedTable);
+      });
     }
   }
 
@@ -387,6 +521,8 @@ class AppController {
     const hash = window.location.hash.replace(/^#\/?/, "").trim();
     if (!hash || hash === "hub" || hash === "all") {
       this.showHubView();
+    } else if (hash === "schema-lookup") {
+      this.showSchemaView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
@@ -401,6 +537,7 @@ class AppController {
     this.currentToolId = null;
     this.hubView.classList.remove("hidden");
     this.toolView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -408,12 +545,36 @@ class AppController {
     });
   }
 
+  showSchemaView() {
+    this.currentToolId = "schema-lookup";
+    this.hubView.classList.add("hidden");
+    this.toolView.classList.add("hidden");
+    this.schemaView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "schema-lookup");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!this.schemaSearchInput.value) {
+      this.schemaSearchInput.value = "patientno";
+      if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.remove("hidden");
+    }
+    this.performSchemaSearch();
+  }
+
   showToolView(toolId) {
+    if (toolId === "schema-lookup") {
+      this.showSchemaView();
+      return;
+    }
+
     const tool = window.getToolById(toolId);
     if (!tool) return;
 
     this.currentToolId = toolId;
     this.hubView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
     this.toolView.classList.remove("hidden");
     this.resetToolState();
     this.loadOrgConfigToUi();
@@ -516,6 +677,237 @@ class AppController {
     });
   }
 
+  // =========================================================================
+  // SCHEMA LOOKUP METHODS
+  // =========================================================================
+  performSchemaSearch() {
+    const query = this.schemaSearchInput.value.trim();
+    const section = this.selectSchemaSection.value;
+    const prefix = this.selectSchemaPrefix.value;
+
+    this.schemaResultsList.innerHTML = "";
+
+    if (this.schemaSearchMode === "column") {
+      const results = window.schemaLookupEngine.searchByColumn(query, section, prefix);
+      this.schemaResultCount.textContent = `Tìm thấy ${results.length} vị trí biến khớp từ khóa`;
+
+      if (results.length === 0) {
+        this.schemaResultsList.innerHTML = `
+          <div class="schema-no-results">
+            <span>🔍 Không tìm thấy biến nào có tên chứa "<strong>${query}</strong>"</span>
+          </div>
+        `;
+        return;
+      }
+
+      // Group or display results
+      results.slice(0, 200).forEach(item => {
+        const row = document.createElement("div");
+        row.className = "schema-item-card";
+        row.innerHTML = `
+          <div class="item-card-top">
+            <span class="item-col-name ${item.isPk ? 'is-pk' : ''}">
+              ${item.isPk ? '🔑 ' : ''}<strong>${item.colName}</strong>
+            </span>
+            <span class="item-type-badge type-${this.getTypeClass(item.colType)}">${item.colType}</span>
+          </div>
+          <div class="item-card-bottom">
+            <span class="item-tbl-name">📋 ${item.tableName}</span>
+            <span class="item-sec-name">${item.tableSection}</span>
+          </div>
+        `;
+
+        row.addEventListener("click", () => {
+          this.inspectTable(item.tableName, item.colName);
+          this.schemaResultsList.querySelectorAll(".schema-item-card").forEach(c => c.classList.remove("selected"));
+          row.classList.add("selected");
+        });
+
+        this.schemaResultsList.appendChild(row);
+      });
+
+      // Automatically inspect first result if none currently inspected
+      if (!this.currentInspectedTable && results.length > 0) {
+        this.inspectTable(results[0].tableName, results[0].colName);
+        this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
+      }
+
+    } else {
+      // Table search mode
+      const results = window.schemaLookupEngine.searchByTable(query, section, prefix);
+      this.schemaResultCount.textContent = `Tìm thấy ${results.length} bảng khớp từ khóa`;
+
+      if (results.length === 0) {
+        this.schemaResultsList.innerHTML = `
+          <div class="schema-no-results">
+            <span>🔍 Không tìm thấy bảng nào có tên chứa "<strong>${query}</strong>"</span>
+          </div>
+        `;
+        return;
+      }
+
+      results.slice(0, 200).forEach(tbl => {
+        const row = document.createElement("div");
+        row.className = "schema-item-card";
+        row.innerHTML = `
+          <div class="item-card-top">
+            <span class="item-tbl-title">📋 <strong>${tbl.name}</strong></span>
+            <span class="item-col-badge">${tbl.columns.length} cột</span>
+          </div>
+          <div class="item-card-bottom">
+            <span class="item-badge-type">${tbl.type}</span>
+            <span class="item-sec-name">${tbl.section}</span>
+          </div>
+        `;
+
+        row.addEventListener("click", () => {
+          this.inspectTable(tbl.name);
+          this.schemaResultsList.querySelectorAll(".schema-item-card").forEach(c => c.classList.remove("selected"));
+          row.classList.add("selected");
+        });
+
+        this.schemaResultsList.appendChild(row);
+      });
+
+      if (!this.currentInspectedTable && results.length > 0) {
+        this.inspectTable(results[0].name);
+        this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
+      }
+    }
+  }
+
+  inspectTable(tableName, highlightCol = "") {
+    const table = window.schemaLookupEngine.getTableByName(tableName);
+    if (!table) return;
+
+    this.currentInspectedTable = table;
+    this.inspectorEmptyState.classList.add("hidden");
+    this.inspectorContent.classList.remove("hidden");
+
+    this.inspectorTableName.textContent = table.name;
+    this.inspectorTableType.textContent = table.type;
+    this.inspectorTableSection.textContent = table.section;
+    this.inspectorTableColCount.textContent = `Tổng cộng: ${table.columns.length} cột / biến`;
+
+    this.inspectorColumnFilterInput.value = "";
+    this.renderInspectorColumns(table.columns, highlightCol);
+  }
+
+  renderInspectorColumns(columns, highlightCol = "") {
+    this.inspectorColumnsBody.innerHTML = "";
+    const hCol = (highlightCol || "").toLowerCase();
+
+    columns.forEach((col, idx) => {
+      const tr = document.createElement("tr");
+      if (hCol && col.name.toLowerCase() === hCol) {
+        tr.classList.add("highlight-column-row");
+      }
+
+      tr.innerHTML = `
+        <td style="text-align: center; color: var(--text-muted);">${idx + 1}</td>
+        <td>
+          <span class="col-name-link ${col.isPk ? 'is-pk' : ''}" title="Bấm để tìm tất cả bảng có chứa biến ${col.name}">
+            ${col.isPk ? '🔑 ' : ''}<strong>${col.name}</strong>
+          </span>
+        </td>
+        <td>
+          <span class="col-type-tag type-${this.getTypeClass(col.type)}">${col.type}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="null-tag ${col.nullable ? 'null-yes' : 'null-no'}">${col.nullable ? 'YES' : 'NO'}</span>
+        </td>
+        <td style="color: var(--text-muted); font-size: 0.76rem;">${col.default || ''}</td>
+      `;
+
+      // Clicking column name performs reverse search
+      tr.querySelector(".col-name-link").addEventListener("click", () => {
+        this.schemaSearchMode = "column";
+        this.btnModeColumn.classList.add("active");
+        this.btnModeTable.classList.remove("active");
+        this.schemaSearchInput.value = col.name;
+        if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.remove("hidden");
+        this.performSchemaSearch();
+      });
+
+      this.inspectorColumnsBody.appendChild(tr);
+    });
+  }
+
+  filterInspectorColumns(filterText) {
+    if (!this.currentInspectedTable) return;
+    const term = (filterText || "").trim().toLowerCase();
+    const filtered = this.currentInspectedTable.columns.filter(c => {
+      return c.name.toLowerCase().includes(term) || c.type.toLowerCase().includes(term);
+    });
+    this.renderInspectorColumns(filtered);
+  }
+
+  getTypeClass(typeStr) {
+    const t = (typeStr || "").toLowerCase();
+    if (t.includes("int") || t.includes("serial")) return "int";
+    if (t.includes("char") || t.includes("text")) return "text";
+    if (t.includes("numeric") || t.includes("float") || t.includes("double")) return "num";
+    if (t.includes("date") || t.includes("time")) return "date";
+    if (t.includes("bool")) return "bool";
+    return "other";
+  }
+
+  async exportTableDictionaryToExcel(table) {
+    if (!table) return;
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(table.name.slice(0, 30));
+
+    // Headers
+    ws.addRow(["STT", "Tên Biến / Tên Cột", "Kiểu Dữ Liệu", "Khóa Chính (PK)", "Cho Phép NULL", "Giá Trị Mặc Định"]);
+    const headerRow = ws.getRow(1);
+    headerRow.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } };
+    headerRow.alignment = { vertical: "middle", horizontal: "center" };
+    headerRow.height = 28;
+
+    table.columns.forEach((c, idx) => {
+      const row = ws.addRow([
+        idx + 1,
+        c.name,
+        c.type,
+        c.isPk ? "YES (PK)" : "NO",
+        c.nullable ? "YES" : "NO",
+        c.default || ""
+      ]);
+      row.font = { name: "Arial", size: 10 };
+      row.alignment = { vertical: "middle" };
+      row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+      row.getCell(4).alignment = { vertical: "middle", horizontal: "center" };
+      row.getCell(5).alignment = { vertical: "middle", horizontal: "center" };
+    });
+
+    ws.columns = [
+      { width: 8 },
+      { width: 30 },
+      { width: 25 },
+      { width: 16 },
+      { width: 16 },
+      { width: 40 }
+    ];
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Schema_${table.name}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+    this.showToast(`Đã xuất từ điển bảng ${table.name}.xlsx thành công!`, "success");
+  }
+
+  // =========================================================================
+  // STANDARD TOOL WORKSPACE LOGIC
+  // =========================================================================
   resetToolState() {
     this.selectedFiles = { primary: [], secondary: [] };
     this.isProcessing = false;
@@ -590,7 +982,6 @@ class AppController {
     }
   }
 
-  // Flow 1: Báo cáo Giám định Bảo hiểm
   async handleGiamDinhFlow() {
     const file = this.selectedFiles.primary[0];
     const arrayBuffer = await file.arrayBuffer();
@@ -646,7 +1037,6 @@ class AppController {
     this.finishExecution();
   }
 
-  // Flow 2: Báo cáo CNTT
   async handleCnttFlow() {
     const file = this.selectedFiles.primary[0];
     const arrayBuffer = await file.arrayBuffer();
@@ -686,7 +1076,6 @@ class AppController {
     this.finishExecution();
   }
 
-  // Flow 3: Đối chiếu Word & SSO ra Excel 19 Cột VGCA
   async handleVgcaDoiChieuFlow() {
     const wordFiles = this.selectedFiles.primary;
     const ssoFiles = this.selectedFiles.secondary;
@@ -698,7 +1087,6 @@ class AppController {
       (pct) => this.updateProgress(pct)
     );
 
-    // Show Quality Metrics
     this.showQualityMetrics(result.totalRecords, result.matchedSsoCount, result.missingSsoCount, result.validCccdCount);
 
     this.lastResult = {
@@ -713,7 +1101,6 @@ class AppController {
     this.finishExecution();
   }
 
-  // Flow 4: Tổng hợp CKS
   async handleVgcaCksFlow() {
     const wordFiles = this.selectedFiles.primary;
     const ssoFiles = this.selectedFiles.secondary;
@@ -725,7 +1112,6 @@ class AppController {
       (pct) => this.updateProgress(pct)
     );
 
-    // Show Quality Metrics
     this.showQualityMetrics(result.totalRecords, result.matchedSsoCount, result.missingSsoCount, result.validCccdCount);
 
     this.lastResult = {
@@ -740,7 +1126,6 @@ class AppController {
     this.finishExecution();
   }
 
-  // Flow 5: Tổng hợp Email
   async handleVgcaEmailFlow() {
     const wordFiles = this.selectedFiles.primary;
 
@@ -750,7 +1135,6 @@ class AppController {
       (pct) => this.updateProgress(pct)
     );
 
-    // Show Quality Metrics
     this.showQualityMetrics(result.totalRecords, 0, 0, result.validCccdCount);
 
     this.lastResult = {
@@ -781,10 +1165,7 @@ class AppController {
     this.btnResetTool.classList.remove("hidden");
     this.btnDownloadResult.textContent = `📥 Tải Về Kết Quả: ${this.lastResult.fileName}`;
 
-    // Render Editable Preview Table
     this.renderPreviewTable(this.lastResult.previewHeaders, this.lastResult.previewRows, this.lastResult.totalRecords);
-
-    // Auto trigger download
     this.downloadLastResult();
     this.showToast(`Đã tạo thành công tệp ${this.lastResult.fileName}!`, "success");
   }
@@ -866,10 +1247,8 @@ class AppController {
     this.previewSection.classList.remove("hidden");
     this.previewSummary.textContent = `Hiển thị ${Math.min(rows.length, 100)} / ${totalCount} bản ghi (Nhấp vào ô để chỉnh sửa)`;
 
-    // Render Header
-    this.previewTableHead.innerHTML = `<tr>${headers.map((h, idx) => `<th>${h}</th>`).join("")}</tr>`;
+    this.previewTableHead.innerHTML = `<tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
 
-    // Render Body (Editable cells with validation highlight)
     const previewSubset = rows.slice(0, 100);
     this.previewTableBody.innerHTML = "";
 
@@ -882,7 +1261,6 @@ class AppController {
         td.contentEditable = "true";
         td.spellcheck = false;
 
-        // Highlight cells missing email or invalid CCCD
         const headerName = headers[cIdx] ? headers[cIdx].toLowerCase() : "";
         if ((headerName.includes("email") || headerName.includes("thư điện tử")) && (!cellVal || cellVal === "")) {
           td.classList.add("cell-warning");
@@ -896,7 +1274,6 @@ class AppController {
           }
         }
 
-        // Live update model on edit
         td.addEventListener("input", () => {
           this.lastResult.previewRows[rIdx][cIdx] = td.textContent.trim();
           td.classList.remove("cell-warning");
@@ -927,15 +1304,11 @@ class AppController {
   }
 
   showModal(modalEl) {
-    if (modalEl) {
-      modalEl.classList.remove("hidden");
-    }
+    if (modalEl) modalEl.classList.remove("hidden");
   }
 
   hideModal(modalEl) {
-    if (modalEl) {
-      modalEl.classList.add("hidden");
-    }
+    if (modalEl) modalEl.classList.add("hidden");
   }
 
   showToast(message, type = "info") {
@@ -948,10 +1321,7 @@ class AppController {
     `;
     this.toastContainer.appendChild(toast);
 
-    setTimeout(() => {
-      toast.classList.add("toast-show");
-    }, 10);
-
+    setTimeout(() => toast.classList.add("toast-show"), 10);
     setTimeout(() => {
       toast.classList.remove("toast-show");
       setTimeout(() => toast.remove(), 300);
@@ -959,7 +1329,6 @@ class AppController {
   }
 }
 
-// Global bootstrap
 document.addEventListener("DOMContentLoaded", () => {
   window.appController = new AppController();
 });

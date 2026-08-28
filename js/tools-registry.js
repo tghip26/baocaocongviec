@@ -11,6 +11,11 @@ window.TOOLS_CATEGORIES = [
     icon: "grid"
   },
   {
+    id: "schema",
+    name: "Tra Cứu Database Schema VIMES",
+    icon: "database"
+  },
+  {
     id: "giamdinh",
     name: "Báo cáo Giám định & P.CNTT",
     icon: "file-spreadsheet"
@@ -23,6 +28,25 @@ window.TOOLS_CATEGORIES = [
 ];
 
 window.TOOLS_REGISTRY = [
+  {
+    id: "schema-lookup",
+    categoryId: "schema",
+    title: "Tra Cứu Database Schema VIMES",
+    subtitle: "Tra cứu chi tiết bảng theo tên biến & tên cột (1,170 bảng, 20,852 biến)",
+    description: "Công cụ tìm kiếm và tra cứu toàn diện cơ sở dữ liệu VIMES. Tra cứu tức thì tất cả các bảng chứa một tên biến/cột cụ thể, xem kiểu dữ liệu, khóa chính, sinh câu lệnh SQL và tra cứu ngược liên kết bảng.",
+    badge: "1,170 Bảng & 20,852 Biến",
+    badgeColor: "cyan",
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>`,
+    inputType: "schema-interactive",
+    outputName: "VIMES_Schema_Dictionary.xlsx",
+    guide: [
+      "Bước 1: Chọn chế độ tìm kiếm: '🔍 Theo Tên Biến / Tên Cột' (mặc định) hoặc '📋 Theo Tên Bảng'.",
+      "Bước 2: Nhập tên biến/cột cần tìm (ví dụ: patientno, docno, invoiceno, doctor_id, card_id, roomid, icd10...).",
+      "Bước 3: Nhấp vào bất kỳ bảng nào trong kết quả để xem toàn bộ danh sách cột, kiểu dữ liệu, trạng thái Khóa chính (PK).",
+      "Bước 4: Nhấp nút 'Tạo SQL SELECT' hoặc nhấp vào từng tên biến để tra cứu ngược các bảng liên quan."
+    ],
+    executeKey: "openSchemaLookup"
+  },
   {
     id: "giam-dinh",
     categoryId: "giamdinh",
@@ -127,7 +151,6 @@ window.TOOLS_REGISTRY = [
   }
 ];
 
-// Helper to get tool by ID
 window.getToolById = function(toolId) {
   return window.TOOLS_REGISTRY.find(t => t.id === toolId);
 };
