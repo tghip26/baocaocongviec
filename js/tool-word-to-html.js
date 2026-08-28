@@ -179,14 +179,27 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Bộ lọc thông minh tự động xác định phạm vi bài viết chính
-   * Loại bỏ Header (Quốc hiệu, Tên bài, Chuyên mục) và Footer (Chữ ký, Nơi nhận)
+   * Bộ lọc thông minh Heuristic Engine (Bộ quy tắc tự học nhận diện cấu trúc bài viết)
+   * Tự động thích ứng với mọi dạng file Word từ tất cả các phòng ban bệnh viện:
+   * - Hoạt động CTXH / Thiện nguyện
+   * - Tin tức Sự kiện / Chuyên môn / Đào tạo
+   * - Thông báo mời thầu / Kế hoạch / Báo cáo
+   * - Công văn / Hướng dẫn chuyên môn
    */
   filterDocumentBoundaries(elements) {
     if (!elements || elements.length === 0) return [];
 
     let startIndex = 0;
     let endIndex = elements.length;
+
+    // Danh mục từ khóa hành chính đầu trang
+    const headerKeywords = [
+      "bệnh viện", "sở y tế", "bộ y tế", "ubnd", "trung tâm",
+      "phòng công tác", "phòng khth", "phòng tccb", "phòng cntt", "phòng tài chính", "phòng điều dưỡng",
+      "cộng hòa xã hội", "độc lập", "tự do", "hạnh phúc",
+      "bài viết đăng", "tin bài đăng", "bài đăng trang", "bản tin", "chuyên mục", "thể loại", "lĩnh vực",
+      "tên bài", "tiêu đề", "chủ đề", "đề tài", "kính gửi"
+    ];
 
     // 1. Quét tìm vị trí Bắt Đầu nội dung bài viết
     for (let i = 0; i < elements.length; i++) {
@@ -200,6 +213,7 @@ class WordToHtmlConverter {
 
       if (el.type === "paragraph") {
         const txt = (el.plainText || "").trim();
+        const txtLower = txt.toLowerCase();
 
         // Bỏ qua đoạn văn rỗng
         if (!txt && !el.hasImage) {
@@ -207,20 +221,20 @@ class WordToHtmlConverter {
           continue;
         }
 
-        // Bỏ qua các nhãn hành chính / tiêu đề văn bản / chuyên mục
-        if (/^(bài viết đăng website|chuyên mục đăng tin|\(chuyên mục|tên bài|tiêu đề bài viết|\d{5,}|[_\-=]{3,})/i.test(txt)) {
+        // Bỏ qua các nhãn hành chính / tiêu đề văn bản / chuyên mục / số hiệu văn bản
+        if (/^(bài viết đăng|tin bài đăng|bản tin|chuyên mục|thể loại|lĩnh vực|\(chuyên mục|tên bài|tiêu đề|số:\s*|\d{5,}|[_\-=]{3,})/i.test(txt)) {
           startIndex = i + 1;
           continue;
         }
 
-        // Bỏ qua tên bài viết in hoa ở đầu trang
+        // Bỏ qua tên bài viết in hoa ở đầu trang hoặc đoạn ngắn chứa tiêu đề
         if (i < 8 && (txt === txt.toUpperCase() || txt.length < 180) &&
-            /(bài viết|nhân ái|thăm, động viên|trao tặng|tên bài|bệnh viện đa khoa)/i.test(txt)) {
+            headerKeywords.some(k => txtLower.includes(k))) {
           startIndex = i + 1;
           continue;
         }
 
-        // Khi gặp đoạn văn xuôi tự sự đầu tiên (bắt đầu viết hoa chữ đầu, theo sau là chữ thường)
+        // Khi gặp câu văn xuôi tự sự đầu tiên (đoạn văn thực sự của bài viết)
         if (txt.length > 25 && !el.hasImage) {
           startIndex = i;
           break;
@@ -234,6 +248,14 @@ class WordToHtmlConverter {
       }
     }
 
+    // Danh mục từ khóa hành chính cuối trang
+    const footerKeywords = [
+      "giám đốc", "phó giám đốc", "ban giám đốc", "kt. giám đốc", "kt giám đốc",
+      "trưởng phòng", "phó trưởng phòng", "tp ctxh", "trưởng khoa", "điều dưỡng trưởng",
+      "tác giả", "người lập biểu", "người viết bài", "người tổng hợp", "duyệt bài",
+      "nơi nhận", "lưu: vt", "lưu hs", "như trên", "bắc ninh, ngày"
+    ];
+
     // 2. Quét từ dưới lên để tìm vị trí Kết Thúc nội dung bài viết
     for (let i = elements.length - 1; i >= startIndex; i--) {
       const el = elements[i];
@@ -246,9 +268,10 @@ class WordToHtmlConverter {
 
       if (el.type === "paragraph") {
         const txt = (el.plainText || "").trim();
+        const txtLower = txt.toLowerCase();
 
-        // Bỏ qua các dòng chữ ký lẻ ở cuối bài
-        if (/^(kt\.?\s*giám đốc|phó giám đốc|trưởng phòng|tác giả|người lập|nơi nhận|lưu:\s*vt)/i.test(txt)) {
+        // Bỏ qua các dòng chữ ký lẻ / địa danh ngày tháng ở cuối bài
+        if (footerKeywords.some(k => txtLower.startsWith(k) || txtLower.includes(k)) && txt.length < 120) {
           endIndex = i;
           continue;
         }
@@ -646,15 +669,15 @@ class WordToHtmlConverter {
     }
 
     // 3. Nhận diện bảng hành chính Quốc hiệu Tiêu ngữ ở đầu trang
-    if (/(bệnh viện|phòng công tác|cộng hòa xã hội|độc lập|sở y tế)/i.test(textContent)) {
+    if (/(bệnh viện|phòng công tác|phòng khth|phòng tccb|phòng cntt|phòng điều dưỡng|cộng hòa xã hội|độc lập|sở y tế|bộ y tế|trung tâm)/i.test(textContent)) {
       return {
         type: "admin_header_table",
         rawText: textContent
       };
     }
 
-    // 4. Nhận diện bảng chữ ký Ban Giám đốc ở cuối trang
-    if (/(giám đốc|phó giám đốc|tp\s*ctxh|trưởng phòng|tác giả|bắc ninh,\s*ngày)/i.test(textContent)) {
+    // 4. Nhận diện bảng chữ ký Ban Giám đốc / Trưởng phòng ở cuối trang
+    if (/(giám đốc|phó giám đốc|tp\s*ctxh|trưởng phòng|trưởng khoa|tác giả|người lập|duyệt bài|bắc ninh,\s*ngày)/i.test(textContent)) {
       return {
         type: "admin_footer_table",
         rawText: textContent
