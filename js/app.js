@@ -2554,59 +2554,6 @@ ${this.currentW2hHtmlOutput}
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     this.showToast(`Đã tải về tệp ${fileName}!`, "success");
   }
-        console.error(`Lỗi render trang ${p}:`, err);
-      }
-
-      // Update progress
-      const percent = Math.round((p / total) * 100);
-      if (this.pdfProgressBarFill) this.pdfProgressBarFill.style.width = `${percent}%`;
-      if (this.pdfProgressPercent) this.pdfProgressPercent.textContent = `${percent}%`;
-    }
-
-    if (this.pdfProgressBarContainer) {
-      setTimeout(() => this.pdfProgressBarContainer.classList.add("hidden"), 500);
-    }
-
-    // Attach card events
-    this.pdfPageGrid.querySelectorAll(".pdf-card-checkbox").forEach(cb => {
-      cb.addEventListener("change", (e) => {
-        const p = parseInt(e.target.dataset.page, 10);
-        const isChecked = e.target.checked;
-        this.pdfConverter.togglePageSelection(p, isChecked);
-        const card = this.pdfPageGrid.querySelector(`.pdf-page-card[data-page-num="${p}"]`);
-        if (card) card.classList.toggle("selected", isChecked);
-        this.updatePdfStatsBar();
-      });
-    });
-
-    this.pdfPageGrid.querySelectorAll(".pdf-card-preview-box").forEach(box => {
-      box.addEventListener("click", () => {
-        const p = parseInt(box.dataset.page, 10);
-        this.openPdfLightbox(p);
-      });
-    });
-
-    this.pdfPageGrid.querySelectorAll(".btn-card-download").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const p = parseInt(btn.dataset.page, 10);
-        this.pdfConverter.downloadSinglePage(p);
-      });
-    });
-
-    this.pdfPageGrid.querySelectorAll(".btn-card-copy").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        const p = parseInt(btn.dataset.page, 10);
-        try {
-          await this.pdfConverter.copyPageImageToClipboard(p);
-          this.showToast(`Đã sao chép ảnh Trang ${p} vào Clipboard!`, "success");
-        } catch (err) {
-          this.showToast("Không thể sao chép: " + err.message, "error");
-        }
-      });
-    });
-  }
 
   onPdfSelectionChanged() {
     if (!this.pdfPageGrid) return;
