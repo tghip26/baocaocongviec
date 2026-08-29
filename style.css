@@ -71,10 +71,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Hidden Input Utility */
+.hidden-input {
+  display: none !important;
+}
+
 /* Layout Wrapper */
 .app-layout {
   display: flex;
   min-height: 100vh;
+  width: 100%;
 }
 
 /* ==========================================================================
@@ -82,6 +88,8 @@ body {
    ========================================================================== */
 .app-sidebar {
   width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-subtle);
   display: flex;
@@ -2261,18 +2269,24 @@ body {
 
 .w2h-layout-grid {
   display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 24px;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
+  width: 100%;
   transition: all var(--transition-normal);
 }
 
 .w2h-layout-grid.sidebar-collapsed {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) !important;
 }
 
 .w2h-layout-grid.sidebar-collapsed .w2h-sidebar-panel {
   display: none !important;
+}
+
+.w2h-main-panel {
+  min-width: 0;
+  width: 100%;
 }
 
 /* Fullscreen Workspace Active */
@@ -3039,23 +3053,6 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 /* Tablets & Small Laptops (<= 1024px) */
 @media (max-width: 1024px) {
-  .w2h-layout-grid {
-    grid-template-columns: 320px 1fr;
-    gap: 16px;
-  }
-  .workspace-grid, .schema-explorer-layout {
-    grid-template-columns: 1fr;
-  }
-  .quality-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .schema-results-pane, .schema-inspector-pane {
-    height: 440px;
-  }
-}
-
-/* Mobile Devices & Small Tablets (<= 768px) */
-@media (max-width: 768px) {
   /* App Shell & Mobile Drawer */
   .app-sidebar {
     position: fixed;
@@ -3086,18 +3083,60 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
   /* App Header Bar */
   .app-header {
-    padding: 10px 12px;
+    padding: 10px 16px;
     height: auto;
+    min-height: 58px;
+    gap: 12px;
+  }
+
+  .header-search {
+    display: none;
+  }
+
+  .w2h-layout-grid:not(.sidebar-collapsed) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .pdf-layout-grid:not(.sidebar-collapsed) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .workspace-grid, .schema-explorer-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .quality-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .schema-results-pane, .schema-inspector-pane {
+    height: 440px;
+  }
+
+  .app-content {
+    padding: 16px 14px 48px;
+  }
+
+  .web-cms-switcher-bar {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Mobile Devices & Small Tablets (<= 768px) */
+@media (max-width: 768px) {
+  /* App Header Bar */
+  .app-header {
+    padding: 10px 12px;
     min-height: 54px;
     gap: 8px;
   }
 
   .header-left {
     gap: 8px;
-  }
-
-  .header-search {
-    display: none; /* Hide heavy search bar on mobile header to prevent breaking header layout */
   }
 
   .header-right {
@@ -3123,7 +3162,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   }
 
   .app-content {
-    padding: 12px 10px;
+    padding: 12px 10px 40px;
   }
 
   /* Hub Hero Typography & Layout */
@@ -3478,7 +3517,6 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 24px 28px 48px;
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
@@ -3486,24 +3524,31 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 .pdf-layout-grid {
   display: grid;
-  grid-template-columns: 380px 1fr;
-  gap: 24px;
+  grid-template-columns: 380px minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
+  width: 100%;
   transition: grid-template-columns var(--transition-normal);
 }
 
 .pdf-layout-grid.sidebar-collapsed {
-  grid-template-columns: 0px 1fr;
+  grid-template-columns: minmax(0, 1fr) !important;
 }
 
 .pdf-layout-grid.sidebar-collapsed .pdf-control-panel {
-  display: none;
+  display: none !important;
+}
+
+.pdf-main-panel {
+  min-width: 0;
+  width: 100%;
 }
 
 .pdf-control-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
 }
 
 /* Loaded PDF File Info Card */
@@ -3717,6 +3762,15 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-primary);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pdf-stats-row .stats-title {
+  white-space: normal;
+  word-break: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Progress Bar */
@@ -4178,31 +4232,4 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   padding: 6px 8px;
   background: rgba(0, 0, 0, 0.25);
   border-top: 1px solid var(--border-subtle);
-}
-
-/* Responsive Rules for Mobile */
-@media (max-width: 1024px) {
-  .pdf-layout-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .web-cms-switcher-bar {
-    margin-left: 0;
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 768px) {
-  .pdf-workspace {
-    padding: 16px 14px 40px;
-  }
-
-  .pdf-page-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .w2h-viewport-switcher {
-    display: none;
-  }
 }
