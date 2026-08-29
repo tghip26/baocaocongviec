@@ -1,28 +1,31 @@
 /**
  * tool-word-to-html.js
- * Advanced Word (.docx) to Clean HTML Converter for CMS Website Publishing.
+ * Advanced Word (.docx) to Clean HTML & CSS Inline Converter for CMS Web Publishing.
  * Cấu trúc chuẩn 100% theo mẫu tòa soạn Cổng Website:
- * 1. Chuyển đổi toàn bộ ảnh nhúng trong Word sang định dạng Base64 data URI tự động.
- * 2. Tự động lọc và loại bỏ:
- *    - Phần đầu: Bảng hành chính Quốc hiệu Tiêu ngữ, Tên bài viết, Chuyên mục, Mã số.
- *    - Phần cuối: Bảng chữ ký Ban Giám đốc, Trưởng phòng, Tác giả, Địa danh ngày tháng.
- *    - Các khoảng bảng trống (Ghost table) do Word tự sinh ra khi chèn ảnh hoặc định dạng.
- * 3. Không in đậm bất kỳ nội dung nào (tất cả đều là chữ thường font-weight: normal).
- * 4. Mọi đoạn văn bản đều căn thẳng sát đầu dòng, không thụt đầu dòng.
- * 5. Kích thước ảnh chuẩn: 650px cho bài CTXH, 850px cho bài Thầu.
+ * 1. Trích xuất toàn bộ ảnh nhúng trong Word sang định dạng Base64 data URI tự động.
+ * 2. Tự động nhận diện và ghép cặp ảnh 2 cột (Cặp ảnh 1, 2, 3...) hoặc ảnh đơn căn giữa.
+ * 3. Bộ lọc thông minh loại bỏ Header/Footer hành chính & Bảng trống (Ghost table).
+ * 4. Hỗ trợ Danh sách (Lists), Tiêu đề (Headings), Bảng biểu (Tables) responsive chống tràn.
+ * 5. Tích hợp công cụ: Làm sạch mã rác MS Word, Định dạng đẹp (Beautify), Nén mã (Minify), Xuất Markdown.
  */
 
 class WordToHtmlConverter {
   constructor(options = {}) {
     this.options = Object.assign({
-      preset: "ctxh", // "ctxh" | "thau"
+      preset: "ctxh", // "ctxh" (ảnh 650px) | "thau" (ảnh 850px) | "custom"
       fontFamily: "times new roman,times,serif",
       baseFontSize: "16px",
       textColor: "#000000",
       textAlign: "justify",
+      autoFilterBoundaries: true, // Tự động lọc phần hành chính đầu và cuối
+      unboldAll: true, // Chuyển toàn bộ thành chữ thường (không in đậm)
+      straightIndent: true, // Căn thẳng sát đầu dòng (không thụt)
+      enableLists: true,
+      enableHeadings: true,
+      cleanEmptySpans: true,
 
       // Image Controls
-      useBase64Images: true, // Tự động nhúng ảnh Base64
+      useBase64Images: true,
       ctxhImageUrls: [],
       thauTopImageUrl: "",
       thauTopImageCaption: "",
@@ -35,8 +38,12 @@ class WordToHtmlConverter {
       charCount: 0,
       paragraphCount: 0,
       tableCount: 0,
-      imageCount: 0
+      imageCount: 0,
+      readingTimeMinutes: 0
     };
+
+    this.rawDocxElements = [];
+    this.originalGeneratedHtml = "";
   }
 
   setOptions(newOptions) {
@@ -44,14 +51,15 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Chuyển đổi tệp Word (.docx) sang đúng mẫu HTML chuẩn CMS
+   * Chuyển đổi tệp Word (.docx) sang HTML chuẩn CMS
    */
   async convertDocxToHtml(fileData, fileName = "") {
     if (!window.JSZip) {
       throw new Error("Thư viện JSZip chưa sẵn sàng. Vui lòng tải lại trang.");
     }
 
-    this.stats = { wordCount: 0, charCount: 0, paragraphCount: 0, tableCount: 0, imageCount: 0 };
+    this.stats = { wordCount: 0, charCount: 0, paragraphCount: 0, tableCount: 0, imageCount: 0, readingTimeMinutes: 0 };
+    this.rawDocxElements = [];
 
     let arrayBuffer = fileData;
     if (fileData instanceof Blob) {
@@ -98,402 +106,192 @@ class WordToHtmlConverter {
         const id = relElements[i].getAttribute("Id");
         const target = relElements[i].getAttribute("Target");
         const type = relElements[i].getAttribute("Type") || "";
-        
-        let base64 = "";
-        if (target) {
-          const targetFname = target.split("/").pop();
-          base64 = imageBase64Map[target] || imageBase64Map[targetFname] || imageBase64Map["media/" + targetFname] || "";
-        }
 
-        relsMap[id] = { target, type, base64 };
-      }
-    }
-
-    // 3. Parse XML document
-    const xmlText = await docXmlFile.async("text");
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
-
-    const bodyNode = xmlDoc.getElementsByTagName("w:body")[0] || xmlDoc.getElementsByTagName("body")[0];
-    if (!bodyNode) {
-      throw new Error("Không tìm thấy nội dung trong file Word.");
-    }
-
-    const isThau = this.options.preset === "thau";
-
-    // 4. Trích xuất toàn bộ các phần tử trong Body (Đoạn văn, Bảng biểu, Khối ảnh)
-    const rawElements = [];
-    const childNodes = bodyNode.childNodes;
-
-    for (let i = 0; i < childNodes.length; i++) {
-      const node = childNodes[i];
-      const nodeName = node.nodeName.toLowerCase();
-
-      if (nodeName === "w:p" || nodeName === "p") {
-        const pItem = this.extractParagraphInfo(node, relsMap);
-        if (pItem) {
-          rawElements.push(pItem);
-        }
-      } else if (nodeName === "w:tbl" || nodeName === "tbl") {
-        const tblResult = this.parseTable(node, relsMap);
-        if (tblResult) {
-          if (tblResult.type === "images") {
-            // Nếu bảng chỉ dùng để xếp ảnh -> bung các ảnh ra độc lập
-            for (const imgUrl of tblResult.images) {
-              rawElements.push({
-                type: "image",
-                src: imgUrl,
-                caption: "",
-                plainText: ""
-              });
-            }
-          } else if (tblResult.type === "table") {
-            rawElements.push(tblResult);
-            this.stats.tableCount++;
-          } else if (tblResult.type === "admin_header_table" || tblResult.type === "admin_footer_table") {
-            rawElements.push(tblResult);
+        if (type.includes("image") || target.includes("media/")) {
+          const fname = target.split("/").pop();
+          if (imageBase64Map[fname]) {
+            relsMap[id] = imageBase64Map[fname];
           }
+        } else if (type.includes("hyperlink")) {
+          relsMap[id] = target;
         }
       }
     }
 
-    // 5. Áp dụng Bộ Lọc Thông Minh: Loại bỏ phần Đầu và phần Cuối
-    const bodyElements = this.filterDocumentBoundaries(rawElements);
+    // 3. Phân tích XML cấu trúc document.xml
+    const docXmlText = await docXmlFile.async("text");
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(docXmlText, "application/xml");
 
-    // 6. Cập nhật thống kê từ ngữ trên phần nội dung đã lọc
-    this.recalculateStats(bodyElements);
-
-    // 7. Gom và định dạng theo đúng cấu trúc CMS
-    let finalHtml = "";
-    if (isThau) {
-      finalHtml = this.buildThauHtml(bodyElements);
-    } else {
-      finalHtml = this.buildCtxhHtml(bodyElements);
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body) {
+      throw new Error("Không tìm thấy nội dung w:body trong tài liệu Word.");
     }
+
+    // Duyệt tuần tự các node con trong body (w:p, w:tbl)
+    const elements = [];
+    for (let i = 0; i < body.childNodes.length; i++) {
+      const child = body.childNodes[i];
+      if (child.nodeName === "w:p") {
+        const pObj = this.parseParagraph(child, relsMap, imageBase64Map);
+        if (pObj) elements.push(pObj);
+      } else if (child.nodeName === "w:tbl") {
+        const tblObj = this.parseTable(child, relsMap, imageBase64Map);
+        if (tblObj) elements.push(tblObj);
+      }
+    }
+
+    this.rawDocxElements = elements;
+
+    // 4. Áp dụng Bộ lọc tự động loại bỏ đầu/cuối và bảng rác nếu bật
+    const filteredElements = this.options.autoFilterBoundaries ? this.filterDocumentBoundaries(elements) : elements;
+
+    // 5. Sinh mã HTML theo Preset bài viết
+    let finalHtml = "";
+    if (this.options.preset === "thau") {
+      finalHtml = this.buildThauHtml(filteredElements);
+    } else {
+      finalHtml = this.buildCtxhHtml(filteredElements);
+    }
+
+    // 6. Làm sạch thẻ rác và tính toán thống kê
+    finalHtml = this.cleanGarbageTags(finalHtml);
+    this.originalGeneratedHtml = finalHtml;
+    this.calculateStats(finalHtml);
 
     return {
       html: finalHtml,
       stats: this.stats,
-      images: extractedImageNames
+      extractedImages: extractedImageNames
     };
   }
 
   /**
-   * Bộ lọc thông minh Heuristic Engine (Bộ quy tắc tự học nhận diện cấu trúc bài viết)
-   * Tự động thích ứng với mọi dạng file Word từ tất cả các phòng ban bệnh viện:
-   * - Hoạt động CTXH / Thiện nguyện
-   * - Tin tức Sự kiện / Chuyên môn / Đào tạo
-   * - Thông báo mời thầu / Kế hoạch / Báo cáo
-   * - Công văn / Hướng dẫn chuyên môn
+   * Phân tích một đoạn văn (w:p)
    */
-  filterDocumentBoundaries(elements) {
-    if (!elements || elements.length === 0) return [];
-
-    let startIndex = 0;
-    let endIndex = elements.length;
-
-    // Danh mục từ khóa hành chính đầu trang
-    const headerKeywords = [
-      "bệnh viện", "sở y tế", "bộ y tế", "ubnd", "trung tâm",
-      "phòng công tác", "phòng khth", "phòng tccb", "phòng cntt", "phòng tài chính", "phòng điều dưỡng",
-      "cộng hòa xã hội", "độc lập", "tự do", "hạnh phúc",
-      "bài viết đăng", "tin bài đăng", "bài đăng trang", "bản tin", "chuyên mục", "thể loại", "lĩnh vực",
-      "tên bài", "tiêu đề", "chủ đề", "đề tài", "kính gửi"
-    ];
-
-    // 1. Quét tìm vị trí Bắt Đầu nội dung bài viết
-    for (let i = 0; i < elements.length; i++) {
-      const el = elements[i];
-
-      // Bỏ qua bảng hành chính đầu tài liệu
-      if (el.type === "admin_header_table") {
-        startIndex = i + 1;
-        continue;
-      }
-
-      if (el.type === "paragraph") {
-        const txt = (el.plainText || "").trim();
-        const txtLower = txt.toLowerCase();
-
-        // Bỏ qua đoạn văn rỗng
-        if (!txt && !el.hasImage) {
-          startIndex = i + 1;
-          continue;
-        }
-
-        // Bỏ qua các nhãn hành chính / tiêu đề văn bản / chuyên mục / số hiệu văn bản
-        if (/^(bài viết đăng|tin bài đăng|bản tin|chuyên mục|thể loại|lĩnh vực|\(chuyên mục|tên bài|tiêu đề|số:\s*|\d{5,}|[_\-=]{3,})/i.test(txt)) {
-          startIndex = i + 1;
-          continue;
-        }
-
-        // Bỏ qua tên bài viết in hoa ở đầu trang hoặc đoạn ngắn chứa tiêu đề
-        if (i < 8 && (txt === txt.toUpperCase() || txt.length < 180) &&
-            headerKeywords.some(k => txtLower.includes(k))) {
-          startIndex = i + 1;
-          continue;
-        }
-
-        // Khi gặp câu văn xuôi tự sự đầu tiên (đoạn văn thực sự của bài viết)
-        if (txt.length > 25 && !el.hasImage) {
-          startIndex = i;
-          break;
-        }
-      } else if (el.type === "image") {
-        // Nếu bài viết bắt đầu bằng một ảnh thực sự sau tiêu đề
-        if (i > 1) {
-          startIndex = i;
-          break;
-        }
-      }
-    }
-
-    // Danh mục từ khóa hành chính cuối trang
-    const footerKeywords = [
-      "giám đốc", "phó giám đốc", "ban giám đốc", "kt. giám đốc", "kt giám đốc",
-      "trưởng phòng", "phó trưởng phòng", "tp ctxh", "trưởng khoa", "điều dưỡng trưởng",
-      "tác giả", "người lập biểu", "người viết bài", "người tổng hợp", "duyệt bài",
-      "nơi nhận", "lưu: vt", "lưu hs", "như trên", "bắc ninh, ngày"
-    ];
-
-    // 2. Quét từ dưới lên để tìm vị trí Kết Thúc nội dung bài viết
-    for (let i = elements.length - 1; i >= startIndex; i--) {
-      const el = elements[i];
-
-      // Bỏ qua bảng chữ ký Ban Giám đốc / Trưởng phòng
-      if (el.type === "admin_footer_table") {
-        endIndex = i;
-        continue;
-      }
-
-      if (el.type === "paragraph") {
-        const txt = (el.plainText || "").trim();
-        const txtLower = txt.toLowerCase();
-
-        // Bỏ qua các dòng chữ ký lẻ / địa danh ngày tháng ở cuối bài
-        if (footerKeywords.some(k => txtLower.startsWith(k) || txtLower.includes(k)) && txt.length < 120) {
-          endIndex = i;
-          continue;
-        }
-
-        if (txt.length > 0 || el.hasImage) {
-          endIndex = i + 1;
-          break;
-        }
-      } else if (el.type === "image" || el.type === "table") {
-        endIndex = i + 1;
-        break;
-      }
-    }
-
-    const filtered = elements.slice(startIndex, endIndex);
-    return filtered.length > 0 ? filtered : elements;
-  }
-
-  /**
-   * Tính toán lại thống kê chuẩn xác trên phần nội dung bài viết
-   */
-  recalculateStats(elements) {
-    let wordCount = 0;
-    let charCount = 0;
-    let paragraphCount = 0;
-    let tableCount = 0;
-    let imageCount = 0;
-
-    for (const el of elements) {
-      if (el.type === "paragraph") {
-        if (el.plainText) {
-          const words = el.plainText.split(/\s+/).filter(w => w.length > 0);
-          wordCount += words.length;
-          charCount += el.plainText.length;
-          paragraphCount++;
-        }
-        if (el.images && el.images.length > 0) {
-          imageCount += el.images.length;
-        }
-      } else if (el.type === "image") {
-        imageCount++;
-      } else if (el.type === "table") {
-        tableCount++;
-      }
-    }
-
-    this.stats = {
-      wordCount,
-      charCount,
-      paragraphCount,
-      tableCount,
-      imageCount
-    };
-  }
-
-  /**
-   * Trích xuất thông tin một đoạn văn từ Word
-   * Đảm bảo: Không in đậm (strip bold), sát đầu dòng (no indent)
-   */
-  extractParagraphInfo(pNode, relsMap) {
-    const pPr = this.findChild(pNode, ["w:pPr", "pPr"]);
-    
-    let align = "justify";
-    if (pPr) {
-      const jcNode = this.findChild(pPr, ["w:jc", "jc"]);
-      if (jcNode) {
-        const val = jcNode.getAttribute("w:val") || jcNode.getAttribute("val");
-        if (val === "center") align = "center";
-        else if (val === "right") align = "right";
-        else if (val === "left") align = "left";
-        else align = "justify";
-      }
-    }
-
+  parseParagraph(pNode, relsMap, imageBase64Map) {
+    let fullText = "";
     const runs = [];
     const images = [];
-    const childNodes = pNode.childNodes;
+    let isHeading = false;
+    let headingLevel = 0;
+    let isListItem = false;
+    let listLevel = 0;
 
-    for (let i = 0; i < childNodes.length; i++) {
-      const child = childNodes[i];
-      const cName = child.nodeName.toLowerCase();
+    // Kiểm tra style Heading
+    const pPr = pNode.getElementsByTagName("w:pPr")[0];
+    if (pPr) {
+      const pStyle = pPr.getElementsByTagName("w:pStyle")[0];
+      if (pStyle) {
+        const val = (pStyle.getAttribute("w:val") || "").toLowerCase();
+        if (val.includes("heading") || val.includes("tiêu đề") || val.includes("tieude") || val === "title") {
+          isHeading = true;
+          const match = val.match(/\d+/);
+          headingLevel = match ? parseInt(match[0], 10) : 2;
+        }
+      }
 
-      if (cName === "w:r" || cName === "r") {
-        const rData = this.extractRunData(child, relsMap);
-        if (rData.text || rData.images.length > 0) {
-          runs.push(rData);
-          if (rData.images.length > 0) {
-            images.push(...rData.images);
-          }
-        }
-      } else if (cName === "w:hyperlink" || cName === "hyperlink") {
-        const rId = child.getAttribute("r:id") || child.getAttribute("id");
-        const linkUrl = (rId && relsMap[rId]) ? relsMap[rId].target || "#" : "#";
-        const linkRuns = child.childNodes;
-        for (let j = 0; j < linkRuns.length; j++) {
-          if (linkRuns[j].nodeName.toLowerCase() === "w:r" || linkRuns[j].nodeName.toLowerCase() === "r") {
-            const rData = this.extractRunData(linkRuns[j], relsMap);
-            if (rData.text) {
-              rData.linkUrl = linkUrl;
-              runs.push(rData);
-            }
-          }
-        }
-      } else if (cName === "w:drawing" || cName === "drawing") {
-        const imgs = this.extractImagesFromDrawing(child, relsMap);
-        images.push(...imgs);
+      // Kiểm tra danh sách (Bullet / Numbering)
+      const numPr = pPr.getElementsByTagName("w:numPr")[0];
+      if (numPr) {
+        isListItem = true;
+        const ilvl = numPr.getElementsByTagName("w:ilvl")[0];
+        listLevel = ilvl ? parseInt(ilvl.getAttribute("w:val") || "0", 10) : 0;
       }
     }
 
-    // Ghép chuỗi văn bản thuần và định dạng (Loại bỏ hoàn toàn In Đậm, Sát đầu dòng)
-    let plainText = "";
-    let formattedText = "";
+    // Duyệt các phần tử con trong w:p
+    for (let i = 0; i < pNode.childNodes.length; i++) {
+      const child = pNode.childNodes[i];
 
-    for (const r of runs) {
-      if (r.text) {
-        let piece = r.text;
-        plainText += piece;
+      if (child.nodeName === "w:r") {
+        const rText = this.getRunText(child);
+        if (rText) {
+          fullText += rText;
+          runs.push({ text: rText });
+        }
 
-        // TUYỆT ĐỐI KHÔNG DÙNG <strong> HAY <b> (Tất cả đều chữ thường theo yêu cầu người dùng)
-        if (r.isItalic) piece = `<em>${piece}</em>`;
-        if (r.isUnderline) piece = `<u>${piece}</u>`;
-        if (r.isStrike) piece = `<s>${piece}</s>`;
-        if (r.isSub) piece = `<sub>${piece}</sub>`;
-        if (r.isSup) piece = `<sup>${piece}</sup>`;
-        if (r.linkUrl) piece = `<a href="${r.linkUrl}" target="_blank" rel="noopener noreferrer">${piece}</a>`;
-
-        formattedText += piece;
+        // Tìm ảnh bên trong w:r
+        const rImages = this.extractImagesFromNode(child, relsMap, imageBase64Map);
+        images.push(...rImages);
+      } else if (child.nodeName === "w:hyperlink") {
+        const rId = child.getAttribute("r:id");
+        const url = relsMap[rId] || "#";
+        let linkText = "";
+        const rNodes = child.getElementsByTagName("w:r");
+        for (let r = 0; r < rNodes.length; r++) {
+          linkText += this.getRunText(rNodes[r]);
+        }
+        if (linkText) {
+          fullText += linkText;
+          runs.push({ text: linkText, isLink: true, url });
+        }
+      } else if (child.nodeName === "w:drawing" || child.nodeName === "w:pict") {
+        const dImages = this.extractImagesFromNode(child, relsMap, imageBase64Map);
+        images.push(...dImages);
       }
     }
 
-    // Xóa khoảng trắng thừa / thụt lề ở đầu dòng (Sát đầu dòng 100%)
-    plainText = plainText.replace(/^[\s\u00A0\t\r\n]+/, "").trim();
-    formattedText = formattedText.replace(/^[\s\u00A0\t\r\n]+/, "").trim();
-
-    if (!plainText && images.length === 0) {
-      return null;
+    const trimmedText = fullText.trim();
+    if (!trimmedText && images.length === 0) {
+      return null; // Bỏ qua đoạn hoàn toàn trống
     }
-
-    const isCaption = align === "center" ||
-      (runs.length === 1 && runs[0].isItalic && plainText.length < 150) ||
-      /^(\*?)(Ảnh|Hình|Ảnh \d|Hình \d|Sơ đồ|Bảng)[\s:]/i.test(plainText);
-
-    const isSource = align === "right" ||
-      /^(Nguồn|Theo|Ảnh|Tác giả|PV|CTV|Theo nguồn)[\s:]/i.test(plainText);
 
     return {
       type: "paragraph",
-      plainText,
-      formattedText,
-      align,
-      hasImage: images.length > 0,
+      text: trimmedText,
+      runs,
       images,
-      isCaption,
-      isSource
+      isHeading,
+      headingLevel,
+      isListItem,
+      listLevel
     };
   }
 
-  extractRunData(rNode, relsMap) {
-    const rPr = this.findChild(rNode, ["w:rPr", "rPr"]);
-    let isItalic = false;
-    let isUnderline = false;
-    let isStrike = false;
-    let isSub = false;
-    let isSup = false;
-
-    if (rPr) {
-      if (this.findChild(rPr, ["w:i", "i"])) isItalic = true;
-      if (this.findChild(rPr, ["w:u", "u"])) isUnderline = true;
-      if (this.findChild(rPr, ["w:strike", "strike"])) isStrike = true;
-      const vertAlign = this.findChild(rPr, ["w:vertAlign", "vertAlign"]);
-      if (vertAlign) {
-        const v = vertAlign.getAttribute("w:val") || vertAlign.getAttribute("val");
-        if (v === "subscript") isSub = true;
-        if (v === "superscript") isSup = true;
-      }
+  /**
+   * Lấy text thuần túy từ một node w:r
+   */
+  getRunText(rNode) {
+    let txt = "";
+    const tNodes = rNode.getElementsByTagName("w:t");
+    for (let i = 0; i < tNodes.length; i++) {
+      txt += tNodes[i].textContent;
     }
-
-    let text = "";
-    const images = [];
-
-    const childNodes = rNode.childNodes;
-    for (let i = 0; i < childNodes.length; i++) {
-      const child = childNodes[i];
-      const cName = child.nodeName.toLowerCase();
-
-      if (cName === "w:t" || cName === "t") {
-        text += this.escapeHtml(child.textContent);
-      } else if (cName === "w:br" || cName === "br") {
-        text += "<br />";
-      } else if (cName === "w:tab" || cName === "tab") {
-        text += " "; // Thay vì &emsp; thì dùng 1 dấu cách để sát đầu dòng
-      } else if (cName === "w:drawing" || cName === "drawing") {
-        const imgs = this.extractImagesFromDrawing(child, relsMap);
-        images.push(...imgs);
-      }
-    }
-
-    return {
-      text,
-      images,
-      isBold: false, // Ép chữ thường 100%
-      isItalic,
-      isUnderline,
-      isStrike,
-      isSub,
-      isSup,
-      linkUrl: null
-    };
+    const tabNodes = rNode.getElementsByTagName("w:tab");
+    if (tabNodes.length > 0) txt += " ";
+    const brNodes = rNode.getElementsByTagName("w:br");
+    if (brNodes.length > 0) txt += "\n";
+    return txt;
   }
 
-  extractImagesFromDrawing(drawingNode, relsMap) {
+  /**
+   * Trích xuất hình ảnh từ một XML node
+   */
+  extractImagesFromNode(node, relsMap, imageBase64Map) {
     const images = [];
-    const blips = drawingNode.getElementsByTagName("a:blip").length > 0
-      ? drawingNode.getElementsByTagName("a:blip")
-      : drawingNode.getElementsByTagName("blip");
 
-    for (let b = 0; b < blips.length; b++) {
-      const blip = blips[b];
-      const rId = blip.getAttribute("r:embed") || blip.getAttribute("embed") ||
-                  blip.getAttribute("r:link") || blip.getAttribute("link");
-      if (rId && relsMap[rId] && relsMap[rId].base64) {
-        images.push(relsMap[rId].base64);
+    // Cách 1: w:drawing -> a:blip
+    const blips = node.getElementsByTagName("a:blip");
+    for (let i = 0; i < blips.length; i++) {
+      const embedId = blips[i].getAttribute("r:embed");
+      if (embedId && relsMap[embedId]) {
+        images.push({
+          src: relsMap[embedId],
+          embedId
+        });
+      }
+    }
+
+    // Cách 2: v:imagedata -> r:id
+    const imgDatas = node.getElementsByTagName("v:imagedata");
+    for (let i = 0; i < imgDatas.length; i++) {
+      const rId = imgDatas[i].getAttribute("r:id") || imgDatas[i].getAttribute("o:relid");
+      if (rId && relsMap[rId]) {
+        images.push({
+          src: relsMap[rId],
+          embedId: rId
+        });
       }
     }
 
@@ -501,276 +299,458 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Xây dựng HTML chuẩn bài CTXH theo đúng định dạng CMS của Bệnh viện
+   * Phân tích bảng biểu (w:tbl)
+   */
+  parseTable(tblNode, relsMap, imageBase64Map) {
+    const rows = [];
+    let isGhostTable = false;
+    let allTextCombined = "";
+    const imagesInTable = [];
+
+    const trNodes = tblNode.getElementsByTagName("w:tr");
+    for (let r = 0; r < trNodes.length; r++) {
+      const row = [];
+      const tcNodes = trNodes[r].getElementsByTagName("w:tc");
+      for (let c = 0; c < tcNodes.length; c++) {
+        const tc = tcNodes[c];
+        const pNodes = tc.getElementsByTagName("w:p");
+        let cellText = "";
+        const cellImages = [];
+
+        for (let p = 0; p < pNodes.length; p++) {
+          const pObj = this.parseParagraph(pNodes[p], relsMap, imageBase64Map);
+          if (pObj) {
+            if (pObj.text) {
+              cellText += (cellText ? " " : "") + pObj.text;
+              allTextCombined += " " + pObj.text;
+            }
+            if (pObj.images && pObj.images.length > 0) {
+              cellImages.push(...pObj.images);
+              imagesInTable.push(...pObj.images);
+            }
+          }
+        }
+
+        // Đọc colSpan (gridSpan)
+        let colSpan = 1;
+        const gridSpan = tc.getElementsByTagName("w:gridSpan")[0];
+        if (gridSpan) {
+          colSpan = parseInt(gridSpan.getAttribute("w:val") || "1", 10);
+        }
+
+        row.push({
+          text: cellText.trim(),
+          images: cellImages,
+          colSpan
+        });
+      }
+      if (row.length > 0) rows.push(row);
+    }
+
+    const cleanAllText = allTextCombined.trim().toLowerCase();
+
+    // Nhận diện Ghost Table (Bảng trống chỉ chứa khoảng trắng hoặc chỉ dùng để căn chỉnh ảnh)
+    if (!cleanAllText && imagesInTable.length === 0) {
+      isGhostTable = true;
+    }
+
+    // Nhận diện Bảng Hành chính (Header: Quốc hiệu hoặc Footer: Chữ ký)
+    const isAdministrativeTable = (
+      cleanAllText.includes("cộng hòa xã hội") ||
+      cleanAllText.includes("độc lập - tự do") ||
+      cleanAllText.includes("bài viết đăng website") ||
+      cleanAllText.includes("phòng công tác xã hội") ||
+      cleanAllText.includes("ban giám đốc") ||
+      cleanAllText.includes("trưởng phòng") ||
+      cleanAllText.includes("nơi nhận:") ||
+      cleanAllText.includes("kt. giám đốc") ||
+      cleanAllText.includes("tác giả bài viết")
+    );
+
+    return {
+      type: "table",
+      rows,
+      images: imagesInTable,
+      isGhostTable,
+      isAdministrativeTable,
+      allTextCombined: cleanAllText
+    };
+  }
+
+  /**
+   * Bộ lọc nhận diện ranh giới thông minh (Heuristic Boundary Filter)
+   */
+  filterDocumentBoundaries(elements) {
+    if (!elements || elements.length === 0) return [];
+
+    let startIndex = 0;
+    let endIndex = elements.length - 1;
+
+    // 1. Tìm điểm bắt đầu nội dung chính (Bỏ header hành chính & tiêu đề in hoa)
+    for (let i = 0; i < elements.length; i++) {
+      const el = elements[i];
+
+      // Bỏ qua bảng hành chính đầu trang
+      if (el.type === "table" && el.isAdministrativeTable) {
+        startIndex = i + 1;
+        continue;
+      }
+
+      // Bỏ qua các đoạn thông tin văn phòng / header
+      if (el.type === "paragraph") {
+        const t = el.text.toLowerCase();
+        const rawT = el.text;
+
+        const isHeaderMeta = (
+          t.includes("cộng hòa xã hội chủ nghĩa") ||
+          t.includes("độc lập - tự do - hạnh phúc") ||
+          t.startsWith("bài viết đăng") ||
+          t.startsWith("chuyên mục:") ||
+          t.startsWith("tên bài:") ||
+          t.startsWith("số:") ||
+          t.startsWith("kính gửi:") ||
+          (rawT === rawT.toUpperCase() && rawT.length < 80 && !t.includes("thứ") && !t.includes("ngày") && !t.includes("trong những"))
+        );
+
+        if (isHeaderMeta && el.images.length === 0) {
+          startIndex = i + 1;
+          continue;
+        } else {
+          // Gặp đoạn văn nội dung đầu tiên
+          startIndex = i;
+          break;
+        }
+      }
+    }
+
+    // 2. Tìm điểm kết thúc nội dung chính (Bỏ chữ ký, nơi nhận, tác giả ở cuối)
+    for (let i = elements.length - 1; i >= startIndex; i--) {
+      const el = elements[i];
+
+      if (el.type === "table" && el.isAdministrativeTable) {
+        endIndex = i - 1;
+        continue;
+      }
+
+      if (el.type === "paragraph") {
+        const t = el.text.toLowerCase();
+        const isFooterSignature = (
+          t.includes("kt. giám đốc") ||
+          t.includes("phó giám đốc") ||
+          t.includes("trưởng phòng") ||
+          t.includes("tác giả bài viết") ||
+          t.includes("tác giả:") ||
+          t.includes("nơi nhận:") ||
+          (t.includes("bắc ninh, ngày") && i >= elements.length - 3) ||
+          t.startsWith("người viết bài")
+        );
+
+        if (isFooterSignature && el.images.length === 0) {
+          endIndex = i - 1;
+          continue;
+        } else {
+          endIndex = i;
+          break;
+        }
+      }
+    }
+
+    // 3. Trích xuất mảng đã lọc và loại bỏ ghost tables
+    const validSlice = elements.slice(Math.max(0, startIndex), Math.max(0, endIndex + 1));
+    return validSlice.filter(el => {
+      if (el.type === "table" && el.isGhostTable) return false;
+      return true;
+    });
+  }
+
+  /**
+   * Sinh mã HTML chuẩn cho Bài viết Phòng CTXH / Tin tức Bệnh viện
    */
   buildCtxhHtml(elements) {
-    const outputBlocks = [];
-    let pairCounter = 1;
-    let lastContext = "";
+    const htmlParts = [];
+    const font = this.options.fontFamily;
+    const size = this.options.baseFontSize;
+    const color = this.options.textColor;
+    const align = this.options.textAlign;
+
+    // Gom tất cả ảnh trong tài liệu để ghép cặp ảnh 2 cột
+    const allImages = [];
+    elements.forEach(el => {
+      if (el.images && el.images.length > 0) {
+        allImages.push(...el.images);
+      }
+    });
+
+    let pairCount = 0;
+    let singleCount = 0;
 
     for (let i = 0; i < elements.length; i++) {
       const el = elements[i];
 
-      // 1. Xử lý Bảng dữ liệu thực tế (nếu có)
-      if (el.type === "table") {
-        outputBlocks.push(el.html);
-        continue;
-      }
-
-      // 2. Xử lý Khối Ảnh (Đơn hoặc Cặp ảnh)
-      let imagesToRender = [];
-      let captionText = "";
-
-      if (el.type === "image") {
-        imagesToRender.push(el.src);
-      } else if (el.hasImage && el.images && el.images.length > 0) {
-        imagesToRender.push(...el.images);
-
-        // Kiểm tra xem đoạn ngay sau có phải chú thích ảnh không
-        if (i + 1 < elements.length && elements[i + 1].type === "paragraph" && elements[i + 1].isCaption) {
-          captionText = elements[i + 1].plainText;
-          i++;
-        }
-      }
-
-      if (imagesToRender.length > 0) {
-        // Tự động sinh thẻ alt thông minh từ ngữ cảnh đoạn văn liền trước
-        const altDesc = captionText || this.generateAltText(lastContext);
-
-        if (imagesToRender.length >= 2) {
-          // Xuất bản Cặp ảnh 2 cột (Table không viền)
-          const comment = `<!-- Cặp ảnh ${pairCounter} -->`;
-          const tableHtml = `${comment}\n\n<table style="width: 100%; border-collapse: collapse; border: none; margin-top: 15px; margin-bottom: 15px;">\n\t<tbody>\n\t\t<tr>\n\t\t\t<td style="width: 50%; text-align: center; vertical-align: top; padding: 5px; border: none;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[0]}" style="width: 100%; max-width: 420px; height: auto;" /></td>\n\t\t\t<td style="width: 50%; text-align: center; vertical-align: top; padding: 5px; border: none;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[1]}" style="width: 100%; max-width: 420px; height: auto;" /></td>\n\t\t</tr>\n\t</tbody>\n</table>`;
-          outputBlocks.push(tableHtml);
-          pairCounter++;
-
-          // Nếu còn ảnh thứ 3, 4 trong cùng khối
-          for (let k = 2; k < imagesToRender.length; k++) {
-            const singleHtml = `<!-- Ảnh đơn -->\n\n<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[k]}" style="max-width: 420px; width: 100%; height: auto;" /></div>`;
-            outputBlocks.push(singleHtml);
+      if (el.type === "paragraph") {
+        // Nếu đoạn có text
+        if (el.text) {
+          const pStyle = `text-align: ${align}; margin-bottom: 10px;`;
+          const spanStyle = `font-family: ${font}; color: ${color};`;
+          
+          let formattedText = this.escapeHtml(el.text);
+          // Xử lý link nếu có
+          if (el.runs) {
+            let composed = "";
+            el.runs.forEach(r => {
+              const safe = this.escapeHtml(r.text);
+              if (r.isLink && r.url) {
+                composed += `<a href="${r.url}" target="_blank" style="color: #2563eb; text-decoration: underline;">${safe}</a>`;
+              } else {
+                composed += safe;
+              }
+            });
+            if (composed) formattedText = composed;
           }
-        } else {
-          // Xuất bản Ảnh đơn căn giữa
-          const singleHtml = `<!-- Ảnh đơn -->\n\n<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(altDesc)}" src="${imagesToRender[0]}" style="max-width: 420px; width: 100%; height: auto;" /></div>`;
-          outputBlocks.push(singleHtml);
+
+          if (el.isHeading && this.options.enableHeadings) {
+            const hSize = el.headingLevel === 1 ? "18px" : (el.headingLevel === 2 ? "17px" : "16px");
+            htmlParts.push(`<div style="${pStyle}"><span style="font-size: ${hSize};"><span style="${spanStyle} font-weight: bold;">${formattedText}</span></span></div>`);
+          } else if (el.isListItem && this.options.enableLists) {
+            const indentPx = (el.listLevel + 1) * 20;
+            htmlParts.push(`<div style="text-align: ${align}; margin-bottom: 8px; padding-left: ${indentPx}px;"><span style="font-size: ${size};"><span style="${spanStyle}">• ${formattedText}</span></span></div>`);
+          } else {
+            htmlParts.push(`<div style="${pStyle}"><span style="font-size: ${size};"><span style="${spanStyle}">${formattedText}</span></span></div>`);
+          }
         }
-        continue;
-      }
 
-      // 3. Xử lý Dòng Nguồn / Tác giả ở cuối bài
-      if (el.isSource && i >= elements.length - 2) {
-        outputBlocks.push(
-          `<div style="text-align: right; margin-bottom: 10px;"><span style="font-size: 16px;"><span style="font-family: times new roman, times, serif; color: #000000;">${el.formattedText}</span></span></div>`
-        );
-        continue;
-      }
-
-      // 4. Đoạn văn bản bình thường (Đúng mẫu 100%)
-      const txt = (el.formattedText || "").trim();
-      if (txt) {
-        lastContext = el.plainText || txt;
-        const blockHtml = `<div style="text-align: justify; margin-bottom: 10px;"><span style="font-size: 16px;"><span style="font-family: times new roman, times, serif; color: #000000;">${txt}</span></span></div>`;
-        outputBlocks.push(blockHtml);
+        // Xử lý ảnh trong đoạn (nếu có)
+        if (el.images && el.images.length > 0) {
+          const imgs = el.images;
+          for (let imgIdx = 0; imgIdx < imgs.length; imgIdx += 2) {
+            if (imgIdx + 1 < imgs.length) {
+              pairCount++;
+              htmlParts.push(this.renderImagePairTable(imgs[imgIdx].src, imgs[imgIdx + 1].src, pairCount));
+            } else {
+              singleCount++;
+              htmlParts.push(this.renderSingleImage(imgs[imgIdx].src, `Ảnh bài viết ${singleCount}`));
+            }
+          }
+        }
+      } else if (el.type === "table") {
+        if (!el.isGhostTable && !el.isAdministrativeTable) {
+          htmlParts.push(this.renderCustomTable(el));
+        }
       }
     }
 
-    return outputBlocks.join("\n\n");
+    return htmlParts.join("\n\n");
   }
 
   /**
-   * Tự động trích xuất chuỗi mô tả alt ngắn gọn từ câu văn liền trước
-   */
-  generateAltText(contextText) {
-    if (!contextText) return "Ảnh hoạt động bài viết";
-    
-    // Tìm các cụm từ ý nghĩa trong câu
-    const clean = contextText.replace(/^[\w\s,]+:\s*/i, "").trim();
-    if (clean.length > 0 && clean.length <= 80) {
-      return clean;
-    }
-    
-    // Cắt ngắn nếu quá dài
-    const firstSentence = clean.split(/[.;]/)[0].trim();
-    return firstSentence.length > 70 ? firstSentence.substring(0, 67) + "..." : firstSentence;
-  }
-
-  /**
-   * Xây dựng HTML chuẩn bài Thầu (Kích thước ảnh 850px)
+   * Sinh mã HTML cho Bài viết Đấu thầu / Mua sắm vật tư (Ảnh 850px)
    */
   buildThauHtml(elements) {
-    const outputBlocks = [];
+    const htmlParts = [];
+    const font = this.options.fontFamily;
+    const size = this.options.baseFontSize;
+    const color = this.options.textColor;
+    const align = this.options.textAlign;
 
-    // 1. Khối Ảnh Trên (Đầu bài thầu - Chiều rộng 850px)
-    const topUrl = this.options.thauTopImageUrl.trim();
-    const topCaption = this.options.thauTopImageCaption.trim();
-
-    if (topUrl) {
-      let topBlock = `<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(topCaption || 'Thông báo mời thầu')}" src="${topUrl}" style="width: 100%; max-width: 850px; height: auto;" /></div>`;
-      outputBlocks.push(topBlock);
+    // Ảnh tiêu đề trên cùng (nếu có cấu hình)
+    if (this.options.thauTopImageUrl) {
+      htmlParts.push(this.renderSingleImage(this.options.thauTopImageUrl, this.options.thauTopImageCaption || "Thông báo đấu thầu", 850));
     }
 
-    // 2. Gom toàn bộ nội dung văn bản từ Word
     for (const el of elements) {
-      if (el.type === "paragraph") {
-        const txt = (el.formattedText || "").trim();
-        if (txt) {
-          outputBlocks.push(
-            `<div style="text-align: justify; margin-bottom: 10px;"><span style="font-size: 16px;"><span style="font-family: times new roman, times, serif; color: #000000;">${txt}</span></span></div>`
-          );
+      if (el.type === "paragraph" && el.text) {
+        const pStyle = `text-align: ${align}; margin-bottom: 12px;`;
+        const spanStyle = `font-family: ${font}; color: ${color};`;
+        const formattedText = this.escapeHtml(el.text);
+
+        if (el.isHeading) {
+          htmlParts.push(`<div style="${pStyle}"><span style="font-size: 17px;"><span style="${spanStyle} font-weight: bold;">${formattedText}</span></span></div>`);
+        } else {
+          htmlParts.push(`<div style="${pStyle}"><span style="font-size: ${size};"><span style="${spanStyle}">${formattedText}</span></span></div>`);
         }
-      } else if (el.type === "image") {
-        outputBlocks.push(
-          `<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="Thông báo thầu" src="${el.src}" style="width: 100%; max-width: 850px; height: auto;" /></div>`
-        );
-      } else if (el.type === "table") {
-        outputBlocks.push(el.html);
+      } else if (el.type === "table" && !el.isGhostTable && !el.isAdministrativeTable) {
+        htmlParts.push(this.renderCustomTable(el));
       }
     }
 
-    // 3. Khối Ảnh Dưới (Cuối bài thầu - Chiều rộng 850px)
-    const btmUrl = this.options.thauBottomImageUrl.trim();
-    const btmCaption = this.options.thauBottomImageCaption.trim();
-
-    if (btmUrl) {
-      let btmBlock = `<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${this.escapeHtml(btmCaption || 'Thông báo mời thầu')}" src="${btmUrl}" style="width: 100%; max-width: 850px; height: auto;" /></div>`;
-      outputBlocks.push(btmBlock);
+    // Ảnh kết thúc bài dưới cùng (nếu có cấu hình)
+    if (this.options.thauBottomImageUrl) {
+      htmlParts.push(this.renderSingleImage(this.options.thauBottomImageUrl, this.options.thauBottomImageCaption || "Bảng tổng hợp chi tiết", 850));
     }
 
-    return outputBlocks.join("\n\n");
+    return htmlParts.join("\n\n");
   }
 
   /**
-   * Xử lý bảng biểu trong Word
-   * Loại bỏ bảng rỗng, nhận diện bảng ảnh (không sinh table thừa) và phân loại Header/Footer
+   * Render Bảng cặp ảnh 2 cột (Cặp ảnh 1, 2, 3...)
    */
-  parseTable(tblNode, relsMap) {
-    const textContent = (tblNode.textContent || "").trim();
-    const blips = tblNode.getElementsByTagName("a:blip").length > 0
-      ? tblNode.getElementsByTagName("a:blip")
-      : tblNode.getElementsByTagName("blip");
+  renderImagePairTable(src1, src2, pairNum = 1) {
+    const alt1 = `Ảnh hoạt động trao quà ${pairNum} - Hình 1`;
+    const alt2 = `Ảnh hoạt động trao quà ${pairNum} - Hình 2`;
 
-    // 1. Thu thập tất cả ảnh nằm trong bảng
-    const tableImages = [];
-    for (let b = 0; b < blips.length; b++) {
-      const blip = blips[b];
-      const rId = blip.getAttribute("r:embed") || blip.getAttribute("embed") ||
-                  blip.getAttribute("r:link") || blip.getAttribute("link");
-      if (rId && relsMap[rId] && relsMap[rId].base64) {
-        tableImages.push(relsMap[rId].base64);
-      }
-    }
+    return `<!-- Cặp ảnh ${pairNum} -->
+<table style="width: 100%; border-collapse: collapse; border: none; margin-top: 15px; margin-bottom: 15px;">
+\t<tbody>
+\t\t<tr>
+\t\t\t<td style="width: 50%; text-align: center; vertical-align: top; padding: 5px; border: none;"><img alt="${alt1}" src="${src1}" style="width: 100%; max-width: 420px; height: auto;" /></td>
+\t\t\t<td style="width: 50%; text-align: center; vertical-align: top; padding: 5px; border: none;"><img alt="${alt2}" src="${src2}" style="width: 100%; max-width: 420px; height: auto;" /></td>
+\t\t</tr>
+\t</tbody>
+</table>`;
+  }
 
-    // 2. Nếu bảng dùng để chèn ảnh (có ảnh và ít/không có chữ) -> Trả về đối tượng ảnh độc lập
-    if (tableImages.length > 0 && textContent.length < 30) {
-      return {
-        type: "images",
-        images: tableImages
-      };
-    }
+  /**
+   * Render Ảnh đơn căn giữa chuẩn đẹp
+   */
+  renderSingleImage(src, alt = "Hình ảnh bài viết", maxWidth = 650) {
+    return `<!-- Ảnh đơn -->
+<div style="text-align: center; margin-top: 15px; margin-bottom: 15px;"><img alt="${alt}" src="${src}" style="max-width: ${maxWidth}px; width: 100%; height: auto;" /></div>`;
+  }
 
-    // 3. Nhận diện bảng hành chính Quốc hiệu Tiêu ngữ ở đầu trang
-    if (/(bệnh viện|phòng công tác|phòng khth|phòng tccb|phòng cntt|phòng điều dưỡng|cộng hòa xã hội|độc lập|sở y tế|bộ y tế|trung tâm)/i.test(textContent)) {
-      return {
-        type: "admin_header_table",
-        rawText: textContent
-      };
-    }
-
-    // 4. Nhận diện bảng chữ ký Ban Giám đốc / Trưởng phòng ở cuối trang
-    if (/(giám đốc|phó giám đốc|tp\s*ctxh|trưởng phòng|trưởng khoa|tác giả|người lập|duyệt bài|bắc ninh,\s*ngày)/i.test(textContent)) {
-      return {
-        type: "admin_footer_table",
-        rawText: textContent
-      };
-    }
-
-    // 5. Nếu bảng hoàn toàn rỗng và không có ảnh -> BỎ QUA HOÀN TOÀN
-    if (!textContent && tableImages.length === 0) {
-      return null;
-    }
-
-    // 6. Xử lý Bảng dữ liệu thực sự (Data Table)
-    const trNodes = tblNode.getElementsByTagName("w:tr").length > 0
-      ? tblNode.getElementsByTagName("w:tr")
-      : tblNode.getElementsByTagName("tr");
-
-    if (trNodes.length === 0) return null;
-
+  /**
+   * Render Bảng dữ liệu nghiệp vụ responsive
+   */
+  renderCustomTable(tableObj) {
     const rowsHtml = [];
+    const font = this.options.fontFamily;
+    const size = this.options.baseFontSize;
 
-    for (let r = 0; r < trNodes.length; r++) {
-      const trNode = trNodes[r];
-      const isHeaderRow = r === 0;
-
-      const tcNodes = trNode.getElementsByTagName("w:tc").length > 0
-        ? trNode.getElementsByTagName("w:tc")
-        : trNode.getElementsByTagName("tc");
-
+    tableObj.rows.forEach((row, rIdx) => {
       const cellsHtml = [];
-      for (let c = 0; c < tcNodes.length; c++) {
-        const tcNode = tcNodes[c];
-        const tcPr = this.findChild(tcNode, ["w:tcPr", "tcPr"]);
+      const isHeaderRow = (rIdx === 0);
+      const bgStyle = isHeaderRow ? "background-color: #f1f5f9; font-weight: bold;" : (rIdx % 2 === 1 ? "background-color: #ffffff;" : "background-color: #f8fafc;");
 
-        let colSpan = 1;
-        if (tcPr) {
-          const gridSpan = this.findChild(tcPr, ["w:gridSpan", "gridSpan"]);
-          if (gridSpan) {
-            colSpan = parseInt(gridSpan.getAttribute("w:val") || gridSpan.getAttribute("val") || "1", 10);
-          }
-        }
+      row.forEach(cell => {
+        const tag = isHeaderRow ? "th" : "td";
+        const spanCol = cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : "";
+        const cellContent = this.escapeHtml(cell.text);
 
-        const pNodes = tcNode.getElementsByTagName("w:p").length > 0
-          ? tcNode.getElementsByTagName("w:p")
-          : tcNode.getElementsByTagName("p");
+        cellsHtml.push(`\t\t\t<${tag}${spanCol} style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; vertical-align: middle; ${bgStyle}"><span style="font-family: ${font}; font-size: ${size}; color: #000000;">${cellContent}</span></${tag}>`);
+      });
 
-        const cellTextParts = [];
-        for (let p = 0; p < pNodes.length; p++) {
-          const pInfo = this.extractParagraphInfo(pNodes[p], relsMap);
-          if (pInfo && pInfo.formattedText) {
-            cellTextParts.push(pInfo.formattedText);
-          }
-        }
+      rowsHtml.push(`\t\t<tr>\n${cellsHtml.join("\n")}\n\t\t</tr>`);
+    });
 
-        let cellInner = cellTextParts.join("<br />");
-        if (!cellInner.trim()) cellInner = "&nbsp;";
+    return `<div style="overflow-x: auto; margin: 15px 0px;">
+<table style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; font-size: ${size};">
+\t<tbody>
+${rowsHtml.join("\n")}
+\t</tbody>
+</table>
+</div>`;
+  }
 
-        const cellTag = isHeaderRow ? "th" : "td";
-        const spanAttr = colSpan > 1 ? ` colspan="${colSpan}"` : "";
-        const cellStyle = isHeaderRow
-          ? `background-color: #f1f5f9; padding: 6px 10px; text-align: center; border: 1px solid #cbd5e1;`
-          : `padding: 6px 10px; vertical-align: top; border: 1px solid #cbd5e1;`;
+  /**
+   * Làm sạch sâu các thẻ rác MS Word và chuẩn hóa mã HTML
+   */
+  cleanGarbageTags(html) {
+    if (!html) return "";
 
-        cellsHtml.push(`    <${cellTag}${spanAttr} style="${cellStyle}"><span style="font-family:${this.options.fontFamily};"><span style="font-size:${this.options.baseFontSize};">${cellInner}</span></span></${cellTag}>`);
+    let clean = html;
+    // 1. Xóa các thuộc tính thừa của MS Office/Word
+    clean = clean.replace(/\s*class="Mso[^"]*"/gi, "");
+    clean = clean.replace(/\s*style="[^"]*mso-[^"]*"/gi, "");
+    clean = clean.replace(/<o:p>[\s\S]*?<\/o:p>/gi, "");
+    clean = clean.replace(/<!--[\s\S]*?-->/gi, (match) => {
+      // Giữ lại comment cặp ảnh/ảnh đơn hữu ích
+      if (match.includes("Cặp ảnh") || match.includes("Ảnh đơn")) return match;
+      return "";
+    });
+
+    // 2. Xóa các span lồng nhau có cùng style
+    clean = clean.replace(/<span[^>]*>\s*<\/span>/gi, "");
+
+    // 3. Xóa các đoạn div hoàn toàn trống không có ảnh
+    clean = clean.replace(/<div[^>]*>\s*<span[^>]*>\s*<\/span>\s*<\/div>/gi, "");
+
+    // 4. Chuẩn hóa khoảng trống và dòng trống liên tiếp
+    clean = clean.replace(/\n{3,}/g, "\n\n");
+
+    return clean.trim();
+  }
+
+  /**
+   * Định dạng mã HTML đẹp (Beautify HTML)
+   */
+  beautifyHtml(html) {
+    if (!html) return "";
+    let formatted = "";
+    let indent = 0;
+    const tab = "  ";
+
+    html.split(/>\s*</).forEach(node => {
+      if (node.match(/^\/\w/)) indent = Math.max(0, indent - 1);
+      formatted += "\n" + tab.repeat(indent) + "<" + node + ">";
+      if (node.match(/^<?\w[^>]*[^\/]$/) && !node.startsWith("input") && !node.startsWith("img") && !node.startsWith("br") && !node.startsWith("hr")) {
+        indent++;
       }
+    });
 
-      rowsHtml.push(`  <tr>\n${cellsHtml.join("\n")}\n  </tr>`);
-    }
+    return formatted.substring(1);
+  }
 
-    const tableHtml = `<div style="overflow-x: auto; margin: 18px 0px;"><table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1;">\n${rowsHtml.join("\n")}\n</table></div>`;
+  /**
+   * Nén mã HTML (Minify HTML)
+   */
+  minifyHtml(html) {
+    if (!html) return "";
+    return html
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/>\s+</g, "><")
+      .trim();
+  }
 
-    return {
-      type: "table",
-      html: tableHtml
+  /**
+   * Chuyển mã HTML sang Markdown sạch
+   */
+  convertToMarkdown(html) {
+    if (!html) return "";
+    let md = html;
+
+    // Chuyển headings
+    md = md.replace(/<div[^>]*><span[^>]*><span[^>]*font-weight:\s*bold;[^>]*>(.*?)<\/span><\/span><\/div>/gi, "\n### $1\n");
+    // Chuyển paragraphs
+    md = md.replace(/<div[^>]*><span[^>]*><span[^>]*>(.*?)<\/span><\/span><\/div>/gi, "\n$1\n");
+    // Chuyển images
+    md = md.replace(/<img[^>]*alt="([^"]*)"[^>]*src="([^"]*)"[^>]*\/>/gi, "\n![$1]($2)\n");
+    // Bỏ các thẻ HTML còn lại
+    md = md.replace(/<[^>]+>/g, "");
+    md = md.replace(/\n{3,}/g, "\n\n");
+
+    return md.trim();
+  }
+
+  /**
+   * Tính toán các chỉ số thống kê bài viết
+   */
+  calculateStats(html) {
+    const textContent = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const words = textContent ? textContent.split(/\s+/).length : 0;
+    const chars = textContent.length;
+    const paragraphs = (html.match(/<div style="text-align/g) || []).length;
+    const tables = (html.match(/<table/g) || []).length;
+    const images = (html.match(/<img/g) || []).length;
+    const readingTime = Math.max(1, Math.ceil(words / 200)); // 200 từ / phút
+
+    this.stats = {
+      wordCount: words,
+      charCount: chars,
+      paragraphCount: paragraphs,
+      tableCount: tables,
+      imageCount: images,
+      readingTimeMinutes: readingTime
     };
+
+    return this.stats;
   }
 
-  findChild(node, names) {
-    if (!node || !node.childNodes) return null;
-    for (let i = 0; i < node.childNodes.length; i++) {
-      const c = node.childNodes[i];
-      if (names.includes(c.nodeName)) return c;
-    }
-    return null;
-  }
-
-  escapeHtml(str) {
-    if (!str) return "";
-    return str
+  escapeHtml(text) {
+    if (!text) return "";
+    return text
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(/>/g, "&gt;");
   }
 }
 

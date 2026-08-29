@@ -591,10 +591,14 @@ https://domain.com/images/anh2.jpg"></textarea>
 
                   <!-- Tùy chọn Bảng biểu & Tinh gọn -->
                   <div class="w2h-checkbox-group-wrap">
-                    <label class="setting-section-title">📊 Tùy chọn nâng cao:</label>
+                    <label class="setting-section-title">📊 Tùy chọn thông minh:</label>
                     <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hPreserveLayoutTables" checked />
-                      <span>Bảo toàn bảng thể thức không viền (Quốc hiệu, Tiêu ngữ, Chữ ký)</span>
+                      <input type="checkbox" id="w2hAutoFilterBoundaries" checked />
+                      <span>🛡️ Tự động lọc Header/Footer hành chính & Bảng trống</span>
+                    </label>
+                    <label class="w2h-checkbox-label">
+                      <input type="checkbox" id="w2hUnboldAll" checked />
+                      <span>🔤 Chữ thường toàn bài (Loại bỏ in đậm)</span>
                     </label>
                     <label class="w2h-checkbox-label">
                       <input type="checkbox" id="w2hTableBorder" checked />
@@ -603,10 +607,6 @@ https://domain.com/images/anh2.jpg"></textarea>
                     <label class="w2h-checkbox-label">
                       <input type="checkbox" id="w2hCleanEmpty" checked />
                       <span>Tự động xóa các đoạn trắng rỗng thừa</span>
-                    </label>
-                    <label class="w2h-checkbox-label">
-                      <input type="checkbox" id="w2hCollapseSpaces" checked />
-                      <span>Tự động gộp khoảng trắng thừa</span>
                     </label>
                   </div>
 
@@ -635,17 +635,36 @@ https://domain.com/images/anh2.jpg"></textarea>
                   </button>
                 </div>
 
+                <!-- Device Preview Viewport Selector -->
+                <div class="w2h-viewport-switcher" id="w2hViewportSwitcher">
+                  <button type="button" class="btn-viewport active" id="btnViewportDesktop" title="Xem trên màn hình máy tính (100%)">💻 Desktop</button>
+                  <button type="button" class="btn-viewport" id="btnViewportTablet" title="Xem trên màn hình máy tính bảng (768px)">📱 Tablet</button>
+                  <button type="button" class="btn-viewport" id="btnViewportMobile" title="Xem trên màn hình điện thoại (375px)">📱 Mobile</button>
+                </div>
+
                 <!-- Action & Tool Buttons -->
                 <div class="w2h-action-btns">
-                  <button type="button" class="btn-w2h-action btn-toggle-sidebar" id="btnToggleSidebarW2h" title="Ẩn/hiện cột cài đặt để mở rộng khung soạn thảo">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                    <span id="txtToggleSidebar">◀ Thu gọn cài đặt</span>
+                  <button type="button" class="btn-w2h-action" id="btnCleanGarbageHtml" title="Loại bỏ toàn bộ mã rác MS Word (mso, span thừa, rỗng)">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                    <span>🧹 Dọn rác</span>
                   </button>
-                  <button type="button" class="btn-w2h-action btn-fullscreen" id="btnToggleFullscreenW2h" title="Phóng to toàn màn hình để chỉnh sửa thoải mái">
+                  <button type="button" class="btn-w2h-action" id="btnBeautifyHtml" title="Định dạng mã HTML thụt dòng đẹp mắt">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                    <span>✨ Làm đẹp</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action" id="btnMinifyHtml" title="Nén mã HTML tối ưu dung lượng CMS">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/></svg>
+                    <span>🗜️ Nén mã</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action btn-toggle-sidebar" id="btnToggleSidebarW2h" title="Ẩn/hiện cột cài đặt">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                    <span id="txtToggleSidebar">◀ Thu gọn</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action btn-fullscreen" id="btnToggleFullscreenW2h" title="Phóng to toàn màn hình">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                     <span id="txtFullscreenBtn">⛶ Phóng to</span>
                   </button>
-                  <button type="button" class="btn-w2h-action btn-revert-original" id="btnRevertOriginalHtml" title="Khôi phục về đoạn mã HTML ban đầu được tạo từ file Word">
+                  <button type="button" class="btn-w2h-action btn-revert-original" id="btnRevertOriginalHtml" title="Khôi phục về đoạn mã HTML ban đầu">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
                     <span>🔄 Mã gốc</span>
                   </button>
@@ -661,6 +680,10 @@ https://domain.com/images/anh2.jpg"></textarea>
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     <span>💾 Tải .html</span>
                   </button>
+                  <button type="button" class="btn-w2h-action" id="btnExportMarkdown" title="Xuất nội dung sang định dạng Markdown (.md)">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span>📝 .MD</span>
+                  </button>
                 </div>
               </div>
 
@@ -668,7 +691,7 @@ https://domain.com/images/anh2.jpg"></textarea>
               <div class="w2h-stats-bar" id="w2hStatsBar">
                 <div class="stats-label-group">
                   <span class="stats-icon">📊</span>
-                  <span class="stats-title">Thống kê:</span>
+                  <span class="stats-title">Thống kê bài viết:</span>
                 </div>
                 <div class="stats-pills-list">
                   <div class="stat-pill"><span class="stat-num" id="w2hStatWords">0</span> từ</div>
@@ -680,6 +703,8 @@ https://domain.com/images/anh2.jpg"></textarea>
                   <div class="stat-pill"><span class="stat-num" id="w2hStatTables">0</span> bảng</div>
                   <span class="stat-sep">•</span>
                   <div class="stat-pill"><span class="stat-num" id="w2hStatImages">0</span> ảnh</div>
+                  <span class="stat-sep">•</span>
+                  <div class="stat-pill"><span class="stat-num" id="w2hStatReadingTime">0</span> phút đọc</div>
                 </div>
               </div>
 
@@ -804,11 +829,12 @@ https://domain.com/images/anh2.jpg"></textarea>
                 </div>
                 <div class="w2h-card-body">
                   <!-- Quick Preset Range Buttons -->
-                  <div class="pdf-quick-range-row">
-                    <button type="button" class="btn-range-quick active" id="btnPdfSelectAll">Tất cả trang</button>
+                  <div class="pdf-quick-range-row-3">
+                    <button type="button" class="btn-range-quick active" id="btnPdfSelectAll">Tất cả</button>
                     <button type="button" class="btn-range-quick" id="btnPdfDeselectAll">Bỏ chọn</button>
-                    <button type="button" class="btn-range-quick" id="btnPdfSelectOdd">Trang lẻ (1, 3...)</button>
-                    <button type="button" class="btn-range-quick" id="btnPdfSelectEven">Trang chẵn (2, 4...)</button>
+                    <button type="button" class="btn-range-quick" id="btnPdfSelectOdd">Trang lẻ</button>
+                    <button type="button" class="btn-range-quick" id="btnPdfSelectEven">Trang chẵn</button>
+                    <button type="button" class="btn-range-quick" id="btnPdfInvertSelection">🔄 Đảo chọn</button>
                   </div>
 
                   <!-- Manual Range Input -->
@@ -826,7 +852,7 @@ https://domain.com/images/anh2.jpg"></textarea>
               <div class="w2h-card">
                 <div class="w2h-card-header">
                   <span class="card-icon">⚙️</span>
-                  <h3>3. Cài Đặt Chất Lượng Ảnh</h3>
+                  <h3>3. Cài Đặt Chất Lượng & Bộ Lọc</h3>
                 </div>
                 <div class="w2h-card-body">
                   <div class="w2h-setting-row-2">
@@ -841,15 +867,25 @@ https://domain.com/images/anh2.jpg"></textarea>
                     <div class="w2h-setting-group">
                       <label class="setting-lbl">📐 Độ phân giải / DPI:</label>
                       <select id="pdfExportScale" class="w2h-select">
-                        <option value="1.0">1.0x (Chuẩn Web ~ 96 DPI)</option>
-                        <option value="1.5">1.5x (Rõ nét ~ 150 DPI)</option>
-                        <option value="2.0" selected>2.0x (Siêu sắc nét ~ 300 DPI)</option>
-                        <option value="3.0">3.0x (Cực nét Ultra HD)</option>
+                        <option value="1.0">1.0x (Web nhẹ ~ 96 DPI)</option>
+                        <option value="1.5">1.5x (HD rõ nét ~ 150 DPI)</option>
+                        <option value="2.0" selected>2.0x (Siêu sắc nét ~ 300 DPI - Khuyên dùng)</option>
+                        <option value="3.0">3.0x (Ultra HD 4K ~ 450 DPI)</option>
+                        <option value="4.0">4.0x (Max Precision ~ 600 DPI)</option>
                       </select>
                     </div>
                   </div>
 
                   <div class="w2h-setting-row-2">
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">✨ Bộ lọc ảnh scan:</label>
+                      <select id="pdfImageFilter" class="w2h-select">
+                        <option value="none" selected>Gốc (Không lọc)</option>
+                        <option value="enhance">✨ Tăng tương phản & Làm nét chữ</option>
+                        <option value="bw">⚫⚪ Trắng đen tương phản cao (B&W)</option>
+                        <option value="grayscale">🔘 Màu xám sạch (Grayscale)</option>
+                      </select>
+                    </div>
                     <div class="w2h-setting-group" id="groupPdfQuality">
                       <label class="setting-lbl">🎚️ Chất lượng nén:</label>
                       <select id="pdfExportQuality" class="w2h-select">
@@ -858,10 +894,11 @@ https://domain.com/images/anh2.jpg"></textarea>
                         <option value="0.8">80% (Tiết kiệm bộ nhớ)</option>
                       </select>
                     </div>
-                    <div class="w2h-setting-group">
-                      <label class="setting-lbl">🏷️ Tiền tố tên file ảnh:</label>
-                      <input type="text" id="pdfFilenamePrefix" class="w2h-text-input" placeholder="Trang" value="Trang" />
-                    </div>
+                  </div>
+
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">🏷️ Tiền tố tên file ảnh xuất:</label>
+                    <input type="text" id="pdfFilenamePrefix" class="w2h-text-input" placeholder="Trang" value="Trang" />
                   </div>
                 </div>
               </div>
@@ -872,16 +909,24 @@ https://domain.com/images/anh2.jpg"></textarea>
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                   <span>📦 TẢI TẤT CẢ TRANG ĐÃ CHỌN (.ZIP)</span>
                 </button>
+                <button type="button" class="btn-pdf-batch-long-img" id="btnPdfMergeLongImage" title="Ghép tất cả các trang đã chọn thành 1 bức ảnh dài liên tục">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+                  <span>🖼️ GHÉP THÀNH 1 ẢNH DÀI (LONG IMAGE)</span>
+                </button>
                 <div class="pdf-batch-btn-row">
+                  <button type="button" class="btn-pdf-batch-secondary" id="btnPdfRotateAll" title="Xoay toàn bộ các trang 90 độ">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    <span>Xoay 90° tất cả</span>
+                  </button>
                   <button type="button" class="btn-pdf-batch-secondary" id="btnPdfDownloadIndividual" title="Tải riêng lẻ từng ảnh các trang đã chọn">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     <span>Tải từng trang lẻ</span>
                   </button>
-                  <button type="button" class="btn-pdf-batch-secondary" id="btnPdfCopyHtmlImg" title="Tạo mã HTML thẻ <img> các trang đã chọn">
-                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                    <span>Sao chép mã thẻ &lt;img&gt;</span>
-                  </button>
                 </div>
+                <button type="button" class="btn-pdf-batch-secondary w-full" id="btnPdfCopyHtmlImg" title="Tạo mã HTML thẻ <img> chuẩn CMS">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                  <span>Sao chép mã HTML thẻ &lt;img&gt; đăng CMS</span>
+                </button>
               </div>
 
             </div>

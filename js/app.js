@@ -72,16 +72,20 @@ class AppController {
     this.btnPdfDeselectAll = document.getElementById("btnPdfDeselectAll");
     this.btnPdfSelectOdd = document.getElementById("btnPdfSelectOdd");
     this.btnPdfSelectEven = document.getElementById("btnPdfSelectEven");
+    this.btnPdfInvertSelection = document.getElementById("btnPdfInvertSelection");
     this.pdfRangeInput = document.getElementById("pdfRangeInput");
     this.btnPdfApplyRange = document.getElementById("btnPdfApplyRange");
 
     this.pdfExportFormat = document.getElementById("pdfExportFormat");
     this.pdfExportScale = document.getElementById("pdfExportScale");
+    this.pdfImageFilter = document.getElementById("pdfImageFilter");
     this.pdfExportQuality = document.getElementById("pdfExportQuality");
     this.groupPdfQuality = document.getElementById("groupPdfQuality");
     this.pdfFilenamePrefix = document.getElementById("pdfFilenamePrefix");
 
     this.btnPdfDownloadZip = document.getElementById("btnPdfDownloadZip");
+    this.btnPdfMergeLongImage = document.getElementById("btnPdfMergeLongImage");
+    this.btnPdfRotateAll = document.getElementById("btnPdfRotateAll");
     this.btnPdfDownloadIndividual = document.getElementById("btnPdfDownloadIndividual");
     this.btnPdfCopyHtmlImg = document.getElementById("btnPdfCopyHtmlImg");
 
@@ -237,11 +241,22 @@ class AppController {
     this.w2hTextIndent = document.getElementById("w2hTextIndent");
     this.w2hLineHeight = document.getElementById("w2hLineHeight");
     this.w2hMarginBottom = document.getElementById("w2hMarginBottom");
-    this.w2hPreserveLayoutTables = document.getElementById("w2hPreserveLayoutTables");
+    this.w2hAutoFilterBoundaries = document.getElementById("w2hAutoFilterBoundaries");
+    this.w2hUnboldAll = document.getElementById("w2hUnboldAll");
     this.w2hTableBorder = document.getElementById("w2hTableBorder");
     this.w2hCleanEmpty = document.getElementById("w2hCleanEmpty");
-    this.w2hCollapseSpaces = document.getElementById("w2hCollapseSpaces");
     this.btnResetW2hSettings = document.getElementById("btnResetW2hSettings");
+
+    // Viewport Switcher Elements
+    this.btnViewportDesktop = document.getElementById("btnViewportDesktop");
+    this.btnViewportTablet = document.getElementById("btnViewportTablet");
+    this.btnViewportMobile = document.getElementById("btnViewportMobile");
+
+    // HTML Action Tools
+    this.btnCleanGarbageHtml = document.getElementById("btnCleanGarbageHtml");
+    this.btnBeautifyHtml = document.getElementById("btnBeautifyHtml");
+    this.btnMinifyHtml = document.getElementById("btnMinifyHtml");
+    this.btnExportMarkdown = document.getElementById("btnExportMarkdown");
 
     // Image URL controls
     this.w2hThauImageControls = document.getElementById("w2hThauImageControls");
@@ -272,6 +287,7 @@ class AppController {
     this.w2hStatParagraphs = document.getElementById("w2hStatParagraphs");
     this.w2hStatTables = document.getElementById("w2hStatTables");
     this.w2hStatImages = document.getElementById("w2hStatImages");
+    this.w2hStatReadingTime = document.getElementById("w2hStatReadingTime");
 
     this.w2hDisplayWorkspace = document.getElementById("w2hDisplayWorkspace");
     this.w2hVisualContainer = document.getElementById("w2hVisualContainer");
@@ -620,8 +636,8 @@ class AppController {
     const settingInputs = [
       this.w2hFontFamily, this.w2hFontSize, this.w2hTextColorPicker, this.w2hTextColorText,
       this.w2hTextAlign, this.w2hTextIndent, this.w2hLineHeight, this.w2hMarginBottom,
-      this.w2hPreserveLayoutTables, this.w2hTableBorder,
-      this.w2hCleanEmpty, this.w2hCollapseSpaces
+      this.w2hAutoFilterBoundaries, this.w2hUnboldAll, this.w2hTableBorder,
+      this.w2hCleanEmpty
     ];
 
     settingInputs.forEach(input => {
@@ -748,6 +764,56 @@ class AppController {
     if (this.btnDownloadHtml) {
       this.btnDownloadHtml.addEventListener("click", () => this.downloadW2hHtml());
     }
+    if (this.btnExportMarkdown) {
+      this.btnExportMarkdown.addEventListener("click", () => this.exportW2hMarkdown());
+    }
+
+    // Viewport Switcher Handlers
+    const viewports = [
+      { btn: this.btnViewportDesktop, cls: "" },
+      { btn: this.btnViewportTablet, cls: "viewport-tablet" },
+      { btn: this.btnViewportMobile, cls: "viewport-mobile" }
+    ];
+    viewports.forEach(({ btn, cls }) => {
+      if (btn) {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".btn-viewport").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          if (this.w2hArticleSheet) {
+            this.w2hArticleSheet.classList.remove("viewport-tablet", "viewport-mobile");
+            if (cls) this.w2hArticleSheet.classList.add(cls);
+          }
+        });
+      }
+    });
+
+    // Clean, Beautify, Minify HTML Tools
+    if (this.btnCleanGarbageHtml) {
+      this.btnCleanGarbageHtml.addEventListener("click", () => {
+        if (!this.w2hHtmlRawTextarea.value) return;
+        this.w2hHtmlRawTextarea.value = this.w2hConverter.cleanGarbageTags(this.w2hHtmlRawTextarea.value);
+        this.handleDirectHtmlCodeEdit();
+        this.showToast("Đã dọn sạch các thẻ rác MS Word!", "success");
+      });
+    }
+
+    if (this.btnBeautifyHtml) {
+      this.btnBeautifyHtml.addEventListener("click", () => {
+        if (!this.w2hHtmlRawTextarea.value) return;
+        this.w2hHtmlRawTextarea.value = this.w2hConverter.beautifyHtml(this.w2hHtmlRawTextarea.value);
+        this.handleDirectHtmlCodeEdit();
+        this.showToast("Đã định dạng mã HTML thụt lề chuẩn!", "success");
+      });
+    }
+
+    if (this.btnMinifyHtml) {
+      this.btnMinifyHtml.addEventListener("click", () => {
+        if (!this.w2hHtmlRawTextarea.value) return;
+        this.w2hHtmlRawTextarea.value = this.w2hConverter.minifyHtml(this.w2hHtmlRawTextarea.value);
+        this.handleDirectHtmlCodeEdit();
+        this.showToast("Đã nén mã HTML tối ưu dung lượng CMS!", "success");
+      });
+    }
 
     // ==========================================
     // PDF TO IMAGE EXPORTER EVENTS
@@ -794,7 +860,8 @@ class AppController {
       { btn: this.btnPdfSelectAll, action: () => { this.pdfConverter.selectAllPages(); this.onPdfSelectionChanged(); } },
       { btn: this.btnPdfDeselectAll, action: () => { this.pdfConverter.deselectAllPages(); this.onPdfSelectionChanged(); } },
       { btn: this.btnPdfSelectOdd, action: () => { this.pdfConverter.selectOddPages(); this.onPdfSelectionChanged(); } },
-      { btn: this.btnPdfSelectEven, action: () => { this.pdfConverter.selectEvenPages(); this.onPdfSelectionChanged(); } }
+      { btn: this.btnPdfSelectEven, action: () => { this.pdfConverter.selectEvenPages(); this.onPdfSelectionChanged(); } },
+      { btn: this.btnPdfInvertSelection, action: () => { this.pdfConverter.invertSelection(); this.onPdfSelectionChanged(); } }
     ];
 
     rangeBtns.forEach(({ btn, action }) => {
@@ -818,12 +885,15 @@ class AppController {
       });
     }
 
-    // Format & Scale Changes
-    const pdfSettings = [this.pdfExportFormat, this.pdfExportScale, this.pdfExportQuality, this.pdfFilenamePrefix];
+    // Format, Scale & Filter Changes
+    const pdfSettings = [this.pdfExportFormat, this.pdfExportScale, this.pdfImageFilter, this.pdfExportQuality, this.pdfFilenamePrefix];
     pdfSettings.forEach(el => {
       if (el) {
-        el.addEventListener("change", () => {
+        el.addEventListener("change", async () => {
           this.applyPdfSettings();
+          if (this.pdfConverter && this.pdfConverter.pdfDoc) {
+            await this.renderPdfPageGrid();
+          }
         });
       }
     });
@@ -840,6 +910,17 @@ class AppController {
     // Batch Action Buttons
     if (this.btnPdfDownloadZip) {
       this.btnPdfDownloadZip.addEventListener("click", () => this.downloadPdfSelectedZip());
+    }
+    if (this.btnPdfMergeLongImage) {
+      this.btnPdfMergeLongImage.addEventListener("click", () => this.mergePdfLongImage());
+    }
+    if (this.btnPdfRotateAll) {
+      this.btnPdfRotateAll.addEventListener("click", async () => {
+        if (!this.pdfConverter || !this.pdfConverter.pdfDoc) return;
+        this.pdfConverter.rotateAllPages(90);
+        this.showToast("Đã xoay toàn bộ các trang 90°!", "info");
+        await this.renderPdfPageGrid();
+      });
     }
     if (this.btnPdfDownloadIndividual) {
       this.btnPdfDownloadIndividual.addEventListener("click", () => this.downloadPdfIndividualPages());
@@ -1580,11 +1661,11 @@ class AppController {
       textAlign: this.w2hTextAlign ? this.w2hTextAlign.value : "justify",
       textIndent: this.w2hTextIndent ? this.w2hTextIndent.value : "none",
       lineHeight: this.w2hLineHeight ? this.w2hLineHeight.value : "1.6",
-      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "6px",
-      preserveLayoutTables: this.w2hPreserveLayoutTables ? this.w2hPreserveLayoutTables.checked : true,
+      paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "10px",
+      autoFilterBoundaries: this.w2hAutoFilterBoundaries ? this.w2hAutoFilterBoundaries.checked : true,
+      unboldAll: this.w2hUnboldAll ? this.w2hUnboldAll.checked : true,
       tableFullBorder: this.w2hTableBorder ? this.w2hTableBorder.checked : true,
       cleanEmptyParagraphs: this.w2hCleanEmpty ? this.w2hCleanEmpty.checked : true,
-      collapseSpaces: this.w2hCollapseSpaces ? this.w2hCollapseSpaces.checked : true,
       ctxhImageUrls: ctxhImageUrls,
       thauTopImageUrl: this.w2hThauTopImageUrl ? this.w2hThauTopImageUrl.value : "",
       thauTopImageCaption: this.w2hThauTopImageCaption ? this.w2hThauTopImageCaption.value : "",
@@ -1666,21 +1747,8 @@ class AppController {
 
     // Tự động tính toán lại thống kê (từ, ký tự, đoạn văn, bảng, ảnh)
     try {
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = editedCode;
-      const text = tempDiv.innerText || "";
-      const words = text.split(/\s+/).filter(w => w.length > 0);
-      const paragraphs = tempDiv.querySelectorAll("p, div, li").length;
-      const tables = tempDiv.querySelectorAll("table").length;
-      const images = tempDiv.querySelectorAll("img").length;
-
-      this.updateW2hStats({
-        wordCount: words.length,
-        charCount: text.length,
-        paragraphCount: paragraphs,
-        tableCount: tables,
-        imageCount: images
-      });
+      const stats = this.w2hConverter.calculateStats(editedCode);
+      this.updateW2hStats(stats);
     } catch (e) {
       // Bỏ qua lỗi parsing tạm thời khi đang gõ dở
     }
@@ -1715,6 +1783,7 @@ class AppController {
     if (this.w2hStatParagraphs) this.w2hStatParagraphs.textContent = (stats.paragraphCount || 0).toLocaleString("vi-VN");
     if (this.w2hStatTables) this.w2hStatTables.textContent = (stats.tableCount || 0).toLocaleString("vi-VN");
     if (this.w2hStatImages) this.w2hStatImages.textContent = (stats.imageCount || 0).toLocaleString("vi-VN");
+    if (this.w2hStatReadingTime) this.w2hStatReadingTime.textContent = (stats.readingTimeMinutes || Math.max(1, Math.ceil((stats.wordCount || 0) / 200))).toLocaleString("vi-VN");
   }
 
   async copyW2hHtmlCode() {
@@ -2273,12 +2342,14 @@ ${this.currentW2hHtmlOutput}
     const scale = this.pdfExportScale ? parseFloat(this.pdfExportScale.value) : 2.0;
     const quality = this.pdfExportQuality ? parseFloat(this.pdfExportQuality.value) : 0.92;
     const filenamePrefix = this.pdfFilenamePrefix ? this.pdfFilenamePrefix.value.trim() : "Trang";
+    const imageFilter = this.pdfImageFilter ? this.pdfImageFilter.value : "none";
 
     this.pdfConverter.setOptions({
       format,
       scale,
       quality,
-      filenamePrefix
+      filenamePrefix,
+      imageFilter
     });
 
     this.updatePdfStatsBar();
@@ -2321,10 +2392,14 @@ ${this.currentW2hHtmlOutput}
             </button>
           </div>
         </div>
-        <div class="pdf-card-footer">
+        <div class="pdf-card-footer-3">
+          <button type="button" class="btn-card-action btn-card-rotate" data-page="${p}" title="Xoay trang này 90°">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            <span>Xoay</span>
+          </button>
           <button type="button" class="btn-card-action btn-card-download" data-page="${p}" title="Tải ảnh trang này">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Tải ảnh</span>
+            <span>Tải</span>
           </button>
           <button type="button" class="btn-card-action btn-card-copy" data-page="${p}" title="Sao chép ảnh vào Clipboard">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -2337,7 +2412,7 @@ ${this.currentW2hHtmlOutput}
 
       // Render thumbnail asynchronously
       try {
-        const pageData = await this.pdfConverter.renderPageToCanvas(p, this.pdfConverter.options.scale);
+        const pageData = await this.pdfConverter.renderPageToCanvas(p, this.pdfConverter.options.scale, true);
         const previewBox = card.querySelector(".pdf-card-preview-box");
         const dimSpan = card.querySelector(`#pdfDim_${p}`);
 
@@ -2348,6 +2423,137 @@ ${this.currentW2hHtmlOutput}
         pageData.canvas.className = "pdf-card-canvas";
         previewBox.prepend(pageData.canvas);
       } catch (err) {
+        console.error(`Lỗi render trang ${p}:`, err);
+      }
+
+      // Update progress
+      const percent = Math.round((p / total) * 100);
+      if (this.pdfProgressBarFill) this.pdfProgressBarFill.style.width = `${percent}%`;
+      if (this.pdfProgressPercent) this.pdfProgressPercent.textContent = `${percent}%`;
+    }
+
+    if (this.pdfProgressBarContainer) {
+      setTimeout(() => this.pdfProgressBarContainer.classList.add("hidden"), 500);
+    }
+
+    // Attach card events
+    this.pdfPageGrid.querySelectorAll(".pdf-card-checkbox").forEach(cb => {
+      cb.addEventListener("change", (e) => {
+        const p = parseInt(e.target.dataset.page, 10);
+        const isChecked = e.target.checked;
+        this.pdfConverter.togglePageSelection(p, isChecked);
+        const card = this.pdfPageGrid.querySelector(`.pdf-page-card[data-page-num="${p}"]`);
+        if (card) card.classList.toggle("selected", isChecked);
+        this.updatePdfStatsBar();
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".pdf-card-preview-box").forEach(box => {
+      box.addEventListener("click", () => {
+        const p = parseInt(box.dataset.page, 10);
+        this.openPdfLightbox(p);
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".btn-card-rotate").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const p = parseInt(btn.dataset.page, 10);
+        this.pdfConverter.rotatePage(p, 90);
+        const card = this.pdfPageGrid.querySelector(`.pdf-page-card[data-page-num="${p}"]`);
+        if (card) {
+          const previewBox = card.querySelector(".pdf-card-preview-box");
+          const oldCanvas = previewBox.querySelector("canvas");
+          if (oldCanvas) oldCanvas.remove();
+
+          const pageData = await this.pdfConverter.renderPageToCanvas(p, this.pdfConverter.options.scale, true);
+          pageData.canvas.className = "pdf-card-canvas";
+          previewBox.prepend(pageData.canvas);
+
+          const dimSpan = card.querySelector(`#pdfDim_${p}`);
+          if (dimSpan) dimSpan.textContent = `${Math.round(pageData.width)} × ${Math.round(pageData.height)} px`;
+        }
+        this.showToast(`Đã xoay Trang ${p} 90°!`, "info");
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".btn-card-download").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const p = parseInt(btn.dataset.page, 10);
+        this.pdfConverter.downloadSinglePage(p);
+      });
+    });
+
+    this.pdfPageGrid.querySelectorAll(".btn-card-copy").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const p = parseInt(btn.dataset.page, 10);
+        try {
+          await this.pdfConverter.copyPageImageToClipboard(p);
+          this.showToast(`Đã sao chép ảnh Trang ${p} vào Clipboard!`, "success");
+        } catch (err) {
+          this.showToast("Không thể sao chép: " + err.message, "error");
+        }
+      });
+    });
+  }
+
+  async mergePdfLongImage() {
+    if (!this.pdfConverter || !this.pdfConverter.pdfDoc) {
+      this.showToast("Vui lòng tải lên file PDF trước khi ghép ảnh!", "warning");
+      return;
+    }
+
+    if (this.pdfConverter.selectedPages.size === 0) {
+      this.showToast("Vui lòng chọn ít nhất một trang để ghép ảnh!", "warning");
+      return;
+    }
+
+    try {
+      if (this.pdfProgressBarContainer) {
+        this.pdfProgressBarContainer.classList.remove("hidden");
+      }
+
+      this.showToast("Đang ghép các trang đã chọn thành 1 ảnh dài duy nhất...", "info");
+      const res = await this.pdfConverter.mergeSelectedPagesToLongImage((cur, total, msg) => {
+        const percent = Math.round((cur / total) * 100);
+        if (this.pdfProgressLabel) this.pdfProgressLabel.textContent = msg;
+        if (this.pdfProgressPercent) this.pdfProgressPercent.textContent = `${percent}%`;
+        if (this.pdfProgressBarFill) this.pdfProgressBarFill.style.width = `${percent}%`;
+      });
+
+      if (this.pdfProgressBarContainer) {
+        setTimeout(() => this.pdfProgressBarContainer.classList.add("hidden"), 500);
+      }
+
+      this.showToast(`Đã ghép thành công tệp ảnh ${res.fileName} (${res.width}x${res.height} px)!`, "success");
+    } catch (err) {
+      this.showToast("Lỗi ghép ảnh: " + err.message, "error");
+      if (this.pdfProgressBarContainer) this.pdfProgressBarContainer.classList.add("hidden");
+    }
+  }
+
+  exportW2hMarkdown() {
+    if (!this.w2hHtmlRawTextarea.value) {
+      this.showToast("Chưa có nội dung để xuất Markdown!", "warning");
+      return;
+    }
+
+    const md = this.w2hConverter.convertToMarkdown(this.w2hHtmlRawTextarea.value);
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const fileName = (this.currentW2hFileName ? this.currentW2hFileName.replace(/\.[^/.]+$/, "") : "Bai_viet") + ".md";
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.showToast(`Đã tải về tệp ${fileName}!`, "success");
+  }
         console.error(`Lỗi render trang ${p}:`, err);
       }
 

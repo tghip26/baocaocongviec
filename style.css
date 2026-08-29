@@ -4079,6 +4079,107 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   overflow-y: auto;
 }
 
+/* ==========================================================================
+   VIEWPORT SWITCHER (Desktop, Tablet, Mobile Device Preview)
+   ========================================================================== */
+.w2h-viewport-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 3px 5px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-viewport {
+  padding: 4px 9px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-viewport:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-viewport.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.3);
+}
+
+/* Dynamic Device Viewports for Article Sheet */
+.w2h-article-sheet.viewport-tablet {
+  max-width: 768px !important;
+  margin: 0 auto;
+  border-left: 2px dashed rgba(59, 130, 246, 0.4);
+  border-right: 2px dashed rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.w2h-article-sheet.viewport-mobile {
+  max-width: 375px !important;
+  margin: 0 auto;
+  padding: 16px 14px !important;
+  border-left: 2px dashed rgba(16, 185, 129, 0.4);
+  border-right: 2px dashed rgba(16, 185, 129, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* 5-Button Range Selector Grid */
+.pdf-quick-range-row-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(65px, 1fr));
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+/* Long Image Merge Action Button */
+.btn-pdf-batch-long-img {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+  transition: all var(--transition-fast);
+}
+
+.btn-pdf-batch-long-img:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #0891b2 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.45);
+}
+
+.btn-pdf-batch-secondary.w-full {
+  grid-column: span 2;
+  width: 100%;
+}
+
+.pdf-card-footer-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid var(--border-subtle);
+}
+
 /* Responsive Rules for Mobile */
 @media (max-width: 1024px) {
   .pdf-layout-grid {
@@ -4099,5 +4200,9 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
   .pdf-page-grid {
     grid-template-columns: 1fr;
+  }
+
+  .w2h-viewport-switcher {
+    display: none;
   }
 }
