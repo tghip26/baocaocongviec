@@ -3415,29 +3415,9 @@ ${this.currentW2hHtmlOutput}
   }
 
   openDutyLoginModal() {
-    this.renderQuickLoginChips();
     if (this.inputDutyLoginUser) this.inputDutyLoginUser.value = "";
     if (this.inputDutyLoginPass) this.inputDutyLoginPass.value = "";
     this.showModal(this.modalDutyLogin);
-  }
-
-  renderQuickLoginChips() {
-    if (!this.quickLoginChipsContainer || !window.ToolDutyRoster) return;
-    this.quickLoginChipsContainer.innerHTML = "";
-    const accounts = ToolDutyRoster.getAccounts();
-    accounts.forEach(acc => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn-quick-login";
-      const icon = acc.role === "admin" ? "👑" : "💻";
-      btn.innerHTML = `${icon} <strong>${acc.fullname || acc.username}</strong> <span style="color:#38bdf8;font-size:0.7rem;">(${acc.username} / ${acc.password})</span>`;
-      btn.addEventListener("click", () => {
-        if (this.inputDutyLoginUser) this.inputDutyLoginUser.value = acc.username;
-        if (this.inputDutyLoginPass) this.inputDutyLoginPass.value = acc.password;
-        this.handleDutyLoginSubmit();
-      });
-      this.quickLoginChipsContainer.appendChild(btn);
-    });
   }
 
   handleDutyLoginSubmit() {
