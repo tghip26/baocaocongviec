@@ -33,6 +33,10 @@ class AppController {
     this.currentPdfFileName = "";
     this.currentLightboxPage = 1;
 
+    // Notification Center & Smart Reminders State
+    this.notifManager = new NotificationManager();
+    this.currentNotifCategory = "all";
+
     // Restore desktop sidebar collapsed state
     if (localStorage.getItem("APP_SIDEBAR_COLLAPSED") === "true" && window.innerWidth > 768) {
       const appLayout = document.querySelector(".app-layout");
@@ -65,6 +69,16 @@ class AppController {
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
+
+    // Notification Center Elements
+    this.btnToggleNotificationCenter = document.getElementById("btnToggleNotificationCenter");
+    this.notificationBadgeCount = document.getElementById("notificationBadgeCount");
+    this.notificationCenterPanel = document.getElementById("notificationCenterPanel");
+    this.btnMarkAllNotifsRead = document.getElementById("btnMarkAllNotifsRead");
+    this.btnClearAllNotifs = document.getElementById("btnClearAllNotifs");
+    this.notifFilterTabs = document.getElementById("notifFilterTabs");
+    this.notificationListContainer = document.getElementById("notificationListContainer");
+    this.chkToggleNotifSound = document.getElementById("chkToggleNotifSound");
 
     // PDF to Image Elements
     this.btnBackToHubFromPdf = document.getElementById("btnBackToHubFromPdf");
@@ -325,6 +339,7 @@ class AppController {
     window.addEventListener("hashchange", () => this.handleUrlHash());
 
     this.initNetworkStatus();
+    this.initNotificationEvents();
     this.initSqlBuilderEvents();
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
@@ -3953,6 +3968,19 @@ ${this.currentW2hHtmlOutput}
         } else {
           this.showToast("⚠️ Mất kết nối Internet! Hệ thống đã chuyển sang Chế độ Ngoại tuyến (Offline Mode) an toàn.", "warning");
         }
+
+        if (this.notifManager) {
+          this.notifManager.addNotification({
+            type: isOnline ? "success" : "warning",
+            category: "system",
+            icon: isOnline ? "🌐" : "⚠️",
+            title: isOnline ? "Đã kết nối Internet trở lại" : "Mất kết nối Internet (Offline Mode)",
+            message: isOnline ? "Hệ thống đang hoạt động ở trạng thái trực tuyến bình thường." : "Đã chuyển sang chế độ Ngoại tuyến an toàn. Mọi công cụ vẫn xử lý 100% trên máy tính.",
+            playSound: true
+          });
+          this.updateNotificationBadge();
+          this.renderNotificationCenter();
+        }
       }
     };
 
@@ -4175,6 +4203,21 @@ ${this.currentW2hHtmlOutput}
         }
       }
 
+      if (this.notifManager) {
+        this.notifManager.addNotification({
+          type: result.criticalCount > 0 ? "warning" : "success",
+          category: "bhyt",
+          icon: "🏥",
+          title: `Kiểm tra XML BHYT: ${result.totalEncounters} Hồ sơ`,
+          message: `Hợp lệ: <strong>${result.validCount}</strong> &bull; Cảnh báo: <strong>${result.warningCount}</strong> &bull; Lỗi nặng: <strong>${result.criticalCount}</strong>.`,
+          actionText: "Xem bảng lỗi",
+          actionHash: "#bhyt-xml",
+          playSound: true
+        });
+        this.updateNotificationBadge();
+        this.renderNotificationCenter();
+      }
+
       this.showToast(`Đã kiểm tra xong ${result.totalEncounters} hồ sơ! Phát hiện ${result.criticalCount} hồ sơ lỗi nặng.`, result.criticalCount > 0 ? "warning" : "success");
     } catch (err) {
       console.error(err);
@@ -4211,6 +4254,21 @@ ${this.currentW2hHtmlOutput}
       // Show download clean zip button & hide banner
       if (this.btnXmlDownloadCleanZip) this.btnXmlDownloadCleanZip.classList.remove("hidden");
       if (this.xmlAutoFixBanner) this.xmlAutoFixBanner.classList.add("hidden");
+
+      if (this.notifManager && fixedCount > 0) {
+        this.notifManager.addNotification({
+          type: "success",
+          category: "bhyt",
+          icon: "🪄",
+          title: `Tự sửa lỗi XML BHYT: Đã sửa ${fixedCount} lỗi`,
+          message: `Đã tự động chuẩn hóa thẻ BHYT, cân bằng viện phí và chuỗi ngày giờ cho hồ sơ.`,
+          actionText: "Tải ZIP sạch",
+          actionHash: "#bhyt-xml",
+          playSound: true
+        });
+        this.updateNotificationBadge();
+        this.renderNotificationCenter();
+      }
 
       if (fixedCount > 0) {
         this.showToast(`✨ Đã tự động sửa thành công ${fixedCount} lỗi dữ liệu (mã thẻ, sai số làm tròn tài chính, ngày giờ)!`, "success");
@@ -4396,6 +4454,185 @@ ${this.currentW2hHtmlOutput}
     this.showToast("Đã làm mới khung tải tệp XML.", "info");
   }
 
+  // =========================================================================
+  // NOTIFICATION CENTER & SMART ALERTS CONTROLLER METHODS
+  // =========================================================================
+  initNotificationEvents() {
+    if (!this.notifManager) return;
+
+    if (this.btnToggleNotificationCenter) {
+      this.btnToggleNotificationCenter.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (this.notificationCenterPanel) {
+          const isHidden = this.notificationCenterPanel.classList.toggle("hidden");
+          if (!isHidden) {
+            this.renderNotificationCenter();
+          }
+        }
+      });
+    }
+
+    if (this.notificationCenterPanel) {
+      this.notificationCenterPanel.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    document.addEventListener("click", () => {
+      if (this.notificationCenterPanel && !this.notificationCenterPanel.classList.contains("hidden")) {
+        this.notificationCenterPanel.classList.add("hidden");
+      }
+    });
+
+    if (this.btnMarkAllNotifsRead) {
+      this.btnMarkAllNotifsRead.addEventListener("click", () => {
+        this.notifManager.markAllAsRead();
+        this.renderNotificationCenter();
+        this.updateNotificationBadge();
+        this.showToast("Đã đánh dấu tất cả thông báo là đã đọc!", "success");
+      });
+    }
+
+    if (this.btnClearAllNotifs) {
+      this.btnClearAllNotifs.addEventListener("click", () => {
+        this.notifManager.clearAll();
+        this.renderNotificationCenter();
+        this.updateNotificationBadge();
+        this.showToast("Đã xóa toàn bộ lịch sử thông báo.", "info");
+      });
+    }
+
+    if (this.chkToggleNotifSound) {
+      this.chkToggleNotifSound.checked = this.notifManager.getSoundEnabled();
+      this.chkToggleNotifSound.addEventListener("change", (e) => {
+        this.notifManager.setSoundEnabled(e.target.checked);
+        if (e.target.checked) {
+          this.notifManager.playChime("success");
+          this.showToast("Đã bật âm thanh nhắc nhở thông báo.", "success");
+        } else {
+          this.showToast("Đã tắt âm thanh nhắc nhở thông báo.", "info");
+        }
+      });
+    }
+
+    // Category filter tabs
+    if (this.notifFilterTabs) {
+      this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(tab => {
+        tab.addEventListener("click", () => {
+          this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          this.currentNotifCategory = tab.dataset.cat;
+          this.renderNotificationCenter();
+        });
+      });
+    }
+
+    // Trigger initial automated smart alerts
+    const staffList = ToolDutyRoster ? ToolDutyRoster.getStaffList() : [];
+    const schedule = (this.dutySchedule && this.dutySchedule.length > 0) ? this.dutySchedule : (ToolDutyRoster ? ToolDutyRoster.generateSchedule(new Date().getFullYear(), new Date().getMonth() + 1, staffList) : []);
+    this.notifManager.runAutomatedSmartAlerts(schedule, staffList);
+
+    this.updateNotificationBadge();
+  }
+
+  updateNotificationBadge() {
+    if (!this.notificationBadgeCount || !this.notifManager) return;
+    const unread = this.notifManager.getUnreadCount();
+    if (unread > 0) {
+      this.notificationBadgeCount.textContent = unread > 99 ? "99+" : unread;
+      this.notificationBadgeCount.classList.remove("hidden");
+    } else {
+      this.notificationBadgeCount.classList.add("hidden");
+    }
+  }
+
+  renderNotificationCenter() {
+    if (!this.notificationListContainer || !this.notifManager) return;
+    this.notificationListContainer.innerHTML = "";
+
+    const allNotifs = this.notifManager.getNotifications();
+    const cat = this.currentNotifCategory || "all";
+
+    const filtered = allNotifs.filter(n => {
+      if (cat === "all") return true;
+      if (cat === "duty") return n.category === "duty";
+      if (cat === "bhyt") return n.category === "bhyt";
+      if (cat === "system") return n.category === "system" || n.category === "network";
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      this.notificationListContainer.innerHTML = `
+        <div class="notif-empty-state">
+          <div class="empty-icon">🔕</div>
+          <div>Không có thông báo nào trong mục này.</div>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(notif => {
+      const item = document.createElement("div");
+      item.className = `notif-item ${notif.isRead ? 'read' : 'unread'}`;
+      
+      const timeStr = this.notifManager.formatTimeAgo(notif.timestamp);
+      let actionHtml = "";
+      if (notif.actionText && notif.actionHash) {
+        actionHtml = `<a href="${notif.actionHash}" class="notif-item-action-btn">${notif.actionText} &rarr;</a>`;
+      }
+
+      item.innerHTML = `
+        <div class="notif-item-icon">${notif.icon || "ℹ️"}</div>
+        <div class="notif-item-body">
+          <div class="notif-item-title">
+            <span>${notif.title}</span>
+            <div style="display:flex;align-items:center;">
+              <span class="notif-item-time">${timeStr}</span>
+              <button type="button" class="btn-notif-delete-single" title="Xóa thông báo này">&times;</button>
+            </div>
+          </div>
+          <div class="notif-item-msg">${notif.message}</div>
+          ${actionHtml}
+        </div>
+      `;
+
+      // Read on click
+      item.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("btn-notif-delete-single")) {
+          this.notifManager.markAsRead(notif.id);
+          item.classList.remove("unread");
+          item.classList.add("read");
+          this.updateNotificationBadge();
+        }
+      });
+
+      // Delete single
+      const btnDel = item.querySelector(".btn-notif-delete-single");
+      if (btnDel) {
+        btnDel.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.notifManager.deleteNotification(notif.id);
+          this.renderNotificationCenter();
+          this.updateNotificationBadge();
+        });
+      }
+
+      // Link action
+      const btnAct = item.querySelector(".notif-item-action-btn");
+      if (btnAct) {
+        btnAct.addEventListener("click", () => {
+          this.notifManager.markAsRead(notif.id);
+          if (this.notificationCenterPanel) this.notificationCenterPanel.classList.add("hidden");
+          this.updateNotificationBadge();
+        });
+      }
+
+      this.notificationListContainer.appendChild(item);
+    });
+
+    this.updateNotificationBadge();
+  }
+
   showModal(modalEl) {
     if (modalEl) modalEl.classList.remove("hidden");
   }
@@ -4404,21 +4641,44 @@ ${this.currentW2hHtmlOutput}
     if (modalEl) modalEl.classList.add("hidden");
   }
 
-  showToast(message, type = "info") {
+  showToast(message, type = "info", duration = 4000, actionText = null, actionHash = null) {
+    if (this.notifManager) {
+      this.notifManager.playChime(type);
+    }
+
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
     const icon = type === "success" ? "✓" : (type === "warning" ? "⚠️" : (type === "error" ? "✕" : "ℹ"));
+    
+    let actionBtnHtml = "";
+    if (actionText && actionHash) {
+      actionBtnHtml = `<button type="button" class="toast-action-btn" data-hash="${actionHash}">${actionText}</button>`;
+    }
+
     toast.innerHTML = `
       <span class="toast-icon">${icon}</span>
       <span class="toast-message">${message}</span>
+      ${actionBtnHtml}
+      <div class="toast-progress-bar" style="animation-duration: ${duration}ms;"></div>
     `;
+
+    if (actionText && actionHash) {
+      const btnAct = toast.querySelector(".toast-action-btn");
+      if (btnAct) {
+        btnAct.addEventListener("click", () => {
+          window.location.hash = actionHash;
+          toast.remove();
+        });
+      }
+    }
+
     this.toastContainer.appendChild(toast);
 
     setTimeout(() => toast.classList.add("toast-show"), 10);
     setTimeout(() => {
       toast.classList.remove("toast-show");
       setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    }, duration);
   }
 }
 
