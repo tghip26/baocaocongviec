@@ -8014,5 +8014,149 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   color: #ffffff;
 }
 
+/* Duty Roster Action: Clear / Delete Schedule */
+.btn-duty-clear {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.btn-duty-clear:hover {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.45);
+}
+
+/* Staff Card Small Action Buttons */
+.btn-card-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.25), rgba(37, 99, 235, 0.35));
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-card-small:hover {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-card-small.btn-card-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  margin-left: 4px;
+}
+
+.btn-card-small.btn-card-danger:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);
+}
+
+/* Password Input with Eye Visibility Toggle */
+.pwd-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pwd-input-wrap .form-input {
+  padding-right: 38px;
+}
+
+.btn-toggle-pwd {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-pwd:hover {
+  color: #38bdf8;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Desktop Sidebar Collapse Button & Layout Transitions */
+.btn-sidebar-collapse-desktop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all var(--transition-fast);
+}
+
+.btn-sidebar-collapse-desktop:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.icon-collapse-arrow {
+  transition: transform 0.25s ease;
+}
+
+.app-layout.sidebar-collapsed .icon-collapse-arrow {
+  transform: rotate(180deg);
+}
+
+.app-layout.sidebar-collapsed .sidebar-footer {
+  display: flex !important;
+  padding: 12px 6px;
+  align-items: center;
+}
+
+.app-layout.sidebar-collapsed .btn-config-trigger,
+.app-layout.sidebar-collapsed .version-tag,
+.app-layout.sidebar-collapsed .btn-sidebar-collapse-desktop span {
+  display: none !important;
+}
+
+.app-layout.sidebar-collapsed .btn-sidebar-collapse-desktop {
+  justify-content: center;
+  padding: 8px;
+  width: auto;
+  border-radius: 8px;
+}
+
+/* Modal Sync Card */
+.modal-sync-card {
+  max-width: 520px;
+  width: 90%;
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+
 
 

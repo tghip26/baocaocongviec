@@ -110,9 +110,9 @@ const ToolDutyRoster = {
   getStaffList() {
     try {
       const raw = localStorage.getItem("DUTY_CNTT_STAFF_LIST");
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {}
     this.saveStaffList(this.defaultStaffList);
@@ -123,12 +123,17 @@ const ToolDutyRoster = {
     localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(list));
   },
 
+  clearAllStaff() {
+    this.saveStaffList([]);
+    return [];
+  },
+
   getAccounts() {
     try {
       const raw = localStorage.getItem("DUTY_CNTT_ACCOUNTS");
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {}
     this.saveAccounts(this.defaultAccounts);
@@ -180,12 +185,38 @@ const ToolDutyRoster = {
     return new Date(year, month - 1, day).getDay();
   },
 
-  // Thuật toán Tự Động Xếp Lịch Trực Phòng CNTT (Công bằng, chống trực 2 ngày liên tiếp)
+  clearSchedule(year, month) {
+    try {
+      localStorage.removeItem(`DUTY_SCHEDULE_${year}_${month}`);
+    } catch (e) {}
+    return [];
+  },
+
+  // Thuật toán Tự Động Xếp Lịch Trực Phòng CNTT (Chỉ xếp trong đúng 1 tháng được cài đặt)
   generateSchedule(year, month, staffList = null) {
-    const activeStaffList = (staffList && staffList.length > 0) ? staffList : this.getStaffList();
-    const totalDays = this.getDaysInMonth(year, month);
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
+    const totalDays = this.getDaysInMonth(y, m);
     const schedule = [];
     
+    if (activeStaffList.length === 0) {
+      for (let d = 1; d <= totalDays; d++) {
+        const dayOfWeek = this.getDayOfWeek(y, m, d);
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+        schedule.push({
+          day: d,
+          dayOfWeek: dayOfWeek,
+          dayName: ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][dayOfWeek],
+          isWeekend: isWeekend,
+          shifts: {
+            "shift_cntt": { id: "", name: "Chưa có cán bộ", role: "", phone: "", dept: "" }
+          }
+        });
+      }
+      return schedule;
+    }
+
     const staffPool = activeStaffList.map(s => ({
       ...s,
       shiftCount: 0,

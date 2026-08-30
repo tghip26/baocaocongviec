@@ -55,9 +55,14 @@ class AppController {
     // Navigation & Views
     this.sidebar = document.getElementById("sidebar");
     this.sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+    this.btnSidebarCollapseDesktop = document.getElementById("btnSidebarCollapseDesktop");
     this.btnSidebarClose = document.getElementById("btnSidebarClose");
     this.sidebarBackdrop = document.getElementById("sidebarBackdrop");
     this.sidebarNav = document.getElementById("sidebarNav");
+    this.modalOfflineSyncConfirm = document.getElementById("modalOfflineSyncConfirm");
+    this.btnConfirmSyncData = document.getElementById("btnConfirmSyncData");
+    this.btnDismissSync = document.getElementById("btnDismissSync");
+    this.btnCloseSyncModal = document.getElementById("btnCloseSyncModal");
     this.hubView = document.getElementById("hubView");
     this.toolView = document.getElementById("toolView");
     this.schemaView = document.getElementById("schemaView");
@@ -344,15 +349,56 @@ class AppController {
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
 
+    // Password Visibility Toggles
+    this.setupPasswordToggle("btnToggleLoginPass", "inputDutyLoginPass");
+    this.setupPasswordToggle("btnToggleNewAccPass", "inputNewAccPass");
+
+    // Offline Sync Modal Actions
+    if (this.btnConfirmSyncData) {
+      this.btnConfirmSyncData.addEventListener("click", () => {
+        localStorage.removeItem("PENDING_OFFLINE_CHANGES");
+        this.hideModal(this.modalOfflineSyncConfirm);
+        this.showToast("🚀 Đã đồng bộ toàn bộ dữ liệu offline lên hệ thống thành công!", "success");
+        if (this.notifManager) {
+          this.notifManager.addNotification({
+            type: "success",
+            category: "system",
+            title: "Đồng bộ dữ liệu thành công",
+            message: "Toàn bộ thay đổi thực hiện lúc offline đã được đồng bộ an toàn lên hệ thống."
+          });
+          this.renderNotificationBadge();
+        }
+      });
+    }
+
+    if (this.btnDismissSync) {
+      this.btnDismissSync.addEventListener("click", () => {
+        this.hideModal(this.modalOfflineSyncConfirm);
+        this.showToast("Đã giữ dữ liệu cục bộ.", "info");
+      });
+    }
+
+    if (this.btnCloseSyncModal) {
+      this.btnCloseSyncModal.addEventListener("click", () => this.hideModal(this.modalOfflineSyncConfirm));
+    }
+
     // Sidebar Drawer & Desktop Collapse Toggle
+    const toggleDesktopSidebar = () => {
+      const appLayout = document.querySelector(".app-layout");
+      if (appLayout) {
+        const isCollapsed = appLayout.classList.toggle("sidebar-collapsed");
+        localStorage.setItem("APP_SIDEBAR_COLLAPSED", isCollapsed ? "true" : "false");
+      }
+    };
+
+    if (this.btnSidebarCollapseDesktop) {
+      this.btnSidebarCollapseDesktop.addEventListener("click", toggleDesktopSidebar);
+    }
+
     if (this.sidebarToggleBtn) {
       this.sidebarToggleBtn.addEventListener("click", () => {
         if (window.innerWidth > 768) {
-          const appLayout = document.querySelector(".app-layout");
-          if (appLayout) {
-            const isCollapsed = appLayout.classList.toggle("sidebar-collapsed");
-            localStorage.setItem("APP_SIDEBAR_COLLAPSED", isCollapsed ? "true" : "false");
-          }
+          toggleDesktopSidebar();
         } else {
           if (!this.sidebar) return;
           const isOpen = this.sidebar.classList.toggle("open");
@@ -1397,6 +1443,15 @@ class AppController {
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+    const now = new Date();
+    if (this.dutySelectMonth && !this.dutyMonthInitialized) {
+      this.dutySelectMonth.value = String(now.getMonth() + 1);
+    }
+    if (this.dutyInputYear && !this.dutyMonthInitialized) {
+      this.dutyInputYear.value = String(now.getFullYear());
+    }
+    this.dutyMonthInitialized = true;
+
     this.dutyStaffList = ToolDutyRoster.getStaffList();
     this.currentDutySession = ToolDutyRoster.getCurrentSession();
 
@@ -3296,6 +3351,11 @@ ${this.currentW2hHtmlOutput}
     this.dutyStaffList = ToolDutyRoster ? ToolDutyRoster.getStaffList() : [];
     this.currentDutySession = ToolDutyRoster ? ToolDutyRoster.getCurrentSession() : { username: "admin", role: "admin", fullname: "Trưởng Phòng CNTT (Quản trị)" };
 
+    // Khởi tạo tháng và năm hiện tại thực tế trên giao diện
+    const now = new Date();
+    if (this.dutySelectMonth) this.dutySelectMonth.value = String(now.getMonth() + 1);
+    if (this.dutyInputYear) this.dutyInputYear.value = String(now.getFullYear());
+
     // Event Bindings
     if (this.btnBackToHubFromDuty) {
       this.btnBackToHubFromDuty.addEventListener("click", () => {
@@ -3314,7 +3374,13 @@ ${this.currentW2hHtmlOutput}
       this.btnRunAutoSchedule.addEventListener("click", () => {
         this.runAutoSchedule();
         this.showToast("Đã xếp lịch trực tự động công bằng cho P.CNTT!", "success");
+        this.recordOfflineChange("Xếp Lịch Tự Động", `Đã xếp lịch cho Tháng ${this.dutySelectMonth ? this.dutySelectMonth.value : ""}/${this.dutyInputYear ? this.dutyInputYear.value : ""}`);
       });
+    }
+
+    this.btnClearDutySchedule = document.getElementById("btnClearDutySchedule");
+    if (this.btnClearDutySchedule) {
+      this.btnClearDutySchedule.addEventListener("click", () => this.clearDutySchedule());
     }
 
     if (this.btnExportDutyExcel) {
@@ -3354,8 +3420,10 @@ ${this.currentW2hHtmlOutput}
     if (this.btnSubmitCreateAccount) this.btnSubmitCreateAccount.addEventListener("click", () => this.saveUserAccount());
     if (this.btnResetAccountForm) this.btnResetAccountForm.addEventListener("click", () => this.resetAccountForm());
 
-    // Add / Edit Staff Modal
+    // Add / Edit Staff Modal & Clean All Staff
     if (this.btnAddStaffModalBtn) this.btnAddStaffModalBtn.addEventListener("click", () => this.openStaffModal());
+    this.btnClearAllStaffBtn = document.getElementById("btnClearAllStaffBtn");
+    if (this.btnClearAllStaffBtn) this.btnClearAllStaffBtn.addEventListener("click", () => this.clearAllStaffData());
     if (this.btnCloseAddStaffModal) this.btnCloseAddStaffModal.addEventListener("click", () => this.hideModal(this.modalAddStaff));
     if (this.btnCancelAddStaff) this.btnCancelAddStaff.addEventListener("click", () => this.hideModal(this.modalAddStaff));
     if (this.btnSaveNewStaff) this.btnSaveNewStaff.addEventListener("click", () => this.saveStaffFromModal());
@@ -3366,6 +3434,27 @@ ${this.currentW2hHtmlOutput}
     if (this.btnConfirmSwapShift) this.btnConfirmSwapShift.addEventListener("click", () => this.confirmSwapShift());
 
     this.updateDutySessionUI();
+  }
+
+  clearDutySchedule() {
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : new Date().getFullYear(), 10);
+    if (!confirm(`Bạn có chắc chắn muốn xóa toàn bộ ca trực của Tháng ${month}/${year} không?`)) return;
+    this.dutySchedule = ToolDutyRoster.clearSchedule(year, month);
+    this.renderDutyViews();
+    this.showToast(`Đã xóa toàn bộ ca trực Tháng ${month}/${year}!`, "info");
+    this.recordOfflineChange("Xóa Lịch Trực", `Đã xóa toàn bộ ca trực Tháng ${month}/${year}`);
+  }
+
+  clearAllStaffData() {
+    if (!confirm("Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách cán bộ mẫu để tự nhập danh sách cán bộ thực tế của bạn không?")) return;
+    this.dutyStaffList = ToolDutyRoster.clearAllStaff();
+    this.currentFilterStaffId = "all";
+    this.currentDutyFilter = "all";
+    this.renderStaffList();
+    this.runAutoSchedule();
+    this.showToast("Đã dọn sạch danh sách cán bộ! Bạn có thể nhấn '+ Thêm' để bắt đầu nhập dữ liệu mới.", "success");
+    this.recordOfflineChange("Xóa Danh Sách Cán Bộ", "Đã dọn sạch danh sách cán bộ để nhập mới");
   }
 
   updateDutySessionUI() {
@@ -3656,6 +3745,19 @@ ${this.currentW2hHtmlOutput}
     this.dutyStaffListContainer.innerHTML = "";
     if (this.staffCountDisplay) this.staffCountDisplay.textContent = this.dutyStaffList.length;
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
+
+    if (this.dutyStaffList.length === 0) {
+      this.dutyStaffListContainer.innerHTML = `
+        <div style="text-align: center; padding: 24px 10px; color: #94a3b8; font-size: 0.78rem; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2); border-radius: 8px;">
+          <div style="font-size: 1.6rem; margin-bottom: 6px;">👥</div>
+          <strong style="color:#f1f5f9; display:block; margin-bottom: 4px;">Chưa có cán bộ trong danh sách</strong>
+          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"+ Thêm"</strong> ở trên để tự nhập danh sách cán bộ thực tế của bạn.</p>
+        </div>
+      `;
+      this.populateStaffFilterDropdown();
+      return;
+    }
+
     this.dutyStaffList.forEach(s => {
       const item = document.createElement("div");
       item.className = "staff-card-item";
@@ -3712,8 +3814,8 @@ ${this.currentW2hHtmlOutput}
   runAutoSchedule() {
     if (!window.ToolDutyRoster) return;
     this.dutyStaffList = ToolDutyRoster.getStaffList();
-    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
-    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : new Date().getFullYear(), 10);
     this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList);
     this.renderDutyViews();
   }
@@ -3726,6 +3828,16 @@ ${this.currentW2hHtmlOutput}
   }
 
   updatePersonalDashboard() {
+    if (!this.dutyStaffList || this.dutyStaffList.length === 0) {
+      if (this.personalCardTitle) this.personalCardTitle.textContent = "Chưa có cán bộ";
+      if (this.personalRolePill) this.personalRolePill.textContent = "0 Cán Bộ";
+      if (this.personalTotalShifts) this.personalTotalShifts.textContent = "0";
+      if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = "0";
+      if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = "0";
+      if (this.personalNextShiftText) this.personalNextShiftText.innerHTML = "Nhấn nút <strong>'+ Thêm'</strong> ở danh sách cán bộ để bắt đầu nhập.";
+      return;
+    }
+
     if (!this.dutySchedule || this.dutySchedule.length === 0) return;
     const isAllMode = (!this.currentFilterStaffId || this.currentFilterStaffId === "all");
 
@@ -3733,8 +3845,8 @@ ${this.currentW2hHtmlOutput}
       if (this.personalCardTitle) this.personalCardTitle.textContent = "Toàn Thể P.CNTT";
       if (this.personalRolePill) this.personalRolePill.textContent = `${this.dutyStaffList.length} Cán Bộ`;
 
-      const total = this.dutySchedule.length;
-      const weekend = this.dutySchedule.filter(d => d.isWeekend).length;
+      const total = this.dutySchedule.filter(d => d.shifts && d.shifts["shift_cntt"] && d.shifts["shift_cntt"].id).length;
+      const weekend = this.dutySchedule.filter(d => d.isWeekend && d.shifts && d.shifts["shift_cntt"] && d.shifts["shift_cntt"].id).length;
       const weekday = total - weekend;
 
       if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
@@ -3742,8 +3854,8 @@ ${this.currentW2hHtmlOutput}
       if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
 
       if (this.personalNextShiftText) {
-        const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
-        const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+        const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
+        const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : new Date().getFullYear(), 10);
         this.personalNextShiftText.innerHTML = `⚡ Đã xếp đủ <strong>${total} ca trực</strong> Tháng ${month}/${year} chia đều cho <strong>${this.dutyStaffList.length} cán bộ</strong>`;
       }
     } else {
@@ -4734,6 +4846,96 @@ ${this.currentW2hHtmlOutput}
       toast.classList.remove("toast-show");
       setTimeout(() => toast.remove(), 300);
     }, duration);
+  }
+
+  initNetworkStatus() {
+    this.connectionStatusBadge = document.getElementById("connectionStatusBadge");
+    this.connectionStatusDot = document.getElementById("connectionStatusDot");
+    this.connectionStatusText = document.getElementById("connectionStatusText");
+    this.offlineAlertBanner = document.getElementById("offlineAlertBanner");
+    this.btnDismissOfflineBanner = document.getElementById("btnDismissOfflineBanner");
+
+    if (this.btnDismissOfflineBanner) {
+      this.btnDismissOfflineBanner.addEventListener("click", () => {
+        if (this.offlineAlertBanner) this.offlineAlertBanner.classList.add("hidden");
+      });
+    }
+
+    const updateStatus = (isOnline) => {
+      if (this.connectionStatusBadge) {
+        this.connectionStatusBadge.className = isOnline ? "badge-status online" : "badge-status offline";
+        this.connectionStatusBadge.title = isOnline ? "Trạng thái: Đang kết nối Internet" : "Trạng thái: Ngoại tuyến (Offline) - Mọi công cụ vẫn hoạt động bình thường";
+      }
+      if (this.connectionStatusText) {
+        this.connectionStatusText.textContent = isOnline ? "Trực tuyến" : "Ngoại tuyến";
+      }
+      if (this.offlineAlertBanner) {
+        if (isOnline) {
+          this.offlineAlertBanner.classList.add("hidden");
+        } else {
+          this.offlineAlertBanner.classList.remove("hidden");
+        }
+      }
+    };
+
+    window.addEventListener("online", () => {
+      updateStatus(true);
+      this.showToast("🌐 Kết nối Internet đã được khôi phục!", "success");
+      this.checkPendingOfflineSync();
+    });
+
+    window.addEventListener("offline", () => {
+      updateStatus(false);
+      this.showToast("⚠️ Đang ở chế độ Ngoại tuyến (Offline). Mọi công cụ vẫn sử dụng bình thường trên trình duyệt!", "warning", 6000);
+    });
+
+    updateStatus(navigator.onLine);
+  }
+
+  recordOfflineChange(actionName, details) {
+    if (!navigator.onLine) {
+      try {
+        const raw = localStorage.getItem("PENDING_OFFLINE_CHANGES") || "[]";
+        const changes = JSON.parse(raw);
+        changes.push({
+          time: new Date().toLocaleTimeString("vi-VN") + " " + new Date().toLocaleDateString("vi-VN"),
+          action: actionName,
+          details: details
+        });
+        localStorage.setItem("PENDING_OFFLINE_CHANGES", JSON.stringify(changes));
+      } catch (e) {}
+    }
+  }
+
+  checkPendingOfflineSync() {
+    try {
+      const raw = localStorage.getItem("PENDING_OFFLINE_CHANGES");
+      if (raw) {
+        const changes = JSON.parse(raw);
+        if (Array.isArray(changes) && changes.length > 0) {
+          const preview = document.getElementById("syncChangesPreview");
+          if (preview) {
+            preview.innerHTML = `<strong>${changes.length} thay đổi đã ghi nhận lúc offline:</strong><ul style="margin:6px 0 0 16px;padding:0;line-height:1.6;">` +
+              changes.map(c => `<li><strong>[${c.time}] ${c.action}</strong>: ${c.details}</li>`).join("") +
+              `</ul>`;
+          }
+          this.showModal(this.modalOfflineSyncConfirm);
+        }
+      }
+    } catch (e) {}
+  }
+
+  setupPasswordToggle(btnId, inputId) {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    if (!btn || !input) return;
+    btn.addEventListener("click", () => {
+      const isPwd = (input.type === "password");
+      input.type = isPwd ? "text" : "password";
+      btn.innerHTML = isPwd
+        ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+        : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    });
   }
 }
 
