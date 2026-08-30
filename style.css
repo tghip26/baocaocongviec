@@ -1116,10 +1116,28 @@ mark.highlight-term {
   transition: all var(--transition-fast);
 }
 
+.btn-notif-center-toggle svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #cbd5e1 !important;
+  stroke: #cbd5e1 !important;
+  fill: none !important;
+  stroke-width: 2 !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
 .btn-notif-center-toggle:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: var(--text-primary);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.btn-notif-center-toggle:hover svg {
+  color: #38bdf8 !important;
+  stroke: #38bdf8 !important;
+  transform: rotate(15deg);
 }
 
 .notif-badge-pill {
@@ -9247,6 +9265,10 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .btn-notif-delete-single:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
+
 /* ==========================================================================
    MASTER WORKSPACE & VIEW CONTAINERS (Bố cục chuẩn mực, sắc sảo, cân đối)
    ========================================================================== */
@@ -9533,6 +9555,199 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .legend-dot.weekend {
   background: #f59e0b;
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+}
+
+/* ==========================================================================
+   DUTY ROSTER 2-COLUMN WORKSPACE & CALENDAR 7-COL GRID
+   ========================================================================== */
+.duty-roster-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .duty-roster-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.duty-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.duty-personal-card,
+.duty-staff-card {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.duty-main-workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
+.duty-calendar-view {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  width: 100%;
+}
+
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.calendar-col-header {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+}
+
+.calendar-day-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px;
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.calendar-day-cell:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-day-cell.weekend {
+  background: rgba(245, 158, 11, 0.04);
+  border-color: rgba(245, 158, 11, 0.12);
+}
+
+.calendar-day-cell.blank {
+  border: 1px dashed rgba(255, 255, 255, 0.04);
+  background: transparent;
+  pointer-events: none;
+}
+
+.cal-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-date-num {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.cal-day-tag {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.cal-shift-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cal-duty-badge {
+  border-radius: 6px;
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 32px;
+  justify-content: center;
+}
+
+.cal-duty-badge.empty-staff {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.cal-duty-badge.empty-staff:hover {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.cal-duty-badge.has-staff {
+  background: rgba(56, 189, 248, 0.09);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.cal-duty-badge.has-staff:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.duty-badge-empty {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 500;
+  text-align: center;
+  display: block;
+}
+
+.duty-badge-name {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.duty-badge-phone {
+  font-size: 0.64rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-duty-badge.highlight-duty {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.3) 0%, rgba(37, 99, 235, 0.25) 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
 }
 
 /* 11. XML VALIDATOR DROPZONE & AUTO-FIX BANNER */

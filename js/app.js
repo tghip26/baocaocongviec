@@ -3955,10 +3955,11 @@ ${this.currentW2hHtmlOutput}
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
-      const assignedName = assigned ? assigned.name : "Chưa phân công";
-      const assignedPhone = assigned ? (assigned.phone || "") : "";
+      const isAssigned = (assigned && assigned.id && assigned.name && assigned.name !== "Chưa có cán bộ");
+      const assignedName = isAssigned ? assigned.name : "Trống";
+      const assignedPhone = (isAssigned && assigned.phone) ? assigned.phone : "";
       
-      const isMyDay = (assigned && targetStaffId && assigned.id === targetStaffId);
+      const isMyDay = (isAssigned && targetStaffId && assigned.id === targetStaffId);
       const isDimmed = (isFilteringSpecific && !isMyDay);
 
       const cell = document.createElement("div");
@@ -3969,9 +3970,11 @@ ${this.currentW2hHtmlOutput}
           <span class="cal-day-tag">${dayObj.dayName}</span>
         </div>
         <div class="cal-shift-list">
-          <div class="cal-duty-badge ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ trực' : 'Cán bộ trực ca'}">
-            <span class="duty-badge-name">💻 ${assignedName}</span>
-            ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
+          <div class="cal-duty-badge ${isAssigned ? 'has-staff' : 'empty-staff'} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ trực' : (isAssigned ? assignedName : 'Chưa phân công')}">
+            ${isAssigned 
+              ? `<span class="duty-badge-name" title="${assignedName}">💻 ${assignedName}</span>${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}`
+              : `<span class="duty-badge-empty">- Trống -</span>`
+            }
           </div>
         </div>
       `;
