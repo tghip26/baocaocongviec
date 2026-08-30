@@ -28,7 +28,7 @@
   </script>
 
   <!-- Master Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="style.css?v=2.7.5" />
+  <link rel="stylesheet" href="style.css?v=2.8.0" />
 </head>
 <body>
   <!-- App Layout Wrapper -->
@@ -1848,28 +1848,65 @@
     </div>
   </div>
 
-  <!-- MODAL: Đổi Ca Trực Trực Tiếp (Admin) -->
+  <!-- MODAL: Quản Lý & Điều Chỉnh Ca Trực Chi Tiết Từng Ngày -->
   <div class="modal-overlay hidden" id="modalSwapShift">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 class="modal-title">🔄 ĐỔI CÁN BỘ TRỰC CA NÀY (P.CNTT)</h3>
+        <h3 class="modal-title">⚙️ ĐIỀU CHỈNH CA TRỰC NGÀY</h3>
         <button type="button" class="modal-close" id="btnCloseSwapShiftModal">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="modal-info-box" id="swapShiftInfoText">Đang tải ca trực...</div>
-        <div class="config-form-group">
-          <label class="form-label">Chọn cán bộ CNTT thay thế trực ca này:</label>
-          <select id="selectSwapStaff" class="form-select"></select>
+        <!-- Thông tin ca trực hiện tại -->
+        <div class="modal-info-box" id="swapShiftInfoText" style="margin-bottom: 16px;">
+          Đang tải thông tin ca trực...
+        </div>
+
+        <!-- Tùy chọn 1: Chuyển cho cán bộ khác -->
+        <div class="duty-adjust-section">
+          <label class="form-label" style="font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+            <span>1. Chuyển Phân Công Cho Cán Bộ Khác:</span>
+          </label>
+          <div class="flex-row gap-8" style="margin-top: 6px;">
+            <select id="selectSwapStaff" class="form-select" style="flex: 1;"></select>
+            <button type="button" class="btn-modal-confirm" id="btnConfirmSwapStaff" style="white-space: nowrap; padding: 8px 14px; font-size: 0.8rem;">
+              💾 Gán Ca
+            </button>
+          </div>
+        </div>
+
+        <!-- Tùy chọn 2: Hoán đổi chéo ca với ngày khác -->
+        <div class="duty-adjust-section" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
+          <label class="form-label" style="font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+            <span>2. Hoán Đổi Ca Trực (Đổi chéo với ngày khác trong tháng):</span>
+          </label>
+          <div class="flex-row gap-8" style="margin-top: 6px;">
+            <select id="selectSwapTargetDay" class="form-select" style="flex: 1;"></select>
+            <button type="button" class="btn-duty-action btn-duty-auto" id="btnConfirmSwapTwoDays" style="white-space: nowrap; padding: 8px 14px; font-size: 0.8rem;">
+              🔄 Đổi Chéo 2 Ngày
+            </button>
+          </div>
+        </div>
+
+        <!-- Tùy chọn 3: Xóa ca trực / Đặt ngày nghỉ -->
+        <div class="duty-adjust-section" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
+          <label class="form-label" style="font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 6px;">
+            <span>3. Trường Hợp Ngày Nghỉ Trực / Nghỉ Lễ / Trống Ca:</span>
+          </label>
+          <div class="flex-row gap-8" style="margin-top: 6px;">
+            <button type="button" class="btn-duty-action btn-duty-clear" id="btnSetDayOffDuty" style="flex: 1; justify-content: center; padding: 9px 12px; font-size: 0.8rem;">
+              💤 Đặt Ngày Này Nghỉ Trực (Xóa Ca)
+            </button>
+          </div>
         </div>
       </div>
       <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Hủy bỏ</button>
-        <button type="button" class="btn-modal-confirm" id="btnConfirmSwapShift">XÁC NHẬN ĐỔI CA &rarr;</button>
+        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng cửa sổ</button>
+        <span style="font-size: 0.72rem; color: #64748b;">Mọi thay đổi được lưu tự động</span>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: Thêm / Chỉnh Sửa Cán Bộ P.CNTT -->
+  <!-- MODAL: Thêm / Chỉnh Sửa Cán Bộ P.CNTT & Đăng Ký Nghỉ Phép -->
   <div class="modal-overlay hidden" id="modalAddStaff">
     <div class="modal-card">
       <div class="modal-header">
@@ -1889,6 +1926,11 @@
         <div class="config-form-group">
           <label class="form-label">Số điện thoại trực / Hotline:</label>
           <input type="text" id="inputStaffPhone" class="form-input" placeholder="Ví dụ: 0912.345.678" />
+        </div>
+        <div class="config-form-group">
+          <label class="form-label">Ngày đăng ký nghỉ phép trong tháng (cách nhau dấu phẩy):</label>
+          <input type="text" id="inputStaffOffDays" class="form-input" placeholder="Ví dụ: 5, 12, 28 (Thuật toán tự động tránh các ngày này)" />
+          <span style="display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Khi bấm Xếp Lịch Tự Động, hệ thống sẽ tự động không phân công ca trực vào các ngày nghỉ này.</span>
         </div>
       </div>
       <div class="modal-footer flex-between">
