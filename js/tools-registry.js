@@ -139,8 +139,8 @@ window.TOOLS_REGISTRY = [
     id: "bhyt-xml",
     categoryId: "giamdinh",
     title: "Kiểm Tra Lỗi XML BHYT (QĐ 130 & 4210)",
-    subtitle: "Quét lỗi thẻ, ngày giờ, ICD-10 & cân đối tài chính trước khi gửi Cổng",
-    description: "Tự động phân tích gói file XML 1..5/130 (hoặc file .ZIP), phát hiện sai định dạng thẻ, logic ngày vào/ra, chẩn đoán, trùng lặp và lệch tiền.",
+    subtitle: "Quét lỗi thẻ, ngày giờ, tài chính, tự động sửa lỗi & xuất ZIP XML sạch",
+    description: "Tự động phân tích gói file XML 1..5/130 (hoặc file .ZIP), phát hiện sai định dạng thẻ, logic ngày vào/ra, chẩn đoán, trùng lặp và lệch tiền. Hỗ trợ tự sửa lỗi nhanh và tải gói XML sạch.",
     badge: "BHYT QĐ 130 & 4210",
     badgeColor: "rose",
     icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>`,
@@ -150,8 +150,8 @@ window.TOOLS_REGISTRY = [
     guide: [
       "Bước 1: Chọn hoặc kéo thả các tệp XML 1..5 hoặc tệp nén .ZIP chứa hồ sơ BHYT.",
       "Bước 2: Hệ thống tự động phân tích cú pháp và kiểm tra toàn bộ danh mục quy tắc.",
-      "Bước 3: Xem phân loại hồ sơ Hợp lệ / Cảnh báo / Lỗi nặng và lọc theo nhóm lỗi.",
-      "Bước 4: Nhấn '📊 Xuất Báo Cáo Excel' để gửi các khoa phòng/bác sĩ chỉnh sửa."
+      "Bước 3: Nhấn '🪄 Tự Sửa Lỗi Nhanh' để tự động cân bằng tiền viện phí, chuẩn hóa mã thẻ & ngày giờ.",
+      "Bước 4: Nhấn '📦 Tải Gói XML Đã Sửa (.ZIP)' để nộp Cổng hoặc '📊 Xuất Báo Cáo Excel'."
     ],
     executeKey: "openBhytXml"
   },

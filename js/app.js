@@ -3977,6 +3977,10 @@ ${this.currentW2hHtmlOutput}
     this.btnBackToHubFromXml = document.getElementById("btnBackToHubFromXml");
     this.btnXmlRecheck = document.getElementById("btnXmlRecheck");
     this.btnExportXmlErrorReport = document.getElementById("btnExportXmlErrorReport");
+    this.btnXmlAutoFix = document.getElementById("btnXmlAutoFix");
+    this.btnXmlDownloadCleanZip = document.getElementById("btnXmlDownloadCleanZip");
+    this.xmlAutoFixBanner = document.getElementById("xmlAutoFixBanner");
+    this.btnTriggerAutoFixInBanner = document.getElementById("btnTriggerAutoFixInBanner");
 
     this.xmlDropzoneWrapper = document.getElementById("xmlDropzoneWrapper");
     this.xmlDropzone = document.getElementById("xmlDropzone");
@@ -4065,6 +4069,24 @@ ${this.currentW2hHtmlOutput}
       });
     }
 
+    if (this.btnXmlAutoFix) {
+      this.btnXmlAutoFix.addEventListener("click", () => {
+        this.handleXmlAutoFix();
+      });
+    }
+
+    if (this.btnTriggerAutoFixInBanner) {
+      this.btnTriggerAutoFixInBanner.addEventListener("click", () => {
+        this.handleXmlAutoFix();
+      });
+    }
+
+    if (this.btnXmlDownloadCleanZip) {
+      this.btnXmlDownloadCleanZip.addEventListener("click", () => {
+        this.handleXmlDownloadCleanZip();
+      });
+    }
+
     // Filter tabs
     if (this.xmlCategoryTabs) {
       this.xmlCategoryTabs.querySelectorAll(".xml-tab-btn").forEach(btn => {
@@ -4142,12 +4164,79 @@ ${this.currentW2hHtmlOutput}
       if (this.xmlResultsDashboard) this.xmlResultsDashboard.classList.remove("hidden");
       if (this.btnXmlRecheck) this.btnXmlRecheck.classList.remove("hidden");
       if (this.btnExportXmlErrorReport) this.btnExportXmlErrorReport.classList.remove("hidden");
+      if (this.btnXmlAutoFix) this.btnXmlAutoFix.classList.remove("hidden");
+
+      // Check if there are fixable errors to show banner
+      if (this.xmlAutoFixBanner) {
+        if (result.criticalCount > 0 || result.warningCount > 0) {
+          this.xmlAutoFixBanner.classList.remove("hidden");
+        } else {
+          this.xmlAutoFixBanner.classList.add("hidden");
+        }
+      }
 
       this.showToast(`Đã kiểm tra xong ${result.totalEncounters} hồ sơ! Phát hiện ${result.criticalCount} hồ sơ lỗi nặng.`, result.criticalCount > 0 ? "warning" : "success");
     } catch (err) {
       console.error(err);
       this.showToast(`Lỗi xử lý file XML: ${err.message}`, "error");
       if (this.xmlProgressContainer) this.xmlProgressContainer.classList.add("hidden");
+    }
+  }
+
+  handleXmlAutoFix() {
+    if (!this.xmlValidationResult || !window.ToolBhytXml) {
+      this.showToast("Chưa có hồ sơ XML để sửa lỗi!", "warning");
+      return;
+    }
+
+    try {
+      const { fixedCount, fixLogs, updatedResult } = ToolBhytXml.autoFixEncounters(this.xmlValidationResult);
+      this.xmlValidationResult = updatedResult;
+
+      // Update stat cards
+      if (this.xmlStatTotal) this.xmlStatTotal.textContent = updatedResult.totalEncounters.toLocaleString("vi-VN");
+      if (this.xmlStatValid) this.xmlStatValid.textContent = updatedResult.validCount.toLocaleString("vi-VN");
+      if (this.xmlStatWarning) this.xmlStatWarning.textContent = updatedResult.warningCount.toLocaleString("vi-VN");
+      if (this.xmlStatCritical) this.xmlStatCritical.textContent = updatedResult.criticalCount.toLocaleString("vi-VN");
+
+      // Update tab count badges
+      if (this.countTabAll) this.countTabAll.textContent = updatedResult.totalEncounters;
+      if (this.countTabCritical) this.countTabCritical.textContent = updatedResult.criticalCount;
+      if (this.countTabWarning) this.countTabWarning.textContent = updatedResult.warningCount;
+      if (this.countTabValid) this.countTabValid.textContent = updatedResult.validCount;
+
+      // Render table
+      this.renderXmlTable();
+
+      // Show download clean zip button & hide banner
+      if (this.btnXmlDownloadCleanZip) this.btnXmlDownloadCleanZip.classList.remove("hidden");
+      if (this.xmlAutoFixBanner) this.xmlAutoFixBanner.classList.add("hidden");
+
+      if (fixedCount > 0) {
+        this.showToast(`✨ Đã tự động sửa thành công ${fixedCount} lỗi dữ liệu (mã thẻ, sai số làm tròn tài chính, ngày giờ)!`, "success");
+      } else {
+        this.showToast("Dữ liệu không có lỗi cú pháp nào có thể tự động sửa được.", "info");
+      }
+    } catch (err) {
+      console.error(err);
+      this.showToast(`Lỗi khi tự động sửa lỗi: ${err.message}`, "error");
+    }
+  }
+
+  async handleXmlDownloadCleanZip() {
+    if (!this.xmlValidationResult || !window.ToolBhytXml) {
+      this.showToast("Chưa có dữ liệu XML sạch để tải về!", "warning");
+      return;
+    }
+
+    try {
+      this.showToast("Đang đóng gói tệp ZIP chứa toàn bộ file XML đã chuẩn hóa...", "info");
+      const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
+      await ToolBhytXml.downloadCleanZip(this.xmlValidationResult, orgCfg);
+      this.showToast("Đã tải xuống gói XML sạch (.ZIP) thành công!", "success");
+    } catch (err) {
+      console.error(err);
+      this.showToast(`Lỗi khi tạo gói ZIP: ${err.message}`, "error");
     }
   }
 
@@ -4195,10 +4284,18 @@ ${this.currentW2hHtmlOutput}
         statusBadge = `<span class="xml-status-tag warning">⚠️ Cảnh Báo (${enc.warnings.length})</span>`;
       }
 
+      if (enc.isAutoFixed) {
+        statusBadge += `<span class="xml-fixed-badge" title="Đã tự động sửa lỗi">🪄 Đã sửa</span>`;
+      }
+
       // Format Error Summaries
       let errorPillsHtml = "";
       if (enc.errors.length === 0 && enc.warnings.length === 0) {
-        errorPillsHtml = `<span style="color: #10b981; font-size: 0.74rem;">Đầy đủ trường bắt buộc, định dạng thẻ và cân đối tài chính chuẩn.</span>`;
+        if (enc.isAutoFixed) {
+          errorPillsHtml = `<span style="color: #a855f7; font-size: 0.74rem;">🪄 Đã sửa tự động: ${(enc.fixedLogs || []).join("; ")}</span>`;
+        } else {
+          errorPillsHtml = `<span style="color: #10b981; font-size: 0.74rem;">Đầy đủ trường bắt buộc, định dạng thẻ và cân đối tài chính chuẩn.</span>`;
+        }
       } else {
         const allMsg = [
           ...enc.errors.map(e => `<div class="xml-error-pill critical"><strong>[${e.category}]</strong> ${e.message}</div>`),
@@ -4292,6 +4389,9 @@ ${this.currentW2hHtmlOutput}
     if (this.xmlResultsDashboard) this.xmlResultsDashboard.classList.add("hidden");
     if (this.btnXmlRecheck) this.btnXmlRecheck.classList.add("hidden");
     if (this.btnExportXmlErrorReport) this.btnExportXmlErrorReport.classList.add("hidden");
+    if (this.btnXmlAutoFix) this.btnXmlAutoFix.classList.add("hidden");
+    if (this.btnXmlDownloadCleanZip) this.btnXmlDownloadCleanZip.classList.add("hidden");
+    if (this.xmlAutoFixBanner) this.xmlAutoFixBanner.classList.add("hidden");
     if (this.xmlTableBody) this.xmlTableBody.innerHTML = "";
     this.showToast("Đã làm mới khung tải tệp XML.", "info");
   }

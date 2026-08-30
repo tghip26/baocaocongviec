@@ -1473,6 +1473,14 @@
             </div>
 
             <div class="workspace-top-actions xml-top-actions">
+              <button type="button" class="btn-xml-action btn-xml-autofix hidden" id="btnXmlAutoFix" title="Tự động sửa lỗi khoảng trắng mã thẻ, chuẩn hóa ngày giờ và cân bằng sai số làm tròn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                <span>🪄 Tự Sửa Lỗi Nhanh</span>
+              </button>
+              <button type="button" class="btn-xml-action btn-xml-clean-zip hidden" id="btnXmlDownloadCleanZip" title="Tải về bộ tệp XML đã được sửa và chuẩn hóa (.ZIP)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>📦 Tải Gói XML Đã Sửa (.ZIP)</span>
+              </button>
               <button type="button" class="btn-xml-action btn-xml-reupload hidden" id="btnXmlRecheck" title="Tải lại và chọn gói file khác">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                 <span>Tải Gói Khác</span>
@@ -1515,6 +1523,19 @@
 
           <!-- Results Dashboard -->
           <div class="xml-results-dashboard hidden" id="xmlResultsDashboard">
+            <!-- Auto-Fix Alert Box -->
+            <div class="xml-autofix-banner hidden" id="xmlAutoFixBanner">
+              <div class="xml-autofix-content">
+                <div class="xml-autofix-icon">🪄</div>
+                <div class="xml-autofix-text">
+                  <strong id="xmlAutoFixTitle">Phát hiện các lỗi có thể tự động sửa ngay!</strong>
+                  <p id="xmlAutoFixDesc">Hệ thống có thể tự động: xóa khoảng trắng mã thẻ BHYT, cân bằng sai số làm tròn viện phí, chuẩn hóa định dạng ngày giờ và viết hoa mã CSKCB/ICD-10.</p>
+                </div>
+              </div>
+              <button type="button" class="btn-trigger-autofix" id="btnTriggerAutoFixInBanner">
+                ⚡ Sửa Tự Động Ngay
+              </button>
+            </div>
             <!-- Stat Cards 4 cols -->
             <div class="xml-stats-row">
               <div class="xml-stat-card total">

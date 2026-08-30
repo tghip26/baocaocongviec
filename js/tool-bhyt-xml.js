@@ -624,6 +624,238 @@ class ToolBhytXml {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  /**
+   * Tự Động Sửa Lỗi Nhanh (Auto-Fixer) cho tập hồ sơ BHYT
+   */
+  static autoFixEncounters(validationResult) {
+    if (!validationResult || !validationResult.encounters) {
+      throw new Error("Chưa có dữ liệu hồ sơ để thực hiện sửa lỗi tự động!");
+    }
+
+    let fixedCount = 0;
+    const fixLogs = [];
+
+    validationResult.encounters.forEach(enc => {
+      let isFixedForThisEnc = false;
+      const encLogs = [];
+
+      // 1. Chuẩn hóa Mã thẻ BHYT (Loại bỏ khoảng trắng, tabs, viết hoa chữ cái)
+      if (enc.cardNo) {
+        const rawCard = enc.cardNo;
+        const cleanCard = rawCard.replace(/\s+/g, "").toUpperCase();
+        if (cleanCard !== rawCard) {
+          enc.cardNo = cleanCard;
+          if (enc.xml1Data) {
+            enc.xml1Data.MA_THE = cleanCard;
+            enc.xml1Data.ma_the = cleanCard;
+          }
+          isFixedForThisEnc = true;
+          encLogs.push(`Chuẩn hóa mã thẻ BHYT [${rawCard}] -> [${cleanCard}]`);
+          fixedCount++;
+        }
+      }
+
+      // 2. Cân bằng sai số làm tròn tài chính / Viện phí
+      // T_TONGCHI = T_BHTT + T_BNTT + T_BNCCT + T_NGUONKHAC + T_NGOAIDS
+      const data = enc.xml1Data || {};
+      const t_tongchi = parseFloat(data.T_TONGCHI || data.t_tongchi || enc.totalCost || 0);
+      const t_bhtt = parseFloat(data.T_BHTT || data.t_bhtt || enc.bhtt || 0);
+      const t_bntt = parseFloat(data.T_BNTT || data.t_bntt || enc.bntt || 0);
+      const t_bncct = parseFloat(data.T_BNCCT || data.t_bncct || enc.bncct || 0);
+      const t_nguonkhac = parseFloat(data.T_NGUONKHAC || data.t_nguonkhac || 0);
+      const t_ngoadds = parseFloat(data.T_NGOAIDS || data.t_ngoadds || 0);
+
+      const sumComponents = t_bhtt + t_bntt + t_bncct + t_nguonkhac + t_ngoadds;
+      const diff = Math.abs(t_tongchi - sumComponents);
+
+      if (diff > 0.001 && diff <= 10.0 && t_tongchi > 0) {
+        // Tự động cân bằng làm tròn chính xác vào BHTT
+        const newBhtt = Math.round((t_tongchi - (t_bntt + t_bncct + t_nguonkhac + t_ngoadds)) * 100) / 100;
+        if (newBhtt >= 0) {
+          enc.bhtt = newBhtt;
+          if (enc.xml1Data) {
+            enc.xml1Data.T_BHTT = newBhtt.toString();
+            enc.xml1Data.t_bhtt = newBhtt.toString();
+          }
+          isFixedForThisEnc = true;
+          encLogs.push(`Tự động cân bằng tài chính: Điều chỉnh T_BHTT từ ${t_bhtt} -> ${newBhtt} đ (lệch ${diff.toFixed(2)} đ)`);
+          fixedCount++;
+        }
+      }
+
+      // 3. Chuẩn hóa chuỗi ngày giờ (Loại bỏ dấu gạch ngang, khoảng trắng, định dạng số)
+      ["NGAY_VAO", "NGAY_RA", "NGAY_SINH"].forEach(dateField => {
+        const rawVal = data[dateField] || (dateField === "NGAY_VAO" ? enc.dateIn : (dateField === "NGAY_RA" ? enc.dateOut : enc.dob));
+        if (rawVal && typeof rawVal === "string") {
+          const digitsOnly = rawVal.replace(/\D/g, "");
+          if (digitsOnly !== rawVal && digitsOnly.length >= 8) {
+            if (enc.xml1Data) enc.xml1Data[dateField] = digitsOnly;
+            if (dateField === "NGAY_VAO") enc.dateIn = digitsOnly;
+            if (dateField === "NGAY_RA") enc.dateOut = digitsOnly;
+            if (dateField === "NGAY_SINH") enc.dob = digitsOnly;
+            isFixedForThisEnc = true;
+            encLogs.push(`Chuẩn hóa định dạng ngày giờ [${dateField}]: [${rawVal}] -> [${digitsOnly}]`);
+            fixedCount++;
+          }
+        }
+      });
+
+      // 4. Chuẩn hóa Mã Cơ Sở KCB & Nơi ĐKKCB (Viết hoa, loại bỏ khoảng trắng thừa)
+      ["MA_CSKCB", "MA_DKBD", "MA_BENH", "MA_BENHKEM"].forEach(codeField => {
+        if (data[codeField]) {
+          const raw = data[codeField];
+          const clean = raw.trim().toUpperCase();
+          if (clean !== raw) {
+            if (enc.xml1Data) enc.xml1Data[codeField] = clean;
+            if (codeField === "MA_BENH") enc.primaryIcd = clean;
+            isFixedForThisEnc = true;
+            encLogs.push(`Chuẩn hóa mã [${codeField}]: [${raw}] -> [${clean}]`);
+            fixedCount++;
+          }
+        }
+      });
+
+      // 5. Chuẩn hóa danh sách Thuốc & DVKT
+      (enc.xml2List || []).forEach((thuoc) => {
+        if (thuoc.MA_THUOC) {
+          const cleanCode = thuoc.MA_THUOC.trim();
+          if (cleanCode !== thuoc.MA_THUOC) {
+            thuoc.MA_THUOC = cleanCode;
+            fixedCount++;
+          }
+        }
+      });
+
+      (enc.xml3List || []).forEach((dvkt) => {
+        if (dvkt.MA_DICH_VU) {
+          const cleanCode = dvkt.MA_DICH_VU.trim();
+          if (cleanCode !== dvkt.MA_DICH_VU) {
+            dvkt.MA_DICH_VU = cleanCode;
+            fixedCount++;
+          }
+        }
+      });
+
+      if (isFixedForThisEnc) {
+        enc.isAutoFixed = true;
+        enc.fixedLogs = encLogs;
+        fixLogs.push({ maLk: enc.maLk, patientName: enc.patientName, logs: encLogs });
+      }
+
+      // Xóa lỗi cũ và đánh giá lại toàn bộ quy tắc sau khi sửa
+      enc.errors = [];
+      enc.warnings = [];
+      this.evaluateEncounterRules(enc);
+    });
+
+    // Tính toán lại các bộ đếm sau khi sửa
+    let validCount = 0;
+    let warningCount = 0;
+    let criticalCount = 0;
+    const allErrorsList = [];
+
+    validationResult.encounters.forEach(enc => {
+      if (enc.errors.length > 0) {
+        criticalCount++;
+      } else if (enc.warnings.length > 0) {
+        warningCount++;
+      } else {
+        validCount++;
+      }
+
+      enc.errors.forEach(e => allErrorsList.push({ ...e, maLk: enc.maLk, patientName: enc.patientName, cardNo: enc.cardNo, fileName: enc.fileName }));
+      enc.warnings.forEach(w => allErrorsList.push({ ...w, maLk: enc.maLk, patientName: enc.patientName, cardNo: enc.cardNo, fileName: enc.fileName }));
+    });
+
+    validationResult.validCount = validCount;
+    validationResult.warningCount = warningCount;
+    validationResult.criticalCount = criticalCount;
+    validationResult.allErrors = allErrorsList;
+    validationResult.summaryStats = this.calculateSummaryStats(validationResult.encounters, allErrorsList);
+    validationResult.isFixed = true;
+    validationResult.fixedCount = fixedCount;
+    validationResult.fixLogs = fixLogs;
+
+    return {
+      fixedCount,
+      fixLogs,
+      updatedResult: validationResult
+    };
+  }
+
+  /**
+   * Tạo gói tệp ZIP chứa toàn bộ file XML đã được chuẩn hóa và sửa lỗi
+   */
+  static async downloadCleanZip(validationResult, orgConfig = {}) {
+    if (!window.JSZip) {
+      throw new Error("Thư viện JSZip chưa sẵn sàng.");
+    }
+
+    const zip = new JSZip();
+    const encounters = validationResult.encounters || [];
+
+    encounters.forEach(enc => {
+      const maLk = enc.maLk || ("LK_" + Date.now());
+
+      // 1. Tạo nội dung XML1 (Tổng hợp)
+      const xml1Doc = document.implementation.createDocument(null, "TONG_HOP", null);
+      const root1 = xml1Doc.documentElement;
+      const d1 = enc.xml1Data || {};
+      for (const [k, v] of Object.entries(d1)) {
+        const el = xml1Doc.createElement(k);
+        el.textContent = v !== null && v !== undefined ? v.toString() : "";
+        root1.appendChild(el);
+      }
+      const xml1Str = '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(xml1Doc);
+      zip.file(`HOSO_${maLk}/XML1_${maLk}.xml`, xml1Str);
+
+      // 2. Tạo nội dung XML2 (Thuốc nếu có)
+      if (enc.xml2List && enc.xml2List.length > 0) {
+        const xml2Doc = document.implementation.createDocument(null, "DSACH_CHI_TIET_THUOC", null);
+        const root2 = xml2Doc.documentElement;
+        enc.xml2List.forEach(item => {
+          const rowEl = xml2Doc.createElement("CHI_TIET_THUOC");
+          for (const [k, v] of Object.entries(item)) {
+            const el = xml2Doc.createElement(k);
+            el.textContent = v !== null && v !== undefined ? v.toString() : "";
+            rowEl.appendChild(el);
+          }
+          root2.appendChild(rowEl);
+        });
+        const xml2Str = '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(xml2Doc);
+        zip.file(`HOSO_${maLk}/XML2_${maLk}.xml`, xml2Str);
+      }
+
+      // 3. Tạo nội dung XML3 (DVKT nếu có)
+      if (enc.xml3List && enc.xml3List.length > 0) {
+        const xml3Doc = document.implementation.createDocument(null, "DSACH_CHI_TIET_DVKT", null);
+        const root3 = xml3Doc.documentElement;
+        enc.xml3List.forEach(item => {
+          const rowEl = xml3Doc.createElement("CHI_TIET_DVKT");
+          for (const [k, v] of Object.entries(item)) {
+            const el = xml3Doc.createElement(k);
+            el.textContent = v !== null && v !== undefined ? v.toString() : "";
+            rowEl.appendChild(el);
+          }
+          root3.appendChild(rowEl);
+        });
+        const xml3Str = '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(xml3Doc);
+        zip.file(`HOSO_${maLk}/XML3_${maLk}.xml`, xml3Str);
+      }
+    });
+
+    const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    a.download = `GOI_XML_BHYT_DA_CHUAN_HOA_${dateStr}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   // Helpers
   static getNodeText(node, tagNamesStr) {
     const tags = tagNamesStr.split(",").map(t => t.trim());
