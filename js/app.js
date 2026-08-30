@@ -74,6 +74,10 @@ class AppController {
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
+    this.headerSearchWrapper = document.getElementById("headerSearchWrapper");
+    this.headerSearchResultsDropdown = document.getElementById("headerSearchResultsDropdown");
+    this.headerSearchResultsList = document.getElementById("headerSearchResultsList");
+    this.btnClearGlobalSearch = document.getElementById("btnClearGlobalSearch");
 
     // Notification Center Elements
     this.btnToggleNotificationCenter = document.getElementById("btnToggleNotificationCenter");
@@ -467,10 +471,112 @@ class AppController {
       });
     }
 
-    // Global Search input
+    // Global Search input & Interactive Quick Dropdown
     if (this.globalSearchInput) {
+      const handleGlobalSearch = (query) => {
+        const q = query.trim();
+        if (this.btnClearGlobalSearch) {
+          this.btnClearGlobalSearch.classList.toggle("hidden", !q);
+        }
+
+        if (!q) {
+          if (this.headerSearchResultsDropdown) this.headerSearchResultsDropdown.classList.add("hidden");
+          this.renderToolGrid("");
+          return;
+        }
+
+        const term = DocxTableParser.removeAccents(q.toLowerCase());
+        const matchedTools = (window.TOOLS_REGISTRY || []).filter(tool => {
+          const titleNorm = DocxTableParser.removeAccents(tool.title.toLowerCase());
+          const descNorm = DocxTableParser.removeAccents(tool.description.toLowerCase());
+          const badgeNorm = DocxTableParser.removeAccents((tool.badge || "").toLowerCase());
+          const idNorm = DocxTableParser.removeAccents((tool.id || "").toLowerCase());
+          return titleNorm.includes(term) || descNorm.includes(term) || badgeNorm.includes(term) || idNorm.includes(term);
+        });
+
+        if (this.headerSearchResultsDropdown && this.headerSearchResultsList) {
+          this.headerSearchResultsList.innerHTML = "";
+          if (matchedTools.length === 0) {
+            this.headerSearchResultsList.innerHTML = `
+              <div class="search-no-match">
+                Không tìm thấy công cụ nào phù hợp với <strong>"${q}"</strong>
+              </div>
+            `;
+          } else {
+            matchedTools.forEach((tool, idx) => {
+              const item = document.createElement("div");
+              item.className = `search-result-item ${idx === 0 ? 'selected' : ''}`;
+              item.dataset.toolId = tool.id;
+              item.innerHTML = `
+                <div class="search-result-icon">${tool.icon || '⚡'}</div>
+                <div class="search-result-info">
+                  <div class="search-result-title">${tool.title}</div>
+                  <div class="search-result-desc">${tool.description}</div>
+                </div>
+                <span class="search-result-cat">${tool.badge || 'Công cụ'}</span>
+              `;
+              item.addEventListener("click", () => {
+                window.location.hash = tool.id;
+                this.headerSearchResultsDropdown.classList.add("hidden");
+                this.globalSearchInput.value = "";
+                if (this.btnClearGlobalSearch) this.btnClearGlobalSearch.classList.add("hidden");
+              });
+              this.headerSearchResultsList.appendChild(item);
+            });
+          }
+          this.headerSearchResultsDropdown.classList.remove("hidden");
+        }
+
+        // Also update hub grid if on hub
+        this.renderToolGrid(q);
+      };
+
       this.globalSearchInput.addEventListener("input", (e) => {
-        this.renderToolGrid(e.target.value);
+        handleGlobalSearch(e.target.value);
+      });
+
+      this.globalSearchInput.addEventListener("focus", (e) => {
+        if (e.target.value.trim()) {
+          handleGlobalSearch(e.target.value);
+        }
+      });
+
+      this.globalSearchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (this.headerSearchResultsDropdown) this.headerSearchResultsDropdown.classList.add("hidden");
+          this.globalSearchInput.blur();
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          const firstItem = this.headerSearchResultsList ? this.headerSearchResultsList.querySelector(".search-result-item") : null;
+          if (firstItem && firstItem.dataset.toolId) {
+            window.location.hash = firstItem.dataset.toolId;
+            if (this.headerSearchResultsDropdown) this.headerSearchResultsDropdown.classList.add("hidden");
+            this.globalSearchInput.value = "";
+            if (this.btnClearGlobalSearch) this.btnClearGlobalSearch.classList.add("hidden");
+            this.globalSearchInput.blur();
+          } else {
+            window.location.hash = "hub";
+            if (this.headerSearchResultsDropdown) this.headerSearchResultsDropdown.classList.add("hidden");
+            this.globalSearchInput.blur();
+          }
+        }
+      });
+
+      if (this.btnClearGlobalSearch) {
+        this.btnClearGlobalSearch.addEventListener("click", () => {
+          this.globalSearchInput.value = "";
+          this.btnClearGlobalSearch.classList.add("hidden");
+          if (this.headerSearchResultsDropdown) this.headerSearchResultsDropdown.classList.add("hidden");
+          this.renderToolGrid("");
+          this.globalSearchInput.focus();
+        });
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (e) => {
+        if (this.headerSearchWrapper && !this.headerSearchWrapper.contains(e.target)) {
+          if (this.headerSearchResultsDropdown) this.headerSearchResultsDropdown.classList.add("hidden");
+        }
       });
     }
 

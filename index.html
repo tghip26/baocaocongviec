@@ -176,9 +176,19 @@
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           
-          <div class="header-search">
+          <div class="header-search" id="headerSearchWrapper">
             <svg class="search-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="globalSearchInput" placeholder="Tìm kiếm nhanh công cụ (ví dụ: xml, schema, patientno, giám định, cks)..." />
+            <input type="text" id="globalSearchInput" placeholder="Tìm kiếm nhanh công cụ (ví dụ: xml, schema, patientno, giám định, lịch trực)..." autocomplete="off" />
+            <button type="button" class="btn-clear-global-search hidden" id="btnClearGlobalSearch" title="Xóa tìm kiếm">✕</button>
+
+            <!-- Floating Quick Search Results Dropdown -->
+            <div class="header-search-results-dropdown hidden" id="headerSearchResultsDropdown">
+              <div class="search-dropdown-header">
+                <span>⚡ KẾT QUẢ TÌM KIẾM CÔNG CỤ</span>
+                <span class="search-hint-esc">ESC để đóng</span>
+              </div>
+              <div class="search-results-list" id="headerSearchResultsList"></div>
+            </div>
           </div>
         </div>
 
@@ -1547,14 +1557,50 @@
               <input type="file" id="xmlFileInput" class="hidden-input" accept=".xml,.zip" multiple />
               <div class="dropzone-inner">
                 <div class="dropzone-icon xml-icon-glow">
-                  <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                  <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                 </div>
-                <h3 class="dropzone-title">Kéo & thả gói file XML 1..5/130 hoặc file nén .ZIP vào đây</h3>
-                <p class="dropzone-subtitle">Tự động đối soát định dạng thẻ BHYT, logic ngày vào/ra viện, mã ICD-10, tiền viện phí và thuốc/vật tư trước khi gửi Cổng</p>
-                <button type="button" class="btn-select-file" id="btnBrowseXmlFiles">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <span>Chọn Tệp XML / ZIP Từ Máy Tính</span>
-                </button>
+                <h3 class="dropzone-title">Kéo & Thả Gói File XML 1..5/130 Hoặc File Nén .ZIP Vào Đây</h3>
+                <p class="dropzone-subtitle">Tự động đối soát cú pháp dữ liệu BHYT, logic ngày vào/ra viện, mã ICD-10, giá viện phí, danh mục thuốc & vật tư trước khi gửi Cổng Giám Định</p>
+                <div class="dropzone-action-row">
+                  <button type="button" class="btn-select-file" id="btnBrowseXmlFiles">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <span>Chọn Tệp XML / ZIP Từ Máy Tính</span>
+                  </button>
+                </div>
+                <!-- Feature Pills inside Dropzone -->
+                <div class="xml-dropzone-badges">
+                  <span class="xml-drop-badge">📜 QĐ 130/QĐ-BYT & QĐ 4210</span>
+                  <span class="xml-drop-badge">🛡️ Soát Thẻ & Hạn BHYT</span>
+                  <span class="xml-drop-badge">💊 Thuốc, DVKT & VTYT</span>
+                  <span class="xml-drop-badge">⚡ Tự Sửa Lỗi Khoảng Trắng</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3 Informative Quick Guide Cards below dropzone when idle -->
+            <div class="xml-features-grid" id="xmlFeaturesGrid">
+              <div class="xml-feature-card">
+                <div class="feature-card-icon">📋</div>
+                <div class="feature-card-content">
+                  <h4>Kiểm Tra Toàn Diện XML 1..5</h4>
+                  <p>Bóc tách và kiểm tra chi tiết cấu trúc XML1 (Tổng hợp), XML2 (Thuốc), XML3 (DVKT), XML4 (CLS) và XML5 (Diễn biến bệnh).</p>
+                </div>
+              </div>
+
+              <div class="xml-feature-card">
+                <div class="feature-card-icon">🪄</div>
+                <div class="feature-card-content">
+                  <h4>Sửa Lỗi Tự Động 1-Click</h4>
+                  <p>Tự động phát hiện và sửa mã thẻ có khoảng trắng, chuẩn hóa định dạng ngày giờ và cân bằng sai số làm tròn số học.</p>
+                </div>
+              </div>
+
+              <div class="xml-feature-card">
+                <div class="feature-card-icon">📊</div>
+                <div class="feature-card-content">
+                  <h4>Xuất Excel & Tải ZIP Sạch</h4>
+                  <p>Xuất danh sách chi tiết các lỗi theo từng Mã Liên Kết ra tệp Excel và tải trọn bộ hồ sơ đã sửa sẵn sàng nộp cổng.</p>
+                </div>
               </div>
             </div>
           </div>
