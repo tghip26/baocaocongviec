@@ -169,6 +169,19 @@ class SchemaLookupEngine {
     return this.schema.tables.find(t => t.name.toLowerCase() === tLower) || null;
   }
 
+  highlight(text, query) {
+    if (!text || !query) return text || "";
+    const q = query.trim();
+    if (!q) return text;
+    try {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escaped})`, 'gi');
+      return String(text).replace(regex, '<mark class="highlight-term">$1</mark>');
+    } catch (e) {
+      return text;
+    }
+  }
+
   generateSelectSql(table) {
     if (!table || !table.columns) return "";
     const colList = table.columns.map(c => `  ${c.name} -- ${c.description || ''}`).join(",\n");

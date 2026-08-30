@@ -977,6 +977,41 @@ class AppController {
         }
       });
     }
+
+    // Global Keyboard Shortcuts
+    document.addEventListener("keydown", (e) => {
+      // 1. ESC -> Close modals & mobile drawer
+      if (e.key === "Escape") {
+        document.querySelectorAll(".modal-overlay:not(.hidden)").forEach(m => m.classList.add("hidden"));
+        if (this.sidebar && this.sidebar.classList.contains("open")) {
+          this.sidebar.classList.remove("open");
+          if (this.sidebarBackdrop) this.sidebarBackdrop.classList.remove("active");
+        }
+      }
+
+      // 2. Lightbox navigation (ArrowLeft / ArrowRight)
+      if (this.modalPdfLightbox && !this.modalPdfLightbox.classList.contains("hidden")) {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          this.navigatePdfLightbox(-1);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          this.navigatePdfLightbox(1);
+        }
+      }
+
+      // 3. Ctrl + S in Word to HTML -> Download HTML
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && this.wordToHtmlView && !this.wordToHtmlView.classList.contains("hidden")) {
+        e.preventDefault();
+        this.downloadW2hHtmlFile();
+      }
+
+      // 4. Ctrl + Shift + C in Word to HTML -> Copy HTML
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "c" && this.wordToHtmlView && !this.wordToHtmlView.classList.contains("hidden")) {
+        e.preventDefault();
+        this.copyW2hHtmlCode();
+      }
+    });
   }
 
   loadOrgConfigToUi() {
@@ -1419,18 +1454,22 @@ class AppController {
       results.slice(0, 200).forEach(item => {
         const row = document.createElement("div");
         row.className = "schema-item-card";
+        const hlColName = window.schemaLookupEngine.highlight(item.colName, query);
+        const hlColDesc = window.schemaLookupEngine.highlight(item.colDesc, query);
+        const hlTblName = window.schemaLookupEngine.highlight(item.tableName, query);
+
         row.innerHTML = `
           <div class="item-card-top">
             <span class="item-col-name ${item.isPk ? 'is-pk' : ''}">
-              ${item.isPk ? '🔑 ' : ''}<strong>${item.colName}</strong>
+              ${item.isPk ? '🔑 ' : ''}<strong>${hlColName}</strong>
             </span>
             <span class="item-type-badge type-${this.getTypeClass(item.colType)}">${item.colType}</span>
           </div>
           <div class="item-card-desc">
-            <span>💡 <strong>${item.colDesc}</strong></span>
+            <span>💡 <strong>${hlColDesc}</strong></span>
           </div>
           <div class="item-card-bottom">
-            <span class="item-tbl-name" title="${item.tableName} (${item.tableTitle})">📋 ${item.tableName} &bull; ${item.tableTitle}</span>
+            <span class="item-tbl-name" title="${item.tableName} (${item.tableTitle})">📋 ${hlTblName} &bull; ${item.tableTitle}</span>
             <span class="item-topic-badge">${item.tableTopic}</span>
           </div>
         `;
@@ -1466,13 +1505,16 @@ class AppController {
       results.slice(0, 200).forEach(tbl => {
         const row = document.createElement("div");
         row.className = "schema-item-card";
+        const hlTblName = window.schemaLookupEngine.highlight(tbl.name, query);
+        const hlTblTitle = window.schemaLookupEngine.highlight(tbl.title || tbl.name, query);
+
         row.innerHTML = `
           <div class="item-card-top">
-            <span class="item-tbl-title">📋 <strong>${tbl.name}</strong></span>
+            <span class="item-tbl-title">📋 <strong>${hlTblName}</strong></span>
             <span class="item-col-badge">${tbl.columns.length} cột</span>
           </div>
           <div class="item-card-desc">
-            <span>🏢 <strong>${tbl.title || tbl.name}</strong></span>
+            <span>🏢 <strong>${hlTblTitle}</strong></span>
           </div>
           <div class="item-card-bottom">
             <span class="item-topic-badge">${tbl.topic || tbl.section}</span>
@@ -1523,6 +1565,9 @@ class AppController {
       const tr = document.createElement("tr");
       if (hCol && col.name.toLowerCase() === hCol) {
         tr.classList.add("highlight-column-row");
+        setTimeout(() => {
+          tr.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
       }
 
       tr.innerHTML = `

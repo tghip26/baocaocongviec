@@ -312,8 +312,9 @@ class PdfToImageConverter {
     for (let i = 0; i < pagesToExport.length; i++) {
       const pageNum = pagesToExport[i];
       if (onProgress) {
-        onProgress(i + 1, pagesToExport.length, `Đang xử lý trang ${pageNum}/${this.totalPages}...`);
+        onProgress(i + 1, pagesToExport.length, `Đang nén ảnh trang ${pageNum}/${this.totalPages}...`);
       }
+      await new Promise(r => setTimeout(r, 16));
 
       let pageData = this.renderedPages.get(pageNum);
       if (!pageData || pageData.blob == null) {
@@ -324,27 +325,26 @@ class PdfToImageConverter {
       folder.file(fileName, pageData.blob);
     }
 
-    if (onProgress) {
-      onProgress(pagesToExport.length, pagesToExport.length, "Đang nén tệp ZIP...");
-    }
+    if (onProgress) onProgress(pagesToExport.length, pagesToExport.length, "Đang đóng gói file ZIP hoàn chỉnh...");
+    await new Promise(r => setTimeout(r, 30));
 
-    const zipBlob = await zip.generateAsync({
-      type: "blob",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 }
-    });
+    const content = await zip.generateAsync(
+      { type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } },
+      (metadata) => {
+        if (onProgress) {
+          const pct = Math.round(metadata.percent);
+          onProgress(pagesToExport.length, pagesToExport.length, `Đang tạo tệp nén: ${pct}%...`);
+        }
+      }
+    );
 
-    const zipFileName = `${this.pdfFileName}_Tat_ca_trang_anh.zip`;
-    this.triggerDownload(zipBlob, zipFileName);
-
-    return {
-      count: pagesToExport.length,
-      zipFileName
-    };
+    const zipFileName = `${this.pdfFileName}_Export_${pagesToExport.length}_Trang.zip`;
+    this.triggerDownload(content, zipFileName);
+    return zipFileName;
   }
 
   /**
-   * Ghép các trang đã chọn thành 1 ảnh dài duy nhất (Long Image / Infographic)
+   * Ghép tất cả các trang đã chọn thành một bức ảnh dài dọc duy nhất
    */
   async mergeSelectedPagesToLongImage(onProgress = null) {
     const pagesToExport = Array.from(this.selectedPages).sort((a, b) => a - b);
@@ -352,15 +352,15 @@ class PdfToImageConverter {
       throw new Error("Vui lòng chọn ít nhất một trang để ghép ảnh dài.");
     }
 
-    if (onProgress) onProgress(0, pagesToExport.length, "Đang khởi tạo khung ghép ảnh...");
-
-    const renderedList = [];
     let maxWidth = 0;
     let totalHeight = 0;
+    const renderedList = [];
 
     for (let i = 0; i < pagesToExport.length; i++) {
       const p = pagesToExport[i];
-      if (onProgress) onProgress(i + 1, pagesToExport.length, `Đang kết xuất trang ${p}...`);
+      if (onProgress) onProgress(i + 1, pagesToExport.length, `Đang kết xuất trang ${p}/${pagesToExport.length}...`);
+      await new Promise(r => setTimeout(r, 16));
+
       let pageData = this.renderedPages.get(p);
       if (!pageData || !pageData.canvas) {
         pageData = await this.renderPageToCanvas(p, this.options.scale, true);

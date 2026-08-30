@@ -45,8 +45,38 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
 
-  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.15s var(--ease-smooth);
+  --transition-normal: 0.25s var(--ease-smooth);
+  --transition-spring: 0.35s var(--ease-spring);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.8; box-shadow: 0 0 15px rgba(37, 99, 235, 0.3); }
+  50% { opacity: 1; box-shadow: 0 0 25px rgba(37, 99, 235, 0.6); }
 }
 
 /* Reset & Base Setup */
@@ -69,6 +99,25 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Global Interactive Tactile Feel */
+button, .btn-preset, .btn-range-quick, .cms-switch-link, .nav-item {
+  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+button:active:not(:disabled), .btn-preset:active, .btn-range-quick:active {
+  transform: scale(0.96) !important;
+}
+
+/* Keyword Search Highlight */
+mark.highlight-term {
+  background: rgba(245, 158, 11, 0.28);
+  color: #fcd34d;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 700;
+  border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
 /* Hidden Input Utility */
@@ -592,17 +641,39 @@ body {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-normal), background var(--transition-fast);
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  animation: cardEntrance 0.35s var(--ease-spring) backwards;
+}
+
+.tool-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  pointer-events: none;
+}
+
+.tool-card:hover::before {
+  opacity: 1;
 }
 
 .tool-card:hover {
   background: var(--bg-card-hover);
-  border-color: rgba(59, 130, 246, 0.4);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(37, 99, 235, 0.15);
+  border-color: rgba(99, 102, 241, 0.45);
+  transform: translateY(-5px);
+  box-shadow: 0 14px 32px -4px rgba(0, 0, 0, 0.5), 0 0 22px -2px rgba(99, 102, 241, 0.25);
+}
+
+.tool-card:active {
+  transform: translateY(-2px) scale(0.985);
 }
 
 .tool-card-top {
@@ -620,6 +691,11 @@ body {
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
+  transition: transform var(--transition-spring);
+}
+
+.tool-card:hover .tool-card-icon {
+  transform: scale(1.08) rotate(3deg);
 }
 
 .icon-blue { background: rgba(37, 99, 235, 0.15); color: #60a5fa; }
@@ -654,9 +730,9 @@ body {
 }
 
 .tool-card-desc {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
   margin-bottom: 20px;
   flex: 1;
 }
@@ -665,12 +741,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
-  font-size: 0.78rem;
 }
 
 .tool-card-output {
+  font-size: 0.78rem;
   color: var(--text-muted);
   font-weight: 500;
   max-width: 200px;
@@ -2019,13 +2095,15 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  background: rgba(8, 12, 22, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 9999;
   padding: 20px;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .modal-card {
@@ -2033,23 +2111,24 @@ body {
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 500px;
-  box-shadow: var(--shadow-lg);
+  max-width: 520px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 25px rgba(37, 99, 235, 0.18);
   overflow: hidden;
-  animation: modal-pop 0.2s ease-out;
+  animation: modal-pop 0.3s var(--ease-spring);
 }
 
 @keyframes modal-pop {
-  0% { transform: scale(0.95); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(0.92) translateY(12px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 .modal-header {
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .modal-title {
@@ -2060,15 +2139,25 @@ body {
 }
 
 .modal-close {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
   color: var(--text-muted);
-  font-size: 1.5rem;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
   cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .modal-close:hover {
-  color: var(--text-primary);
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.4);
+  color: #f87171;
+  transform: rotate(90deg);
 }
 
 .modal-body {
@@ -3378,8 +3467,11 @@ body {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #10b981, #06b6d4);
+  background-size: 24px 24px;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent);
+  animation: stripes 1s linear infinite;
   border-radius: 4px;
-  transition: width 0.2s ease;
+  transition: width 0.25s var(--ease-smooth);
 }
 
 /* Empty State */
@@ -3426,19 +3518,21 @@ body {
   border: 1px solid var(--border-card);
   border-radius: var(--radius-md);
   overflow: hidden;
-  transition: all var(--transition-normal);
+  transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-normal);
   position: relative;
+  animation: cardEntrance 0.35s var(--ease-spring) backwards;
 }
 
 .pdf-page-card:hover {
-  border-color: rgba(16, 185, 129, 0.4);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(16, 185, 129, 0.2);
+  transform: translateY(-4px);
 }
 
 .pdf-page-card.selected {
   border-color: #10b981;
-  background: rgba(16, 185, 129, 0.04);
+  background: rgba(16, 185, 129, 0.06);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
 }
 
 .pdf-card-header {
@@ -3574,7 +3668,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 30px rgba(16, 185, 129, 0.2);
+  animation: modal-pop 0.35s var(--ease-spring);
 }
 
 .pdf-lightbox-header {
