@@ -5,7 +5,7 @@
  */
 
 const ToolDutyRoster = {
-  // Danh sách cán bộ chính thức Phòng Công Nghệ Thông Tin
+  // Danh sách cán bộ chính thức Phòng Công Nghệ Thông Tin (BVĐK Bắc Ninh Số 2)
   defaultStaffList: [
     { id: "nv1", name: "KS. Ngô Thanh Tùng", role: "Kỹ sư HIS & CSDL VIMES", dept: "Phòng CNTT", phone: "0912.345.678", offDays: [] },
     { id: "nv2", name: "KS. Trần Văn Nam", role: "Kỹ sư Hạ tầng Mạng & Server", dept: "Phòng CNTT", phone: "0988.112.233", offDays: [] },
@@ -95,15 +95,44 @@ const ToolDutyRoster = {
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv7"
+    },
+    {
+      id: "acc_kienbv",
+      username: "kienbv",
+      password: "admin",
+      fullname: "KTV. Bùi Văn Kiên",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv8"
     }
   ],
+
+  getStaffList() {
+    try {
+      const raw = localStorage.getItem("DUTY_CNTT_STAFF_LIST");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    this.saveStaffList(this.defaultStaffList);
+    return [...this.defaultStaffList];
+  },
+
+  saveStaffList(list) {
+    localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(list));
+  },
 
   getAccounts() {
     try {
       const raw = localStorage.getItem("DUTY_CNTT_ACCOUNTS");
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch (e) {}
-    return this.defaultAccounts;
+    this.saveAccounts(this.defaultAccounts);
+    return [...this.defaultAccounts];
   },
 
   saveAccounts(accounts) {
@@ -113,9 +142,14 @@ const ToolDutyRoster = {
   getCurrentSession() {
     try {
       const raw = localStorage.getItem("DUTY_CNTT_SESSION");
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const session = JSON.parse(raw);
+        if (session && session.username) return session;
+      }
     } catch (e) {}
-    return this.defaultAccounts[0]; // Mặc định admin
+    const defaultAdmin = this.defaultAccounts[0];
+    this.setSession(defaultAdmin);
+    return defaultAdmin;
   },
 
   setSession(userObj) {
@@ -141,11 +175,12 @@ const ToolDutyRoster = {
   },
 
   // Thuật toán Tự Động Xếp Lịch Trực Phòng CNTT (Công bằng, chống trực 2 ngày liên tiếp)
-  generateSchedule(year, month, staffList, shiftRoles = null) {
+  generateSchedule(year, month, staffList = null) {
+    const activeStaffList = (staffList && staffList.length > 0) ? staffList : this.getStaffList();
     const totalDays = this.getDaysInMonth(year, month);
     const schedule = [];
     
-    const staffPool = staffList.map(s => ({
+    const staffPool = activeStaffList.map(s => ({
       ...s,
       shiftCount: 0,
       weekendCount: 0,
@@ -207,8 +242,9 @@ const ToolDutyRoster = {
   },
 
   calculateStatistics(staffList, schedule) {
+    const activeStaffList = (staffList && staffList.length > 0) ? staffList : this.getStaffList();
     const stats = {};
-    staffList.forEach(s => {
+    activeStaffList.forEach(s => {
       stats[s.id] = {
         id: s.id,
         name: s.name,
@@ -257,12 +293,13 @@ const ToolDutyRoster = {
     return personalShifts;
   },
 
-  exportToExcel(year, month, schedule, staffList, shiftRoles = null, orgConfig = {}) {
+  exportToExcel(year, month, schedule, staffList = null, shiftRoles = null, orgConfig = {}) {
     if (!window.XLSX) {
       alert("Thư viện SheetJS XLSX chưa được tải!");
       return;
     }
 
+    const activeStaffList = (staffList && staffList.length > 0) ? staffList : this.getStaffList();
     const org1 = orgConfig.org1 || "ỦY BAN NHÂN DÂN TỈNH BẮC NINH";
     const org2 = orgConfig.org2 || "SỞ Y TẾ";
     const org3 = orgConfig.org3 || "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2";
@@ -299,7 +336,7 @@ const ToolDutyRoster = {
     rows.push(["BẢNG TỔNG HỢP SỐ CA TRỰC PHÒNG CNTT (CHẤM CÔNG)"]);
     rows.push(["STT", "Họ Và Tên", "Nhiệm Vụ / Vị Trí", "Tổng Số Ca Trực", "Trực Ngày Thường", "Trực Thứ 7 / CN", "Số Điện Thoại"]);
     
-    const stats = this.calculateStatistics(staffList, schedule);
+    const stats = this.calculateStatistics(activeStaffList, schedule);
     stats.forEach((st, idx) => {
       rows.push([idx + 1, st.name, st.role, st.total, st.weekday, st.weekend, st.phone]);
     });
@@ -319,3 +356,4 @@ const ToolDutyRoster = {
 };
 
 window.ToolDutyRoster = ToolDutyRoster;
+

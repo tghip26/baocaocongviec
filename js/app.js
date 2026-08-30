@@ -1360,8 +1360,9 @@ class AppController {
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+    this.dutyStaffList = ToolDutyRoster.getStaffList();
+    this.currentDutySession = ToolDutyRoster.getCurrentSession();
     this.updateDutySessionUI();
-    this.updateDutyMonthStats();
     this.renderStaffList();
     this.runAutoSchedule();
   }
@@ -3068,7 +3069,8 @@ ${this.currentW2hHtmlOutput}
     });
 
     this.updateSqlOutput();
-  }
+}
+
   updateSqlOutput() {
     if (!window.ToolSqlBuilder) return;
     const tpl = ToolSqlBuilder.templates.find(t => t.id === this.currentSqlTemplateId);
@@ -3136,7 +3138,6 @@ ${this.currentW2hHtmlOutput}
     this.dutyTableContainer = document.getElementById("dutyTableContainer");
 
     // Filter Controls
-    this.dutyFilterChips = document.getElementById("dutyFilterChips");
     this.selectFilterSpecificStaff = document.getElementById("selectFilterSpecificStaff");
 
     // Personal Status Card Elements
@@ -3149,8 +3150,6 @@ ${this.currentW2hHtmlOutput}
 
     // Header Session Widget Elements
     this.dutyHeaderSessionWidget = document.getElementById("dutyHeaderSessionWidget");
-    this.dutyHeaderAccessTag = document.getElementById("dutyHeaderAccessTag");
-    this.dutyHeaderUserPill = document.getElementById("dutyHeaderUserPill");
     this.dutyHeaderAvatar = document.getElementById("dutyHeaderAvatar");
     this.dutyHeaderUserName = document.getElementById("dutyHeaderUserName");
     this.dutyHeaderRoleTag = document.getElementById("dutyHeaderRoleTag");
@@ -3164,25 +3163,31 @@ ${this.currentW2hHtmlOutput}
     this.btnSubmitDutyLogin = document.getElementById("btnSubmitDutyLogin");
     this.inputDutyLoginUser = document.getElementById("inputDutyLoginUser");
     this.inputDutyLoginPass = document.getElementById("inputDutyLoginPass");
+    this.quickLoginChipsContainer = document.getElementById("quickLoginChipsContainer");
 
     // Modal: User Management
     this.modalUserManagement = document.getElementById("modalUserManagement");
     this.btnCloseUserManageModal = document.getElementById("btnCloseUserManageModal");
+    this.btnCloseUserManageModalFooter = document.getElementById("btnCloseUserManageModalFooter");
     this.dutyAccountsTableBody = document.getElementById("dutyAccountsTableBody");
+    this.userFormTitle = document.getElementById("userFormTitle");
+    this.inputEditAccId = document.getElementById("inputEditAccId");
     this.inputNewAccUser = document.getElementById("inputNewAccUser");
     this.inputNewAccPass = document.getElementById("inputNewAccPass");
     this.selectNewAccStaff = document.getElementById("selectNewAccStaff");
     this.selectNewAccRole = document.getElementById("selectNewAccRole");
     this.btnSubmitCreateAccount = document.getElementById("btnSubmitCreateAccount");
+    this.btnResetAccountForm = document.getElementById("btnResetAccountForm");
 
-    // Modal: Add Staff
+    // Modal: Add/Edit Staff
     this.btnAddStaffModalBtn = document.getElementById("btnAddStaffModalBtn");
     this.modalAddStaff = document.getElementById("modalAddStaff");
+    this.modalStaffTitle = document.getElementById("modalStaffTitle");
+    this.inputEditStaffId = document.getElementById("inputEditStaffId");
     this.btnCloseAddStaffModal = document.getElementById("btnCloseAddStaffModal");
     this.btnCancelAddStaff = document.getElementById("btnCancelAddStaff");
     this.btnSaveNewStaff = document.getElementById("btnSaveNewStaff");
     this.inputStaffName = document.getElementById("inputStaffName");
-    this.selectStaffGroup = document.getElementById("selectStaffGroup");
     this.inputStaffRole = document.getElementById("inputStaffRole");
     this.inputStaffPhone = document.getElementById("inputStaffPhone");
 
@@ -3195,20 +3200,14 @@ ${this.currentW2hHtmlOutput}
     this.selectSwapStaff = document.getElementById("selectSwapStaff");
 
     // State Initialization
-    this.currentDutyFilter = "all"; // 'all', 'personal'
+    this.currentDutyFilter = "all";
     this.currentFilterStaffId = "all";
-    this.dutyViewMode = "calendar"; // 'calendar', 'personal', 'table'
+    this.dutyViewMode = "calendar";
     this.dutySchedule = [];
-    this.currentSwapTarget = null; // { day }
+    this.currentSwapTarget = null;
 
-    try {
-      const savedStaff = localStorage.getItem("DUTY_CNTT_STAFF_LIST");
-      this.dutyStaffList = savedStaff ? JSON.parse(savedStaff) : (window.ToolDutyRoster ? ToolDutyRoster.defaultStaffList : []);
-    } catch (e) {
-      this.dutyStaffList = window.ToolDutyRoster ? ToolDutyRoster.defaultStaffList : [];
-    }
-
-    this.currentDutySession = window.ToolDutyRoster ? ToolDutyRoster.getCurrentSession() : { username: "admin", role: "admin", fullname: "Trưởng Phòng CNTT" };
+    this.dutyStaffList = ToolDutyRoster ? ToolDutyRoster.getStaffList() : [];
+    this.currentDutySession = ToolDutyRoster ? ToolDutyRoster.getCurrentSession() : { username: "admin", role: "admin", fullname: "Trưởng Phòng CNTT (Quản trị)" };
 
     // Event Bindings
     if (this.btnBackToHubFromDuty) {
@@ -3218,20 +3217,16 @@ ${this.currentW2hHtmlOutput}
     }
 
     if (this.dutySelectMonth) {
-      this.dutySelectMonth.addEventListener("change", () => {
-        this.runAutoSchedule();
-      });
+      this.dutySelectMonth.addEventListener("change", () => this.runAutoSchedule());
     }
     if (this.dutyInputYear) {
-      this.dutyInputYear.addEventListener("input", () => {
-        this.runAutoSchedule();
-      });
+      this.dutyInputYear.addEventListener("input", () => this.runAutoSchedule());
     }
 
     if (this.btnRunAutoSchedule) {
       this.btnRunAutoSchedule.addEventListener("click", () => {
         this.runAutoSchedule();
-        this.showToast("Đã xếp lịch trực tự động cho P.CNTT!", "success");
+        this.showToast("Đã xếp lịch trực tự động công bằng cho P.CNTT!", "success");
       });
     }
 
@@ -3240,74 +3235,42 @@ ${this.currentW2hHtmlOutput}
     }
 
     // View Mode Tabs
-    if (this.btnTabDutyCalendar) {
-      this.btnTabDutyCalendar.addEventListener("click", () => this.switchDutyViewMode("calendar"));
-    }
-    if (this.btnTabDutyPersonal) {
-      this.btnTabDutyPersonal.addEventListener("click", () => this.switchDutyViewMode("personal"));
-    }
-    if (this.btnTabDutyTable) {
-      this.btnTabDutyTable.addEventListener("click", () => this.switchDutyViewMode("table"));
-    }
+    if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.addEventListener("click", () => this.switchDutyViewMode("calendar"));
+    if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.addEventListener("click", () => this.switchDutyViewMode("personal"));
+    if (this.btnTabDutyTable) this.btnTabDutyTable.addEventListener("click", () => this.switchDutyViewMode("table"));
 
-    // Filter Chips
-    if (this.dutyFilterChips) {
-      this.dutyFilterChips.addEventListener("click", (e) => {
-        const chip = e.target.closest(".duty-chip-btn");
-        if (chip) {
-          const filter = chip.dataset.filter;
-          this.setDutyFilter(filter);
-        }
-      });
-    }
-
+    // Filter by Staff Dropdown
     if (this.selectFilterSpecificStaff) {
       this.selectFilterSpecificStaff.addEventListener("change", (e) => {
         this.currentFilterStaffId = e.target.value;
-        this.setDutyFilter(this.currentFilterStaffId !== "all" ? "personal" : "all");
+        this.currentDutyFilter = (this.currentFilterStaffId !== "all") ? "personal" : "all";
+        this.renderDutyViews();
       });
     }
 
     // Auth & Session
-    if (this.btnOpenLoginModalHeader) {
-      this.btnOpenLoginModalHeader.addEventListener("click", () => this.openDutyLoginModal());
-    }
+    if (this.btnOpenLoginModalHeader) this.btnOpenLoginModalHeader.addEventListener("click", () => this.openDutyLoginModal());
     if (this.btnCloseLoginModal) this.btnCloseLoginModal.addEventListener("click", () => this.hideModal(this.modalDutyLogin));
     if (this.btnCancelLoginModal) this.btnCancelLoginModal.addEventListener("click", () => this.hideModal(this.modalDutyLogin));
-    if (this.btnSubmitDutyLogin) {
-      this.btnSubmitDutyLogin.addEventListener("click", () => this.handleDutyLoginSubmit());
-    }
+    if (this.btnSubmitDutyLogin) this.btnSubmitDutyLogin.addEventListener("click", () => this.handleDutyLoginSubmit());
 
     // User Management Modal
-    if (this.btnOpenUserManageModal) {
-      this.btnOpenUserManageModal.addEventListener("click", () => this.openUserManageModal());
-    }
+    if (this.btnOpenUserManageModal) this.btnOpenUserManageModal.addEventListener("click", () => this.openUserManageModal());
     if (this.btnCloseUserManageModal) this.btnCloseUserManageModal.addEventListener("click", () => this.hideModal(this.modalUserManagement));
-    if (this.btnSubmitCreateAccount) {
-      this.btnSubmitCreateAccount.addEventListener("click", () => this.createNewUserAccount());
-    }
+    if (this.btnCloseUserManageModalFooter) this.btnCloseUserManageModalFooter.addEventListener("click", () => this.hideModal(this.modalUserManagement));
+    if (this.btnSubmitCreateAccount) this.btnSubmitCreateAccount.addEventListener("click", () => this.saveUserAccount());
+    if (this.btnResetAccountForm) this.btnResetAccountForm.addEventListener("click", () => this.resetAccountForm());
 
-    // Add Staff Modal
-    if (this.btnAddStaffModalBtn) {
-      this.btnAddStaffModalBtn.addEventListener("click", () => {
-        if (this.inputStaffName) this.inputStaffName.value = "";
-        if (this.inputStaffPhone) this.inputStaffPhone.value = "";
-        if (this.inputStaffRole) this.inputStaffRole.value = "";
-        this.showModal(this.modalAddStaff);
-      });
-    }
+    // Add / Edit Staff Modal
+    if (this.btnAddStaffModalBtn) this.btnAddStaffModalBtn.addEventListener("click", () => this.openStaffModal());
     if (this.btnCloseAddStaffModal) this.btnCloseAddStaffModal.addEventListener("click", () => this.hideModal(this.modalAddStaff));
     if (this.btnCancelAddStaff) this.btnCancelAddStaff.addEventListener("click", () => this.hideModal(this.modalAddStaff));
-    if (this.btnSaveNewStaff) {
-      this.btnSaveNewStaff.addEventListener("click", () => this.saveNewStaffFromModal());
-    }
+    if (this.btnSaveNewStaff) this.btnSaveNewStaff.addEventListener("click", () => this.saveStaffFromModal());
 
     // Shift Swap Modal
     if (this.btnCloseSwapShiftModal) this.btnCloseSwapShiftModal.addEventListener("click", () => this.hideModal(this.modalSwapShift));
     if (this.btnCancelSwapShift) this.btnCancelSwapShift.addEventListener("click", () => this.hideModal(this.modalSwapShift));
-    if (this.btnConfirmSwapShift) {
-      this.btnConfirmSwapShift.addEventListener("click", () => this.confirmSwapShift());
-    }
+    if (this.btnConfirmSwapShift) this.btnConfirmSwapShift.addEventListener("click", () => this.confirmSwapShift());
 
     this.updateDutySessionUI();
   }
@@ -3317,15 +3280,8 @@ ${this.currentW2hHtmlOutput}
     const isAdmin = (this.currentDutySession.role === "admin");
 
     if (this.dutyHeaderUserName) this.dutyHeaderUserName.textContent = this.currentDutySession.fullname || this.currentDutySession.username;
-    if (this.dutyHeaderRoleTag) {
-      this.dutyHeaderRoleTag.textContent = isAdmin ? "ADMIN" : "USER";
-    }
-    if (this.dutyHeaderAvatar) {
-      this.dutyHeaderAvatar.textContent = isAdmin ? "👑" : "💻";
-    }
-    if (this.dutyHeaderAccessTag) {
-      this.dutyHeaderAccessTag.textContent = isAdmin ? "⚡ Quyền: Admin (Toàn quyền)" : `💻 Cán bộ: ${this.currentDutySession.fullname}`;
-    }
+    if (this.dutyHeaderRoleTag) this.dutyHeaderRoleTag.textContent = isAdmin ? "ADMIN" : "USER";
+    if (this.dutyHeaderAvatar) this.dutyHeaderAvatar.textContent = isAdmin ? "👑" : "💻";
 
     const adminButtons = document.querySelectorAll(".admin-only-btn");
     adminButtons.forEach(btn => {
@@ -3334,76 +3290,284 @@ ${this.currentW2hHtmlOutput}
 
     if (!isAdmin && this.currentDutySession.staffId) {
       this.currentFilterStaffId = this.currentDutySession.staffId;
-      this.setDutyFilter("personal");
     }
   }
 
   openDutyLoginModal() {
+    this.renderQuickLoginChips();
+    if (this.inputDutyLoginUser) this.inputDutyLoginUser.value = "";
+    if (this.inputDutyLoginPass) this.inputDutyLoginPass.value = "";
     this.showModal(this.modalDutyLogin);
+  }
+
+  renderQuickLoginChips() {
+    if (!this.quickLoginChipsContainer || !window.ToolDutyRoster) return;
+    this.quickLoginChipsContainer.innerHTML = "";
+    const accounts = ToolDutyRoster.getAccounts();
+    accounts.forEach(acc => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn-quick-login";
+      const icon = acc.role === "admin" ? "👑" : "💻";
+      btn.innerHTML = `${icon} <strong>${acc.fullname || acc.username}</strong> <span style="color:#38bdf8;font-size:0.7rem;">(${acc.username} / ${acc.password})</span>`;
+      btn.addEventListener("click", () => {
+        if (this.inputDutyLoginUser) this.inputDutyLoginUser.value = acc.username;
+        if (this.inputDutyLoginPass) this.inputDutyLoginPass.value = acc.password;
+        this.handleDutyLoginSubmit();
+      });
+      this.quickLoginChipsContainer.appendChild(btn);
+    });
   }
 
   handleDutyLoginSubmit() {
     const u = this.inputDutyLoginUser ? this.inputDutyLoginUser.value.trim() : "";
     const p = this.inputDutyLoginPass ? this.inputDutyLoginPass.value : "";
+    if (!u) {
+      this.showToast("Vui lòng nhập tên đăng nhập!", "warning");
+      return;
+    }
     const authRes = ToolDutyRoster.authenticate(u, p);
     if (authRes.success) {
       this.currentDutySession = authRes.user;
       this.updateDutySessionUI();
       this.hideModal(this.modalDutyLogin);
-      this.showToast(`Chào ${authRes.user.fullname}!`, "success");
+      this.showToast(`Chào mừng: ${authRes.user.fullname}!`, "success");
+      this.renderStaffList();
       this.renderDutyViews();
     } else {
-      this.showToast("Đăng nhập thất bại!", "error");
+      this.showToast(authRes.message || "Sai tên đăng nhập hoặc mật khẩu!", "error");
     }
   }
 
   openUserManageModal() {
+    this.resetAccountForm();
+    this.populateStaffSelectInUserModal();
     this.renderUserAccountsTable();
     this.showModal(this.modalUserManagement);
   }
 
+  populateStaffSelectInUserModal() {
+    if (!this.selectNewAccStaff) return;
+    this.selectNewAccStaff.innerHTML = `<option value="">-- Không liên kết cán bộ (Tài khoản chung) --</option>`;
+    this.dutyStaffList = ToolDutyRoster.getStaffList();
+    this.dutyStaffList.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.id;
+      opt.textContent = `${s.name} (${s.role})`;
+      this.selectNewAccStaff.appendChild(opt);
+    });
+  }
+
   renderUserAccountsTable() {
-    if (!this.dutyAccountsTableBody) return;
+    if (!this.dutyAccountsTableBody || !window.ToolDutyRoster) return;
     const accounts = ToolDutyRoster.getAccounts();
     this.dutyAccountsTableBody.innerHTML = "";
-    accounts.forEach(acc => {
+    accounts.forEach((acc, idx) => {
+      const linkedStaff = this.dutyStaffList.find(s => s.id === acc.staffId);
+      const staffName = linkedStaff ? linkedStaff.name : (acc.fullname || "Chưa gắn cán bộ");
+      const isRootAdmin = (acc.username === "admin");
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${acc.username}</td><td>${acc.fullname}</td><td>${acc.role}</td>`;
+      tr.innerHTML = `
+        <td style="text-align:center;color:#94a3b8;">${idx + 1}</td>
+        <td><strong style="color:#f1f5f9;">${acc.username}</strong></td>
+        <td>
+          <div class="pass-cell-display">
+            <span class="user-pass-text">${acc.password}</span>
+            <button type="button" class="btn-copy-pass-sm" title="Sao chép mật khẩu">📋</button>
+          </div>
+        </td>
+        <td><span style="color:#38bdf8;">${staffName}</span></td>
+        <td><span class="tool-badge badge-${acc.role === 'admin' ? 'purple' : 'blue'}">${acc.role === 'admin' ? 'Admin' : 'User'}</span></td>
+        <td>
+          <div class="acc-actions-wrap">
+            <button type="button" class="btn-acc-act btn-edit-acc" title="Chỉnh sửa tài khoản">✏️ Sửa</button>
+            ${!isRootAdmin ? `<button type="button" class="btn-acc-act btn-del-acc" title="Xóa tài khoản">🗑️ Xóa</button>` : `<span style="font-size:0.68rem;color:#94a3b8;font-style:italic;">Mặc định</span>`}
+          </div>
+        </td>
+      `;
+      tr.querySelector(".btn-copy-pass-sm").addEventListener("click", () => {
+        navigator.clipboard.writeText(acc.password).then(() => this.showToast(`Đã sao chép mật khẩu tài khoản "${acc.username}": ${acc.password}`, "success"));
+      });
+      tr.querySelector(".btn-edit-acc").addEventListener("click", () => this.openEditAccountForm(acc.id));
+      const delBtn = tr.querySelector(".btn-del-acc");
+      if (delBtn) delBtn.addEventListener("click", () => this.deleteAccount(acc.id));
       this.dutyAccountsTableBody.appendChild(tr);
     });
   }
 
-  createNewUserAccount() {
+  openEditAccountForm(accId) {
+    const accounts = ToolDutyRoster.getAccounts();
+    const acc = accounts.find(a => a.id === accId);
+    if (!acc) return;
+    if (this.inputEditAccId) this.inputEditAccId.value = acc.id;
+    if (this.inputNewAccUser) this.inputNewAccUser.value = acc.username;
+    if (this.inputNewAccPass) this.inputNewAccPass.value = acc.password;
+    if (this.selectNewAccStaff) this.selectNewAccStaff.value = acc.staffId || "";
+    if (this.selectNewAccRole) this.selectNewAccRole.value = acc.role || "user";
+    if (this.userFormTitle) this.userFormTitle.textContent = `✏️ Chỉnh Sửa Tài Khoản: ${acc.username}`;
+    if (this.btnSubmitCreateAccount) this.btnSubmitCreateAccount.textContent = "💾 CẬP NHẬT TÀI KHOẢN";
+    if (this.btnResetAccountForm) this.btnResetAccountForm.style.display = "inline-block";
+  }
+
+  resetAccountForm() {
+    if (this.inputEditAccId) this.inputEditAccId.value = "";
+    if (this.inputNewAccUser) this.inputNewAccUser.value = "";
+    if (this.inputNewAccPass) this.inputNewAccPass.value = "admin";
+    if (this.selectNewAccStaff) this.selectNewAccStaff.value = "";
+    if (this.selectNewAccRole) this.selectNewAccRole.value = "user";
+    if (this.userFormTitle) this.userFormTitle.textContent = "➕ Cấp Tài Khoản Mới";
+    if (this.btnSubmitCreateAccount) this.btnSubmitCreateAccount.textContent = "✨ LƯU TÀI KHOẢN";
+    if (this.btnResetAccountForm) this.btnResetAccountForm.style.display = "none";
+  }
+
+  saveUserAccount() {
     const u = this.inputNewAccUser ? this.inputNewAccUser.value.trim() : "";
-    const p = this.inputNewAccPass ? this.inputNewAccPass.value : "123456";
+    const p = this.inputNewAccPass ? this.inputNewAccPass.value.trim() : "";
     const role = this.selectNewAccRole ? this.selectNewAccRole.value : "user";
     const staffId = this.selectNewAccStaff ? this.selectNewAccStaff.value : null;
-
-    const newAcc = { id: "acc_" + Date.now(), username: u, password: p, fullname: u, role: role, staffId: staffId };
-    const accounts = ToolDutyRoster.getAccounts();
-    accounts.push(newAcc);
-    ToolDutyRoster.saveAccounts(accounts);
-    this.renderUserAccountsTable();
-    this.showToast("Đã cấp tài khoản!", "success");
-  }
-
-  setDutyFilter(filterType) {
-    this.currentDutyFilter = filterType;
-    if (this.dutyFilterChips) {
-      this.dutyFilterChips.querySelectorAll(".duty-chip-btn").forEach(chip => {
-        chip.classList.toggle("active", chip.dataset.filter === filterType);
-      });
+    if (!u) {
+      this.showToast("Vui lòng nhập tên đăng nhập!", "warning");
+      return;
     }
-    if (filterType === "personal") this.switchDutyViewMode("personal");
-    else this.renderDutyViews();
+    if (!p) {
+      this.showToast("Mật khẩu không được để trống!", "warning");
+      return;
+    }
+    const editId = this.inputEditAccId ? this.inputEditAccId.value : "";
+    const accounts = ToolDutyRoster.getAccounts();
+    let linkedStaffName = u;
+    if (staffId) {
+      const s = this.dutyStaffList.find(st => st.id === staffId);
+      if (s) linkedStaffName = s.name;
+    }
+    if (editId) {
+      const acc = accounts.find(a => a.id === editId);
+      if (acc) {
+        acc.username = u;
+        acc.password = p;
+        acc.role = role;
+        acc.staffId = staffId || null;
+        acc.fullname = linkedStaffName;
+        ToolDutyRoster.saveAccounts(accounts);
+        this.showToast(`Đã cập nhật tài khoản "${u}" thành công!`, "success");
+      }
+    } else {
+      if (accounts.some(a => a.username.toLowerCase() === u.toLowerCase())) {
+        this.showToast(`Tên đăng nhập "${u}" đã tồn tại!`, "error");
+        return;
+      }
+      const newAcc = { id: "acc_" + Date.now(), username: u, password: p, fullname: linkedStaffName, role: role, dept: "Phòng CNTT", staffId: staffId || null };
+      accounts.push(newAcc);
+      ToolDutyRoster.saveAccounts(accounts);
+      this.showToast(`Đã cấp mới tài khoản "${u}" thành công!`, "success");
+    }
+    this.resetAccountForm();
+    this.renderUserAccountsTable();
   }
 
-  switchDutyViewMode(mode) {
-    this.dutyViewMode = mode;
-    if (this.dutyCalendarContainer) this.dutyCalendarContainer.classList.toggle("hidden", mode !== "calendar");
-    if (this.dutyPersonalScheduleContainer) this.dutyPersonalScheduleContainer.classList.toggle("hidden", mode !== "personal");
-    if (this.dutyTableContainer) this.dutyTableContainer.classList.toggle("hidden", mode !== "table");
-    this.renderDutyViews();
+  deleteAccount(accId) {
+    const accounts = ToolDutyRoster.getAccounts();
+    const acc = accounts.find(a => a.id === accId);
+    if (!acc) return;
+    if (acc.username === "admin") {
+      this.showToast("Không thể xóa tài khoản Quản trị viên root (admin)!", "error");
+      return;
+    }
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${acc.username}"?`)) return;
+    const filtered = accounts.filter(a => a.id !== accId);
+    ToolDutyRoster.saveAccounts(filtered);
+    this.renderUserAccountsTable();
+    this.showToast(`Đã xóa tài khoản "${acc.username}"!`, "info");
+  }
+
+  openStaffModal(staffId = null) {
+    if (staffId) {
+      const s = this.dutyStaffList.find(st => st.id === staffId);
+      if (!s) return;
+      if (this.modalStaffTitle) this.modalStaffTitle.textContent = "✏️ CHỈNH SỬA CÁN BỘ P.CNTT";
+      if (this.inputEditStaffId) this.inputEditStaffId.value = s.id;
+      if (this.inputStaffName) this.inputStaffName.value = s.name;
+      if (this.inputStaffRole) this.inputStaffRole.value = s.role;
+      if (this.inputStaffPhone) this.inputStaffPhone.value = s.phone || "";
+    } else {
+      if (this.modalStaffTitle) this.modalStaffTitle.textContent = "➕ THÊM CÁN BỘ PHÒNG CNTT";
+      if (this.inputEditStaffId) this.inputEditStaffId.value = "";
+      if (this.inputStaffName) this.inputStaffName.value = "";
+      if (this.inputStaffRole) this.inputStaffRole.value = "";
+      if (this.inputStaffPhone) this.inputStaffPhone.value = "";
+    }
+    this.showModal(this.modalAddStaff);
+  }
+
+  saveStaffFromModal() {
+    const name = this.inputStaffName ? this.inputStaffName.value.trim() : "";
+    if (!name) {
+      this.showToast("Vui lòng nhập họ tên cán bộ!", "warning");
+      return;
+    }
+    const role = this.inputStaffRole && this.inputStaffRole.value.trim() ? this.inputStaffRole.value.trim() : "Kỹ sư CNTT";
+    const phone = this.inputStaffPhone && this.inputStaffPhone.value.trim() ? this.inputStaffPhone.value.trim() : "";
+    const editId = this.inputEditStaffId ? this.inputEditStaffId.value : "";
+    this.dutyStaffList = ToolDutyRoster.getStaffList();
+    if (editId) {
+      const s = this.dutyStaffList.find(st => st.id === editId);
+      if (s) {
+        s.name = name;
+        s.role = role;
+        s.phone = phone;
+        this.showToast(`Đã cập nhật cán bộ "${name}"!`, "success");
+      }
+    } else {
+      const newStaff = { id: "nv_" + Date.now(), name: name, role: role, dept: "Phòng CNTT", phone: phone, offDays: [] };
+      this.dutyStaffList.push(newStaff);
+      this.showToast(`Đã thêm cán bộ "${name}" vào danh sách!`, "success");
+    }
+    ToolDutyRoster.saveStaffList(this.dutyStaffList);
+    this.renderStaffList();
+    this.hideModal(this.modalAddStaff);
+    this.runAutoSchedule();
+  }
+
+  deleteStaff(staffId) {
+    const s = this.dutyStaffList.find(st => st.id === staffId);
+    if (!s) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa cán bộ "${s.name}" khỏi danh sách xếp lịch?`)) return;
+    this.dutyStaffList = this.dutyStaffList.filter(st => st.id !== staffId);
+    ToolDutyRoster.saveStaffList(this.dutyStaffList);
+    this.renderStaffList();
+    this.runAutoSchedule();
+    this.showToast(`Đã xóa cán bộ "${s.name}"!`, "info");
+  }
+
+  renderStaffList() {
+    if (!this.dutyStaffListContainer) return;
+    this.dutyStaffList = ToolDutyRoster.getStaffList();
+    this.dutyStaffListContainer.innerHTML = "";
+    if (this.staffCountDisplay) this.staffCountDisplay.textContent = this.dutyStaffList.length;
+    const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
+    this.dutyStaffList.forEach(s => {
+      const item = document.createElement("div");
+      item.className = "staff-card-item";
+      item.innerHTML = `
+        <div class="staff-info">
+          <span class="staff-name">💻 ${s.name}</span>
+          <span class="staff-role-badge">${s.role}</span>
+          ${s.phone ? `<span class="staff-phone-badge">📞 ${s.phone}</span>` : ""}
+        </div>
+        ${isAdmin ? `
+          <div class="staff-card-actions">
+            <button type="button" class="btn-staff-act btn-edit-staff" title="Sửa thông tin cán bộ" data-id="${s.id}">✏️</button>
+            <button type="button" class="btn-staff-act btn-del-staff" title="Xóa cán bộ" data-id="${s.id}">🗑️</button>
+          </div>
+        ` : ""}
+      `;
+      if (isAdmin) {
+        item.querySelector(".btn-edit-staff").addEventListener("click", () => this.openStaffModal(s.id));
+        item.querySelector(".btn-del-staff").addEventListener("click", () => this.deleteStaff(s.id));
+      }
+      this.dutyStaffListContainer.appendChild(item);
+    });
+    this.populateStaffFilterDropdown();
   }
 
   populateStaffFilterDropdown() {
@@ -3418,34 +3582,20 @@ ${this.currentW2hHtmlOutput}
     });
   }
 
-  renderStaffList() {
-    if (!this.dutyStaffListContainer) return;
-    this.dutyStaffListContainer.innerHTML = "";
-    if (this.staffCountDisplay) this.staffCountDisplay.textContent = this.dutyStaffList.length;
-    this.dutyStaffList.forEach(s => {
-      const item = document.createElement("div");
-      item.className = "staff-card-item";
-      item.innerHTML = `<div class="staff-info"><strong>${s.name}</strong><br><small>${s.role}</small></div>`;
-      this.dutyStaffListContainer.appendChild(item);
-    });
-    this.populateStaffFilterDropdown();
-  }
-
-  saveNewStaffFromModal() {
-    const name = this.inputStaffName ? this.inputStaffName.value.trim() : "";
-    if (!name) return;
-    const role = this.inputStaffRole && this.inputStaffRole.value.trim() ? this.inputStaffRole.value.trim() : "Kỹ sư CNTT";
-    const phone = this.inputStaffPhone && this.inputStaffPhone.value.trim() ? this.inputStaffPhone.value.trim() : "";
-    const newStaff = { id: "nv_" + Date.now(), name: name, role: role, dept: "Phòng CNTT", phone: phone };
-    this.dutyStaffList.push(newStaff);
-    localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(this.dutyStaffList));
-    this.renderStaffList();
-    this.hideModal(this.modalAddStaff);
-    this.runAutoSchedule();
+  switchDutyViewMode(mode) {
+    this.dutyViewMode = mode;
+    if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.classList.toggle("active", mode === "calendar");
+    if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.classList.toggle("active", mode === "personal");
+    if (this.btnTabDutyTable) this.btnTabDutyTable.classList.toggle("active", mode === "table");
+    if (this.dutyCalendarContainer) this.dutyCalendarContainer.classList.toggle("hidden", mode !== "calendar");
+    if (this.dutyPersonalScheduleContainer) this.dutyPersonalScheduleContainer.classList.toggle("hidden", mode !== "personal");
+    if (this.dutyTableContainer) this.dutyTableContainer.classList.toggle("hidden", mode !== "table");
+    this.renderDutyViews();
   }
 
   runAutoSchedule() {
     if (!window.ToolDutyRoster) return;
+    this.dutyStaffList = ToolDutyRoster.getStaffList();
     const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
     const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
     this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList);
@@ -3462,39 +3612,32 @@ ${this.currentW2hHtmlOutput}
   updatePersonalDashboard() {
     if (!this.dutySchedule || this.dutySchedule.length === 0) return;
     let targetStaffId = this.currentFilterStaffId;
-    if (targetStaffId === "all") targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
+    if (targetStaffId === "all") {
+      targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
+    }
     const staff = this.dutyStaffList.find(s => s.id === targetStaffId) || this.dutyStaffList[0];
     if (!staff) return;
+
     if (this.personalCardTitle) this.personalCardTitle.textContent = `Lịch Trực: ${staff.name}`;
     if (this.personalRolePill) this.personalRolePill.textContent = staff.role || "Phòng CNTT";
+
     const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
-    if (this.personalTotalShifts) this.personalTotalShifts.textContent = personalShifts.length;
+    const total = personalShifts.length;
+    const weekend = personalShifts.filter(s => s.isWeekend).length;
+    const weekday = total - weekend;
+
+    if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
+    if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
+    if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
+
     if (this.personalNextShiftText) {
       if (personalShifts.length > 0) {
         const next = personalShifts[0];
         this.personalNextShiftText.innerHTML = `📅 Ngày <strong>${next.day}</strong> (${next.dayName}) &bull; <span style="color:#38bdf8;">Trực P.CNTT</span>`;
-      } else this.personalNextShiftText.textContent = "Không có ca trực.";
+      } else {
+        this.personalNextShiftText.textContent = "Không có ca trực tháng này.";
+      }
     }
-  }
-
-  updateDutySessionUI() {
-    if (!this.currentDutySession) return;
-    const isAdmin = (this.currentDutySession.role === "admin");
-
-    if (this.dutyHeaderUserName) {
-      this.dutyHeaderUserName.textContent = this.currentDutySession.fullname || this.currentDutySession.username;
-    }
-    if (this.dutyHeaderRoleTag) {
-      this.dutyHeaderRoleTag.textContent = isAdmin ? "ADMIN" : "USER";
-    }
-    if (this.dutyHeaderAvatar) {
-      this.dutyHeaderAvatar.textContent = isAdmin ? "👑" : "💻";
-    }
-
-    const adminButtons = document.querySelectorAll(".admin-only-btn");
-    adminButtons.forEach(btn => {
-      btn.style.display = isAdmin ? "inline-flex" : "none";
-    });
   }
 
   renderDutyCalendarView() {
@@ -3503,8 +3646,6 @@ ${this.currentW2hHtmlOutput}
 
     const grid = document.createElement("div");
     grid.className = "calendar-month-grid";
-
-    // 7 Column Headers
     const dayHeaders = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
     dayHeaders.forEach(dh => {
       const colHead = document.createElement("div");
@@ -3515,7 +3656,6 @@ ${this.currentW2hHtmlOutput}
 
     const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
     const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
-
     const firstDayDow = ToolDutyRoster.getDayOfWeek(year, month, 1);
     const offset = (firstDayDow === 0) ? 6 : (firstDayDow - 1);
 
@@ -3534,46 +3674,37 @@ ${this.currentW2hHtmlOutput}
     }
 
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
-
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
       const assignedName = assigned ? assigned.name : "Chưa phân công";
       const assignedPhone = assigned ? (assigned.phone || "") : "";
       const isMyDay = (assigned && personalTargetStaffId && personalTargetStaffId !== "all" && assigned.id === personalTargetStaffId);
       const isDimmed = (this.currentDutyFilter === "personal" && personalTargetStaffId !== "all" && !isMyDay);
-
       const cell = document.createElement("div");
       cell.className = `calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""}`;
-
       cell.innerHTML = `
         <div class="cal-day-header">
           <span class="cal-date-num">${dayObj.day}</span>
           <span class="cal-day-tag">${dayObj.dayName}</span>
         </div>
         <div class="cal-shift-list">
-          <div class="cal-duty-badge ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Bấm để đổi người trực' : 'Cán bộ trực'}">
+          <div class="cal-duty-badge ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ trực' : 'Cán bộ trực ca'}">
             <span class="duty-badge-name">💻 ${assignedName}</span>
             ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
           </div>
         </div>
       `;
-
       if (isAdmin) {
-        cell.querySelector(".cal-duty-badge").addEventListener("click", () => {
-          this.openSwapShiftModal(dayObj.day);
-        });
+        cell.querySelector(".cal-duty-badge").addEventListener("click", () => this.openSwapShiftModal(dayObj.day));
       }
-
       grid.appendChild(cell);
     });
-
     this.dutyCalendarContainer.appendChild(grid);
   }
 
   renderDutyPersonalView() {
     if (!this.dutyPersonalScheduleContainer || !window.ToolDutyRoster) return;
     this.dutyPersonalScheduleContainer.innerHTML = "";
-
     let targetStaffId = this.currentFilterStaffId;
     if (targetStaffId === "all") {
       targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
@@ -3583,11 +3714,9 @@ ${this.currentW2hHtmlOutput}
       this.dutyPersonalScheduleContainer.innerHTML = `<div class="terminal-box"><div class="log-line log-info">Không tìm thấy thông tin cán bộ.</div></div>`;
       return;
     }
-
     const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
     const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
     const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
-
     const headerCard = document.createElement("div");
     headerCard.className = "w2h-card";
     headerCard.style.marginBottom = "14px";
@@ -3601,7 +3730,6 @@ ${this.currentW2hHtmlOutput}
       </div>
     `;
     this.dutyPersonalScheduleContainer.appendChild(headerCard);
-
     if (personalShifts.length === 0) {
       const emptyBox = document.createElement("div");
       emptyBox.className = "terminal-box";
@@ -3609,10 +3737,8 @@ ${this.currentW2hHtmlOutput}
       this.dutyPersonalScheduleContainer.appendChild(emptyBox);
       return;
     }
-
     const listWrap = document.createElement("div");
     listWrap.className = "duty-personal-view";
-
     personalShifts.forEach(shift => {
       const card = document.createElement("div");
       card.className = `personal-shift-card ${shift.isWeekend ? "weekend" : ""}`;
@@ -3631,23 +3757,17 @@ ${this.currentW2hHtmlOutput}
       `;
       listWrap.appendChild(card);
     });
-
     this.dutyPersonalScheduleContainer.appendChild(listWrap);
   }
 
   renderDutyTableView() {
     if (!this.dutyTableContainer || !window.ToolDutyRoster) return;
     this.dutyTableContainer.innerHTML = "";
-
     const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
     const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
-
     const wrap = document.createElement("div");
     wrap.className = "duty-table-wrap";
-
-    let theadHtml = `<tr><th>Ngày</th><th>Thứ</th><th>Cán Bộ Trực P.CNTT</th><th>Số Điện Thoại Trực</th><th>Ghi Chú</th></tr>`;
     let tbodyHtml = "";
-
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
       tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""}">
@@ -3658,8 +3778,7 @@ ${this.currentW2hHtmlOutput}
         <td>${dayObj.isWeekend ? '<span class="tool-badge badge-amber" style="font-size:0.65rem;">Cuối tuần</span>' : '<span style="color:#94a3b8;font-size:0.75rem;">Ngày thường</span>'}</td>
       </tr>`;
     });
-
-    wrap.innerHTML = `<table class="duty-table"><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
+    wrap.innerHTML = `<table class="duty-table"><thead><tr><th>Ngày</th><th>Thứ</th><th>Cán Bộ Trực P.CNTT</th><th>Số Điện Thoại Trực</th><th>Ghi Chú</th></tr></thead><tbody>${tbodyHtml}</tbody></table>`;
     this.dutyTableContainer.appendChild(wrap);
   }
 
@@ -3667,13 +3786,15 @@ ${this.currentW2hHtmlOutput}
     this.currentSwapTarget = { day };
     const dayObj = this.dutySchedule.find(d => d.day === day);
     const currentAssigned = dayObj ? dayObj.shifts["shift_cntt"] : null;
-    if (this.swapShiftInfoText) this.swapShiftInfoText.innerHTML = `<strong>Ngày ${day}</strong>`;
+    if (this.swapShiftInfoText) {
+      this.swapShiftInfoText.innerHTML = `Đổi cán bộ trực cho <strong>Ngày ${day} (${dayObj ? dayObj.dayName : ''})</strong> &bull; Hiện tại: <strong style="color:#38bdf8;">${currentAssigned ? currentAssigned.name : 'Chưa phân công'}</strong>`;
+    }
     if (this.selectSwapStaff) {
       this.selectSwapStaff.innerHTML = "";
       this.dutyStaffList.forEach(s => {
         const opt = document.createElement("option");
         opt.value = s.id;
-        opt.textContent = s.name;
+        opt.textContent = `${s.name} - ${s.role}`;
         if (currentAssigned && currentAssigned.id === s.id) opt.selected = true;
         this.selectSwapStaff.appendChild(opt);
       });

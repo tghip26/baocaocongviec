@@ -1617,9 +1617,11 @@
 
   <!-- MODAL: Đổi Người Trực Thủ Công (Shift Swap) -->
   <div class="modal-overlay hidden" id="modalSwapShift">
+  <!-- MODAL: Đổi Ca Trực Trực Tiếp (Admin) -->
+  <div class="modal-overlay hidden" id="modalSwapShift">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">🔄 ĐỔI NGƯỜI TRỰC CA NÀY (P.CNTT)</h3>
+        <h3 class="modal-title">🔄 ĐỔI CÁN BỘ TRỰC CA NÀY (P.CNTT)</h3>
         <button type="button" class="modal-close" id="btnCloseSwapShiftModal">&times;</button>
       </div>
       <div class="modal-body">
@@ -1630,8 +1632,37 @@
         </div>
       </div>
       <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng</button>
+        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Hủy bỏ</button>
         <button type="button" class="btn-modal-confirm" id="btnConfirmSwapShift">XÁC NHẬN ĐỔI CA &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Thêm / Chỉnh Sửa Cán Bộ P.CNTT -->
+  <div class="modal-overlay hidden" id="modalAddStaff">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalStaffTitle">👥 THÊM CÁN BỘ PHÒNG CNTT</h3>
+        <button type="button" class="modal-close" id="btnCloseAddStaffModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="inputEditStaffId" value="" />
+        <div class="config-form-group">
+          <label class="form-label">Họ và tên cán bộ (kèm học vị):</label>
+          <input type="text" id="inputStaffName" class="form-input" placeholder="Ví dụ: KS. Ngô Thanh Tùng" />
+        </div>
+        <div class="config-form-group">
+          <label class="form-label">Vị trí / Chuyên môn phụ trách:</label>
+          <input type="text" id="inputStaffRole" class="form-input" placeholder="Ví dụ: Kỹ sư HIS & CSDL VIMES" />
+        </div>
+        <div class="config-form-group">
+          <label class="form-label">Số điện thoại trực / Hotline:</label>
+          <input type="text" id="inputStaffPhone" class="form-input" placeholder="Ví dụ: 0912.345.678" />
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnCancelAddStaff">Hủy bỏ</button>
+        <button type="button" class="btn-modal-confirm" id="btnSaveNewStaff">LƯU CÁN BỘ &rarr;</button>
       </div>
     </div>
   </div>
@@ -1640,11 +1671,11 @@
   <div class="modal-overlay hidden" id="modalDutyLogin">
     <div class="modal-card modal-auth-card">
       <div class="modal-header">
-        <h3 class="modal-title">🔐 ĐĂNG NHẬP PHÂN HỆ LỊCH TRỰC P.CNTT</h3>
+        <h3 class="modal-title">🔐 ĐĂNG NHẬP LỊCH TRỰC P.CNTT</h3>
         <button type="button" class="modal-close" id="btnCloseLoginModal">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="modal-instruction">Đăng nhập tài khoản để quản lý xếp lịch trực (Admin) hoặc xem lịch trực cá nhân chi tiết của cán bộ CNTT (User):</p>
+        <p class="modal-instruction">Đăng nhập để xem lịch trực cá nhân hoặc quản lý xếp lịch trực toàn quyền (Admin):</p>
         
         <div class="config-form-group">
           <label class="form-label">Tên đăng nhập (Username):</label>
@@ -1657,16 +1688,8 @@
         </div>
 
         <div class="quick-login-section">
-          <span class="quick-login-lbl">⚡ Đăng nhập nhanh 1-Click Cán Bộ P.CNTT:</span>
-          <div class="quick-login-chips">
-            <button type="button" class="btn-quick-login active" data-u="admin" data-p="admin">👑 Trưởng Phòng CNTT (admin / admin)</button>
-            <button type="button" class="btn-quick-login" data-u="tungnt" data-p="admin">💻 KS. Ngô Thanh Tùng (HIS / CSDL VIMES)</button>
-            <button type="button" class="btn-quick-login" data-u="namtv" data-p="admin">🌐 KS. Trần Văn Nam (Mạng / Server)</button>
-            <button type="button" class="btn-quick-login" data-u="dangnh" data-p="admin">📊 CN. Nguyễn Hải Đăng (Phần mềm / BHYT)</button>
-            <button type="button" class="btn-quick-login" data-u="huylq" data-p="admin">🛠️ KTV. Lê Quang Huy (Máy trạm / Ngoại vi)</button>
-            <button type="button" class="btn-quick-login" data-u="tuanvm" data-p="admin">🩺 KTV. Vũ Minh Tuấn (Hỗ trợ Lâm sàng)</button>
-            <button type="button" class="btn-quick-login" data-u="trongpd" data-p="admin">📞 KS. Phạm Đức Trọng (Hạ tầng / Viễn thông)</button>
-          </div>
+          <span class="quick-login-lbl">⚡ Đăng nhập nhanh 1-Click Cán Bộ P.CNTT (MK: admin):</span>
+          <div class="quick-login-chips" id="quickLoginChipsContainer"></div>
         </div>
       </div>
       <div class="modal-footer flex-between">
@@ -1676,27 +1699,31 @@
     </div>
   </div>
 
-  <!-- MODAL: Quản Lý Người Dùng & Cấp Tài Khoản -->
+  <!-- MODAL: Quản Lý Người Dùng & Cấp Tài Khoản (Xem Mật Khẩu, Thêm, Sửa, Xóa) -->
   <div class="modal-overlay hidden" id="modalUserManagement">
     <div class="modal-card modal-users-card">
       <div class="modal-header">
-        <h3 class="modal-title">👥 QUẢN LÝ NGƯỜI DÙNG & CẤP TÀI KHOẢN</h3>
+        <h3 class="modal-title">👥 QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG P.CNTT (ADMIN)</h3>
         <button type="button" class="modal-close" id="btnCloseUserManageModal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="user-management-grid">
           <!-- Bảng danh sách tài khoản hiện tại -->
           <div class="user-list-pane">
-            <h4 class="pane-title">📋 Danh Sách Tài Khoản Đã Cấp</h4>
+            <div class="flex-between" style="margin-bottom: 8px;">
+              <h4 class="pane-title" style="margin:0;">📋 Danh Sách Tài Khoản & Mật Khẩu</h4>
+              <span style="font-size:0.72rem;color:#38bdf8;">Admin xem & cấp trực tiếp cho cán bộ</span>
+            </div>
             <div class="user-table-scroll">
               <table class="user-accounts-table">
                 <thead>
                   <tr>
-                    <th>Username</th>
-                    <th>Họ và Tên</th>
-                    <th>Bộ Phận</th>
+                    <th>STT</th>
+                    <th>Tên Đăng Nhập</th>
+                    <th>Mật Khẩu</th>
+                    <th>Cán Bộ Liên Kết</th>
                     <th>Quyền</th>
-                    <th>Thao tác</th>
+                    <th>Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody id="dutyAccountsTableBody"></tbody>
@@ -1704,31 +1731,42 @@
             </div>
           </div>
 
-          <!-- Form tạo tài khoản mới -->
+          <!-- Form thêm / sửa tài khoản -->
           <div class="user-create-pane">
-            <h4 class="pane-title">➕ Cấp Tài Khoản Mới</h4>
+            <h4 class="pane-title" id="userFormTitle">➕ Cấp Tài Khoản Mới</h4>
+            <input type="hidden" id="inputEditAccId" value="" />
+            
             <div class="config-form-group">
               <label class="form-label">Tên đăng nhập (Username):</label>
-              <input type="text" id="inputNewAccUser" class="form-input" placeholder="Ví dụ: namtv, hoaitt..." />
+              <input type="text" id="inputNewAccUser" class="form-input" placeholder="Ví dụ: namtv, dangnh..." />
             </div>
+            
             <div class="config-form-group">
-              <label class="form-label">Mật khẩu:</label>
+              <label class="form-label">Mật khẩu (Hiển thị rõ cho Admin):</label>
               <input type="text" id="inputNewAccPass" class="form-input" value="admin" />
             </div>
+
             <div class="config-form-group">
-              <label class="form-label">Gắn với Nhân sự trong danh sách:</label>
+              <label class="form-label">Liên kết Cán bộ P.CNTT:</label>
               <select id="selectNewAccStaff" class="form-select"></select>
             </div>
+
             <div class="config-form-group">
-              <label class="form-label">Phân quyền:</label>
+              <label class="form-label">Phân quyền tài khoản:</label>
               <select id="selectNewAccRole" class="form-select">
-                <option value="user" selected>User (Chỉ xem lịch & ca trực của mình)</option>
-                <option value="admin">Admin (Toàn quyền xếp lịch & đổi ca)</option>
+                <option value="user" selected>User (Xem lịch cá nhân & toàn phòng)</option>
+                <option value="admin">Admin (Toàn quyền xếp lịch, đổi ca, sửa user)</option>
               </select>
             </div>
-            <button type="button" class="btn-create-acc-submit" id="btnSubmitCreateAccount">
-              ✨ CẤP TÀI KHOẢN &rarr;
-            </button>
+
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button type="button" class="btn-create-acc-submit" id="btnSubmitCreateAccount">
+                ✨ LƯU TÀI KHOẢN
+              </button>
+              <button type="button" class="btn-modal-reset" id="btnResetAccountForm" style="display:none;padding:6px 12px;font-size:0.75rem;">
+                Hủy sửa
+              </button>
+            </div>
           </div>
         </div>
       </div>
