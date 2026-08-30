@@ -3657,31 +3657,48 @@ ${this.currentW2hHtmlOutput}
 
   updatePersonalDashboard() {
     if (!this.dutySchedule || this.dutySchedule.length === 0) return;
-    let targetStaffId = this.currentFilterStaffId;
-    if (targetStaffId === "all") {
-      targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
-    }
-    const staff = this.dutyStaffList.find(s => s.id === targetStaffId) || this.dutyStaffList[0];
-    if (!staff) return;
+    const isAllMode = (!this.currentFilterStaffId || this.currentFilterStaffId === "all");
 
-    if (this.personalCardTitle) this.personalCardTitle.textContent = `Lịch Trực: ${staff.name}`;
-    if (this.personalRolePill) this.personalRolePill.textContent = staff.role || "Phòng CNTT";
+    if (isAllMode) {
+      if (this.personalCardTitle) this.personalCardTitle.textContent = "Toàn Thể P.CNTT";
+      if (this.personalRolePill) this.personalRolePill.textContent = `${this.dutyStaffList.length} Cán Bộ`;
 
-    const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
-    const total = personalShifts.length;
-    const weekend = personalShifts.filter(s => s.isWeekend).length;
-    const weekday = total - weekend;
+      const total = this.dutySchedule.length;
+      const weekend = this.dutySchedule.filter(d => d.isWeekend).length;
+      const weekday = total - weekend;
 
-    if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
-    if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
-    if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
+      if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
+      if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
+      if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
 
-    if (this.personalNextShiftText) {
-      if (personalShifts.length > 0) {
-        const next = personalShifts[0];
-        this.personalNextShiftText.innerHTML = `📅 Ngày <strong>${next.day}</strong> (${next.dayName}) &bull; <span style="color:#38bdf8;">Trực P.CNTT</span>`;
-      } else {
-        this.personalNextShiftText.textContent = "Không có ca trực tháng này.";
+      if (this.personalNextShiftText) {
+        const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+        const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+        this.personalNextShiftText.innerHTML = `⚡ Đã xếp đủ <strong>${total} ca trực</strong> Tháng ${month}/${year} chia đều cho <strong>${this.dutyStaffList.length} cán bộ</strong>`;
+      }
+    } else {
+      const staff = this.dutyStaffList.find(s => s.id === this.currentFilterStaffId);
+      if (!staff) return;
+
+      if (this.personalCardTitle) this.personalCardTitle.textContent = `Lịch Trực: ${staff.name}`;
+      if (this.personalRolePill) this.personalRolePill.textContent = staff.role || "Phòng CNTT";
+
+      const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
+      const total = personalShifts.length;
+      const weekend = personalShifts.filter(s => s.isWeekend).length;
+      const weekday = total - weekend;
+
+      if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
+      if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
+      if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
+
+      if (this.personalNextShiftText) {
+        if (personalShifts.length > 0) {
+          const next = personalShifts[0];
+          this.personalNextShiftText.innerHTML = `📅 Ca trực đầu tiên: Ngày <strong>${next.day}</strong> (${next.dayName}) &bull; <span style="color:#38bdf8;">Tổng ${total} ca/tháng</span>`;
+        } else {
+          this.personalNextShiftText.textContent = "Không có ca trực trong tháng này.";
+        }
       }
     }
   }
@@ -3712,20 +3729,18 @@ ${this.currentW2hHtmlOutput}
       grid.appendChild(blank);
     }
 
-    let personalTargetStaffId = this.currentFilterStaffId;
-    if (this.dutyViewMode === "personal" || this.currentDutyFilter === "personal") {
-      if (personalTargetStaffId === "all") {
-        personalTargetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
-      }
-    }
+    const isFilteringSpecific = (this.currentFilterStaffId && this.currentFilterStaffId !== "all");
+    const targetStaffId = isFilteringSpecific ? this.currentFilterStaffId : null;
 
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
       const assignedName = assigned ? assigned.name : "Chưa phân công";
       const assignedPhone = assigned ? (assigned.phone || "") : "";
-      const isMyDay = (assigned && personalTargetStaffId && personalTargetStaffId !== "all" && assigned.id === personalTargetStaffId);
-      const isDimmed = (this.currentDutyFilter === "personal" && personalTargetStaffId !== "all" && !isMyDay);
+      
+      const isMyDay = (assigned && targetStaffId && assigned.id === targetStaffId);
+      const isDimmed = (isFilteringSpecific && !isMyDay);
+
       const cell = document.createElement("div");
       cell.className = `calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""}`;
       cell.innerHTML = `
@@ -3751,59 +3766,97 @@ ${this.currentW2hHtmlOutput}
   renderDutyPersonalView() {
     if (!this.dutyPersonalScheduleContainer || !window.ToolDutyRoster) return;
     this.dutyPersonalScheduleContainer.innerHTML = "";
-    let targetStaffId = this.currentFilterStaffId;
-    if (targetStaffId === "all") {
-      targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
-    }
-    const staff = this.dutyStaffList.find(s => s.id === targetStaffId) || this.dutyStaffList[0];
-    if (!staff) {
-      this.dutyPersonalScheduleContainer.innerHTML = `<div class="terminal-box"><div class="log-line log-info">Không tìm thấy thông tin cán bộ.</div></div>`;
-      return;
-    }
-    const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
     const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
     const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
-    const headerCard = document.createElement("div");
-    headerCard.className = "w2h-card";
-    headerCard.style.marginBottom = "14px";
-    headerCard.innerHTML = `
-      <div class="w2h-card-body flex-between">
-        <div>
-          <h3 style="color:#fff;font-size:1.05rem;margin-bottom:4px;">⭐ Lịch Trực Của: ${staff.name}</h3>
-          <p style="color:#38bdf8;font-size:0.8rem;">Vị trí: <strong>${staff.role}</strong> &bull; Hotline: <strong>${staff.phone || "0912.345.678"}</strong> &bull; Tháng ${month}/${year} (${personalShifts.length} Ca Trực)</p>
-        </div>
-        <span class="personal-status-pill">Phòng CNTT</span>
-      </div>
-    `;
-    this.dutyPersonalScheduleContainer.appendChild(headerCard);
-    if (personalShifts.length === 0) {
-      const emptyBox = document.createElement("div");
-      emptyBox.className = "terminal-box";
-      emptyBox.innerHTML = `<div class="log-line log-info">ℹ️ Cán bộ không có ca trực nào trong Tháng ${month}/${year}.</div>`;
-      this.dutyPersonalScheduleContainer.appendChild(emptyBox);
-      return;
-    }
-    const listWrap = document.createElement("div");
-    listWrap.className = "duty-personal-view";
-    personalShifts.forEach(shift => {
-      const card = document.createElement("div");
-      card.className = `personal-shift-card ${shift.isWeekend ? "weekend" : ""}`;
-      card.innerHTML = `
-        <div class="p-shift-left">
-          <div class="p-shift-date-badge">
-            <span class="p-shift-date-num">${shift.day}</span>
-            <span class="p-shift-dayname">${shift.dayName}</span>
+
+    const isAllMode = (!this.currentFilterStaffId || this.currentFilterStaffId === "all");
+
+    if (isAllMode) {
+      const headerCard = document.createElement("div");
+      headerCard.className = "w2h-card";
+      headerCard.style.marginBottom = "14px";
+      headerCard.innerHTML = `
+        <div class="w2h-card-body flex-between">
+          <div>
+            <h3 style="color:#fff;font-size:1.05rem;margin-bottom:4px;">👥 Lịch Phân Công Toàn Bộ Cán Bộ P.CNTT</h3>
+            <p style="color:#38bdf8;font-size:0.8rem;">Tháng ${month}/${year} &bull; Tổng số: <strong>${this.dutySchedule.length} Ca Trực</strong> &bull; Chia đều cho <strong>${this.dutyStaffList.length} Cán Bộ</strong></p>
           </div>
-          <div class="p-shift-meta">
-            <span class="p-shift-role-title">💻 Trực Phòng Công Nghệ Thông Tin (24/7)</span>
-            <span style="font-size:0.75rem;color:#94a3b8;">Phụ trách: Hệ thống HIS VIMES, Máy Chủ, Cổng BHYT, Ký số & Mạng LAN Khoa/Phòng</span>
-          </div>
+          <span class="personal-status-pill">${this.dutyStaffList.length} Cán Bộ</span>
         </div>
-        <span class="tool-badge badge-${shift.isWeekend ? 'amber' : 'blue'}">${shift.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
       `;
-      listWrap.appendChild(card);
-    });
-    this.dutyPersonalScheduleContainer.appendChild(listWrap);
+      this.dutyPersonalScheduleContainer.appendChild(headerCard);
+
+      const listWrap = document.createElement("div");
+      listWrap.className = "duty-personal-view";
+      this.dutySchedule.forEach(dayObj => {
+        const assigned = dayObj.shifts["shift_cntt"];
+        const card = document.createElement("div");
+        card.className = `personal-shift-card ${dayObj.isWeekend ? "weekend" : ""}`;
+        card.innerHTML = `
+          <div class="p-shift-left">
+            <div class="p-shift-date-badge">
+              <span class="p-shift-date-num">${dayObj.day}</span>
+              <span class="p-shift-dayname">${dayObj.dayName}</span>
+            </div>
+            <div class="p-shift-meta">
+              <span class="p-shift-role-title">💻 ${assigned ? assigned.name : "Chưa phân công"}</span>
+              <span style="font-size:0.75rem;color:#94a3b8;">${assigned ? assigned.role : "Phòng CNTT"} ${assigned && assigned.phone ? `&bull; 📞 ${assigned.phone}` : ""}</span>
+            </div>
+          </div>
+          <span class="tool-badge badge-${dayObj.isWeekend ? 'amber' : 'blue'}">${dayObj.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+        `;
+        listWrap.appendChild(card);
+      });
+      this.dutyPersonalScheduleContainer.appendChild(listWrap);
+    } else {
+      const staff = this.dutyStaffList.find(s => s.id === this.currentFilterStaffId);
+      if (!staff) {
+        this.dutyPersonalScheduleContainer.innerHTML = `<div class="terminal-box"><div class="log-line log-info">Không tìm thấy thông tin cán bộ.</div></div>`;
+        return;
+      }
+      const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
+      const headerCard = document.createElement("div");
+      headerCard.className = "w2h-card";
+      headerCard.style.marginBottom = "14px";
+      headerCard.innerHTML = `
+        <div class="w2h-card-body flex-between">
+          <div>
+            <h3 style="color:#fff;font-size:1.05rem;margin-bottom:4px;">⭐ Lịch Trực Của: ${staff.name}</h3>
+            <p style="color:#38bdf8;font-size:0.8rem;">Vị trí: <strong>${staff.role}</strong> &bull; Hotline: <strong>${staff.phone || "0912.345.678"}</strong> &bull; Tháng ${month}/${year} (${personalShifts.length} Ca Trực)</p>
+          </div>
+          <span class="personal-status-pill">Phòng CNTT</span>
+        </div>
+      `;
+      this.dutyPersonalScheduleContainer.appendChild(headerCard);
+      if (personalShifts.length === 0) {
+        const emptyBox = document.createElement("div");
+        emptyBox.className = "terminal-box";
+        emptyBox.innerHTML = `<div class="log-line log-info">ℹ️ Cán bộ không có ca trực nào trong Tháng ${month}/${year}.</div>`;
+        this.dutyPersonalScheduleContainer.appendChild(emptyBox);
+        return;
+      }
+      const listWrap = document.createElement("div");
+      listWrap.className = "duty-personal-view";
+      personalShifts.forEach(shift => {
+        const card = document.createElement("div");
+        card.className = `personal-shift-card ${shift.isWeekend ? "weekend" : ""}`;
+        card.innerHTML = `
+          <div class="p-shift-left">
+            <div class="p-shift-date-badge">
+              <span class="p-shift-date-num">${shift.day}</span>
+              <span class="p-shift-dayname">${shift.dayName}</span>
+            </div>
+            <div class="p-shift-meta">
+              <span class="p-shift-role-title">💻 Trực Phòng Công Nghệ Thông Tin (24/7)</span>
+              <span style="font-size:0.75rem;color:#94a3b8;">Phụ trách: Hệ thống HIS VIMES, Máy Chủ, Cổng BHYT, Ký số & Mạng LAN Khoa/Phòng</span>
+            </div>
+          </div>
+          <span class="tool-badge badge-${shift.isWeekend ? 'amber' : 'blue'}">${shift.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+        `;
+        listWrap.appendChild(card);
+      });
+      this.dutyPersonalScheduleContainer.appendChild(listWrap);
+    }
   }
 
   renderDutyTableView() {
