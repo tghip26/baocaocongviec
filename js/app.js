@@ -33,6 +33,12 @@ class AppController {
     this.currentPdfFileName = "";
     this.currentLightboxPage = 1;
 
+    // Restore desktop sidebar collapsed state
+    if (localStorage.getItem("APP_SIDEBAR_COLLAPSED") === "true" && window.innerWidth > 768) {
+      const appLayout = document.querySelector(".app-layout");
+      if (appLayout) appLayout.classList.add("sidebar-collapsed");
+    }
+
     this.initElements();
     this.initEvents();
     this.loadOrgConfigToUi();
@@ -318,13 +324,21 @@ class AppController {
     this.initSqlBuilderEvents();
     this.initDutyRosterEvents();
 
-    // Mobile Sidebar Drawer Toggle
+    // Sidebar Drawer & Desktop Collapse Toggle
     if (this.sidebarToggleBtn) {
       this.sidebarToggleBtn.addEventListener("click", () => {
-        if (!this.sidebar) return;
-        const isOpen = this.sidebar.classList.toggle("open");
-        if (this.sidebarBackdrop) {
-          this.sidebarBackdrop.classList.toggle("active", isOpen);
+        if (window.innerWidth > 768) {
+          const appLayout = document.querySelector(".app-layout");
+          if (appLayout) {
+            const isCollapsed = appLayout.classList.toggle("sidebar-collapsed");
+            localStorage.setItem("APP_SIDEBAR_COLLAPSED", isCollapsed ? "true" : "false");
+          }
+        } else {
+          if (!this.sidebar) return;
+          const isOpen = this.sidebar.classList.toggle("open");
+          if (this.sidebarBackdrop) {
+            this.sidebarBackdrop.classList.toggle("active", isOpen);
+          }
         }
       });
     }
@@ -3463,67 +3477,189 @@ ${this.currentW2hHtmlOutput}
     }
   }
 
+  updateDutySessionUI() {
+    if (!this.currentDutySession) return;
+    const isAdmin = (this.currentDutySession.role === "admin");
+
+    if (this.dutyHeaderUserName) {
+      this.dutyHeaderUserName.textContent = this.currentDutySession.fullname || this.currentDutySession.username;
+    }
+    if (this.dutyHeaderRoleTag) {
+      this.dutyHeaderRoleTag.textContent = isAdmin ? "ADMIN" : "USER";
+    }
+    if (this.dutyHeaderAvatar) {
+      this.dutyHeaderAvatar.textContent = isAdmin ? "👑" : "💻";
+    }
+
+    const adminButtons = document.querySelectorAll(".admin-only-btn");
+    adminButtons.forEach(btn => {
+      btn.style.display = isAdmin ? "inline-flex" : "none";
+    });
+  }
+
   renderDutyCalendarView() {
     if (!this.dutyCalendarContainer || !window.ToolDutyRoster) return;
     this.dutyCalendarContainer.innerHTML = "";
+
     const grid = document.createElement("div");
     grid.className = "calendar-month-grid";
+
+    // 7 Column Headers
+    const dayHeaders = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
+    dayHeaders.forEach(dh => {
+      const colHead = document.createElement("div");
+      colHead.className = "calendar-col-header";
+      colHead.textContent = dh;
+      grid.appendChild(colHead);
+    });
+
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+
+    const firstDayDow = ToolDutyRoster.getDayOfWeek(year, month, 1);
+    const offset = (firstDayDow === 0) ? 6 : (firstDayDow - 1);
+
+    for (let i = 0; i < offset; i++) {
+      const blank = document.createElement("div");
+      blank.className = "calendar-day-cell blank";
+      blank.style.opacity = "0.2";
+      grid.appendChild(blank);
+    }
+
     let personalTargetStaffId = this.currentFilterStaffId;
+    if (this.dutyViewMode === "personal" || this.currentDutyFilter === "personal") {
+      if (personalTargetStaffId === "all") {
+        personalTargetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
+      }
+    }
+
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
 
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
       const assignedName = assigned ? assigned.name : "Chưa phân công";
-      const assignedPhone = assigned ? assigned.phone : "";
+      const assignedPhone = assigned ? (assigned.phone || "") : "";
       const isMyDay = (assigned && personalTargetStaffId && personalTargetStaffId !== "all" && assigned.id === personalTargetStaffId);
       const isDimmed = (this.currentDutyFilter === "personal" && personalTargetStaffId !== "all" && !isMyDay);
+
       const cell = document.createElement("div");
       cell.className = `calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""}`;
+
       cell.innerHTML = `
-        <div class="cal-day-header"><span class="cal-date-num">${dayObj.day}</span></div>
+        <div class="cal-day-header">
+          <span class="cal-date-num">${dayObj.day}</span>
+          <span class="cal-day-tag">${dayObj.dayName}</span>
+        </div>
         <div class="cal-shift-list">
-          <div class="cal-duty-badge ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}">
+          <div class="cal-duty-badge ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Bấm để đổi người trực' : 'Cán bộ trực'}">
             <span class="duty-badge-name">💻 ${assignedName}</span>
             ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
           </div>
         </div>
       `;
+
       if (isAdmin) {
-        cell.querySelector(".cal-duty-badge").addEventListener("click", () => this.openSwapShiftModal(dayObj.day));
+        cell.querySelector(".cal-duty-badge").addEventListener("click", () => {
+          this.openSwapShiftModal(dayObj.day);
+        });
       }
+
       grid.appendChild(cell);
     });
+
     this.dutyCalendarContainer.appendChild(grid);
   }
 
   renderDutyPersonalView() {
     if (!this.dutyPersonalScheduleContainer || !window.ToolDutyRoster) return;
     this.dutyPersonalScheduleContainer.innerHTML = "";
+
     let targetStaffId = this.currentFilterStaffId;
-    if (targetStaffId === "all") targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
-    const staff = this.dutyStaffList.find(s => s.id === targetStaffId);
-    if (!staff) return;
+    if (targetStaffId === "all") {
+      targetStaffId = (this.currentDutySession && this.currentDutySession.staffId) ? this.currentDutySession.staffId : (this.dutyStaffList[0] ? this.dutyStaffList[0].id : null);
+    }
+    const staff = this.dutyStaffList.find(s => s.id === targetStaffId) || this.dutyStaffList[0];
+    if (!staff) {
+      this.dutyPersonalScheduleContainer.innerHTML = `<div class="terminal-box"><div class="log-line log-info">Không tìm thấy thông tin cán bộ.</div></div>`;
+      return;
+    }
+
     const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+
+    const headerCard = document.createElement("div");
+    headerCard.className = "w2h-card";
+    headerCard.style.marginBottom = "14px";
+    headerCard.innerHTML = `
+      <div class="w2h-card-body flex-between">
+        <div>
+          <h3 style="color:#fff;font-size:1.05rem;margin-bottom:4px;">⭐ Lịch Trực Của: ${staff.name}</h3>
+          <p style="color:#38bdf8;font-size:0.8rem;">Vị trí: <strong>${staff.role}</strong> &bull; Hotline: <strong>${staff.phone || "0912.345.678"}</strong> &bull; Tháng ${month}/${year} (${personalShifts.length} Ca Trực)</p>
+        </div>
+        <span class="personal-status-pill">Phòng CNTT</span>
+      </div>
+    `;
+    this.dutyPersonalScheduleContainer.appendChild(headerCard);
+
+    if (personalShifts.length === 0) {
+      const emptyBox = document.createElement("div");
+      emptyBox.className = "terminal-box";
+      emptyBox.innerHTML = `<div class="log-line log-info">ℹ️ Cán bộ không có ca trực nào trong Tháng ${month}/${year}.</div>`;
+      this.dutyPersonalScheduleContainer.appendChild(emptyBox);
+      return;
+    }
+
     const listWrap = document.createElement("div");
+    listWrap.className = "duty-personal-view";
+
     personalShifts.forEach(shift => {
       const card = document.createElement("div");
-      card.className = "personal-shift-card";
-      card.innerHTML = `<div class="p-shift-meta">📅 ${shift.day} &bull; Trực Phòng CNTT (24/7)</div>`;
+      card.className = `personal-shift-card ${shift.isWeekend ? "weekend" : ""}`;
+      card.innerHTML = `
+        <div class="p-shift-left">
+          <div class="p-shift-date-badge">
+            <span class="p-shift-date-num">${shift.day}</span>
+            <span class="p-shift-dayname">${shift.dayName}</span>
+          </div>
+          <div class="p-shift-meta">
+            <span class="p-shift-role-title">💻 Trực Phòng Công Nghệ Thông Tin (24/7)</span>
+            <span style="font-size:0.75rem;color:#94a3b8;">Phụ trách: Hệ thống HIS VIMES, Máy Chủ, Cổng BHYT, Ký số & Mạng LAN Khoa/Phòng</span>
+          </div>
+        </div>
+        <span class="tool-badge badge-${shift.isWeekend ? 'amber' : 'blue'}">${shift.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+      `;
       listWrap.appendChild(card);
     });
+
     this.dutyPersonalScheduleContainer.appendChild(listWrap);
   }
 
   renderDutyTableView() {
     if (!this.dutyTableContainer || !window.ToolDutyRoster) return;
     this.dutyTableContainer.innerHTML = "";
+
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+
     const wrap = document.createElement("div");
+    wrap.className = "duty-table-wrap";
+
+    let theadHtml = `<tr><th>Ngày</th><th>Thứ</th><th>Cán Bộ Trực P.CNTT</th><th>Số Điện Thoại Trực</th><th>Ghi Chú</th></tr>`;
     let tbodyHtml = "";
+
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
-      tbodyHtml += `<tr><td>Ngày ${dayObj.day}</td><td>💻 ${assigned ? assigned.name : "-"}</td></tr>`;
+      tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""}">
+        <td><strong>Ngày ${dayObj.day}/${month}</strong></td>
+        <td>${dayObj.dayName}</td>
+        <td><strong style="color:#93c5fd;">💻 ${assigned ? assigned.name : "-"}</strong></td>
+        <td>${assigned ? (assigned.phone || "-") : "-"}</td>
+        <td>${dayObj.isWeekend ? '<span class="tool-badge badge-amber" style="font-size:0.65rem;">Cuối tuần</span>' : '<span style="color:#94a3b8;font-size:0.75rem;">Ngày thường</span>'}</td>
+      </tr>`;
     });
-    wrap.innerHTML = `<table class="duty-table"><thead><tr><th>Ngày</th><th>Cán Bộ</th></tr></thead><tbody>${tbodyHtml}</tbody></table>`;
+
+    wrap.innerHTML = `<table class="duty-table"><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
     this.dutyTableContainer.appendChild(wrap);
   }
 

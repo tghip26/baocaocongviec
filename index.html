@@ -40,9 +40,17 @@
     <!-- Left Sidebar -->
     <aside class="app-sidebar" id="sidebar">
       <div class="sidebar-brand">
-        <div class="brand-logo">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        <div class="brand-logo" title="BVĐK Bắc Ninh Số 2">
+          <svg viewBox="0 0 32 32" width="28" height="28">
+            <defs>
+              <linearGradient id="brandLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="100%" stop-color="#2563eb"/>
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="7" fill="url(#brandLogoGrad)"/>
+            <path d="M12 5h8v7h7v8h-7v7h-8v-7H5v-8h7V5z" fill="#ffffff"/>
+            <circle cx="16" cy="16" r="2.6" fill="#0284c7"/>
           </svg>
         </div>
         <div class="brand-text">
@@ -177,15 +185,12 @@
         <div class="header-right">
           <!-- Session Widget displayed on Top Header when on Duty Roster page -->
           <div class="duty-header-session-widget hidden" id="dutyHeaderSessionWidget">
-            <span class="duty-header-access-pill" id="dutyHeaderAccessTag">⚡ Quyền: Admin (Toàn quyền)</span>
-            <div class="duty-header-user-pill" id="dutyHeaderUserPill">
+            <button type="button" class="duty-header-user-btn" id="btnOpenLoginModalHeader" title="Nhấp để đăng nhập / đổi tài khoản">
               <span class="duty-header-avatar" id="dutyHeaderAvatar">👑</span>
-              <div class="duty-header-meta">
-                <span class="duty-header-name" id="dutyHeaderUserName">Trưởng Phòng CNTT</span>
-                <span class="duty-header-role" id="dutyHeaderRoleTag">ADMIN</span>
-              </div>
-              <button type="button" class="btn-duty-switch-acc-sm" id="btnOpenLoginModalHeader" title="Đổi tài khoản">Đổi TK</button>
-            </div>
+              <span class="duty-header-name" id="dutyHeaderUserName">Trưởng Phòng CNTT</span>
+              <span class="duty-header-role" id="dutyHeaderRoleTag">ADMIN</span>
+              <svg class="header-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
           </div>
 
           <button type="button" class="btn-header-config" id="btnOpenConfigHeader" title="Cấu hình thông tin đơn vị mặc định">
@@ -1287,7 +1292,7 @@
                 <span>Quay lại</span>
               </button>
               <div class="workspace-heading">
-                <h1 class="workspace-title">Quản Lý & Xếp Lịch Trực Phòng CNTT</h1>
+                <h1 class="workspace-title">Lịch Trực Phòng CNTT</h1>
               </div>
             </div>
 
@@ -1313,31 +1318,54 @@
               </div>
 
               <!-- Admin Only Actions -->
-              <button type="button" class="btn-action-outline admin-only-btn" id="btnOpenUserManageModal" title="Quản lý & cấp tài khoản cho từng nhân viên">
-                <span>👥 Quản Lý Người Dùng</span>
+              <button type="button" class="btn-duty-action btn-duty-users admin-only-btn" id="btnOpenUserManageModal" title="Quản lý & cấp tài khoản người dùng">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Người Dùng</span>
               </button>
 
-              <button type="button" class="btn-action-primary admin-only-btn" id="btnRunAutoSchedule" title="Thuật toán tự động xếp lịch chia đều công P.CNTT">
-                <span>⚡ Xếp Lịch Tự Động</span>
+              <button type="button" class="btn-duty-action btn-duty-auto admin-only-btn" id="btnRunAutoSchedule" title="Thuật toán tự động xếp lịch chia đều công P.CNTT">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Xếp Lịch Tự Động</span>
               </button>
 
-              <button type="button" class="btn-action-secondary" id="btnExportDutyExcel" title="Xuất file Excel bảng chấm công chuẩn Phòng CNTT">
-                <span>📊 Xuất Excel Chấm Công</span>
+              <button type="button" class="btn-duty-action btn-duty-excel" id="btnExportDutyExcel" title="Xuất file Excel bảng chấm công chuẩn Phòng CNTT">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span>Xuất Excel</span>
               </button>
             </div>
           </div>
 
-          <!-- Minimal Filter Toolbar -->
-          <div class="duty-filter-toolbar">
-            <div class="duty-filter-chips" id="dutyFilterChips">
-              <button type="button" class="duty-chip-btn active" data-filter="all">💻 Toàn Bộ Lịch Trực P.CNTT</button>
-              <button type="button" class="duty-chip-btn my-duty-chip" data-filter="personal" id="btnFilterMyDuty">⭐ Lịch Trực Của Tôi</button>
+          <!-- Single Unified Control Bar: Tabs + Filter + Legend -->
+          <div class="duty-control-bar">
+            <!-- View Tabs -->
+            <div class="duty-mode-tabs">
+              <button type="button" class="duty-tab-btn active" data-view="calendar" id="btnTabDutyCalendar">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Lưới Lịch Tháng</span>
+              </button>
+              <button type="button" class="duty-tab-btn" data-view="personal" id="btnTabDutyPersonal">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Lịch Của Tôi</span>
+              </button>
+              <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span>Bảng Chấm Công</span>
+              </button>
             </div>
-            <div class="duty-filter-select-wrap">
-              <span class="filter-lbl">🔍 Lọc theo cán bộ:</span>
-              <select id="selectFilterSpecificStaff" class="duty-filter-select">
-                <option value="all">-- Toàn thể Cán bộ P.CNTT --</option>
-              </select>
+
+            <!-- Filter Staff Dropdown & Legend -->
+            <div class="duty-filter-right-cluster">
+              <div class="duty-staff-filter-pill">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <select id="selectFilterSpecificStaff" class="duty-filter-select-sm">
+                  <option value="all">-- Toàn thể Cán bộ P.CNTT --</option>
+                </select>
+              </div>
+
+              <div class="duty-legend">
+                <span class="legend-item"><span class="legend-dot normal"></span> Ngày thường</span>
+                <span class="legend-item"><span class="legend-dot weekend"></span> Cuối tuần</span>
+              </div>
             </div>
           </div>
 
@@ -1361,7 +1389,7 @@
                   <div class="personal-stats-grid">
                     <div class="personal-stat-item">
                       <span class="p-stat-val" id="personalTotalShifts">0</span>
-                      <span class="p-stat-lbl">Tổng ca trực</span>
+                      <span class="p-stat-lbl">Tổng ca</span>
                     </div>
                     <div class="personal-stat-item">
                       <span class="p-stat-val" id="personalWeekdayShifts">0</span>
@@ -1392,19 +1420,6 @@
 
             <!-- Cột phải: Lịch tháng & Bảng thống kê công -->
             <div class="duty-main-workspace">
-              <!-- Switcher xem dạng Lưới Lịch vs Dạng Bảng vs Lịch Cá Nhân -->
-              <div class="duty-view-controls">
-                <div class="duty-mode-tabs">
-                  <button type="button" class="duty-tab-btn active" data-view="calendar" id="btnTabDutyCalendar">🗓️ Lưới Lịch Tháng P.CNTT</button>
-                  <button type="button" class="duty-tab-btn" data-view="personal" id="btnTabDutyPersonal">⭐ Lịch Cá Nhân Chi Tiết</button>
-                  <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">📋 Bảng Phân Công & Chấm Công</button>
-                </div>
-                <div class="duty-legend">
-                  <span class="legend-item"><span class="legend-dot normal"></span> Ca trực P.CNTT</span>
-                  <span class="legend-item"><span class="legend-dot weekend"></span> Cuối tuần</span>
-                </div>
-              </div>
-
               <!-- View A: Lưới Lịch Tháng (Calendar View) -->
               <div class="duty-calendar-view" id="dutyCalendarContainer"></div>
 

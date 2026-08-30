@@ -147,7 +147,41 @@ mark.highlight-term {
   top: 0;
   height: 100vh;
   z-index: 100;
-  transition: transform var(--transition-normal);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform var(--transition-normal);
+}
+
+/* Collapsed Desktop Sidebar */
+.app-layout.sidebar-collapsed .app-sidebar {
+  width: 72px;
+  min-width: 72px;
+}
+
+.app-layout.sidebar-collapsed .brand-text,
+.app-layout.sidebar-collapsed .nav-section-title,
+.app-layout.sidebar-collapsed .nav-text,
+.app-layout.sidebar-collapsed .nav-badge,
+.app-layout.sidebar-collapsed .sidebar-footer {
+  display: none !important;
+}
+
+.app-layout.sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+  padding: 18px 0;
+}
+
+.app-layout.sidebar-collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+  margin: 4px 10px;
+  border-radius: 10px;
+}
+
+.app-layout.sidebar-collapsed .nav-icon {
+  margin-right: 0;
+}
+
+.app-layout.sidebar-collapsed .nav-item::before {
+  display: none;
 }
 
 .sidebar-brand {
@@ -5842,44 +5876,35 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
    DUTY ROSTER & SESSION WIDGET STYLES (PHÒNG CÔNG NGHỆ THÔNG TIN)
    ========================================================================== */
 
-/* Header Session Widget on Global App Header */
+/* Single Sleek Header User Badge on App Header */
 .duty-header-session-widget {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
-.duty-header-access-pill {
-  background: rgba(14, 165, 233, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #38bdf8;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  white-space: nowrap;
-}
-
-.duty-header-user-pill {
+.duty-header-user-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(56, 189, 248, 0.4);
   border-radius: 9999px;
-  padding: 3px 10px 3px 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  padding: 5px 12px 5px 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+}
+
+.duty-header-user-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+  transform: translateY(-1px);
 }
 
 .duty-header-avatar {
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1;
-}
-
-.duty-header-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .duty-header-name {
@@ -5890,40 +5915,29 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .duty-header-role {
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   color: #38bdf8;
   font-weight: 800;
   background: rgba(56, 189, 248, 0.15);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
-.btn-duty-switch-acc-sm {
-  background: rgba(56, 189, 248, 0.2);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
-  border-radius: 9999px;
-  padding: 2px 8px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.header-chevron {
+  color: #94a3b8;
+  margin-left: 2px;
 }
 
-.btn-duty-switch-acc-sm:hover {
-  background: #38bdf8;
-  color: #0f172a;
-}
-
-/* Compact Month / Year in Workspace Top Bar */
+/* Compact Month / Year Picker */
 .duty-time-picker-compact {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(148, 163, 184, 0.25);
-  padding: 3px 8px;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 9999px;
 }
 
 .duty-select-month-sm {
@@ -5931,7 +5945,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   border: none;
   color: #38bdf8;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   outline: none;
   cursor: pointer;
 }
@@ -5942,110 +5956,182 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .duty-input-year-sm {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 6px;
   color: #f1f5f9;
   font-weight: 700;
-  font-size: 0.82rem;
-  width: 65px;
-  padding: 2px 6px;
+  font-size: 0.8rem;
+  width: 58px;
+  padding: 2px 4px;
   outline: none;
   text-align: center;
 }
 
-/* Department & Personal Filter Toolbar */
-.duty-filter-toolbar {
+/* Unified Action Buttons in Workspace Top Bar */
+.btn-duty-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-duty-action:hover {
+  transform: translateY(-1px);
+}
+
+.btn-duty-users {
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.btn-duty-users:hover {
+  background: rgba(14, 165, 233, 0.25);
+  border-color: #38bdf8;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+
+.btn-duty-auto {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+.btn-duty-auto:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.55);
+}
+
+.btn-duty-excel {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(5, 150, 105, 0.35);
+}
+
+.btn-duty-excel:hover {
+  background: linear-gradient(135deg, #047857 0%, #0f766e 100%);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.55);
+}
+
+/* Single Unified Control Bar: Tabs + Filter + Legend */
+.duty-control-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 12px;
-  padding: 8px 14px;
+  padding: 6px 12px;
   margin-bottom: 16px;
   backdrop-filter: blur(12px);
 }
 
-.duty-filter-chips {
+.duty-mode-tabs {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 3px;
 }
 
-.duty-chip-btn {
-  background: rgba(30, 41, 59, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  color: #cbd5e1;
-  padding: 6px 13px;
-  border-radius: 20px;
-  font-size: 0.78rem;
+.duty-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.duty-chip-btn:hover {
-  background: rgba(51, 65, 85, 0.9);
-  color: #fff;
-  border-color: rgba(56, 189, 248, 0.4);
+.duty-tab-btn:hover {
+  color: #f1f5f9;
 }
 
-.duty-chip-btn.active {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(59, 130, 246, 0.25));
-  border-color: #38bdf8;
+.duty-tab-btn.active {
+  background: rgba(56, 189, 248, 0.2);
   color: #38bdf8;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
 }
 
-.duty-chip-btn.highlight-cntt.active {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(14, 165, 233, 0.3));
-  border-color: #22d3ee;
-  color: #22d3ee;
-}
-
-.duty-chip-btn.my-duty-chip {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #fbbf24;
-}
-
-.duty-chip-btn.my-duty-chip.active {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.3));
-  border-color: #fbbf24;
-  color: #fbbf24;
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.35);
-}
-
-.duty-filter-select-wrap {
+.duty-filter-right-cluster {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
-.filter-lbl {
-  font-size: 0.78rem;
+.duty-staff-filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+  padding: 4px 10px;
   color: #94a3b8;
-  font-weight: 600;
 }
 
-.duty-filter-select {
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+.duty-filter-select-sm {
+  background: transparent;
+  border: none;
   color: #f1f5f9;
-  border-radius: 8px;
-  padding: 5px 10px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
+  font-weight: 600;
   outline: none;
+  cursor: pointer;
 }
+
+.duty-filter-select-sm option {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.duty-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.normal { background: #38bdf8; }
+.legend-dot.weekend { background: #fbbf24; }
 
 /* Duty Roster Layout Grid */
 .duty-roster-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 290px 1fr;
   gap: 16px;
   align-items: start;
 }
@@ -6054,6 +6140,86 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+/* Personal Duty Status Card */
+.duty-personal-card {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.75));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.duty-personal-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #38bdf8, #818cf8, #fbbf24);
+}
+
+.personal-status-pill {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.personal-next-shift-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+
+.next-shift-lbl {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.next-shift-val {
+  font-size: 0.84rem;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.personal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.personal-stat-item {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 8px;
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.personal-stat-item .p-stat-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: block;
+  line-height: 1.2;
+}
+
+.personal-stat-item.weekend .p-stat-val {
+  color: #fbbf24;
+}
+
+.personal-stat-item .p-stat-lbl {
+  font-size: 0.62rem;
+  color: #94a3b8;
 }
 
 /* Staff List in Sidebar */
@@ -6127,56 +6293,6 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   gap: 10px;
 }
 
-.duty-mode-tabs {
-  display: flex;
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 10px;
-  padding: 3px;
-  gap: 4px;
-}
-
-.duty-tab-btn {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.duty-tab-btn.active {
-  background: rgba(56, 189, 248, 0.2);
-  color: #38bdf8;
-  font-weight: 700;
-}
-
-.duty-legend {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.72rem;
-  color: #94a3b8;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-
-.legend-dot.normal { background: #38bdf8; }
-.legend-dot.weekend { background: #fbbf24; }
-
 /* Calendar Month Grid */
 .calendar-month-grid {
   display: grid;
@@ -6200,7 +6316,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   border: 1px solid rgba(148, 163, 184, 0.15);
   border-radius: 10px;
   padding: 8px;
-  min-height: 100px;
+  min-height: 105px;
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease;
@@ -6234,6 +6350,11 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 .calendar-day-cell.weekend .cal-date-num {
   color: #fbbf24;
+}
+
+.cal-day-tag {
+  font-size: 0.65rem;
+  color: #94a3b8;
 }
 
 .cal-shift-list {
