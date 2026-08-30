@@ -119,19 +119,19 @@ window.TOOLS_REGISTRY = [
   {
     id: "duty-roster",
     categoryId: "duty",
-    title: "Quản Lý & Xếp Lịch Trực Bệnh Viện Tự Động",
-    subtitle: "Xếp ca trực thông minh, chống trùng lịch, tính công & xuất Excel/Ảnh Zalo",
-    description: "Công cụ tự động xếp lịch trực cho các khoa phòng, khối chuyên môn và tổ CNTT. Thuật toán tự động chia đều ca trực đêm, cuối tuần, ngày lễ; chống xếp 2 ngày liên tiếp; giao diện lịch tháng tương tác đổi người trực 1-click; xuất Excel chấm công và xuất Ảnh gửi Zalo sắc nét.",
-    badge: "Xếp Lịch Trực Tự Động",
-    badgeColor: "amber",
+    title: "Quản Lý & Xếp Lịch Trực Phòng CNTT Tự Động",
+    subtitle: "Xếp ca trực HIS, Máy Chủ, CSDL & Hỗ trợ Lâm sàng, chấm công P.CNTT",
+    description: "Công cụ tự động xếp lịch trực chuyên biệt cho cán bộ, kỹ sư, kỹ thuật viên Phòng Công Nghệ Thông Tin Bệnh Viện. Phân bổ công bằng ca Trực Chính (HIS/Server), Trực Phụ (Khoa Phòng) và Trực Chỉ Huy On-Call; kiểm soát chống trùng lịch; cấp tài khoản cá nhân tra cứu ca trực; xuất Excel chấm công chuẩn Phòng CNTT.",
+    badge: "Lịch Trực Phòng CNTT",
+    badgeColor: "cyan",
     icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M15 14h2"/><path d="M15 17h3"/></svg>`,
     inputType: "duty-roster-interactive",
-    outputName: "Lich_Truc_Benh_Vien.xlsx",
+    outputName: "Lich_Truc_Phong_CNTT.xlsx",
     guide: [
-      "Bước 1: Nhập danh sách nhân sự (Họ tên, chức danh, nhóm ca) và chọn ngày bận/nghỉ phép (nếu có).",
-      "Bước 2: Chọn Tháng / Năm cần xếp lịch và các vị trí ca trực trong ngày (Lãnh đạo, Cấp cứu, Nội, Ngoại, ĐD, KTV, CNTT...).",
-      "Bước 3: Nhấn '⚡ Xếp Lịch Tự Động' để hệ thống tự động phân bổ công bằng.",
-      "Bước 4: Xem trước Lịch tháng, đổi ca trực thủ công nếu cần, sau đó nhấn '📊 Xuất Excel' hoặc '🖼️ Xuất Ảnh Zalo'."
+      "Bước 1: Quản lý danh sách nhân sự Phòng CNTT (Kỹ sư HIS, CSDL, Mạng, Server, KTV máy trạm, Hỗ trợ lâm sàng).",
+      "Bước 2: Chọn Tháng / Năm cần xếp lịch (Hệ thống phân bổ 3 ca: Trực Chính HIS/Server, Trực Phụ Khoa Phòng, Trực Chỉ Huy On-Call).",
+      "Bước 3: Nhấn '⚡ Xếp Lịch Tự Động' để thuật toán phân chia đều ca đêm, thứ 7/CN và chống xếp 2 ngày liên tiếp.",
+      "Bước 4: Đăng nhập tài khoản cá nhân để xem lịch của riêng mình, hoặc nhấn '📊 Xuất Excel Chấm Công' cho toàn phòng."
     ],
     executeKey: "openDutyRoster"
   },

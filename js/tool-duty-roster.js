@@ -1,43 +1,38 @@
 /**
  * tool-duty-roster.js
- * Quản Lý & Xếp Lịch Trực Bệnh Viện Tự Động (Tích hợp Hệ thống Phân quyền Admin / User Cá Nhân)
- * Cung cấp: Phân quyền admin/user, quản lý tài khoản nhân viên, lọc lịch trực cá nhân, xếp lịch thông minh & xuất Excel.
+ * Quản Lý & Xếp Lịch Trực Phòng Công Nghệ Thông Tin Tự Động
+ * Dành riêng cho Phòng CNTT Bệnh Viện Đa Khoa Bắc Ninh Số 2: Trực Hệ thống HIS, Server, CSDL VIMES & Hỗ trợ kỹ thuật lâm sàng.
  */
 
 const ToolDutyRoster = {
-  // Danh sách mẫu nhân sự ban đầu
+  // Danh sách nhân sự chính thức Phòng Công Nghệ Thông Tin
   defaultStaffList: [
-    { id: "nv1", name: "BSCKI. Nguyễn Văn Hùng", role: "Trực Lãnh đạo / Trưởng ca", group: "bacsi", dept: "Khối Ngoại - Cấp Cứu", offDays: [] },
-    { id: "nv2", name: "ThS.BS. Trần Quốc Toản", role: "Bác sĩ Trực Cấp cứu", group: "bacsi", dept: "Khoa Cấp Cứu", offDays: [] },
-    { id: "nv3", name: "BS. Lê Thị Mai", role: "Bác sĩ Trực Nội", group: "bacsi", dept: "Khoa Nội Tổng Hợp", offDays: [] },
-    { id: "nv4", name: "BS. Phạm Minh Đức", role: "Bác sĩ Trực Ngoại", group: "bacsi", dept: "Khoa Ngoại Tổng Hợp", offDays: [] },
-    { id: "nv5", name: "ĐD. Hoàng Thu Thủy", role: "Điều dưỡng Trưởng ca", group: "dieuduong", dept: "Khối Điều Dưỡng", offDays: [] },
-    { id: "nv6", name: "ĐD. Vũ Hải Yến", role: "Điều dưỡng Cấp cứu", group: "dieuduong", dept: "Khoa Cấp Cứu", offDays: [] },
-    { id: "nv7", name: "KTV. Đỗ Mạnh Cường", role: "Kỹ thuật viên X-Quang / XN", group: "ktv", dept: "Khoa CĐHA & Xét Nghiệm", offDays: [] },
-    { id: "nv8", name: "KS. Ngô Thanh Tùng", role: "Kỹ sư Trực CNTT / HIS", group: "cntt", dept: "Phòng CNTT", offDays: [] },
-    { id: "nv9", name: "DS. Bùi Thị Lan", role: "Dược sĩ Trực Kho Thuốc", group: "duoc", dept: "Khoa Dược", offDays: [] }
+    { id: "nv1", name: "KS. Ngô Thanh Tùng", role: "Kỹ sư HIS & CSDL VIMES", group: "cntt_main", dept: "Phòng CNTT", phone: "0912.345.678", offDays: [] },
+    { id: "nv2", name: "KS. Trần Văn Nam", role: "Kỹ sư Hạ tầng Mạng & Server", group: "cntt_main", dept: "Phòng CNTT", phone: "0988.112.233", offDays: [] },
+    { id: "nv3", name: "CN. Nguyễn Hải Đăng", role: "Cử nhân Phần mềm & Cổng BHYT", group: "cntt_main", dept: "Phòng CNTT", phone: "0977.445.566", offDays: [] },
+    { id: "nv4", name: "KTV. Lê Quang Huy", role: "KTV Phần cứng & Máy trạm", group: "cntt_sub", dept: "Phòng CNTT", phone: "0966.778.899", offDays: [] },
+    { id: "nv5", name: "KTV. Vũ Minh Tuấn", role: "KTV Hỗ trợ Lâm sàng & HIS", group: "cntt_sub", dept: "Phòng CNTT", phone: "0944.556.677", offDays: [] },
+    { id: "nv6", name: "KS. Phạm Đức Trọng", role: "Kỹ sư Mạng LAN & Viễn thông", group: "cntt_sub", dept: "Phòng CNTT", phone: "0933.221.144", offDays: [] },
+    { id: "nv7", name: "CN. Đặng Hoàng Long", role: "Cử nhân Ký số & An toàn TT", group: "cntt_main", dept: "Phòng CNTT", phone: "0918.998.877", offDays: [] },
+    { id: "nv8", name: "KTV. Bùi Văn Kiên", role: "KTV Thiết bị Ngoại vi & In ấn", group: "cntt_sub", dept: "Phòng CNTT", phone: "0904.332.211", offDays: [] }
   ],
 
-  // Các vị trí / ca trực trong ngày
+  // Các vị trí ca trực chuyên môn trong ngày của Phòng CNTT
   defaultShiftRoles: [
-    { id: "shift_lanhdao", name: "Trực Lãnh Đạo", group: "bacsi", badgeColor: "blue" },
-    { id: "shift_capcuu", name: "Trực Cấp Cứu", group: "bacsi", badgeColor: "emerald" },
-    { id: "shift_noi", name: "Trực Nội Khoa", group: "bacsi", badgeColor: "violet" },
-    { id: "shift_ngoai", name: "Trực Ngoại Khoa", group: "bacsi", badgeColor: "amber" },
-    { id: "shift_dieuduong", name: "Điều Dưỡng Trực", group: "dieuduong", badgeColor: "cyan" },
-    { id: "shift_ktv", name: "Kỹ Thuật Viên (XN/CĐHA)", group: "ktv", badgeColor: "indigo" },
-    { id: "shift_cntt", name: "Trực CNTT / Hệ Thống HIS", group: "cntt", badgeColor: "blue" }
+    { id: "shift_cntt_chinh", name: "🖥️ Trực Chính (HIS, Máy Chủ & CSDL)", group: "cntt_main", badgeColor: "blue", desc: "Giám sát HIS VIMES, Oracle/PostgreSQL, Cổng BHYT, CKS" },
+    { id: "shift_cntt_phu", name: "🛠️ Trực Phụ (Hỗ Trợ Lâm Sàng & Mạng)", group: "cntt_sub", badgeColor: "cyan", desc: "Xử lý máy trạm, máy in, mạng LAN các khoa Khám bệnh, Cấp cứu, Điều trị" },
+    { id: "shift_cntt_oncall", name: "📞 Trực On-Call / Chỉ Huy (Lãnh Đạo Phòng)", group: "cntt_main", badgeColor: "amber", desc: "Chỉ đạo xử lý sự cố cấp bách, hỗ trợ từ xa 24/7" }
   ],
 
-  // Danh sách tài khoản người dùng mặc định (Admin: admin / admin)
+  // Danh sách tài khoản người dùng Phòng CNTT (Mặc định: admin / admin)
   defaultAccounts: [
     {
       id: "acc_admin",
       username: "admin",
       password: "admin",
-      fullname: "Quản Trị Viên (Phòng CNTT)",
+      fullname: "Quản Trị Viên (Trưởng Phòng CNTT)",
       role: "admin",
-      dept: "Phòng CNTT",
+      dept: "Lãnh Đạo Phòng CNTT",
       staffId: null
     },
     {
@@ -46,63 +41,80 @@ const ToolDutyRoster = {
       password: "admin",
       fullname: "KS. Ngô Thanh Tùng",
       role: "user",
-      dept: "Phòng CNTT",
-      staffId: "nv8"
-    },
-    {
-      id: "acc_hungnv",
-      username: "hungnv",
-      password: "admin",
-      fullname: "BSCKI. Nguyễn Văn Hùng",
-      role: "user",
-      dept: "Khối Ngoại - Cấp Cứu",
+      dept: "Tổ Hệ Thống & HIS",
       staffId: "nv1"
     },
     {
-      id: "acc_toantq",
-      username: "toantq",
+      id: "acc_namtv",
+      username: "namtv",
       password: "admin",
-      fullname: "ThS.BS. Trần Quốc Toản",
+      fullname: "KS. Trần Văn Nam",
       role: "user",
-      dept: "Khoa Cấp Cứu",
+      dept: "Tổ Hạ Tầng & Server",
       staffId: "nv2"
     },
     {
-      id: "acc_thuyht",
-      username: "thuyht",
+      id: "acc_dangnh",
+      username: "dangnh",
       password: "admin",
-      fullname: "ĐD. Hoàng Thu Thủy",
+      fullname: "CN. Nguyễn Hải Đăng",
       role: "user",
-      dept: "Khối Điều Dưỡng",
+      dept: "Tổ Phần Mềm & BHYT",
+      staffId: "nv3"
+    },
+    {
+      id: "acc_huylq",
+      username: "huylq",
+      password: "admin",
+      fullname: "KTV. Lê Quang Huy",
+      role: "user",
+      dept: "Tổ Kỹ Thuật Máy Trạm",
+      staffId: "nv4"
+    },
+    {
+      id: "acc_tuanvm",
+      username: "tuanvm",
+      password: "admin",
+      fullname: "KTV. Vũ Minh Tuấn",
+      role: "user",
+      dept: "Tổ Hỗ Trợ Lâm Sàng",
       staffId: "nv5"
+    },
+    {
+      id: "acc_trongpd",
+      username: "trongpd",
+      password: "admin",
+      fullname: "KS. Phạm Đức Trọng",
+      role: "user",
+      dept: "Tổ Mạng & Viễn Thông",
+      staffId: "nv6"
     }
   ],
 
-  // Khởi tạo và lấy danh sách tài khoản từ localStorage
+  // Lấy danh sách tài khoản từ localStorage
   getAccounts() {
     try {
-      const raw = localStorage.getItem("DUTY_ACCOUNTS");
+      const raw = localStorage.getItem("DUTY_CNTT_ACCOUNTS");
       if (raw) return JSON.parse(raw);
     } catch (e) {}
     return this.defaultAccounts;
   },
 
   saveAccounts(accounts) {
-    localStorage.setItem("DUTY_ACCOUNTS", JSON.stringify(accounts));
+    localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(accounts));
   },
 
   // Quản lý phiên đăng nhập hiện tại
   getCurrentSession() {
     try {
-      const raw = localStorage.getItem("DUTY_CURRENT_SESSION");
+      const raw = localStorage.getItem("DUTY_CNTT_SESSION");
       if (raw) return JSON.parse(raw);
     } catch (e) {}
-    // Mặc định đăng nhập với tài khoản admin
-    return this.defaultAccounts[0];
+    return this.defaultAccounts[0]; // Mặc định admin
   },
 
   setSession(userObj) {
-    localStorage.setItem("DUTY_CURRENT_SESSION", JSON.stringify(userObj));
+    localStorage.setItem("DUTY_CNTT_SESSION", JSON.stringify(userObj));
   },
 
   // Xác thực đăng nhập
@@ -126,17 +138,18 @@ const ToolDutyRoster = {
     return new Date(year, month - 1, day).getDay();
   },
 
-  // Thuật toán Tự Động Xếp Lịch Trực Thông Minh (Smart Fair-Distribution Scheduler)
+  // Thuật toán Tự Động Xếp Lịch Trực Phòng CNTT (Smart Fair-Distribution Scheduler)
   generateSchedule(year, month, staffList, shiftRoles) {
     const totalDays = this.getDaysInMonth(year, month);
-    const schedule = []; // Array of day objects: { day, dayOfWeek, isWeekend, shifts: { shiftId: staffObj } }
+    const schedule = [];
     
-    // Nhóm nhân sự theo role group
-    const staffByGroup = {};
-    staffList.forEach(s => {
-      if (!staffByGroup[s.group]) staffByGroup[s.group] = [];
-      staffByGroup[s.group].push({ ...s, shiftCount: 0, weekendCount: 0, lastAssignedDay: -99 });
-    });
+    // Khởi tạo bộ đếm công cho nhân viên CNTT
+    const staffPool = staffList.map(s => ({
+      ...s,
+      shiftCount: 0,
+      weekendCount: 0,
+      lastAssignedDay: -99
+    }));
 
     for (let d = 1; d <= totalDays; d++) {
       const dayOfWeek = this.getDayOfWeek(year, month, d);
@@ -144,31 +157,41 @@ const ToolDutyRoster = {
       const dayShifts = {};
 
       shiftRoles.forEach(role => {
-        let pool = staffByGroup[role.group] || [];
-        if (pool.length === 0) {
-          pool = Object.values(staffByGroup).flat();
-        }
+        // Lọc ứng viên theo nhóm chuyên môn (nếu cần) hoặc toàn thể kỹ sư CNTT
+        let pool = staffPool.filter(s => {
+          if (role.group === "cntt_main") return s.group === "cntt_main" || s.role.includes("KS") || s.role.includes("CN");
+          return true;
+        });
+        if (pool.length === 0) pool = staffPool;
 
-        // Lọc các nhân viên không bị vướng ngày nghỉ và không trực ngày hôm trước (cách ít nhất 1 ngày)
+        // Tránh trùng người trong cùng 1 ngày
+        const assignedTodayIds = Object.values(dayShifts).map(x => x.id).filter(Boolean);
+
+        // Lọc không nghỉ phép và không trực liên tiếp 2 ngày
         let candidates = pool.filter(s => {
           const isOff = s.offDays && s.offDays.includes(d);
           const isConsecutive = (s.lastAssignedDay === d - 1);
-          return !isOff && !isConsecutive;
+          const alreadyAssignedToday = assignedTodayIds.includes(s.id);
+          return !isOff && !isConsecutive && !alreadyAssignedToday;
         });
 
-        // Nếu tất cả đều vướng, nới lỏng điều kiện liên tiếp
         if (candidates.length === 0) {
-          candidates = pool.filter(s => !(s.offDays && s.offDays.includes(d)));
+          candidates = pool.filter(s => {
+            const isOff = s.offDays && s.offDays.includes(d);
+            const alreadyAssignedToday = assignedTodayIds.includes(s.id);
+            return !isOff && !alreadyAssignedToday;
+          });
+        }
+        if (candidates.length === 0) {
+          candidates = pool.filter(s => !assignedTodayIds.includes(s.id));
         }
         if (candidates.length === 0) {
           candidates = pool;
         }
 
-        // Ưu tiên người có số ca trực ít nhất, nếu bằng nhau thì ưu tiên người có số ca cuối tuần ít hơn
+        // Ưu tiên chia đều số ca & ca cuối tuần
         candidates.sort((a, b) => {
-          if (isWeekend) {
-            if (a.weekendCount !== b.weekendCount) return a.weekendCount - b.weekendCount;
-          }
+          if (isWeekend && a.weekendCount !== b.weekendCount) return a.weekendCount - b.weekendCount;
           if (a.shiftCount !== b.shiftCount) return a.shiftCount - b.shiftCount;
           return a.lastAssignedDay - b.lastAssignedDay;
         });
@@ -178,9 +201,15 @@ const ToolDutyRoster = {
           selectedStaff.shiftCount++;
           if (isWeekend) selectedStaff.weekendCount++;
           selectedStaff.lastAssignedDay = d;
-          dayShifts[role.id] = { id: selectedStaff.id, name: selectedStaff.name, group: selectedStaff.group, dept: selectedStaff.dept || "" };
+          dayShifts[role.id] = {
+            id: selectedStaff.id,
+            name: selectedStaff.name,
+            role: selectedStaff.role,
+            phone: selectedStaff.phone || "",
+            dept: selectedStaff.dept || "Phòng CNTT"
+          };
         } else {
-          dayShifts[role.id] = { id: "", name: "Chưa phân công", group: "", dept: "" };
+          dayShifts[role.id] = { id: "", name: "Chưa phân công", role: "", phone: "", dept: "" };
         }
       });
 
@@ -196,15 +225,16 @@ const ToolDutyRoster = {
     return schedule;
   },
 
-  // Tính toán thống kê số ca trực của từng nhân sự
+  // Thống kê số ca trực của từng cán bộ Phòng CNTT
   calculateStatistics(staffList, schedule, shiftRoles) {
     const stats = {};
     staffList.forEach(s => {
       stats[s.id] = {
         id: s.id,
         name: s.name,
-        group: s.group,
-        dept: s.dept || "",
+        role: s.role,
+        dept: s.dept || "Phòng CNTT",
+        phone: s.phone || "",
         total: 0,
         weekday: 0,
         weekend: 0,
@@ -229,19 +259,22 @@ const ToolDutyRoster = {
     return Object.values(stats);
   },
 
-  // Lọc danh sách ca trực của một nhân viên cụ thể
+  // Lấy lịch trực cá nhân của 1 cán bộ CNTT cụ thể
   getPersonalSchedule(staffId, schedule, shiftRoles) {
     const personalShifts = [];
     schedule.forEach(dayObj => {
       Object.entries(dayObj.shifts).forEach(([shiftId, assignedStaff]) => {
         if (assignedStaff && assignedStaff.id === staffId) {
           const shiftRole = shiftRoles.find(r => r.id === shiftId);
-          // Tìm các đồng nghiệp cùng trực trong ngày này
           const colleagues = [];
           Object.entries(dayObj.shifts).forEach(([sId, staff]) => {
             if (staff && staff.id && staff.id !== staffId) {
               const r = shiftRoles.find(x => x.id === sId);
-              colleagues.push({ roleName: r ? r.name : sId, name: staff.name });
+              colleagues.push({
+                roleName: r ? r.name : sId,
+                name: staff.name,
+                phone: staff.phone || ""
+              });
             }
           });
 
@@ -260,7 +293,7 @@ const ToolDutyRoster = {
     return personalShifts;
   },
 
-  // Xuất file Excel Lịch Trực chuẩn Bệnh viện
+  // Xuất file Excel Lịch Trực Phòng CNTT chuẩn Bệnh viện
   exportToExcel(year, month, schedule, staffList, shiftRoles, orgConfig = {}) {
     if (!window.XLSX) {
       alert("Thư viện SheetJS XLSX chưa được tải!");
@@ -273,12 +306,14 @@ const ToolDutyRoster = {
     const province = orgConfig.province || "Bắc Ninh";
 
     const rows = [];
-    rows.push([org1.toUpperCase(), "", "", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"]);
-    rows.push([org2.toUpperCase(), "", "", "", "Độc lập - Tự do - Hạnh phúc"]);
-    rows.push([org3.toUpperCase(), "", "", "", "---------------"]);
+    rows.push([org1.toUpperCase(), "", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"]);
+    rows.push([org2.toUpperCase(), "", "", "Độc lập - Tự do - Hạnh phúc"]);
+    rows.push([org3.toUpperCase(), "", "", "---------------"]);
+    rows.push(["PHÒNG CÔNG NGHỆ THÔNG TIN", "", "", ""]);
     rows.push([""]);
-    rows.push([`BẢNG PHÂN CÔNG LỊCH TRỰC THÁNG ${month} NĂM ${year}`]);
-    rows.push([`Áp dụng: Khối Chuyên Môn & Phòng CNTT - BVĐK Bắc Ninh Số 2`]);
+    rows.push([`BẢNG PHÂN CÔNG LỊCH TRỰC PHÒNG CÔNG NGHỆ THÔNG TIN`]);
+    rows.push([`THÁNG ${month} NĂM ${year} - BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2`]);
+    rows.push([`Hotline Trực Kỹ Thuật CNTT 24/7: 0912.345.678 - Hỗ trợ HIS, HIS VIMES, Máy Chủ & Mạng LAN`]);
     rows.push([""]);
 
     // Header Table
@@ -291,31 +326,31 @@ const ToolDutyRoster = {
       const row = [`Ngày ${d.day}/${month}`, d.dayName];
       shiftRoles.forEach(r => {
         const assigned = d.shifts[r.id];
-        row.push(assigned ? assigned.name : "-");
+        row.push(assigned ? `${assigned.name} (${assigned.phone || ''})` : "-");
       });
       rows.push(row);
     });
 
-    // Thống kê ca trực
+    // Thống kê chấm công Phòng CNTT
     rows.push([""]);
-    rows.push(["BẢNG TỔNG HỢP SỐ CA TRỰC & CHẤM CÔNG"]);
-    rows.push(["STT", "Họ Và Tên", "Đơn Vị / Khoa Phòng", "Tổng Số Ca Trực", "Trực Ngày Thường", "Trực Thứ 7 / CN"]);
+    rows.push(["BẢNG TỔNG HỢP SỐ CA TRỰC PHÒNG CNTT (CHẤM CÔNG)"]);
+    rows.push(["STT", "Họ Và Tên", "Nhiệm Vụ / Chức Danh", "Tổng Số Ca Trực", "Trực Ngày Thường", "Trực Thứ 7 / CN", "Số Điện Thoại"]);
     
     const stats = this.calculateStatistics(staffList, schedule, shiftRoles);
     stats.forEach((st, idx) => {
-      rows.push([idx + 1, st.name, st.dept || st.group.toUpperCase(), st.total, st.weekday, st.weekend]);
+      rows.push([idx + 1, st.name, st.role, st.total, st.weekday, st.weekend, st.phone]);
     });
 
     rows.push([""]);
-    rows.push(["", "", "", "", `${province}, ngày ... tháng ${month} năm ${year}`]);
-    rows.push(["", "NGƯỜI LẬP BẢNG", "", "", "GIÁM ĐỐC BỆNH VIỆN"]);
-    rows.push(["", "(Ký, ghi rõ họ tên)", "", "", "(Ký, đóng dấu)"]);
+    rows.push(["", "", "", `${province}, ngày ... tháng ${month} năm ${year}`]);
+    rows.push(["", "NGƯỜI LẬP LỊCH", "", "TRƯỞNG PHÒNG CÔNG NGHỆ THÔNG TIN"]);
+    rows.push(["", "(Ký, ghi rõ họ tên)", "", "(Ký, ghi rõ họ tên)"]);
 
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Lich_Truc_T${month}_${year}`);
+    XLSX.utils.book_append_sheet(wb, ws, `Lich_Truc_CNTT_T${month}_${year}`);
 
-    const filename = `LICH_TRUC_BVDK_BAC_NINH_SO_2_THANG_${month}_${year}.xlsx`;
+    const filename = `LICH_TRUC_PHONG_CNTT_THANG_${month}_${year}.xlsx`;
     XLSX.writeFile(wb, filename);
   }
 };
