@@ -4062,19 +4062,20 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
     word-break: normal !important;
   }
 
-  /* Word to HTML Converter Mobile Layout */
-  .w2h-layout-grid {
+  /* Word to HTML & PDF to Image Mobile Layout */
+  .w2h-layout-grid, .pdf-layout-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  .w2h-sidebar-panel {
+  .w2h-sidebar-panel, .pdf-control-panel {
     order: 2;
   }
 
-  .w2h-main-panel {
+  .w2h-main-panel, .pdf-main-panel {
     order: 1;
     min-height: auto;
+    width: 100% !important;
   }
 
   .w2h-output-toolbar {
