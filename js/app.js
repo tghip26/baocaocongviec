@@ -4189,6 +4189,168 @@ ${this.currentW2hHtmlOutput}
   }
 
   // =========================================================================
+  // NOTIFICATION CENTER SYSTEM
+  // =========================================================================
+  initNotificationEvents() {
+    if (!this.notifManager) this.notifManager = new NotificationManager();
+
+    // Toggle dropdown
+    if (this.btnToggleNotificationCenter) {
+      this.btnToggleNotificationCenter.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (this.notificationCenterPanel) {
+          const isOpen = !this.notificationCenterPanel.classList.contains("hidden");
+          this.notificationCenterPanel.classList.toggle("hidden", isOpen);
+          if (!isOpen) {
+            this.renderNotificationCenter();
+          }
+        }
+      });
+    }
+
+    // Click outside to close notification panel
+    document.addEventListener("click", (e) => {
+      if (this.notificationCenterPanel && !this.notificationCenterPanel.classList.contains("hidden")) {
+        if (!this.notificationCenterPanel.contains(e.target) && !this.btnToggleNotificationCenter.contains(e.target)) {
+          this.notificationCenterPanel.classList.add("hidden");
+        }
+      }
+    });
+
+    // Mark all as read
+    if (this.btnMarkAllNotifsRead) {
+      this.btnMarkAllNotifsRead.addEventListener("click", () => {
+        const list = this.notifManager.getNotifications();
+        list.forEach(n => n.isRead = true);
+        this.notifManager.saveNotifications(list);
+        this.updateNotificationBadge();
+        this.renderNotificationCenter();
+        this.showToast("Đã đánh dấu tất cả thông báo là đã đọc.", "info");
+      });
+    }
+
+    // Clear all notifications
+    if (this.btnClearAllNotifs) {
+      this.btnClearAllNotifs.addEventListener("click", () => {
+        this.notifManager.saveNotifications([]);
+        this.updateNotificationBadge();
+        this.renderNotificationCenter();
+        this.showToast("Đã xóa toàn bộ lịch sử thông báo.", "info");
+      });
+    }
+
+    // Filter tabs inside panel
+    if (this.notifFilterTabs) {
+      this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(tab => {
+        tab.addEventListener("click", () => {
+          this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          this.currentNotifCategory = tab.dataset.cat || "all";
+          this.renderNotificationCenter();
+        });
+      });
+    }
+
+    // Sound toggle
+    if (this.chkToggleNotifSound) {
+      this.chkToggleNotifSound.checked = this.notifManager.getSoundEnabled();
+      this.chkToggleNotifSound.addEventListener("change", (e) => {
+        this.notifManager.setSoundEnabled(e.target.checked);
+      });
+    }
+
+    // Run automated smart checks on page load
+    setTimeout(() => {
+      const schedule = (window.ToolDutyRoster) ? ToolDutyRoster.getSchedule(new Date().getFullYear(), new Date().getMonth() + 1) : [];
+      const staffList = (window.ToolDutyRoster) ? ToolDutyRoster.getStaffList() : [];
+      this.notifManager.runAutomatedSmartAlerts(schedule, staffList);
+      this.updateNotificationBadge();
+    }, 1500);
+
+    this.updateNotificationBadge();
+  }
+
+  updateNotificationBadge() {
+    if (!this.notifManager) return;
+    const unread = this.notifManager.getUnreadCount();
+    if (this.notificationBadgeCount) {
+      this.notificationBadgeCount.textContent = unread;
+      this.notificationBadgeCount.classList.toggle("hidden", unread === 0);
+    }
+  }
+
+  renderNotificationCenter() {
+    if (!this.notificationListContainer || !this.notifManager) return;
+    const list = this.notifManager.getNotifications();
+    const category = this.currentNotifCategory || "all";
+    const filtered = (category === "all") ? list : list.filter(n => n.category === category);
+
+    this.notificationListContainer.innerHTML = "";
+
+    if (filtered.length === 0) {
+      this.notificationListContainer.innerHTML = `
+        <div class="notif-empty-state">
+          <span class="empty-icon">🔕</span>
+          <p>Không có thông báo nào trong mục này</p>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(notif => {
+      const item = document.createElement("div");
+      item.className = `notif-item ${notif.isRead ? "read" : "unread"} notif-${notif.type || "info"}`;
+      
+      const iconWrap = document.createElement("div");
+      iconWrap.className = "notif-item-icon";
+      iconWrap.textContent = notif.icon || (notif.type === "success" ? "✅" : notif.type === "warning" ? "⚠️" : "🔔");
+
+      const body = document.createElement("div");
+      body.className = "notif-item-body";
+
+      const title = document.createElement("div");
+      title.className = "notif-item-title";
+      title.innerHTML = `${notif.title} <span class="notif-item-time">${this.notifManager.formatTimeAgo(notif.timestamp)}</span>`;
+
+      const msg = document.createElement("div");
+      msg.className = "notif-item-msg";
+      msg.innerHTML = notif.message;
+
+      body.appendChild(title);
+      body.appendChild(msg);
+
+      if (notif.actionText && notif.actionHash) {
+        const actionBtn = document.createElement("a");
+        actionBtn.href = notif.actionHash;
+        actionBtn.className = "notif-item-action-link";
+        actionBtn.textContent = notif.actionText;
+        actionBtn.addEventListener("click", () => {
+          notif.isRead = true;
+          this.notifManager.saveNotifications(list);
+          this.updateNotificationBadge();
+          if (this.notificationCenterPanel) this.notificationCenterPanel.classList.add("hidden");
+        });
+        body.appendChild(actionBtn);
+      }
+
+      item.appendChild(iconWrap);
+      item.appendChild(body);
+
+      item.addEventListener("click", (e) => {
+        if (e.target.tagName !== "A") {
+          notif.isRead = true;
+          this.notifManager.saveNotifications(list);
+          this.updateNotificationBadge();
+          item.classList.remove("unread");
+          item.classList.add("read");
+        }
+      });
+
+      this.notificationListContainer.appendChild(item);
+    });
+  }
+
+  // =========================================================================
   // BHYT XML 4210 & 130 VALIDATOR CONTROLLER METHODS
   // =========================================================================
   initBhytXmlEvents() {
