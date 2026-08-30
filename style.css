@@ -9247,8 +9247,113 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .btn-notif-delete-single:hover {
-  color: #ef4444 !important;
-  background: rgba(239, 68, 68, 0.15) !important;
+/* ==========================================================================
+   MASTER WORKSPACE & VIEW CONTAINERS (Bố cục chuẩn mực, sắc sảo, cân đối)
+   ========================================================================== */
+.workspace-container,
+.main-content {
+  flex: 1;
+  padding: 20px 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.workspace-view {
+  animation: viewEntrance 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes viewEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.996);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Unified Glass Top Bar for All Tools */
+.workspace-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 10px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  flex-wrap: wrap;
+}
+
+.workspace-top-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-back:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateX(-2px);
+}
+
+.workspace-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.workspace-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tool-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  white-space: nowrap;
+}
+
+.workspace-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 /* 9. DUTY GUEST BANNER */
@@ -9432,33 +9537,103 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 /* 11. XML VALIDATOR DROPZONE & AUTO-FIX BANNER */
 .xml-dropzone-wrapper {
-  padding: 24px 0;
+  padding: 10px 0 24px 0;
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .xml-dropzone {
   width: 100%;
-  max-width: 760px;
-  border: 2px dashed rgba(56, 189, 248, 0.35);
-  border-radius: 16px;
-  padding: 44px 24px;
-  background: radial-gradient(circle at center, rgba(56, 189, 248, 0.05) 0%, rgba(15, 23, 42, 0.7) 100%);
+  max-width: 840px;
+  border: 2px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 18px;
+  padding: 48px 32px;
+  background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.07) 0%, rgba(15, 23, 42, 0.85) 100%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.03);
   text-align: center;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
 }
 
 .xml-dropzone:hover,
 .xml-dropzone.dragover {
   border-color: #38bdf8;
-  background: radial-gradient(circle at center, rgba(56, 189, 248, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%);
-  box-shadow: 0 0 35px rgba(56, 189, 248, 0.25);
-  transform: scale(1.005);
+  background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.14) 0%, rgba(15, 23, 42, 0.95) 100%);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(56, 189, 248, 0.35);
+  transform: translateY(-2px) scale(1.008);
+}
+
+.dropzone-icon.xml-icon-glow {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(37, 99, 235, 0.12) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
+  animation: pulseGlow 3s infinite ease-in-out;
+  margin-bottom: 4px;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 10px 28px rgba(56, 189, 248, 0.45);
+  }
+}
+
+.dropzone-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.dropzone-subtitle {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  max-width: 580px;
+  line-height: 1.5;
+  margin: 0 auto;
+}
+
+.btn-select-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-select-file:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 8px 24px rgba(56, 189, 248, 0.55);
+  transform: translateY(-2px);
 }
 
 .xml-autofix-banner {
