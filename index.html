@@ -1267,35 +1267,103 @@
              VIEW: QUẢN LÝ & XẾP LỊCH TRỰC BỆNH VIỆN TỰ ĐỘNG
              ============================================================ -->
         <section class="workspace-view hidden" id="dutyRosterView">
-          <div class="workspace-top-bar">
+          <div class="workspace-top-bar duty-top-bar">
             <div class="workspace-top-left">
               <button type="button" class="btn-back" id="btnBackToHubFromDuty" title="Quay về danh mục">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 <span>Quay lại</span>
               </button>
               <div class="workspace-heading">
-                <h1 class="workspace-title">Quản Lý & Xếp Lịch Trực Bệnh Viện Tự Động</h1>
-                <span class="tool-badge badge-amber">📅 Chống Trùng Lịch • Chia Đều Công</span>
+                <h1 class="workspace-title">Quản Lý & Xếp Lịch Trực Bệnh Viện</h1>
+                <span class="tool-badge badge-amber" id="dutyAccessBadge">⚡ Phân Hệ P.CNTT & Khối Điều Trị</span>
               </div>
             </div>
-            <div class="workspace-top-actions">
-              <button type="button" class="btn-action-primary" id="btnRunAutoSchedule">
+
+            <!-- Top Actions & Session Switcher -->
+            <div class="workspace-top-actions duty-actions-cluster">
+              <!-- Account Session Chip -->
+              <div class="duty-user-pill" id="dutyUserSessionBadge">
+                <span class="duty-user-icon" id="dutyUserAvatar">👑</span>
+                <div class="duty-user-meta">
+                  <span class="duty-user-name" id="dutyCurrentUserName">Quản Trị Viên</span>
+                  <span class="duty-user-role" id="dutyCurrentUserRoleTag">ADMIN (Toàn quyền)</span>
+                </div>
+                <button type="button" class="btn-duty-switch-acc" id="btnOpenLoginModal" title="Đăng nhập / Đổi tài khoản người dùng">
+                  Đổi TK
+                </button>
+              </div>
+
+              <!-- Admin Only Actions -->
+              <button type="button" class="btn-action-outline admin-only-btn" id="btnOpenUserManageModal" title="Quản lý & cấp tài khoản cho từng nhân viên">
+                <span>👥 Quản Lý Người Dùng</span>
+              </button>
+
+              <button type="button" class="btn-action-primary admin-only-btn" id="btnRunAutoSchedule" title="Thuật toán tự động xếp lịch chia đều công">
                 <span>⚡ Xếp Lịch Tự Động</span>
               </button>
-              <button type="button" class="btn-action-secondary" id="btnExportDutyExcel">
+
+              <button type="button" class="btn-action-secondary" id="btnExportDutyExcel" title="Xuất file Excel bảng chấm công chuẩn Bệnh Viện">
                 <span>📊 Xuất Excel Chấm Công</span>
               </button>
             </div>
           </div>
 
+          <!-- Quick Department & Personal Filter Toolbar -->
+          <div class="duty-filter-toolbar">
+            <div class="duty-filter-chips" id="dutyFilterChips">
+              <button type="button" class="duty-chip-btn active" data-filter="all">🌐 Toàn Bệnh Viện</button>
+              <button type="button" class="duty-chip-btn highlight-cntt" data-filter="cntt">💻 Phòng CNTT</button>
+              <button type="button" class="duty-chip-btn" data-filter="bacsi">🩺 Khối Bác Sĩ & Cấp Cứu</button>
+              <button type="button" class="duty-chip-btn" data-filter="dieuduong">💉 Khối Điều Dưỡng & KTV</button>
+              <button type="button" class="duty-chip-btn my-duty-chip" data-filter="personal" id="btnFilterMyDuty">⭐ Lịch Trực Của Tôi</button>
+            </div>
+            <div class="duty-filter-select-wrap">
+              <span class="filter-lbl">🔍 Lọc theo nhân viên:</span>
+              <select id="selectFilterSpecificStaff" class="duty-filter-select">
+                <option value="all">-- Xem tất cả nhân sự --</option>
+              </select>
+            </div>
+          </div>
+
           <div class="duty-roster-grid">
-            <!-- Cột trái: Cấu hình Tháng & Danh sách nhân sự -->
+            <!-- Cột trái: Cấu hình Tháng, Lịch cá nhân & Danh sách nhân sự -->
             <div class="duty-sidebar">
-              <!-- Card 1: Chọn Tháng/Năm -->
+              <!-- Card 1: Bảng Tin Lịch Trực Cá Nhân (Personal Duty Status Card) -->
+              <div class="w2h-card duty-personal-card" id="dutyPersonalCard">
+                <div class="w2h-card-header flex-between">
+                  <div class="header-inline">
+                    <span class="card-icon">⭐</span>
+                    <h3 id="personalCardTitle">Lịch Trực Cá Nhân Của Tôi</h3>
+                  </div>
+                  <span class="personal-status-pill" id="personalRolePill">P.CNTT</span>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="personal-next-shift-box" id="personalNextShiftBox">
+                    <span class="next-shift-lbl">⏰ Ca trực sắp tới:</span>
+                    <div class="next-shift-val" id="personalNextShiftText">Đang tính toán...</div>
+                  </div>
+                  <div class="personal-stats-grid">
+                    <div class="personal-stat-item">
+                      <span class="p-stat-val" id="personalTotalShifts">0</span>
+                      <span class="p-stat-lbl">Tổng ca trực</span>
+                    </div>
+                    <div class="personal-stat-item">
+                      <span class="p-stat-val" id="personalWeekdayShifts">0</span>
+                      <span class="p-stat-lbl">Ngày thường</span>
+                    </div>
+                    <div class="personal-stat-item weekend">
+                      <span class="p-stat-val" id="personalWeekendShifts">0</span>
+                      <span class="p-stat-lbl">Thứ 7 / CN</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Chọn Tháng/Năm -->
               <div class="w2h-card">
                 <div class="w2h-card-header">
                   <span class="card-icon">🗓️</span>
-                  <h3>1. Tháng & Năm Trực</h3>
+                  <h3>Thời Gian Trực</h3>
                 </div>
                 <div class="w2h-card-body">
                   <div class="w2h-setting-row-2">
@@ -1328,14 +1396,14 @@
                 </div>
               </div>
 
-              <!-- Card 2: Danh sách Nhân sự Khoa/Phòng -->
+              <!-- Card 3: Danh sách Nhân sự Khoa/Phòng -->
               <div class="w2h-card">
                 <div class="w2h-card-header flex-between">
                   <div class="header-inline">
                     <span class="card-icon">👥</span>
-                    <h3>2. Nhân Sự (<span id="staffCountDisplay">9</span>)</h3>
+                    <h3>Nhân Sự Trực (<span id="staffCountDisplay">9</span>)</h3>
                   </div>
-                  <button type="button" class="btn-card-small" id="btnAddStaffModalBtn">+ Thêm</button>
+                  <button type="button" class="btn-card-small admin-only-btn" id="btnAddStaffModalBtn">+ Thêm</button>
                 </div>
                 <div class="w2h-card-body">
                   <div class="staff-list-container" id="dutyStaffListContainer"></div>
@@ -1345,13 +1413,15 @@
 
             <!-- Cột phải: Lịch tháng & Bảng thống kê công -->
             <div class="duty-main-workspace">
-              <!-- Switcher xem dạng Lưới Lịch vs Dạng Bảng -->
+              <!-- Switcher xem dạng Lưới Lịch vs Dạng Bảng vs Lịch Cá Nhân -->
               <div class="duty-view-controls">
                 <div class="duty-mode-tabs">
                   <button type="button" class="duty-tab-btn active" data-view="calendar" id="btnTabDutyCalendar">🗓️ Lưới Lịch Tháng</button>
+                  <button type="button" class="duty-tab-btn" data-view="personal" id="btnTabDutyPersonal">⭐ Lịch Cá Nhân Chi Tiết</button>
                   <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">📋 Bảng Phân Công & Chấm Công</button>
                 </div>
                 <div class="duty-legend">
+                  <span class="legend-item"><span class="legend-dot cntt"></span> P.CNTT</span>
                   <span class="legend-item"><span class="legend-dot weekend"></span> Cuối tuần</span>
                   <span class="legend-item"><span class="legend-dot normal"></span> Ngày thường</span>
                 </div>
@@ -1360,7 +1430,10 @@
               <!-- View A: Lưới Lịch Tháng (Calendar View) -->
               <div class="duty-calendar-view" id="dutyCalendarContainer"></div>
 
-              <!-- View B: Bảng Phân Công & Bảng Chấm Công (Table View) -->
+              <!-- View B: Bảng Lịch Trực Cá Nhân (Personal List View) -->
+              <div class="duty-personal-view hidden" id="dutyPersonalScheduleContainer"></div>
+
+              <!-- View C: Bảng Phân Công & Chấm Công (Table View) -->
               <div class="duty-table-view hidden" id="dutyTableContainer"></div>
             </div>
           </div>
@@ -1564,6 +1637,106 @@
       <div class="modal-footer flex-between">
         <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng</button>
         <button type="button" class="btn-modal-confirm" id="btnConfirmSwapShift">XÁC NHẬN ĐỔI CA &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Đăng Nhập Tài Khoản Lịch Trực -->
+  <div class="modal-overlay hidden" id="modalDutyLogin">
+    <div class="modal-card modal-auth-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🔐 ĐĂNG NHẬP PHÂN HỆ LỊCH TRỰC</h3>
+        <button type="button" class="modal-close" id="btnCloseLoginModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction">Đăng nhập tài khoản để quản lý xếp lịch trực (Admin) hoặc xem lịch trực cá nhân chi tiết (User):</p>
+        
+        <div class="config-form-group">
+          <label class="form-label">Tên đăng nhập (Username):</label>
+          <input type="text" id="inputDutyLoginUser" class="form-input" placeholder="Ví dụ: admin hoặc tungnt" />
+        </div>
+
+        <div class="config-form-group">
+          <label class="form-label">Mật khẩu (Password):</label>
+          <input type="password" id="inputDutyLoginPass" class="form-input" placeholder="Nhập mật khẩu (Mặc định: admin)" />
+        </div>
+
+        <div class="quick-login-section">
+          <span class="quick-login-lbl">⚡ Đăng nhập nhanh 1-Click:</span>
+          <div class="quick-login-chips">
+            <button type="button" class="btn-quick-login active" data-u="admin" data-p="admin">👑 Admin (Quản trị)</button>
+            <button type="button" class="btn-quick-login" data-u="tungnt" data-p="admin">💻 KS. Tùng (P.CNTT)</button>
+            <button type="button" class="btn-quick-login" data-u="hungnv" data-p="admin">🩺 BSCKI. Hùng (Trưởng ca)</button>
+            <button type="button" class="btn-quick-login" data-u="toantq" data-p="admin">🚨 BS. Toản (Cấp cứu)</button>
+            <button type="button" class="btn-quick-login" data-u="thuyht" data-p="admin">💉 ĐD. Thủy (Điều dưỡng)</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnCancelLoginModal">Hủy bỏ</button>
+        <button type="button" class="btn-modal-confirm" id="btnSubmitDutyLogin">ĐĂNG NHẬP NGAY &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Quản Lý Người Dùng & Cấp Tài Khoản -->
+  <div class="modal-overlay hidden" id="modalUserManagement">
+    <div class="modal-card modal-users-card">
+      <div class="modal-header">
+        <h3 class="modal-title">👥 QUẢN LÝ NGƯỜI DÙNG & CẤP TÀI KHOẢN</h3>
+        <button type="button" class="modal-close" id="btnCloseUserManageModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="user-management-grid">
+          <!-- Bảng danh sách tài khoản hiện tại -->
+          <div class="user-list-pane">
+            <h4 class="pane-title">📋 Danh Sách Tài Khoản Đã Cấp</h4>
+            <div class="user-table-scroll">
+              <table class="user-accounts-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Họ và Tên</th>
+                    <th>Bộ Phận</th>
+                    <th>Quyền</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="dutyAccountsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Form tạo tài khoản mới -->
+          <div class="user-create-pane">
+            <h4 class="pane-title">➕ Cấp Tài Khoản Mới</h4>
+            <div class="config-form-group">
+              <label class="form-label">Tên đăng nhập (Username):</label>
+              <input type="text" id="inputNewAccUser" class="form-input" placeholder="Ví dụ: namtv, hoaitt..." />
+            </div>
+            <div class="config-form-group">
+              <label class="form-label">Mật khẩu:</label>
+              <input type="text" id="inputNewAccPass" class="form-input" value="admin" />
+            </div>
+            <div class="config-form-group">
+              <label class="form-label">Gắn với Nhân sự trong danh sách:</label>
+              <select id="selectNewAccStaff" class="form-select"></select>
+            </div>
+            <div class="config-form-group">
+              <label class="form-label">Phân quyền:</label>
+              <select id="selectNewAccRole" class="form-select">
+                <option value="user" selected>User (Chỉ xem lịch & ca trực của mình)</option>
+                <option value="admin">Admin (Toàn quyền xếp lịch & đổi ca)</option>
+              </select>
+            </div>
+            <button type="button" class="btn-create-acc-submit" id="btnSubmitCreateAccount">
+              ✨ CẤP TÀI KHOẢN &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-reset" id="btnCloseUserManageModalFooter">Đóng</button>
       </div>
     </div>
   </div>

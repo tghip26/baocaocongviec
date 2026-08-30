@@ -4572,13 +4572,275 @@ mark.highlight-term {
 .sql-string { color: #34d399; }
 
 /* ==========================================================================
-   HOSPITAL DUTY ROSTER & SCHEDULE MANAGER STYLES
+   HOSPITAL DUTY ROSTER & SCHEDULE MANAGER STYLES (Admin & User Multi-Role)
    ========================================================================== */
+.duty-top-bar {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.duty-actions-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* User Session Pill in Top Bar */
+.duty-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 30px;
+  padding: 4px 12px 4px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.duty-user-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.duty-user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.duty-user-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.duty-user-role {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #38bdf8;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.btn-duty-switch-acc {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-left: 4px;
+}
+
+.btn-duty-switch-acc:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-action-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-action-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* Department & Personal Filter Toolbar */
+.duty-filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.duty-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.duty-chip-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.duty-chip-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.duty-chip-btn.active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.duty-chip-btn.highlight-cntt.active {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.duty-chip-btn.my-duty-chip {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.duty-chip-btn.my-duty-chip:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+}
+
+.duty-chip-btn.my-duty-chip.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  border-color: #fde68a;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
+.duty-filter-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-lbl {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.duty-filter-select {
+  background: #0f172a;
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.duty-filter-select:focus {
+  border-color: #38bdf8;
+}
+
+/* Duty Main Grid Layout */
 .duty-roster-grid {
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
   gap: 20px;
   align-items: start;
+}
+
+/* Personal Duty Status Card */
+.duty-personal-card {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: linear-gradient(180deg, rgba(30, 27, 75, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+}
+
+.personal-status-pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.personal-next-shift-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.next-shift-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #93c5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.next-shift-val {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #fde047;
+  line-height: 1.4;
+}
+
+.personal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.personal-stat-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.p-stat-val {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #38bdf8;
+}
+
+.personal-stat-item.weekend .p-stat-val {
+  color: #fbbf24;
+}
+
+.p-stat-lbl {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .duty-summary-pills {
@@ -4607,7 +4869,7 @@ mark.highlight-term {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 480px;
+  max-height: 420px;
   overflow-y: auto;
 }
 
@@ -4726,6 +4988,7 @@ mark.highlight-term {
   height: 8px;
   border-radius: 50%;
 }
+.legend-dot.cntt { background: #38bdf8; box-shadow: 0 0 6px #38bdf8; }
 .legend-dot.weekend { background: #f59e0b; }
 .legend-dot.normal { background: #3b82f6; }
 
@@ -4767,6 +5030,18 @@ mark.highlight-term {
 .calendar-day-cell.weekend {
   background: rgba(30, 27, 75, 0.35);
   border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* My Duty Day Highlight */
+.calendar-day-cell.my-duty-highlight {
+  background: linear-gradient(180deg, rgba(30, 58, 138, 0.35) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
+}
+
+.calendar-day-cell.my-duty-highlight .cal-date-num {
+  color: #fde047;
+  text-shadow: 0 0 8px rgba(253, 224, 71, 0.5);
 }
 
 .cal-day-header {
@@ -4823,12 +5098,24 @@ mark.highlight-term {
 .cal-shift-badge.role-ngoai { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.4); color: #fde68a; }
 .cal-shift-badge.role-dieuduong { background: rgba(6, 182, 212, 0.2); border-color: rgba(6, 182, 212, 0.4); color: #67e8f9; }
 .cal-shift-badge.role-ktv { background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.4); color: #a5b4fc; }
-.cal-shift-badge.role-cntt { background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; }
+.cal-shift-badge.role-cntt { background: rgba(56, 189, 248, 0.25); border-color: rgba(56, 189, 248, 0.6); color: #38bdf8; font-weight: 700; }
+
+.cal-shift-badge.highlight-duty {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(217, 119, 6, 0.3) 100%);
+  border: 1px solid #fbbf24;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.cal-shift-badge.dimmed {
+  opacity: 0.18;
+  filter: grayscale(80%);
+}
 
 .shift-title-lbl {
   font-size: 0.6rem;
   font-weight: 700;
-  opacity: 0.8;
+  opacity: 0.85;
   text-transform: uppercase;
 }
 
@@ -4837,6 +5124,95 @@ mark.highlight-term {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Personal Schedule View Details */
+.duty-personal-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.personal-shift-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all var(--transition-fast);
+}
+
+.personal-shift-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
+}
+
+.personal-shift-card.weekend {
+  border-left: 4px solid #f59e0b;
+}
+
+.p-shift-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.p-shift-date-badge {
+  background: rgba(37, 99, 235, 0.2);
+  border: 1px solid rgba(37, 99, 235, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  text-align: center;
+  min-width: 65px;
+}
+
+.p-shift-date-num {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #fff;
+  display: block;
+}
+
+.p-shift-dayname {
+  font-size: 0.68rem;
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.p-shift-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.p-shift-role-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.colleague-tags-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.colleague-lbl {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.colleague-pill {
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: var(--text-secondary);
 }
 
 /* Duty Table View */
@@ -4876,9 +5252,130 @@ mark.highlight-term {
   background: rgba(245, 158, 11, 0.04);
 }
 
+/* Modal Auth & User Management Styles */
+.modal-auth-card {
+  max-width: 480px;
+}
+
+.quick-login-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.quick-login-lbl {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #93c5fd;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.quick-login-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-quick-login {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-subtle);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-quick-login:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.modal-users-card {
+  max-width: 820px;
+}
+
+.user-management-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+}
+
+.pane-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #93c5fd;
+  margin-bottom: 10px;
+}
+
+.user-table-scroll {
+  max-height: 380px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.user-accounts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.user-accounts-table th {
+  background: #0f172a;
+  padding: 8px 10px;
+  color: #93c5fd;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.user-accounts-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.btn-delete-acc {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-delete-acc:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-create-acc-submit {
+  width: 100%;
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border: none;
+  color: #fff;
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all var(--transition-fast);
+}
+
+.btn-create-acc-submit:hover {
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5);
+  transform: translateY(-1px);
+}
+
 /* Responsive queries */
 @media (max-width: 1024px) {
-  .sql-builder-grid, .duty-roster-grid {
+  .sql-builder-grid, .duty-roster-grid, .user-management-grid {
     grid-template-columns: 1fr;
   }
   .calendar-month-grid {

@@ -1,21 +1,21 @@
 /**
  * tool-duty-roster.js
- * Công cụ Quản lý & Xếp Lịch Trực Bệnh Viện Tự Động
- * Thuật toán phân bổ công bằng, kiểm soát xung đột, giao diện lịch trực tương tác & xuất Excel/Ảnh
+ * Quản Lý & Xếp Lịch Trực Bệnh Viện Tự Động (Tích hợp Hệ thống Phân quyền Admin / User Cá Nhân)
+ * Cung cấp: Phân quyền admin/user, quản lý tài khoản nhân viên, lọc lịch trực cá nhân, xếp lịch thông minh & xuất Excel.
  */
 
 const ToolDutyRoster = {
   // Danh sách mẫu nhân sự ban đầu
   defaultStaffList: [
-    { id: "nv1", name: "BSCKI. Nguyễn Văn Hùng", role: "Trực Lãnh đạo / Trưởng ca", group: "bacsi", offDays: [] },
-    { id: "nv2", name: "ThS.BS. Trần Quốc Toản", role: "Bác sĩ Trực Cấp cứu", group: "bacsi", offDays: [] },
-    { id: "nv3", name: "BS. Lê Thị Mai", role: "Bác sĩ Trực Nội", group: "bacsi", offDays: [] },
-    { id: "nv4", name: "BS. Phạm Minh Đức", role: "Bác sĩ Trực Ngoại", group: "bacsi", offDays: [] },
-    { id: "nv5", name: "ĐD. Hoàng Thu Thủy", role: "Điều dưỡng Trưởng ca", group: "dieuduong", offDays: [] },
-    { id: "nv6", name: "ĐD. Vũ Hải Yến", role: "Điều dưỡng Cấp cứu", group: "dieuduong", offDays: [] },
-    { id: "nv7", name: "KTV. Đỗ Mạnh Cường", role: "Kỹ thuật viên X-Quang / XN", group: "ktv", offDays: [] },
-    { id: "nv8", name: "KS. Ngô Thanh Tùng", role: "Kỹ sư Trực CNTT / HIS", group: "cntt", offDays: [] },
-    { id: "nv9", name: "DS. Bùi Thị Lan", role: "Dược sĩ Trực Kho Thuốc", group: "duoc", offDays: [] }
+    { id: "nv1", name: "BSCKI. Nguyễn Văn Hùng", role: "Trực Lãnh đạo / Trưởng ca", group: "bacsi", dept: "Khối Ngoại - Cấp Cứu", offDays: [] },
+    { id: "nv2", name: "ThS.BS. Trần Quốc Toản", role: "Bác sĩ Trực Cấp cứu", group: "bacsi", dept: "Khoa Cấp Cứu", offDays: [] },
+    { id: "nv3", name: "BS. Lê Thị Mai", role: "Bác sĩ Trực Nội", group: "bacsi", dept: "Khoa Nội Tổng Hợp", offDays: [] },
+    { id: "nv4", name: "BS. Phạm Minh Đức", role: "Bác sĩ Trực Ngoại", group: "bacsi", dept: "Khoa Ngoại Tổng Hợp", offDays: [] },
+    { id: "nv5", name: "ĐD. Hoàng Thu Thủy", role: "Điều dưỡng Trưởng ca", group: "dieuduong", dept: "Khối Điều Dưỡng", offDays: [] },
+    { id: "nv6", name: "ĐD. Vũ Hải Yến", role: "Điều dưỡng Cấp cứu", group: "dieuduong", dept: "Khoa Cấp Cứu", offDays: [] },
+    { id: "nv7", name: "KTV. Đỗ Mạnh Cường", role: "Kỹ thuật viên X-Quang / XN", group: "ktv", dept: "Khoa CĐHA & Xét Nghiệm", offDays: [] },
+    { id: "nv8", name: "KS. Ngô Thanh Tùng", role: "Kỹ sư Trực CNTT / HIS", group: "cntt", dept: "Phòng CNTT", offDays: [] },
+    { id: "nv9", name: "DS. Bùi Thị Lan", role: "Dược sĩ Trực Kho Thuốc", group: "duoc", dept: "Khoa Dược", offDays: [] }
   ],
 
   // Các vị trí / ca trực trong ngày
@@ -28,6 +28,93 @@ const ToolDutyRoster = {
     { id: "shift_ktv", name: "Kỹ Thuật Viên (XN/CĐHA)", group: "ktv", badgeColor: "indigo" },
     { id: "shift_cntt", name: "Trực CNTT / Hệ Thống HIS", group: "cntt", badgeColor: "blue" }
   ],
+
+  // Danh sách tài khoản người dùng mặc định (Admin: admin / admin)
+  defaultAccounts: [
+    {
+      id: "acc_admin",
+      username: "admin",
+      password: "admin",
+      fullname: "Quản Trị Viên (Phòng CNTT)",
+      role: "admin",
+      dept: "Phòng CNTT",
+      staffId: null
+    },
+    {
+      id: "acc_tungnt",
+      username: "tungnt",
+      password: "admin",
+      fullname: "KS. Ngô Thanh Tùng",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv8"
+    },
+    {
+      id: "acc_hungnv",
+      username: "hungnv",
+      password: "admin",
+      fullname: "BSCKI. Nguyễn Văn Hùng",
+      role: "user",
+      dept: "Khối Ngoại - Cấp Cứu",
+      staffId: "nv1"
+    },
+    {
+      id: "acc_toantq",
+      username: "toantq",
+      password: "admin",
+      fullname: "ThS.BS. Trần Quốc Toản",
+      role: "user",
+      dept: "Khoa Cấp Cứu",
+      staffId: "nv2"
+    },
+    {
+      id: "acc_thuyht",
+      username: "thuyht",
+      password: "admin",
+      fullname: "ĐD. Hoàng Thu Thủy",
+      role: "user",
+      dept: "Khối Điều Dưỡng",
+      staffId: "nv5"
+    }
+  ],
+
+  // Khởi tạo và lấy danh sách tài khoản từ localStorage
+  getAccounts() {
+    try {
+      const raw = localStorage.getItem("DUTY_ACCOUNTS");
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return this.defaultAccounts;
+  },
+
+  saveAccounts(accounts) {
+    localStorage.setItem("DUTY_ACCOUNTS", JSON.stringify(accounts));
+  },
+
+  // Quản lý phiên đăng nhập hiện tại
+  getCurrentSession() {
+    try {
+      const raw = localStorage.getItem("DUTY_CURRENT_SESSION");
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    // Mặc định đăng nhập với tài khoản admin
+    return this.defaultAccounts[0];
+  },
+
+  setSession(userObj) {
+    localStorage.setItem("DUTY_CURRENT_SESSION", JSON.stringify(userObj));
+  },
+
+  // Xác thực đăng nhập
+  authenticate(username, password) {
+    const accounts = this.getAccounts();
+    const user = accounts.find(a => a.username.trim().toLowerCase() === username.trim().toLowerCase() && a.password === password);
+    if (user) {
+      this.setSession(user);
+      return { success: true, user };
+    }
+    return { success: false, message: "Sai tên đăng nhập hoặc mật khẩu!" };
+  },
 
   // Lấy số ngày trong tháng
   getDaysInMonth(year, month) {
@@ -42,7 +129,7 @@ const ToolDutyRoster = {
   // Thuật toán Tự Động Xếp Lịch Trực Thông Minh (Smart Fair-Distribution Scheduler)
   generateSchedule(year, month, staffList, shiftRoles) {
     const totalDays = this.getDaysInMonth(year, month);
-    const schedule = []; // Array of day objects: { day, dayOfWeek, isWeekend, isHoliday, shifts: { shiftId: staffObj } }
+    const schedule = []; // Array of day objects: { day, dayOfWeek, isWeekend, shifts: { shiftId: staffObj } }
     
     // Nhóm nhân sự theo role group
     const staffByGroup = {};
@@ -59,7 +146,6 @@ const ToolDutyRoster = {
       shiftRoles.forEach(role => {
         let pool = staffByGroup[role.group] || [];
         if (pool.length === 0) {
-          // Fallback pool from all staff
           pool = Object.values(staffByGroup).flat();
         }
 
@@ -92,9 +178,9 @@ const ToolDutyRoster = {
           selectedStaff.shiftCount++;
           if (isWeekend) selectedStaff.weekendCount++;
           selectedStaff.lastAssignedDay = d;
-          dayShifts[role.id] = { id: selectedStaff.id, name: selectedStaff.name, group: selectedStaff.group };
+          dayShifts[role.id] = { id: selectedStaff.id, name: selectedStaff.name, group: selectedStaff.group, dept: selectedStaff.dept || "" };
         } else {
-          dayShifts[role.id] = { id: "", name: "Chưa phân công", group: "" };
+          dayShifts[role.id] = { id: "", name: "Chưa phân công", group: "", dept: "" };
         }
       });
 
@@ -118,6 +204,7 @@ const ToolDutyRoster = {
         id: s.id,
         name: s.name,
         group: s.group,
+        dept: s.dept || "",
         total: 0,
         weekday: 0,
         weekend: 0,
@@ -142,6 +229,37 @@ const ToolDutyRoster = {
     return Object.values(stats);
   },
 
+  // Lọc danh sách ca trực của một nhân viên cụ thể
+  getPersonalSchedule(staffId, schedule, shiftRoles) {
+    const personalShifts = [];
+    schedule.forEach(dayObj => {
+      Object.entries(dayObj.shifts).forEach(([shiftId, assignedStaff]) => {
+        if (assignedStaff && assignedStaff.id === staffId) {
+          const shiftRole = shiftRoles.find(r => r.id === shiftId);
+          // Tìm các đồng nghiệp cùng trực trong ngày này
+          const colleagues = [];
+          Object.entries(dayObj.shifts).forEach(([sId, staff]) => {
+            if (staff && staff.id && staff.id !== staffId) {
+              const r = shiftRoles.find(x => x.id === sId);
+              colleagues.push({ roleName: r ? r.name : sId, name: staff.name });
+            }
+          });
+
+          personalShifts.push({
+            day: dayObj.day,
+            dayName: dayObj.dayName,
+            isWeekend: dayObj.isWeekend,
+            shiftId: shiftId,
+            shiftName: shiftRole ? shiftRole.name : shiftId,
+            colleagues: colleagues
+          });
+        }
+      });
+    });
+
+    return personalShifts;
+  },
+
   // Xuất file Excel Lịch Trực chuẩn Bệnh viện
   exportToExcel(year, month, schedule, staffList, shiftRoles, orgConfig = {}) {
     if (!window.XLSX) {
@@ -160,7 +278,7 @@ const ToolDutyRoster = {
     rows.push([org3.toUpperCase(), "", "", "", "---------------"]);
     rows.push([""]);
     rows.push([`BẢNG PHÂN CÔNG LỊCH TRỰC THÁNG ${month} NĂM ${year}`]);
-    rows.push([`Áp dụng: Toàn viện / Khối Chuyên môn nghiệp vụ - BVĐK Bắc Ninh Số 2`]);
+    rows.push([`Áp dụng: Khối Chuyên Môn & Phòng CNTT - BVĐK Bắc Ninh Số 2`]);
     rows.push([""]);
 
     // Header Table
@@ -181,11 +299,11 @@ const ToolDutyRoster = {
     // Thống kê ca trực
     rows.push([""]);
     rows.push(["BẢNG TỔNG HỢP SỐ CA TRỰC & CHẤM CÔNG"]);
-    rows.push(["STT", "Họ Và Tên", "Bộ Phận/Chức Danh", "Tổng Số Ca Trực", "Trực Ngày Thường", "Trực Thứ 7 / CN"]);
+    rows.push(["STT", "Họ Và Tên", "Đơn Vị / Khoa Phòng", "Tổng Số Ca Trực", "Trực Ngày Thường", "Trực Thứ 7 / CN"]);
     
     const stats = this.calculateStatistics(staffList, schedule, shiftRoles);
     stats.forEach((st, idx) => {
-      rows.push([idx + 1, st.name, st.group.toUpperCase(), st.total, st.weekday, st.weekend]);
+      rows.push([idx + 1, st.name, st.dept || st.group.toUpperCase(), st.total, st.weekday, st.weekend]);
     });
 
     rows.push([""]);
@@ -199,24 +317,6 @@ const ToolDutyRoster = {
 
     const filename = `LICH_TRUC_BVDK_BAC_NINH_SO_2_THANG_${month}_${year}.xlsx`;
     XLSX.writeFile(wb, filename);
-  },
-
-  // Xuất Lịch Trực dạng Ảnh PNG độ nét cao để gửi Zalo
-  async exportToImage(elementId, filename = "Lich_Truc_Zalo.png") {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-
-    // Use modern browser Canvas drawing to render the schedule sheet into an image
-    const canvas = document.createElement("canvas");
-    const width = 1200;
-    const padding = 30;
-    const rowHeight = 36;
-    const headerHeight = 120;
-    
-    // We will draw a beautiful, crisp schedule image
-    const ctx = canvas.getContext("2d");
-    // Draw logic will be bound to UI
-    return canvas.toDataURL("image/png");
   }
 };
 

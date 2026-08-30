@@ -105,7 +105,7 @@ window.TOOLS_REGISTRY = [
     description: "Bộ sưu tập mẫu câu lệnh SQL báo cáo nghiệp vụ thường quy (KCB Ngoại trú, Bệnh nhân Nội trú, Doanh thu viện phí, Kê đơn dược, Phẫu thuật thủ thuật) và Trình dựng câu lệnh tùy biến trực quan chuẩn CSDL VIMES với đầy đủ lệnh JOIN bảng.",
     badge: "Sinh Lệnh SQL Báo Cáo",
     badgeColor: "cyan",
-    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>`,
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><polyline points="14 15 18 19 22 15"/></svg>`,
     inputType: "sql-builder-interactive",
     outputName: "Bao_cao_SQL_VIMES.sql",
     guide: [
@@ -124,7 +124,7 @@ window.TOOLS_REGISTRY = [
     description: "Công cụ tự động xếp lịch trực cho các khoa phòng, khối chuyên môn và tổ CNTT. Thuật toán tự động chia đều ca trực đêm, cuối tuần, ngày lễ; chống xếp 2 ngày liên tiếp; giao diện lịch tháng tương tác đổi người trực 1-click; xuất Excel chấm công và xuất Ảnh gửi Zalo sắc nét.",
     badge: "Xếp Lịch Trực Tự Động",
     badgeColor: "amber",
-    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="15" r="2"/></svg>`,
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M15 14h2"/><path d="M15 17h3"/></svg>`,
     inputType: "duty-roster-interactive",
     outputName: "Lich_Truc_Benh_Vien.xlsx",
     guide: [
