@@ -120,9 +120,189 @@ mark.highlight-term {
   border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
-/* Hidden Input Utility */
+/* Hidden & Utility Classes */
+.hidden {
+  display: none !important;
+}
+
 .hidden-input {
   display: none !important;
+}
+
+/* Global Modal Overlays & Dialogs */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-overlay.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  background: #0f172a;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(37, 99, 235, 0.25);
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: cardEntrance 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 100000;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.modal-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.3px;
+}
+
+.modal-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-footer.flex-between {
+  justify-content: space-between;
+}
+
+.btn-modal-reset {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #94a3b8;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-modal-reset:hover {
+  background: rgba(51, 65, 85, 0.9);
+  color: #fff;
+}
+
+.btn-modal-confirm {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border: none;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-modal-confirm:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.55);
+}
+
+.modal-info-box {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #e0f2fe;
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+}
+
+.config-form-group {
+  margin-bottom: 14px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.form-select option {
+  background: #0f172a;
+  color: #f1f5f9;
 }
 
 /* Layout Wrapper */
@@ -660,26 +840,26 @@ mark.highlight-term {
   box-shadow: 0 4px 14px var(--primary-glow);
 }
 
-/* Tool Grid Cards */
+/* Tool Grid Cards - Compact & Sleek */
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 16px;
 }
 
 .tool-card {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  padding: 24px;
+  border-radius: 12px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: transform var(--transition-spring), border-color var(--transition-fast), box-shadow var(--transition-normal), background var(--transition-fast);
+  transition: transform 0.2s var(--ease-spring), border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  animation: cardEntrance 0.35s var(--ease-spring) backwards;
+  animation: cardEntrance 0.3s var(--ease-spring) backwards;
 }
 
 .tool-card::before {
@@ -689,9 +869,9 @@ mark.highlight-term {
   left: 0;
   right: 0;
   height: 100%;
-  background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+  background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.12) 0%, transparent 60%);
   opacity: 0;
-  transition: opacity var(--transition-normal);
+  transition: opacity 0.2s ease;
   pointer-events: none;
 }
 
@@ -701,31 +881,36 @@ mark.highlight-term {
 
 .tool-card:hover {
   background: var(--bg-card-hover);
-  border-color: rgba(99, 102, 241, 0.45);
-  transform: translateY(-5px);
-  box-shadow: 0 14px 32px -4px rgba(0, 0, 0, 0.5), 0 0 22px -2px rgba(99, 102, 241, 0.25);
+  border-color: rgba(56, 189, 248, 0.5);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -3px rgba(0, 0, 0, 0.5), 0 0 18px -2px rgba(56, 189, 248, 0.25);
 }
 
 .tool-card:active {
-  transform: translateY(-2px) scale(0.985);
+  transform: translateY(-1px) scale(0.99);
 }
 
 .tool-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 
 .tool-card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
-  transition: transform var(--transition-spring);
+  transition: transform 0.2s var(--ease-spring);
+}
+
+.tool-card-icon svg {
+  width: 20px;
+  height: 20px;
 }
 
 .tool-card:hover .tool-card-icon {
@@ -740,11 +925,11 @@ mark.highlight-term {
 .icon-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
 
 .tool-badge {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 20px;
-  letter-spacing: 0.4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
 }
 
 .badge-blue { background: rgba(37, 99, 235, 0.15); color: #93c5fd; border: 1px solid rgba(37, 99, 235, 0.3); }
@@ -756,50 +941,62 @@ mark.highlight-term {
 
 .tool-card-title {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 0.98rem;
   font-weight: 700;
-  color: #fff;
-  margin-bottom: 8px;
-  line-height: 1.35;
+  color: #f8fafc;
+  margin-bottom: 6px;
+  line-height: 1.3;
 }
 
 .tool-card-desc {
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  line-height: 1.55;
-  margin-bottom: 20px;
+  line-height: 1.45;
+  margin-bottom: 12px;
   flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .tool-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 16px;
+  padding-top: 10px;
   border-top: 1px solid var(--border-subtle);
 }
 
 .tool-card-output {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   font-weight: 500;
-  max-width: 200px;
+  max-width: 170px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .btn-open-tool {
-  background: transparent;
-  border: none;
-  color: #60a5fa;
-  font-size: 0.82rem;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #38bdf8;
+  font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 4px;
-  transition: transform var(--transition-fast);
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all var(--transition-fast);
+}
+
+.tool-card:hover .btn-open-tool {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #fff;
 }
 
 /* ==========================================================================

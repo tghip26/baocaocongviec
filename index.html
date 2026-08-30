@@ -246,6 +246,9 @@
               <button type="button" class="cat-btn active" data-cat="all">
                 <span>📁 Tất cả công cụ</span>
               </button>
+              <button type="button" class="cat-btn" data-cat="duty">
+                <span>🗓️ Lịch Trực Phòng CNTT</span>
+              </button>
               <button type="button" class="cat-btn" data-cat="web-cms">
                 <span>🌐 Đăng Bài Web & Xuất Ảnh PDF</span>
               </button>
@@ -1579,44 +1582,6 @@
     </div>
   </div>
 
-  <!-- MODAL: Thêm / Sửa Nhân sự Trực -->
-  <!-- MODAL: Thêm / Sửa Cán bộ Phòng CNTT -->
-  <div class="modal-overlay hidden" id="modalAddStaff">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 class="modal-title">👥 THÊM CÁN BỘ PHÒNG CNTT</h3>
-        <button type="button" class="modal-close" id="btnCloseAddStaffModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="config-form-group">
-          <label class="form-label">Họ và Tên Cán Bộ (Kèm học hàm/học vị nếu có):</label>
-          <input type="text" id="inputStaffName" class="form-input" placeholder="Ví dụ: KS. Nguyễn Văn An" />
-        </div>
-        <div class="config-form-group">
-          <label class="form-label">Phân Nhóm Chuyên Môn Trực CNTT:</label>
-          <select id="selectStaffGroup" class="form-select">
-            <option value="cntt_main" selected>Kỹ sư Hệ thống (Trực Chính: Máy Chủ, HIS VIMES & CSDL)</option>
-            <option value="cntt_sub">Kỹ thuật viên (Trực Phụ: Máy trạm, Hỗ trợ Lâm sàng & Mạng LAN)</option>
-          </select>
-        </div>
-        <div class="config-form-group">
-          <label class="form-label">Vị trí / Tổ công tác chuyên trách:</label>
-          <input type="text" id="inputStaffRole" class="form-input" placeholder="Ví dụ: Kỹ sư Phần Mềm & Cổng BHYT" />
-        </div>
-        <div class="config-form-group">
-          <label class="form-label">Số điện thoại trực / Hotline:</label>
-          <input type="text" id="inputStaffPhone" class="form-input" placeholder="Ví dụ: 0912.345.678" />
-        </div>
-      </div>
-      <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnCancelAddStaff">Hủy bỏ</button>
-        <button type="button" class="btn-modal-confirm" id="btnSaveNewStaff">THÊM CÁN BỘ &rarr;</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Đổi Người Trực Thủ Công (Shift Swap) -->
-  <div class="modal-overlay hidden" id="modalSwapShift">
   <!-- MODAL: Đổi Ca Trực Trực Tiếp (Admin) -->
   <div class="modal-overlay hidden" id="modalSwapShift">
     <div class="modal-card">

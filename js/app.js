@@ -549,6 +549,15 @@ class AppController {
       this.btnCopyTable.addEventListener("click", () => this.copyTableToClipboard());
     }
 
+    // Global Modal Backdrop Click to Close
+    document.querySelectorAll(".modal-overlay").forEach(overlay => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) {
+          this.hideModal(overlay);
+        }
+      });
+    });
+
     // Modal Events
     if (this.btnCloseDayModal) this.btnCloseDayModal.addEventListener("click", () => this.hideModal(this.modalDayRange));
     if (this.btnCloseSheetModal) this.btnCloseSheetModal.addEventListener("click", () => this.hideModal(this.modalSheetSelect));
