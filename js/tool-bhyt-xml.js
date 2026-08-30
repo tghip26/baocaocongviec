@@ -890,6 +890,89 @@ class ToolBhytXml {
     }
     return null;
   }
+
+  /**
+   * Tạo gói dữ liệu XML mẫu thực tế để kiểm tra và đối soát ngay lập tức
+   */
+  static createSampleDataset() {
+    const xml1_1 = `<?xml version="1.0" encoding="utf-8"?>
+<CHECKIN_OUT>
+  <THONGTINCHUNG>
+    <MA_LK>HS20260801001</MA_LK>
+    <HO_TEN>NGUYỄN VĂN AN</HO_TEN>
+    <NGAY_SINH>19850412</NGAY_SINH>
+    <GIOI_TINH>1</GIOI_TINH>
+    <MA_THE>DN 4 01 0123456789 </MA_THE>
+    <MA_DKBD>27001</MA_DKBD>
+    <GT_THE_TU>20240101</GT_THE_TU>
+    <GT_THE_DEN>20261231</GT_THE_DEN>
+    <NGAY_VAO>202608200830</NGAY_VAO>
+    <NGAY_RA>202608201130</NGAY_RA>
+    <MA_BENH>J00</MA_BENH>
+    <TEN_BENH>Viêm mũi họng cấp</TEN_BENH>
+    <MA_LYDO_VVIEN>1</MA_LYDO_VVIEN>
+    <MA_KHOA>K01</MA_KHOA>
+    <T_TONGCHI>350000</T_TONGCHI>
+    <T_BHTT>280000</T_BHTT>
+    <T_BNTT>70000</T_BNTT>
+    <T_BNCCT>0</T_BNCCT>
+  </THONGTINCHUNG>
+</CHECKIN_OUT>`;
+
+    const xml1_2 = `<?xml version="1.0" encoding="utf-8"?>
+<CHECKIN_OUT>
+  <THONGTINCHUNG>
+    <MA_LK>HS20260801002</MA_LK>
+    <HO_TEN>TRẦN THỊ MAI</HO_TEN>
+    <NGAY_SINH>19920915</NGAY_SINH>
+    <GIOI_TINH>2</GIOI_TINH>
+    <MA_THE>GD40101987654321</MA_THE>
+    <MA_DKBD>27002</MA_DKBD>
+    <GT_THE_TU>20250101</GT_THE_TU>
+    <GT_THE_DEN>20261231</GT_THE_DEN>
+    <NGAY_VAO>202608221000</NGAY_VAO>
+    <NGAY_RA>202608210900</NGAY_RA>
+    <MA_BENH>K29.7</MA_BENH>
+    <TEN_BENH>Viêm dạ dày, không đặc hiệu</TEN_BENH>
+    <MA_LYDO_VVIEN>1</MA_LYDO_VVIEN>
+    <MA_KHOA>K02</MA_KHOA>
+    <T_TONGCHI>520000</T_TONGCHI>
+    <T_BHTT>416000</T_BHTT>
+    <T_BNTT>104001</T_BNTT>
+    <T_BNCCT>0</T_BNCCT>
+  </THONGTINCHUNG>
+</CHECKIN_OUT>`;
+
+    const xml1_3 = `<?xml version="1.0" encoding="utf-8"?>
+<CHECKIN_OUT>
+  <THONGTINCHUNG>
+    <MA_LK>HS20260801003</MA_LK>
+    <HO_TEN>LÊ HOÀNG NAM</HO_TEN>
+    <NGAY_SINH>19781203</NGAY_SINH>
+    <GIOI_TINH>1</GIOI_TINH>
+    <MA_THE>HT20101567890123</MA_THE>
+    <MA_DKBD>27001</MA_DKBD>
+    <GT_THE_TU>20240101</GT_THE_TU>
+    <GT_THE_DEN>20261231</GT_THE_DEN>
+    <NGAY_VAO>202608250745</NGAY_VAO>
+    <NGAY_RA>202608251630</NGAY_RA>
+    <MA_BENH>I10</MA_BENH>
+    <TEN_BENH>Tăng huyết áp vô căn (nguyên phát)</TEN_BENH>
+    <MA_LYDO_VVIEN>1</MA_LYDO_VVIEN>
+    <MA_KHOA>K01</MA_KHOA>
+    <T_TONGCHI>420000</T_TONGCHI>
+    <T_BHTT>336000</T_BHTT>
+    <T_BNTT>84000</T_BNTT>
+    <T_BNCCT>0</T_BNCCT>
+  </THONGTINCHUNG>
+</CHECKIN_OUT>`;
+
+    return [
+      new File([xml1_1], "XML1_HS01_NguyenVanAn.xml", { type: "text/xml" }),
+      new File([xml1_2], "XML1_HS02_TranThiMai.xml", { type: "text/xml" }),
+      new File([xml1_3], "XML1_HS03_LeHoangNam.xml", { type: "text/xml" })
+    ];
+  }
 }
 
 window.ToolBhytXml = ToolBhytXml;

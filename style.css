@@ -9909,9 +9909,11 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 /* 11. XML VALIDATOR DROPZONE & AUTO-FIX BANNER */
 .xml-dropzone-wrapper {
   padding: 10px 0 24px 0;
-  display: flex;
-  justify-content: center;
-  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 20px !important;
 }
 
 .xml-dropzone {
@@ -9919,7 +9921,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   max-width: 840px;
   border: 2px dashed rgba(56, 189, 248, 0.4);
   border-radius: 18px;
-  padding: 48px 32px;
+  padding: 44px 32px;
   background: radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.07) 0%, rgba(15, 23, 42, 0.85) 100%);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.03);
   text-align: center;
@@ -9931,6 +9933,38 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   gap: 14px;
   position: relative;
   overflow: hidden;
+}
+
+.dropzone-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.btn-sample-xml {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-sample-xml:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
 }
 
 .xml-dropzone:hover,

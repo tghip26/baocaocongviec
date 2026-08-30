@@ -454,7 +454,13 @@ class AppController {
       });
     }
 
-    // Back to Hub
+    // Back to Hub / Home
+    const btnSidebarBrand = document.getElementById("btnSidebarBrand");
+    if (btnSidebarBrand) {
+      btnSidebarBrand.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
     if (this.btnBackToHub) {
       this.btnBackToHub.addEventListener("click", () => {
         window.location.hash = "";
@@ -4533,7 +4539,10 @@ ${this.currentW2hHtmlOutput}
     }
 
     if (this.btnBrowseXmlFiles && this.xmlFileInput) {
-      this.btnBrowseXmlFiles.addEventListener("click", () => this.xmlFileInput.click());
+      this.btnBrowseXmlFiles.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.xmlFileInput.click();
+      });
     }
 
     if (this.xmlFileInput) {
@@ -4545,6 +4554,11 @@ ${this.currentW2hHtmlOutput}
     }
 
     if (this.xmlDropzone) {
+      this.xmlDropzone.addEventListener("click", (e) => {
+        if (e.target.closest("#btnLoadSampleXml")) return;
+        if (this.xmlFileInput) this.xmlFileInput.click();
+      });
+
       this.xmlDropzone.addEventListener("dragover", (e) => {
         e.preventDefault();
         this.xmlDropzone.classList.add("dragover");
@@ -4557,6 +4571,17 @@ ${this.currentW2hHtmlOutput}
         this.xmlDropzone.classList.remove("dragover");
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
           this.handleXmlFilesUpload(Array.from(e.dataTransfer.files));
+        }
+      });
+    }
+
+    this.btnLoadSampleXml = document.getElementById("btnLoadSampleXml");
+    if (this.btnLoadSampleXml) {
+      this.btnLoadSampleXml.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (window.ToolBhytXml && typeof ToolBhytXml.createSampleDataset === "function") {
+          const sampleFiles = ToolBhytXml.createSampleDataset();
+          this.handleXmlFilesUpload(sampleFiles);
         }
       });
     }
