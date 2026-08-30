@@ -207,10 +207,14 @@
           <!-- Session Widget displayed on Top Header when on Duty Roster page -->
           <div class="duty-header-session-widget hidden" id="dutyHeaderSessionWidget">
             <button type="button" class="duty-header-user-btn" id="btnOpenLoginModalHeader" title="Nhấp để đăng nhập / đổi tài khoản">
-              <span class="duty-header-avatar" id="dutyHeaderAvatar">👑</span>
-              <span class="duty-header-name" id="dutyHeaderUserName">Trưởng Phòng CNTT</span>
-              <span class="duty-header-role" id="dutyHeaderRoleTag">ADMIN</span>
+              <span class="duty-header-avatar" id="dutyHeaderAvatar">👤</span>
+              <span class="duty-header-name" id="dutyHeaderUserName">Chưa đăng nhập</span>
+              <span class="duty-header-role" id="dutyHeaderRoleTag">KHÁCH</span>
               <svg class="header-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button type="button" class="btn-duty-logout hidden" id="btnDutyLogout" title="Đăng xuất khỏi tài khoản hiện tại">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Đăng xuất</span>
             </button>
           </div>
 
@@ -1403,6 +1407,20 @@
                 <span>Xuất Excel</span>
               </button>
             </div>
+          </div>
+
+          <!-- Guest Login Prompt Banner (Chỉ hiển thị khi chưa đăng nhập) -->
+          <div class="duty-guest-banner" id="dutyGuestLoginBanner">
+            <div class="duty-guest-banner-left">
+              <div class="duty-guest-icon">🔐</div>
+              <div class="duty-guest-text">
+                <strong>Bạn đang xem lịch trực chung của Toàn Thể Phòng CNTT</strong>
+                <span>Đăng nhập tài khoản cán bộ để xem số ca trực, ngày trực cá nhân và gửi yêu cầu đổi ca.</span>
+              </div>
+            </div>
+            <button type="button" class="btn-duty-login-now" id="btnDutyLoginNow">
+              <span>👉 ĐĂNG NHẬP NGAY</span>
+            </button>
           </div>
 
           <!-- Single Unified Control Bar: Tabs + Filter + Legend -->

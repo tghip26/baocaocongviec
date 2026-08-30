@@ -147,13 +147,19 @@ const ToolDutyRoster = {
         if (session && session.username) return session;
       }
     } catch (e) {}
-    const defaultAdmin = this.defaultAccounts[0];
-    this.setSession(defaultAdmin);
-    return defaultAdmin;
+    return null;
   },
 
   setSession(userObj) {
-    localStorage.setItem("DUTY_CNTT_SESSION", JSON.stringify(userObj));
+    if (!userObj) {
+      localStorage.removeItem("DUTY_CNTT_SESSION");
+    } else {
+      localStorage.setItem("DUTY_CNTT_SESSION", JSON.stringify(userObj));
+    }
+  },
+
+  logout() {
+    localStorage.removeItem("DUTY_CNTT_SESSION");
   },
 
   authenticate(username, password) {

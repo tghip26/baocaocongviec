@@ -1399,6 +1399,32 @@ class AppController {
     window.scrollTo({ top: 0, behavior: "smooth" });
     this.dutyStaffList = ToolDutyRoster.getStaffList();
     this.currentDutySession = ToolDutyRoster.getCurrentSession();
+
+    if (!this.currentDutySession) {
+      // Khi chưa đăng nhập: Mặc định hiển thị lịch chung toàn bộ Phòng CNTT
+      this.currentFilterStaffId = "all";
+      this.currentDutyFilter = "all";
+      this.dutyViewMode = "calendar";
+      if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.classList.add("active");
+      if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.classList.remove("active");
+      if (this.btnTabDutyTable) this.btnTabDutyTable.classList.remove("active");
+      if (this.dutyCalendarContainer) this.dutyCalendarContainer.classList.remove("hidden");
+      if (this.dutyPersonalScheduleContainer) this.dutyPersonalScheduleContainer.classList.add("hidden");
+      if (this.dutyTableContainer) this.dutyTableContainer.classList.add("hidden");
+
+      if (this.dutyGuestLoginBanner) this.dutyGuestLoginBanner.classList.remove("hidden");
+      this.showToast("🔐 Đăng nhập tài khoản để xem lịch trực cá nhân của bạn! Hiện đang hiển thị lịch chung toàn bộ Phòng CNTT.", "info", 5000, "Đăng Nhập", () => this.openDutyLoginModal());
+    } else {
+      if (this.dutyGuestLoginBanner) this.dutyGuestLoginBanner.classList.add("hidden");
+      if (this.currentDutySession.role !== "admin" && this.currentDutySession.staffId) {
+        this.currentFilterStaffId = this.currentDutySession.staffId;
+        this.currentDutyFilter = "personal";
+      } else {
+        this.currentFilterStaffId = "all";
+        this.currentDutyFilter = "all";
+      }
+    }
+
     this.updateDutySessionUI();
     this.renderStaffList();
     this.runAutoSchedule();
@@ -3310,7 +3336,13 @@ ${this.currentW2hHtmlOutput}
     }
 
     // Auth & Session
+    this.dutyGuestLoginBanner = document.getElementById("dutyGuestLoginBanner");
+    this.btnDutyLoginNow = document.getElementById("btnDutyLoginNow");
+    this.btnDutyLogout = document.getElementById("btnDutyLogout");
+
     if (this.btnOpenLoginModalHeader) this.btnOpenLoginModalHeader.addEventListener("click", () => this.openDutyLoginModal());
+    if (this.btnDutyLoginNow) this.btnDutyLoginNow.addEventListener("click", () => this.openDutyLoginModal());
+    if (this.btnDutyLogout) this.btnDutyLogout.addEventListener("click", () => this.handleDutyLogout());
     if (this.btnCloseLoginModal) this.btnCloseLoginModal.addEventListener("click", () => this.hideModal(this.modalDutyLogin));
     if (this.btnCancelLoginModal) this.btnCancelLoginModal.addEventListener("click", () => this.hideModal(this.modalDutyLogin));
     if (this.btnSubmitDutyLogin) this.btnSubmitDutyLogin.addEventListener("click", () => this.handleDutyLoginSubmit());
@@ -3337,21 +3369,49 @@ ${this.currentW2hHtmlOutput}
   }
 
   updateDutySessionUI() {
-    if (!this.currentDutySession) return;
-    const isAdmin = (this.currentDutySession.role === "admin");
+    const isLogged = !!this.currentDutySession;
+    const isAdmin = isLogged && (this.currentDutySession.role === "admin");
 
-    if (this.dutyHeaderUserName) this.dutyHeaderUserName.textContent = this.currentDutySession.fullname || this.currentDutySession.username;
-    if (this.dutyHeaderRoleTag) this.dutyHeaderRoleTag.textContent = isAdmin ? "ADMIN" : "USER";
-    if (this.dutyHeaderAvatar) this.dutyHeaderAvatar.textContent = isAdmin ? "👑" : "💻";
+    if (this.dutyHeaderUserName) {
+      this.dutyHeaderUserName.textContent = isLogged ? (this.currentDutySession.fullname || this.currentDutySession.username) : "Chưa đăng nhập";
+    }
+    if (this.dutyHeaderRoleTag) {
+      this.dutyHeaderRoleTag.textContent = isLogged ? (isAdmin ? "ADMIN" : "USER") : "KHÁCH";
+    }
+    if (this.dutyHeaderAvatar) {
+      this.dutyHeaderAvatar.textContent = isLogged ? (isAdmin ? "👑" : "💻") : "👤";
+    }
+    if (this.btnDutyLogout) {
+      this.btnDutyLogout.classList.toggle("hidden", !isLogged);
+    }
+    if (this.dutyGuestLoginBanner) {
+      this.dutyGuestLoginBanner.classList.toggle("hidden", isLogged);
+    }
 
     const adminButtons = document.querySelectorAll(".admin-only-btn");
     adminButtons.forEach(btn => {
       btn.style.display = isAdmin ? "inline-flex" : "none";
     });
+  }
 
-    if (!isAdmin && this.currentDutySession.staffId) {
-      this.currentFilterStaffId = this.currentDutySession.staffId;
-    }
+  handleDutyLogout() {
+    ToolDutyRoster.logout();
+    this.currentDutySession = null;
+    this.currentFilterStaffId = "all";
+    this.currentDutyFilter = "all";
+    this.dutyViewMode = "calendar";
+    if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.classList.add("active");
+    if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.classList.remove("active");
+    if (this.btnTabDutyTable) this.btnTabDutyTable.classList.remove("active");
+    if (this.dutyCalendarContainer) this.dutyCalendarContainer.classList.remove("hidden");
+    if (this.dutyPersonalScheduleContainer) this.dutyPersonalScheduleContainer.classList.add("hidden");
+    if (this.dutyTableContainer) this.dutyTableContainer.classList.add("hidden");
+
+    this.updateDutySessionUI();
+    this.populateStaffFilterDropdown();
+    this.renderStaffList();
+    this.renderDutyViews();
+    this.showToast("Đã đăng xuất! Đang hiển thị lịch trực chung Toàn thể Phòng CNTT.", "info");
   }
 
   openDutyLoginModal() {
@@ -3390,9 +3450,19 @@ ${this.currentW2hHtmlOutput}
     const authRes = ToolDutyRoster.authenticate(u, p);
     if (authRes.success) {
       this.currentDutySession = authRes.user;
+
+      if (authRes.user.role !== "admin" && authRes.user.staffId) {
+        this.currentFilterStaffId = authRes.user.staffId;
+        this.currentDutyFilter = "personal";
+      } else {
+        this.currentFilterStaffId = "all";
+        this.currentDutyFilter = "all";
+      }
+
       this.updateDutySessionUI();
+      this.populateStaffFilterDropdown();
       this.hideModal(this.modalDutyLogin);
-      this.showToast(`Chào mừng: ${authRes.user.fullname}!`, "success");
+      this.showToast(`Chào mừng: ${authRes.user.fullname}! Đang hiển thị lịch trực của bạn.`, "success");
       this.renderStaffList();
       this.renderDutyViews();
     } else {
@@ -3644,6 +3714,11 @@ ${this.currentW2hHtmlOutput}
   }
 
   switchDutyViewMode(mode) {
+    if (mode === "personal" && !this.currentDutySession) {
+      this.showToast("Vui lòng đăng nhập tài khoản để xem tab 'Lịch Của Tôi'!", "info", 4000, "Đăng Nhập", () => this.openDutyLoginModal());
+      this.openDutyLoginModal();
+      return;
+    }
     this.dutyViewMode = mode;
     if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.classList.toggle("active", mode === "calendar");
     if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.classList.toggle("active", mode === "personal");

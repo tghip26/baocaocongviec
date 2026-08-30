@@ -7941,4 +7941,89 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   to { width: 0%; }
 }
 
+/* Duty Roster Guest Login Prompt Banner */
+.duty-guest-banner {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.7));
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  animation: fadeInBanner 0.3s ease;
+}
+
+@keyframes fadeInBanner {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.duty-guest-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.duty-guest-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.duty-guest-text strong {
+  display: block;
+  font-size: 0.84rem;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.duty-guest-text span {
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.btn-duty-login-now {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.btn-duty-login-now:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+.btn-duty-logout {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-left: 6px;
+}
+
+.btn-duty-logout:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+
 
