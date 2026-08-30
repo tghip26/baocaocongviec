@@ -1447,7 +1447,9 @@ class AppController {
     if (this.dutySelectMonth && !this.dutyMonthInitialized) {
       this.dutySelectMonth.value = String(now.getMonth() + 1);
     }
-    if (this.dutyInputYear && !this.dutyMonthInitialized) {
+    if (this.dutySelectYear && !this.dutyMonthInitialized) {
+      this.dutySelectYear.value = String(now.getFullYear());
+    } else if (this.dutyInputYear && !this.dutyMonthInitialized) {
       this.dutyInputYear.value = String(now.getFullYear());
     }
     this.dutyMonthInitialized = true;
@@ -3352,9 +3354,14 @@ ${this.currentW2hHtmlOutput}
     this.currentDutySession = ToolDutyRoster ? ToolDutyRoster.getCurrentSession() : { username: "admin", role: "admin", fullname: "Trưởng Phòng CNTT (Quản trị)" };
 
     // Khởi tạo tháng và năm hiện tại thực tế trên giao diện
+    this.dutySelectMonth = document.getElementById("dutySelectMonth");
+    this.dutySelectYear = document.getElementById("dutySelectYear");
+    this.dutyInputYear = document.getElementById("dutySelectYear") || document.getElementById("dutyInputYear");
+
     const now = new Date();
     if (this.dutySelectMonth) this.dutySelectMonth.value = String(now.getMonth() + 1);
-    if (this.dutyInputYear) this.dutyInputYear.value = String(now.getFullYear());
+    if (this.dutySelectYear) this.dutySelectYear.value = String(now.getFullYear());
+    else if (this.dutyInputYear) this.dutyInputYear.value = String(now.getFullYear());
 
     // Event Bindings
     if (this.btnBackToHubFromDuty) {
@@ -3366,7 +3373,10 @@ ${this.currentW2hHtmlOutput}
     if (this.dutySelectMonth) {
       this.dutySelectMonth.addEventListener("change", () => this.runAutoSchedule());
     }
-    if (this.dutyInputYear) {
+    if (this.dutySelectYear) {
+      this.dutySelectYear.addEventListener("change", () => this.runAutoSchedule());
+    }
+    if (this.dutyInputYear && this.dutyInputYear !== this.dutySelectYear) {
       this.dutyInputYear.addEventListener("input", () => this.runAutoSchedule());
     }
 
@@ -3374,7 +3384,7 @@ ${this.currentW2hHtmlOutput}
       this.btnRunAutoSchedule.addEventListener("click", () => {
         this.runAutoSchedule();
         this.showToast("Đã xếp lịch trực tự động công bằng cho P.CNTT!", "success");
-        this.recordOfflineChange("Xếp Lịch Tự Động", `Đã xếp lịch cho Tháng ${this.dutySelectMonth ? this.dutySelectMonth.value : ""}/${this.dutyInputYear ? this.dutyInputYear.value : ""}`);
+        this.recordOfflineChange("Xếp Lịch Tự Động", `Đã xếp lịch cho Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()}`);
       });
     }
 
@@ -3436,9 +3446,23 @@ ${this.currentW2hHtmlOutput}
     this.updateDutySessionUI();
   }
 
+  getSelectedDutyMonth() {
+    return parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
+  }
+
+  getSelectedDutyYear() {
+    if (this.dutySelectYear && this.dutySelectYear.value) {
+      return parseInt(this.dutySelectYear.value, 10);
+    }
+    if (this.dutyInputYear && this.dutyInputYear.value) {
+      return parseInt(this.dutyInputYear.value, 10);
+    }
+    return new Date().getFullYear();
+  }
+
   clearDutySchedule() {
-    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
-    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : new Date().getFullYear(), 10);
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
     if (!confirm(`Bạn có chắc chắn muốn xóa toàn bộ ca trực của Tháng ${month}/${year} không?`)) return;
     this.dutySchedule = ToolDutyRoster.clearSchedule(year, month);
     this.renderDutyViews();
@@ -3814,8 +3838,8 @@ ${this.currentW2hHtmlOutput}
   runAutoSchedule() {
     if (!window.ToolDutyRoster) return;
     this.dutyStaffList = ToolDutyRoster.getStaffList();
-    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
-    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : new Date().getFullYear(), 10);
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
     this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList);
     this.renderDutyViews();
   }
@@ -3854,8 +3878,8 @@ ${this.currentW2hHtmlOutput}
       if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
 
       if (this.personalNextShiftText) {
-        const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : (new Date().getMonth() + 1), 10);
-        const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : new Date().getFullYear(), 10);
+        const month = this.getSelectedDutyMonth();
+        const year = this.getSelectedDutyYear();
         this.personalNextShiftText.innerHTML = `⚡ Đã xếp đủ <strong>${total} ca trực</strong> Tháng ${month}/${year} chia đều cho <strong>${this.dutyStaffList.length} cán bộ</strong>`;
       }
     } else {
@@ -3899,8 +3923,8 @@ ${this.currentW2hHtmlOutput}
       grid.appendChild(colHead);
     });
 
-    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
-    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
     const firstDayDow = ToolDutyRoster.getDayOfWeek(year, month, 1);
     const offset = (firstDayDow === 0) ? 6 : (firstDayDow - 1);
 
@@ -4100,8 +4124,8 @@ ${this.currentW2hHtmlOutput}
       this.showToast("Chưa có lịch trực để xuất Excel!", "warning");
       return;
     }
-    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
-    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
     const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
     ToolDutyRoster.exportToExcel(year, month, this.dutySchedule, this.dutyStaffList, null, orgCfg);
     this.showToast(`Đã xuất file Excel Lịch Trực Phòng CNTT Tháng ${month}/${year} thành công!`, "success");

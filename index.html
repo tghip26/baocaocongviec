@@ -1375,23 +1375,33 @@
 
             <!-- Top Actions & Month Picker -->
             <div class="workspace-top-actions duty-actions-cluster">
-              <!-- Month / Year Selector -->
-              <div class="duty-time-picker-compact">
-                <select id="dutySelectMonth" class="duty-select-month-sm">
-                  <option value="1">Tháng 1</option>
-                  <option value="2">Tháng 2</option>
-                  <option value="3">Tháng 3</option>
-                  <option value="4">Tháng 4</option>
-                  <option value="5">Tháng 5</option>
-                  <option value="6">Tháng 6</option>
-                  <option value="7">Tháng 7</option>
-                  <option value="8">Tháng 8</option>
-                  <option value="9" selected>Tháng 9</option>
+              <!-- Month / Year Selector (Ultra sleek combined pill) -->
+              <div class="duty-time-picker-compact" title="Chọn Tháng và Năm để xem hoặc xếp lịch">
+                <span class="picker-cal-icon">📅</span>
+                <select id="dutySelectMonth" class="duty-select-month-sm" title="Chọn Tháng">
+                  <option value="1">Tháng 01</option>
+                  <option value="2">Tháng 02</option>
+                  <option value="3">Tháng 03</option>
+                  <option value="4">Tháng 04</option>
+                  <option value="5">Tháng 05</option>
+                  <option value="6">Tháng 06</option>
+                  <option value="7">Tháng 07</option>
+                  <option value="8">Tháng 08</option>
+                  <option value="9">Tháng 09</option>
                   <option value="10">Tháng 10</option>
                   <option value="11">Tháng 11</option>
                   <option value="12">Tháng 12</option>
                 </select>
-                <input type="number" id="dutyInputYear" class="duty-input-year-sm" value="2026" min="2024" max="2030" />
+                <span class="picker-divider">/</span>
+                <select id="dutySelectYear" class="duty-select-year-sm" title="Chọn Năm">
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                  <option value="2026" selected>2026</option>
+                  <option value="2027">2027</option>
+                  <option value="2028">2028</option>
+                  <option value="2029">2029</option>
+                  <option value="2030">2030</option>
+                </select>
               </div>
 
               <!-- Admin Only Actions -->
@@ -1418,17 +1428,13 @@
           </div>
 
           <!-- Guest Login Prompt Banner (Chỉ hiển thị khi chưa đăng nhập) -->
-          <div class="duty-guest-banner" id="dutyGuestLoginBanner">
-            <div class="duty-guest-banner-left">
-              <div class="duty-guest-icon">🔐</div>
-              <div class="duty-guest-text">
-                <strong>Bạn đang xem lịch trực chung của Toàn Thể Phòng CNTT</strong>
-                <span>Đăng nhập tài khoản cán bộ để xem số ca trực, ngày trực cá nhân và gửi yêu cầu đổi ca.</span>
-              </div>
+          <div class="duty-guest-login-banner hidden" id="dutyGuestLoginBanner">
+            <div class="guest-banner-icon">🔐</div>
+            <div class="guest-banner-content">
+              <strong>Bạn đang xem lịch trực chung của toàn thể Phòng CNTT</strong>
+              <p>Đăng nhập tài khoản cá nhân để xem bảng phân công ca trực, thống kê ca trực và lịch trực riêng của bạn.</p>
             </div>
-            <button type="button" class="btn-duty-login-now" id="btnDutyLoginNow">
-              <span>👉 ĐĂNG NHẬP NGAY</span>
-            </button>
+            <button type="button" class="btn-duty-login-now" id="btnDutyLoginNow">Đăng Nhập Ngay</button>
           </div>
 
           <!-- Single Unified Control Bar: Tabs + Filter + Legend -->
@@ -1465,12 +1471,13 @@
             </div>
           </div>
 
+          <!-- Duty Roster Workspace Layout (2 columns: Sidebar & Main Calendar) -->
           <div class="duty-roster-grid">
-            <!-- Cột trái: Thông tin cá nhân & Danh sách cán bộ P.CNTT -->
+            <!-- Cột trái: Thông tin cá nhân & Danh sách cán bộ -->
             <div class="duty-sidebar">
               <!-- Card 1: Thông tin & Thống kê trực -->
               <div class="w2h-card duty-personal-card" id="dutyPersonalCard">
-                <div class="w2h-card-header flex-between">
+                <div class="duty-card-header">
                   <div class="header-inline">
                     <span class="card-icon">⭐</span>
                     <h3 id="personalCardTitle">Thông Tin Trực Cán Bộ</h3>
@@ -1500,14 +1507,14 @@
               </div>
 
               <!-- Card 2: Danh sách Cán bộ Phòng CNTT -->
-              <div class="w2h-card">
-                <div class="w2h-card-header flex-between">
-                  <div class="header-inline">
+              <div class="w2h-card duty-staff-card">
+                <div class="duty-staff-header">
+                  <div class="staff-header-left">
                     <span class="card-icon">👥</span>
-                    <h3>Cán Bộ P.CNTT (<span id="staffCountDisplay">8</span>)</h3>
+                    <h3 class="staff-title">Cán Bộ (<span id="staffCountDisplay">0</span>)</h3>
                   </div>
-                  <div class="header-actions">
-                    <button type="button" class="btn-card-small admin-only-btn" id="btnAddStaffModalBtn">+ Thêm</button>
+                  <div class="staff-header-actions">
+                    <button type="button" class="btn-card-small admin-only-btn" id="btnAddStaffModalBtn" title="Thêm cán bộ mới">+ Thêm</button>
                     <button type="button" class="btn-card-small btn-card-danger admin-only-btn" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ mẫu để tự nhập danh sách thực tế">Dọn Sạch</button>
                   </div>
                 </div>

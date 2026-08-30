@@ -6117,41 +6117,70 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 /* Compact Month / Year Picker */
 .duty-time-picker-compact {
-  display: flex;
+/* Month & Year Ultra-sleek Combined Pill */
+.duty-time-picker-compact {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  padding: 4px 10px;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 4px 12px;
   border-radius: 9999px;
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
-.duty-select-month-sm {
+.duty-time-picker-compact:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.picker-cal-icon {
+  font-size: 0.9rem;
+  margin-right: 2px;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
+}
+
+.duty-select-month-sm,
+.duty-select-year-sm {
   background: transparent;
   border: none;
   color: #38bdf8;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   outline: none;
   cursor: pointer;
+  padding: 2px 2px;
+  font-family: inherit;
+  transition: color 0.2s ease;
 }
 
-.duty-select-month-sm option {
+.duty-select-year-sm {
+  color: #fbbf24;
+}
+
+.duty-select-month-sm:hover {
+  color: #7dd3fc;
+}
+
+.duty-select-year-sm:hover {
+  color: #fde68a;
+}
+
+.duty-select-month-sm option,
+.duty-select-year-sm option {
   background: #0f172a;
   color: #f1f5f9;
+  padding: 8px 12px;
 }
 
-.duty-input-year-sm {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 6px;
-  color: #f1f5f9;
+.picker-divider {
+  color: rgba(148, 163, 184, 0.5);
   font-weight: 700;
-  font-size: 0.8rem;
-  width: 58px;
-  padding: 2px 4px;
-  outline: none;
-  text-align: center;
+  font-size: 0.85rem;
+  padding: 0 1px;
 }
 
 /* Unified Action Buttons in Workspace Top Bar */
@@ -6328,15 +6357,19 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   gap: 14px;
 }
 
-/* Personal Duty Status Card */
-.duty-personal-card {
+/* Duty Cards & Sidebar Styling */
+.duty-personal-card,
+.duty-staff-card {
   background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.75));
   border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-.duty-personal-card::before {
+.duty-personal-card::before,
+.duty-staff-card::before {
   content: "";
   position: absolute;
   top: 0;
@@ -6344,6 +6377,43 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   right: 0;
   height: 3px;
   background: linear-gradient(90deg, #38bdf8, #818cf8, #fbbf24);
+}
+
+.duty-card-header,
+.duty-staff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.staff-header-left,
+.duty-card-header .header-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.staff-title,
+.duty-card-header h3 {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+}
+
+.staff-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .personal-status-pill {
