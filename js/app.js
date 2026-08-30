@@ -1880,8 +1880,10 @@ class AppController {
       textIndent: this.w2hTextIndent ? this.w2hTextIndent.value : "none",
       lineHeight: this.w2hLineHeight ? this.w2hLineHeight.value : "1.6",
       paragraphMarginBottom: this.w2hMarginBottom ? this.w2hMarginBottom.value : "10px",
-      autoFilterBoundaries: this.w2hAutoFilterBoundaries ? this.w2hAutoFilterBoundaries.checked : true,
-      unboldAll: this.w2hUnboldAll ? this.w2hUnboldAll.checked : true,
+      preserveOriginalAlignment: true,
+      preserveRichStyles: true,
+      autoFilterBoundaries: false, // 100% không tự ý cắt bỏ nội dung
+      unboldAll: false,
       tableFullBorder: this.w2hTableBorder ? this.w2hTableBorder.checked : true,
       cleanEmptyParagraphs: this.w2hCleanEmpty ? this.w2hCleanEmpty.checked : true,
       ctxhImageUrls: ctxhImageUrls,
