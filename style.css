@@ -5838,64 +5838,120 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   flex-wrap: wrap;
   gap: 12px;
 }
+/* ==========================================================================
+   DUTY ROSTER & SESSION WIDGET STYLES (PHÒNG CÔNG NGHỆ THÔNG TIN)
+   ========================================================================== */
 
-.duty-actions-cluster {
+/* Header Session Widget on Global App Header */
+.duty-header-session-widget {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
 
-.duty-user-pill {
+.duty-header-access-pill {
+  background: rgba(14, 165, 233, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.duty-header-user-pill {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 9999px;
-  padding: 4px 12px 4px 6px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  padding: 3px 10px 3px 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.duty-user-icon {
-  font-size: 1.1rem;
+.duty-header-avatar {
+  font-size: 1.05rem;
   line-height: 1;
 }
 
-.duty-user-meta {
+.duty-header-meta {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
-.duty-user-name {
-  font-size: 0.8rem;
+.duty-header-name {
+  font-size: 0.78rem;
   font-weight: 700;
   color: #f1f5f9;
-  line-height: 1.2;
+  white-space: nowrap;
 }
 
-.duty-user-role {
-  font-size: 0.65rem;
+.duty-header-role {
+  font-size: 0.64rem;
   color: #38bdf8;
-  font-weight: 600;
+  font-weight: 800;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
 }
 
-.btn-duty-switch-acc {
-  background: rgba(56, 189, 248, 0.15);
+.btn-duty-switch-acc-sm {
+  background: rgba(56, 189, 248, 0.2);
   border: 1px solid rgba(56, 189, 248, 0.4);
   color: #38bdf8;
   border-radius: 9999px;
-  padding: 3px 9px;
-  font-size: 0.7rem;
+  padding: 2px 8px;
+  font-size: 0.68rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: 4px;
 }
 
-.btn-duty-switch-acc:hover {
+.btn-duty-switch-acc-sm:hover {
   background: #38bdf8;
   color: #0f172a;
+}
+
+/* Compact Month / Year in Workspace Top Bar */
+.duty-time-picker-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.duty-select-month-sm {
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.duty-select-month-sm option {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.duty-input-year-sm {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-weight: 700;
+  font-size: 0.82rem;
+  width: 65px;
+  padding: 2px 6px;
+  outline: none;
+  text-align: center;
 }
 
 /* Department & Personal Filter Toolbar */
@@ -5986,90 +6042,10 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   outline: none;
 }
 
-/* Personal Duty Status Card */
-.duty-personal-card {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.75));
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  position: relative;
-  overflow: hidden;
-}
-
-.duty-personal-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #38bdf8, #818cf8, #fbbf24);
-}
-
-.personal-status-pill {
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #38bdf8;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.personal-next-shift-box {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-}
-
-.next-shift-lbl {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.next-shift-val {
-  font-size: 0.84rem;
-  color: #f1f5f9;
-  font-weight: 600;
-}
-
-.personal-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-
-.personal-stat-item {
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 8px;
-  padding: 6px 4px;
-  text-align: center;
-}
-
-.personal-stat-item .p-stat-val {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #38bdf8;
-  display: block;
-  line-height: 1.2;
-}
-
-.personal-stat-item.weekend .p-stat-val {
-  color: #fbbf24;
-}
-
-.personal-stat-item .p-stat-lbl {
-  font-size: 0.62rem;
-  color: #94a3b8;
-}
-
 /* Duty Roster Layout Grid */
 .duty-roster-grid {
   display: grid;
-  grid-template-columns: 310px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 16px;
   align-items: start;
 }
@@ -6078,28 +6054,6 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-
-.duty-summary-pills {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.duty-pill {
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #38bdf8;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.duty-pill.weekend {
-  background: rgba(245, 158, 11, 0.15);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #fbbf24;
 }
 
 /* Staff List in Sidebar */
@@ -6220,8 +6174,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   border-radius: 50%;
 }
 
-.legend-dot.cntt { background: #38bdf8; }
-.legend-dot.normal { background: #06b6d4; }
+.legend-dot.normal { background: #38bdf8; }
 .legend-dot.weekend { background: #fbbf24; }
 
 /* Calendar Month Grid */
@@ -6247,7 +6200,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   border: 1px solid rgba(148, 163, 184, 0.15);
   border-radius: 10px;
   padding: 8px;
-  min-height: 140px;
+  min-height: 100px;
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease;
@@ -6283,11 +6236,6 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   color: #fbbf24;
 }
 
-.cal-day-tag {
-  font-size: 0.65rem;
-  color: #94a3b8;
-}
-
 .cal-shift-list {
   display: flex;
   flex-direction: column;
@@ -6295,61 +6243,44 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   flex-grow: 1;
 }
 
-.cal-shift-badge {
-  padding: 4px 6px;
-  border-radius: 6px;
-  font-size: 0.68rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Single Duty Badge per day */
+.cal-duty-badge {
+  background: rgba(14, 165, 233, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 8px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.cal-shift-badge:hover {
+.cal-duty-badge:hover {
+  background: rgba(14, 165, 233, 0.3);
+  border-color: #38bdf8;
   transform: translateY(-1px);
-  filter: brightness(1.2);
 }
 
-.shift-title-lbl {
-  font-size: 0.62rem;
-  color: #cbd5e1;
-  opacity: 0.85;
-}
-
-.shift-person-name {
+.duty-badge-name {
+  font-size: 0.76rem;
   font-weight: 700;
-  color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #f1f5f9;
+  line-height: 1.2;
 }
 
-/* Shift badge color classes */
-.cal-shift-badge.role-cntt-main {
-  background: rgba(14, 165, 233, 0.22);
-  border: 1px solid rgba(56, 189, 248, 0.45);
-  color: #38bdf8;
+.duty-badge-phone {
+  font-size: 0.65rem;
+  color: #93c5fd;
 }
 
-.cal-shift-badge.role-cntt-sub {
-  background: rgba(6, 182, 212, 0.22);
-  border: 1px solid rgba(34, 211, 238, 0.45);
-  color: #22d3ee;
+.cal-duty-badge.highlight-duty {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(59, 130, 246, 0.35));
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
 }
 
-.cal-shift-badge.role-cntt-oncall {
-  background: rgba(245, 158, 11, 0.22);
-  border: 1px solid rgba(251, 191, 36, 0.45);
-  color: #fbbf24;
-}
-
-.cal-shift-badge.highlight-duty {
-  border: 1.5px solid #fff;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
-  font-weight: 800;
-}
-
-.cal-shift-badge.dimmed {
+.cal-duty-badge.dimmed {
   opacity: 0.25;
   filter: grayscale(0.8);
 }

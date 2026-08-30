@@ -175,6 +175,19 @@
         </div>
 
         <div class="header-right">
+          <!-- Session Widget displayed on Top Header when on Duty Roster page -->
+          <div class="duty-header-session-widget hidden" id="dutyHeaderSessionWidget">
+            <span class="duty-header-access-pill" id="dutyHeaderAccessTag">⚡ Quyền: Admin (Toàn quyền)</span>
+            <div class="duty-header-user-pill" id="dutyHeaderUserPill">
+              <span class="duty-header-avatar" id="dutyHeaderAvatar">👑</span>
+              <div class="duty-header-meta">
+                <span class="duty-header-name" id="dutyHeaderUserName">Trưởng Phòng CNTT</span>
+                <span class="duty-header-role" id="dutyHeaderRoleTag">ADMIN</span>
+              </div>
+              <button type="button" class="btn-duty-switch-acc-sm" id="btnOpenLoginModalHeader" title="Đổi tài khoản">Đổi TK</button>
+            </div>
+          </div>
+
           <button type="button" class="btn-header-config" id="btnOpenConfigHeader" title="Cấu hình thông tin đơn vị mặc định">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             <span>Cấu hình Đơn vị</span>
@@ -1275,22 +1288,28 @@
               </button>
               <div class="workspace-heading">
                 <h1 class="workspace-title">Quản Lý & Xếp Lịch Trực Phòng CNTT</h1>
-                <span class="tool-badge badge-cyan" id="dutyAccessBadge">⚡ Trực Hệ Thống HIS, Máy Chủ & Mạng Khoa Phòng</span>
               </div>
             </div>
 
-            <!-- Top Actions & Session Switcher -->
+            <!-- Top Actions & Month Picker -->
             <div class="workspace-top-actions duty-actions-cluster">
-              <!-- Account Session Chip -->
-              <div class="duty-user-pill" id="dutyUserSessionBadge">
-                <span class="duty-user-icon" id="dutyUserAvatar">👑</span>
-                <div class="duty-user-meta">
-                  <span class="duty-user-name" id="dutyCurrentUserName">Trưởng Phòng CNTT</span>
-                  <span class="duty-user-role" id="dutyCurrentUserRoleTag">ADMIN (Toàn quyền)</span>
-                </div>
-                <button type="button" class="btn-duty-switch-acc" id="btnOpenLoginModal" title="Đăng nhập / Đổi tài khoản cán bộ CNTT">
-                  Đổi TK
-                </button>
+              <!-- Month / Year Selector -->
+              <div class="duty-time-picker-compact">
+                <select id="dutySelectMonth" class="duty-select-month-sm">
+                  <option value="1">Tháng 1</option>
+                  <option value="2">Tháng 2</option>
+                  <option value="3">Tháng 3</option>
+                  <option value="4">Tháng 4</option>
+                  <option value="5">Tháng 5</option>
+                  <option value="6">Tháng 6</option>
+                  <option value="7">Tháng 7</option>
+                  <option value="8">Tháng 8</option>
+                  <option value="9" selected>Tháng 9</option>
+                  <option value="10">Tháng 10</option>
+                  <option value="11">Tháng 11</option>
+                  <option value="12">Tháng 12</option>
+                </select>
+                <input type="number" id="dutyInputYear" class="duty-input-year-sm" value="2026" min="2024" max="2030" />
               </div>
 
               <!-- Admin Only Actions -->
@@ -1308,17 +1327,14 @@
             </div>
           </div>
 
-          <!-- Quick Department & Personal Filter Toolbar -->
+          <!-- Minimal Filter Toolbar -->
           <div class="duty-filter-toolbar">
             <div class="duty-filter-chips" id="dutyFilterChips">
-              <button type="button" class="duty-chip-btn active" data-filter="all">💻 Tất Cả Ca Trực P.CNTT</button>
-              <button type="button" class="duty-chip-btn highlight-cntt" data-filter="cntt_main">🖥️ Trực Chính (HIS & Server)</button>
-              <button type="button" class="duty-chip-btn" data-filter="cntt_sub">🛠️ Trực Phụ (Khoa Phòng)</button>
-              <button type="button" class="duty-chip-btn" data-filter="cntt_oncall">📞 Trực Chỉ Huy On-Call</button>
+              <button type="button" class="duty-chip-btn active" data-filter="all">💻 Toàn Bộ Lịch Trực P.CNTT</button>
               <button type="button" class="duty-chip-btn my-duty-chip" data-filter="personal" id="btnFilterMyDuty">⭐ Lịch Trực Của Tôi</button>
             </div>
             <div class="duty-filter-select-wrap">
-              <span class="filter-lbl">🔍 Lọc theo cán bộ CNTT:</span>
+              <span class="filter-lbl">🔍 Lọc theo cán bộ:</span>
               <select id="selectFilterSpecificStaff" class="duty-filter-select">
                 <option value="all">-- Toàn thể Cán bộ P.CNTT --</option>
               </select>
@@ -1326,14 +1342,14 @@
           </div>
 
           <div class="duty-roster-grid">
-            <!-- Cột trái: Cấu hình Tháng, Lịch cá nhân & Danh sách nhân sự P.CNTT -->
+            <!-- Cột trái: Thông tin cá nhân & Danh sách cán bộ P.CNTT -->
             <div class="duty-sidebar">
-              <!-- Card 1: Bảng Tin Lịch Trực Cá Nhân (Personal Duty Status Card) -->
+              <!-- Card 1: Thông tin & Thống kê trực -->
               <div class="w2h-card duty-personal-card" id="dutyPersonalCard">
                 <div class="w2h-card-header flex-between">
                   <div class="header-inline">
                     <span class="card-icon">⭐</span>
-                    <h3 id="personalCardTitle">Lịch Trực Cán Bộ CNTT</h3>
+                    <h3 id="personalCardTitle">Thông Tin Trực Cán Bộ</h3>
                   </div>
                   <span class="personal-status-pill" id="personalRolePill">Phòng CNTT</span>
                 </div>
@@ -1359,44 +1375,7 @@
                 </div>
               </div>
 
-              <!-- Card 2: Chọn Tháng/Năm -->
-              <div class="w2h-card">
-                <div class="w2h-card-header">
-                  <span class="card-icon">🗓️</span>
-                  <h3>Thời Gian Trực</h3>
-                </div>
-                <div class="w2h-card-body">
-                  <div class="w2h-setting-row-2">
-                    <div class="w2h-setting-group">
-                      <label class="setting-lbl">Tháng:</label>
-                      <select id="dutySelectMonth" class="w2h-select">
-                        <option value="1">Tháng 1</option>
-                        <option value="2">Tháng 2</option>
-                        <option value="3">Tháng 3</option>
-                        <option value="4">Tháng 4</option>
-                        <option value="5">Tháng 5</option>
-                        <option value="6">Tháng 6</option>
-                        <option value="7">Tháng 7</option>
-                        <option value="8">Tháng 8</option>
-                        <option value="9" selected>Tháng 9</option>
-                        <option value="10">Tháng 10</option>
-                        <option value="11">Tháng 11</option>
-                        <option value="12">Tháng 12</option>
-                      </select>
-                    </div>
-                    <div class="w2h-setting-group">
-                      <label class="setting-lbl">Năm:</label>
-                      <input type="number" id="dutyInputYear" class="w2h-text-input" value="2026" min="2024" max="2030" />
-                    </div>
-                  </div>
-                  <div class="duty-summary-pills">
-                    <span class="duty-pill" id="dutyTotalDaysPill">30 Ngày</span>
-                    <span class="duty-pill weekend" id="dutyWeekendDaysPill">8 Ngày T7/CN</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Card 3: Danh sách Nhân sự Phòng CNTT -->
+              <!-- Card 2: Danh sách Cán bộ Phòng CNTT -->
               <div class="w2h-card">
                 <div class="w2h-card-header flex-between">
                   <div class="header-inline">
@@ -1421,8 +1400,7 @@
                   <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">📋 Bảng Phân Công & Chấm Công</button>
                 </div>
                 <div class="duty-legend">
-                  <span class="legend-item"><span class="legend-dot cntt"></span> Trực Chính</span>
-                  <span class="legend-item"><span class="legend-dot normal"></span> Trực Phụ</span>
+                  <span class="legend-item"><span class="legend-dot normal"></span> Ca trực P.CNTT</span>
                   <span class="legend-item"><span class="legend-dot weekend"></span> Cuối tuần</span>
                 </div>
               </div>
