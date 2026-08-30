@@ -16,8 +16,13 @@ window.TOOLS_CATEGORIES = [
     icon: "code"
   },
   {
+    id: "duty",
+    name: "Quản Lý Lịch Trực & Chấm Công",
+    icon: "calendar"
+  },
+  {
     id: "schema",
-    name: "Tra Cứu Database Schema VIMES",
+    name: "Tra Cứu Database & Sinh SQL VIMES",
     icon: "database"
   },
   {
@@ -91,6 +96,44 @@ window.TOOLS_REGISTRY = [
       "Bước 4: Nhấp nút 'Tạo SQL SELECT' hoặc nhấp vào từng tên biến để tra cứu ngược các bảng liên quan."
     ],
     executeKey: "openSchemaLookup"
+  },
+  {
+    id: "sql-builder",
+    categoryId: "schema",
+    title: "Trình Sinh Câu Lệnh Báo Cáo SQL VIMES",
+    subtitle: "Mẫu câu lệnh báo cáo chuẩn & Dựng truy vấn CSDL tự động",
+    description: "Bộ sưu tập mẫu câu lệnh SQL báo cáo nghiệp vụ thường quy (KCB Ngoại trú, Bệnh nhân Nội trú, Doanh thu viện phí, Kê đơn dược, Phẫu thuật thủ thuật) và Trình dựng câu lệnh tùy biến trực quan chuẩn CSDL VIMES với đầy đủ lệnh JOIN bảng.",
+    badge: "Sinh Lệnh SQL Báo Cáo",
+    badgeColor: "cyan",
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>`,
+    inputType: "sql-builder-interactive",
+    outputName: "Bao_cao_SQL_VIMES.sql",
+    guide: [
+      "Bước 1: Chọn mẫu báo cáo cần sinh (Ngoại trú, Nội trú, Doanh thu, Kê đơn, PTTT) hoặc tự cấu hình bảng.",
+      "Bước 2: Tùy chỉnh các trường dữ liệu, khoảng thời gian (Hôm nay, Tháng này, Năm nay) và điều kiện lọc.",
+      "Bước 3: Xem trước câu lệnh SQL với cú pháp tô màu chuẩn xác.",
+      "Bước 4: Nhấn '📋 Sao Chép SQL' để dán vào DBeaver / Navicat / pgAdmin hoặc '💾 Tải File .SQL'."
+    ],
+    executeKey: "openSqlBuilder"
+  },
+  {
+    id: "duty-roster",
+    categoryId: "duty",
+    title: "Quản Lý & Xếp Lịch Trực Bệnh Viện Tự Động",
+    subtitle: "Xếp ca trực thông minh, chống trùng lịch, tính công & xuất Excel/Ảnh Zalo",
+    description: "Công cụ tự động xếp lịch trực cho các khoa phòng, khối chuyên môn và tổ CNTT. Thuật toán tự động chia đều ca trực đêm, cuối tuần, ngày lễ; chống xếp 2 ngày liên tiếp; giao diện lịch tháng tương tác đổi người trực 1-click; xuất Excel chấm công và xuất Ảnh gửi Zalo sắc nét.",
+    badge: "Xếp Lịch Trực Tự Động",
+    badgeColor: "amber",
+    icon: `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="15" r="2"/></svg>`,
+    inputType: "duty-roster-interactive",
+    outputName: "Lich_Truc_Benh_Vien.xlsx",
+    guide: [
+      "Bước 1: Nhập danh sách nhân sự (Họ tên, chức danh, nhóm ca) và chọn ngày bận/nghỉ phép (nếu có).",
+      "Bước 2: Chọn Tháng / Năm cần xếp lịch và các vị trí ca trực trong ngày (Lãnh đạo, Cấp cứu, Nội, Ngoại, ĐD, KTV, CNTT...).",
+      "Bước 3: Nhấn '⚡ Xếp Lịch Tự Động' để hệ thống tự động phân bổ công bằng.",
+      "Bước 4: Xem trước Lịch tháng, đổi ca trực thủ công nếu cần, sau đó nhấn '📊 Xuất Excel' hoặc '🖼️ Xuất Ảnh Zalo'."
+    ],
+    executeKey: "openDutyRoster"
   },
   {
     id: "giam-dinh",

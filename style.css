@@ -4417,6 +4417,482 @@ mark.highlight-term {
 }
 
 /* ==========================================================================
+   SQL REPORT QUERY BUILDER STYLES
+   ========================================================================== */
+.sql-builder-grid {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.sql-template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sql-template-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sql-template-card:hover {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.4);
+  transform: translateX(4px);
+}
+
+.sql-template-card.active {
+  background: rgba(37, 99, 235, 0.18);
+  border-color: #3b82f6;
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.3);
+}
+
+.sql-template-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.sql-template-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sql-template-cat {
+  font-size: 0.68rem;
+  color: #93c5fd;
+  background: rgba(37, 99, 235, 0.15);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.sql-template-desc {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.sql-editor-card {
+  background: #050811;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+}
+
+.sql-editor-header {
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sql-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sql-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.sql-dot.red { background: #ef4444; }
+.sql-dot.yellow { background: #f59e0b; }
+.sql-dot.green { background: #10b981; }
+
+.sql-filename {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #93c5fd;
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.sql-editor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-editor-action {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-editor-action:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.sql-code-viewport {
+  padding: 16px;
+  overflow: auto;
+  flex: 1;
+  max-height: 650px;
+}
+
+.sql-code-display {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sql-comment { color: #64748b; font-style: italic; }
+.sql-kw { color: #60a5fa; font-weight: 700; }
+.sql-string { color: #34d399; }
+
+/* ==========================================================================
+   HOSPITAL DUTY ROSTER & SCHEDULE MANAGER STYLES
+   ========================================================================== */
+.duty-roster-grid {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.duty-summary-pills {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.duty-pill {
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.duty-pill.weekend {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+.staff-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.staff-card-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+
+.staff-card-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.staff-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.staff-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staff-role-badge {
+  font-size: 0.68rem;
+  color: #93c5fd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-remove-staff {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.btn-remove-staff:hover {
+  color: #ef4444;
+}
+
+/* Duty Workspace Controls */
+.duty-view-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.duty-mode-tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.duty-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.duty-tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.duty-tab-btn.active {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+}
+
+.duty-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.legend-dot.weekend { background: #f59e0b; }
+.legend-dot.normal { background: #3b82f6; }
+
+/* Calendar Grid View */
+.calendar-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-col-header {
+  text-align: center;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #93c5fd;
+}
+
+.calendar-day-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.calendar-day-cell:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-day-cell.weekend {
+  background: rgba(30, 27, 75, 0.35);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.cal-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 2px;
+}
+
+.cal-date-num {
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+.calendar-day-cell.weekend .cal-date-num {
+  color: #fbbf24;
+}
+
+.cal-day-tag {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.cal-shift-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.cal-shift-badge {
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid transparent;
+}
+
+.cal-shift-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.cal-shift-badge.role-lanhdao { background: rgba(37, 99, 235, 0.2); border-color: rgba(37, 99, 235, 0.4); color: #93c5fd; }
+.cal-shift-badge.role-capcuu { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+.cal-shift-badge.role-noi { background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.4); color: #c4b5fd; }
+.cal-shift-badge.role-ngoai { background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.4); color: #fde68a; }
+.cal-shift-badge.role-dieuduong { background: rgba(6, 182, 212, 0.2); border-color: rgba(6, 182, 212, 0.4); color: #67e8f9; }
+.cal-shift-badge.role-ktv { background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.4); color: #a5b4fc; }
+.cal-shift-badge.role-cntt { background: rgba(56, 189, 248, 0.2); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; }
+
+.shift-title-lbl {
+  font-size: 0.6rem;
+  font-weight: 700;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+
+.shift-person-name {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Duty Table View */
+.duty-table-wrap {
+  overflow-x: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+}
+
+.duty-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.duty-table th {
+  background: #0b1120;
+  color: #93c5fd;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.duty-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.duty-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.duty-table tr.weekend-row {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+/* Responsive queries */
+@media (max-width: 1024px) {
+  .sql-builder-grid, .duty-roster-grid {
+    grid-template-columns: 1fr;
+  }
+  .calendar-month-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-month-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
    RESPONSIVE DESIGN (Tablets & Mobile Optimization)
    ========================================================================== */
 

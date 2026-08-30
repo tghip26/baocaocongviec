@@ -90,6 +90,22 @@
           <span class="nav-text">Tra Cứu Schema VIMES</span>
         </a>
 
+        <a href="#sql-builder" class="nav-item" data-tool="sql-builder">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+          </span>
+          <span class="nav-text">Sinh SQL Báo Cáo VIMES</span>
+        </a>
+
+        <div class="nav-section-title">QUẢN LÝ LỊCH TRỰC & CHẤM CÔNG</div>
+
+        <a href="#duty-roster" class="nav-item" data-tool="duty-roster">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="15" r="2"/></svg>
+          </span>
+          <span class="nav-text">Xếp Lịch Trực Bệnh Viện</span>
+        </a>
+
         <div class="nav-section-title">BÁO CÁO GIÁM ĐỊNH & CNTT</div>
         
         <a href="#giam-dinh" class="nav-item" data-tool="giam-dinh">
@@ -1151,6 +1167,205 @@
           </div>
         </section>
 
+        <!-- ============================================================
+             VIEW: TRÌNH SINH CÂU LỆNH BÁO CÁO SQL VIMES
+             ============================================================ -->
+        <section class="workspace-view hidden" id="sqlBuilderView">
+          <div class="workspace-top-bar">
+            <div class="workspace-top-left">
+              <button type="button" class="btn-back" id="btnBackToHubFromSql" title="Quay về danh mục">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Quay lại</span>
+              </button>
+              <div class="workspace-heading">
+                <h1 class="workspace-title">Trình Sinh Câu Lệnh Báo Cáo SQL VIMES</h1>
+                <span class="tool-badge badge-cyan">⚡ 5+ Mẫu Chuẩn Viện Phí & KCB</span>
+              </div>
+            </div>
+            <div class="workspace-top-actions">
+              <button type="button" class="btn-action-primary" id="btnCopySqlTop">
+                <span>📋 Sao Chép SQL</span>
+              </button>
+              <button type="button" class="btn-action-secondary" id="btnDownloadSqlFile">
+                <span>💾 Tải Tệp .SQL</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="sql-builder-grid">
+            <!-- Cột trái: Chọn mẫu & Cấu hình bộ lọc -->
+            <div class="sql-builder-sidebar">
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">📚</span>
+                  <h3>1. Mẫu Báo Cáo Thường Dùng</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="sql-template-list" id="sqlTemplateList"></div>
+                </div>
+              </div>
+
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">⚙️</span>
+                  <h3>2. Bộ Lọc Thời Gian & Tham Số</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">📅 Khoảng thời gian lấy dữ liệu:</label>
+                    <select id="sqlDateRange" class="w2h-select">
+                      <option value="month" selected>Từ đầu tháng đến hiện tại</option>
+                      <option value="today">Hôm nay (Trong ngày)</option>
+                      <option value="year">Từ đầu năm đến hiện tại</option>
+                      <option value="all">Tất cả thời gian</option>
+                    </select>
+                  </div>
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">📑 Trạng thái hồ sơ điều trị:</label>
+                    <select id="sqlStatusFilter" class="w2h-select">
+                      <option value="all" selected>Tất cả trạng thái</option>
+                      <option value="active">Đang điều trị / Chưa xuất viện</option>
+                      <option value="completed">Đã kết thúc / Đã thanh toán</option>
+                    </select>
+                  </div>
+                  <div class="w2h-setting-group">
+                    <label class="setting-lbl">🔢 Giới hạn số bản ghi (LIMIT):</label>
+                    <select id="sqlLimit" class="w2h-select">
+                      <option value="100" selected>100 dòng (Xem trước nhanh)</option>
+                      <option value="500">500 dòng</option>
+                      <option value="1000">1,000 dòng</option>
+                      <option value="0">Không giới hạn (Toàn bộ dữ liệu)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cột phải: Trình soạn & hiển thị mã SQL -->
+            <div class="sql-builder-main">
+              <div class="sql-editor-card">
+                <div class="sql-editor-header">
+                  <div class="sql-editor-title">
+                    <span class="sql-dot red"></span>
+                    <span class="sql-dot yellow"></span>
+                    <span class="sql-dot green"></span>
+                    <span class="sql-filename" id="sqlCurrentTitle">Bao_cao_KCB_Ngoaitru.sql</span>
+                  </div>
+                  <div class="sql-editor-actions">
+                    <button type="button" class="btn-editor-action" id="btnCopySqlEditor">📋 Sao chép</button>
+                  </div>
+                </div>
+                <div class="sql-code-viewport">
+                  <pre class="sql-code-display" id="sqlCodeDisplay"><code>-- Đang chuẩn bị câu lệnh SQL...</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             VIEW: QUẢN LÝ & XẾP LỊCH TRỰC BỆNH VIỆN TỰ ĐỘNG
+             ============================================================ -->
+        <section class="workspace-view hidden" id="dutyRosterView">
+          <div class="workspace-top-bar">
+            <div class="workspace-top-left">
+              <button type="button" class="btn-back" id="btnBackToHubFromDuty" title="Quay về danh mục">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Quay lại</span>
+              </button>
+              <div class="workspace-heading">
+                <h1 class="workspace-title">Quản Lý & Xếp Lịch Trực Bệnh Viện Tự Động</h1>
+                <span class="tool-badge badge-amber">📅 Chống Trùng Lịch • Chia Đều Công</span>
+              </div>
+            </div>
+            <div class="workspace-top-actions">
+              <button type="button" class="btn-action-primary" id="btnRunAutoSchedule">
+                <span>⚡ Xếp Lịch Tự Động</span>
+              </button>
+              <button type="button" class="btn-action-secondary" id="btnExportDutyExcel">
+                <span>📊 Xuất Excel Chấm Công</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="duty-roster-grid">
+            <!-- Cột trái: Cấu hình Tháng & Danh sách nhân sự -->
+            <div class="duty-sidebar">
+              <!-- Card 1: Chọn Tháng/Năm -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">🗓️</span>
+                  <h3>1. Tháng & Năm Trực</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="w2h-setting-row-2">
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">Tháng:</label>
+                      <select id="dutySelectMonth" class="w2h-select">
+                        <option value="1">Tháng 1</option>
+                        <option value="2">Tháng 2</option>
+                        <option value="3">Tháng 3</option>
+                        <option value="4">Tháng 4</option>
+                        <option value="5">Tháng 5</option>
+                        <option value="6">Tháng 6</option>
+                        <option value="7">Tháng 7</option>
+                        <option value="8">Tháng 8</option>
+                        <option value="9" selected>Tháng 9</option>
+                        <option value="10">Tháng 10</option>
+                        <option value="11">Tháng 11</option>
+                        <option value="12">Tháng 12</option>
+                      </select>
+                    </div>
+                    <div class="w2h-setting-group">
+                      <label class="setting-lbl">Năm:</label>
+                      <input type="number" id="dutyInputYear" class="w2h-text-input" value="2026" min="2024" max="2030" />
+                    </div>
+                  </div>
+                  <div class="duty-summary-pills">
+                    <span class="duty-pill" id="dutyTotalDaysPill">30 Ngày</span>
+                    <span class="duty-pill weekend" id="dutyWeekendDaysPill">8 Ngày T7/CN</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Danh sách Nhân sự Khoa/Phòng -->
+              <div class="w2h-card">
+                <div class="w2h-card-header flex-between">
+                  <div class="header-inline">
+                    <span class="card-icon">👥</span>
+                    <h3>2. Nhân Sự (<span id="staffCountDisplay">9</span>)</h3>
+                  </div>
+                  <button type="button" class="btn-card-small" id="btnAddStaffModalBtn">+ Thêm</button>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="staff-list-container" id="dutyStaffListContainer"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cột phải: Lịch tháng & Bảng thống kê công -->
+            <div class="duty-main-workspace">
+              <!-- Switcher xem dạng Lưới Lịch vs Dạng Bảng -->
+              <div class="duty-view-controls">
+                <div class="duty-mode-tabs">
+                  <button type="button" class="duty-tab-btn active" data-view="calendar" id="btnTabDutyCalendar">🗓️ Lưới Lịch Tháng</button>
+                  <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">📋 Bảng Phân Công & Chấm Công</button>
+                </div>
+                <div class="duty-legend">
+                  <span class="legend-item"><span class="legend-dot weekend"></span> Cuối tuần</span>
+                  <span class="legend-item"><span class="legend-dot normal"></span> Ngày thường</span>
+                </div>
+              </div>
+
+              <!-- View A: Lưới Lịch Tháng (Calendar View) -->
+              <div class="duty-calendar-view" id="dutyCalendarContainer"></div>
+
+              <!-- View B: Bảng Phân Công & Bảng Chấm Công (Table View) -->
+              <div class="duty-table-view hidden" id="dutyTableContainer"></div>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -1298,6 +1513,61 @@
     </div>
   </div>
 
+  <!-- MODAL: Thêm / Sửa Nhân sự Trực -->
+  <div class="modal-overlay hidden" id="modalAddStaff">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">👥 THÊM NHÂN SỰ TRỰC KHOA/PHÒNG</h3>
+        <button type="button" class="modal-close" id="btnCloseAddStaffModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="config-form-group">
+          <label class="form-label">Họ và Tên Nhân Viên (Kèm học hàm/học vị nếu có):</label>
+          <input type="text" id="inputStaffName" class="form-input" placeholder="Ví dụ: BSCKI. Trần Văn Nam" />
+        </div>
+        <div class="config-form-group">
+          <label class="form-label">Nhóm Chức Danh / Khối Chuyên Môn:</label>
+          <select id="selectStaffGroup" class="form-select">
+            <option value="bacsi" selected>Bác sĩ (Trực Lãnh đạo / Cấp cứu / Khối Nội / Khối Ngoại)</option>
+            <option value="dieuduong">Điều dưỡng / Nữ hộ sinh</option>
+            <option value="ktv">Kỹ thuật viên (Xét nghiệm / CĐHA / Thăm dò chức năng)</option>
+            <option value="cntt">Kỹ sư / Cán bộ Trực CNTT & Hệ thống HIS</option>
+            <option value="duoc">Dược sĩ trực kho thuốc</option>
+          </select>
+        </div>
+        <div class="config-form-group">
+          <label class="form-label">Chức vụ / Vị trí phân công:</label>
+          <input type="text" id="inputStaffRole" class="form-input" placeholder="Ví dụ: Bác sĩ Trực Cấp Cứu" />
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnCancelAddStaff">Hủy bỏ</button>
+        <button type="button" class="btn-modal-confirm" id="btnSaveNewStaff">THÊM NHÂN SỰ &rarr;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Đổi Người Trực Thủ Công (Shift Swap) -->
+  <div class="modal-overlay hidden" id="modalSwapShift">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">🔄 ĐỔI NGƯỜI TRỰC CA NÀY</h3>
+        <button type="button" class="modal-close" id="btnCloseSwapShiftModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-info-box" id="swapShiftInfoText">Đang tải ca trực...</div>
+        <div class="config-form-group">
+          <label class="form-label">Chọn người thay thế trực ca này:</label>
+          <select id="selectSwapStaff" class="form-select"></select>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng</button>
+        <button type="button" class="btn-modal-confirm" id="btnConfirmSwapShift">XÁC NHẬN ĐỔI CA &rarr;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -1306,6 +1576,8 @@
   <script src="js/docx-parser.js"></script>
   <script src="js/tools-registry.js"></script>
   <script src="js/tool-schema-lookup.js"></script>
+  <script src="js/tool-sql-builder.js"></script>
+  <script src="js/tool-duty-roster.js"></script>
   <script src="js/tool-word-to-html.js"></script>
   <script src="js/tool-pdf-to-image.js"></script>
   <script src="js/tool-giamdinh.js"></script>

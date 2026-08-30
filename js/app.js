@@ -315,6 +315,9 @@ class AppController {
     // Hash change for SPA routing
     window.addEventListener("hashchange", () => this.handleUrlHash());
 
+    this.initSqlBuilderEvents();
+    this.initDutyRosterEvents();
+
     // Mobile Sidebar Drawer Toggle
     if (this.sidebarToggleBtn) {
       this.sidebarToggleBtn.addEventListener("click", () => {
@@ -1236,6 +1239,10 @@ class AppController {
       this.showHubView();
     } else if (hash === "schema-lookup") {
       this.showSchemaView();
+    } else if (hash === "sql-builder") {
+      this.showSqlBuilderView();
+    } else if (hash === "duty-roster") {
+      this.showDutyRosterView();
     } else if (hash === "word-to-html") {
       this.showWordToHtmlView();
     } else if (hash === "pdf-to-image") {
@@ -1247,6 +1254,10 @@ class AppController {
           this.showWordToHtmlView();
         } else if (tool.id === "pdf-to-image") {
           this.showPdfToImageView();
+        } else if (tool.id === "sql-builder") {
+          this.showSqlBuilderView();
+        } else if (tool.id === "duty-roster") {
+          this.showDutyRosterView();
         } else {
           this.showToolView(tool.id);
         }
@@ -1263,6 +1274,8 @@ class AppController {
     this.schemaView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1276,6 +1289,8 @@ class AppController {
     this.toolView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     this.schemaView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1294,12 +1309,52 @@ class AppController {
     this.performSchemaSearch();
   }
 
+  showSqlBuilderView() {
+    this.currentToolId = "sql-builder";
+    this.hubView.classList.add("hidden");
+    this.toolView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "sql-builder");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    this.renderSqlTemplatesList();
+  }
+
+  showDutyRosterView() {
+    this.currentToolId = "duty-roster";
+    this.hubView.classList.add("hidden");
+    this.toolView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "duty-roster");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    this.updateDutyMonthStats();
+    this.renderStaffList();
+    this.runAutoSchedule();
+  }
+
   showWordToHtmlView() {
     this.currentToolId = "word-to-html";
     this.hubView.classList.add("hidden");
     this.toolView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1315,6 +1370,8 @@ class AppController {
     this.toolView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1327,6 +1384,14 @@ class AppController {
   showToolView(toolId) {
     if (toolId === "schema-lookup") {
       this.showSchemaView();
+      return;
+    }
+    if (toolId === "sql-builder") {
+      this.showSqlBuilderView();
+      return;
+    }
+    if (toolId === "duty-roster") {
+      this.showDutyRosterView();
       return;
     }
     if (toolId === "word-to-html") {
@@ -1346,6 +1411,8 @@ class AppController {
     this.schemaView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     this.toolView.classList.remove("hidden");
     this.hubView.classList.add("hidden");
     this.schemaView.classList.add("hidden");
@@ -2907,6 +2974,473 @@ ${this.currentW2hHtmlOutput}
     } else {
       this.showToast("Nhập trực tiếp đường dẫn thư mục lưu trên máy vào ô", "info");
     }
+  }
+
+  /* =========================================================================
+     SQL BUILDER CONTROLLER METHODS
+     ========================================================================= */
+  initSqlBuilderEvents() {
+    this.sqlTemplateList = document.getElementById("sqlTemplateList");
+    this.sqlDateRange = document.getElementById("sqlDateRange");
+    this.sqlStatusFilter = document.getElementById("sqlStatusFilter");
+    this.sqlLimit = document.getElementById("sqlLimit");
+    this.sqlCurrentTitle = document.getElementById("sqlCurrentTitle");
+    this.sqlCodeDisplay = document.getElementById("sqlCodeDisplay");
+    this.btnCopySqlTop = document.getElementById("btnCopySqlTop");
+    this.btnCopySqlEditor = document.getElementById("btnCopySqlEditor");
+    this.btnDownloadSqlFile = document.getElementById("btnDownloadSqlFile");
+    this.btnBackToHubFromSql = document.getElementById("btnBackToHubFromSql");
+    this.sqlBuilderView = document.getElementById("sqlBuilderView");
+
+    this.currentSqlTemplateId = "rpt_kcb_ngoaitru";
+    this.currentGeneratedSql = "";
+
+    if (this.btnBackToHubFromSql) {
+      this.btnBackToHubFromSql.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+
+    if (this.btnCopySqlTop) {
+      this.btnCopySqlTop.addEventListener("click", () => this.copyCurrentSql());
+    }
+    if (this.btnCopySqlEditor) {
+      this.btnCopySqlEditor.addEventListener("click", () => this.copyCurrentSql());
+    }
+    if (this.btnDownloadSqlFile) {
+      this.btnDownloadSqlFile.addEventListener("click", () => this.downloadCurrentSqlFile());
+    }
+
+    if (this.sqlDateRange) {
+      this.sqlDateRange.addEventListener("change", () => this.updateSqlOutput());
+    }
+    if (this.sqlStatusFilter) {
+      this.sqlStatusFilter.addEventListener("change", () => this.updateSqlOutput());
+    }
+    if (this.sqlLimit) {
+      this.sqlLimit.addEventListener("change", () => this.updateSqlOutput());
+    }
+  }
+
+  renderSqlTemplatesList() {
+    if (!this.sqlTemplateList || !window.ToolSqlBuilder) return;
+    this.sqlTemplateList.innerHTML = "";
+
+    ToolSqlBuilder.templates.forEach(tpl => {
+      const card = document.createElement("div");
+      card.className = `sql-template-card ${tpl.id === this.currentSqlTemplateId ? "active" : ""}`;
+      card.dataset.id = tpl.id;
+      card.innerHTML = `
+        <div class="sql-template-top">
+          <span class="sql-template-name">${tpl.name}</span>
+          <span class="sql-template-cat">${tpl.category}</span>
+        </div>
+        <div class="sql-template-desc">${tpl.description}</div>
+      `;
+      card.addEventListener("click", () => {
+        this.currentSqlTemplateId = tpl.id;
+        this.sqlTemplateList.querySelectorAll(".sql-template-card").forEach(c => c.classList.remove("active"));
+        card.classList.add("active");
+        this.updateSqlOutput();
+      });
+      this.sqlTemplateList.appendChild(card);
+    });
+
+    this.updateSqlOutput();
+  }
+
+  updateSqlOutput() {
+    if (!window.ToolSqlBuilder) return;
+    const tpl = ToolSqlBuilder.templates.find(t => t.id === this.currentSqlTemplateId);
+    let rawSql = "";
+    if (tpl) {
+      rawSql = tpl.sql;
+      if (this.sqlCurrentTitle) this.sqlCurrentTitle.textContent = `${tpl.id}.sql`;
+    } else {
+      rawSql = ToolSqlBuilder.generateCustomSql({
+        dateRangeType: this.sqlDateRange ? this.sqlDateRange.value : "month",
+        statusFilter: this.sqlStatusFilter ? this.sqlStatusFilter.value : "all",
+        limit: this.sqlLimit ? parseInt(this.sqlLimit.value, 10) : 100
+      });
+      if (this.sqlCurrentTitle) this.sqlCurrentTitle.textContent = `Bao_cao_Tuy_Bien.sql`;
+    }
+
+    this.currentGeneratedSql = rawSql;
+    if (this.sqlCodeDisplay) {
+      this.sqlCodeDisplay.innerHTML = ToolSqlBuilder.highlightSql(rawSql);
+    }
+  }
+
+  copyCurrentSql() {
+    if (!this.currentGeneratedSql) return;
+    navigator.clipboard.writeText(this.currentGeneratedSql).then(() => {
+      this.showToast("Đã sao chép câu lệnh SQL vào Clipboard!", "success");
+    }).catch(err => {
+      this.showToast("Lỗi sao chép: " + err.message, "error");
+    });
+  }
+
+  downloadCurrentSqlFile() {
+    if (!this.currentGeneratedSql) return;
+    const filename = this.sqlCurrentTitle ? this.sqlCurrentTitle.textContent : "Bao_cao_SQL_VIMES.sql";
+    const blob = new Blob([this.currentGeneratedSql], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    const paths = this.getSavePathConfig();
+    this.showToast(`Đã tải tệp SQL: ${filename} (Thư mục đề xuất: ${paths.schema})`, "success");
+  }
+
+  /* =========================================================================
+     DUTY ROSTER CONTROLLER METHODS
+     ========================================================================= */
+  initDutyRosterEvents() {
+    this.dutyRosterView = document.getElementById("dutyRosterView");
+    this.btnBackToHubFromDuty = document.getElementById("btnBackToHubFromDuty");
+    this.btnRunAutoSchedule = document.getElementById("btnRunAutoSchedule");
+    this.btnExportDutyExcel = document.getElementById("btnExportDutyExcel");
+    this.dutySelectMonth = document.getElementById("dutySelectMonth");
+    this.dutyInputYear = document.getElementById("dutyInputYear");
+    this.dutyTotalDaysPill = document.getElementById("dutyTotalDaysPill");
+    this.dutyWeekendDaysPill = document.getElementById("dutyWeekendDaysPill");
+    this.staffCountDisplay = document.getElementById("staffCountDisplay");
+    this.dutyStaffListContainer = document.getElementById("dutyStaffListContainer");
+    this.btnTabDutyCalendar = document.getElementById("btnTabDutyCalendar");
+    this.btnTabDutyTable = document.getElementById("btnTabDutyTable");
+    this.dutyCalendarContainer = document.getElementById("dutyCalendarContainer");
+    this.dutyTableContainer = document.getElementById("dutyTableContainer");
+
+    // Modals
+    this.btnAddStaffModalBtn = document.getElementById("btnAddStaffModalBtn");
+    this.modalAddStaff = document.getElementById("modalAddStaff");
+    this.btnCloseAddStaffModal = document.getElementById("btnCloseAddStaffModal");
+    this.btnCancelAddStaff = document.getElementById("btnCancelAddStaff");
+    this.btnSaveNewStaff = document.getElementById("btnSaveNewStaff");
+    this.inputStaffName = document.getElementById("inputStaffName");
+    this.selectStaffGroup = document.getElementById("selectStaffGroup");
+    this.inputStaffRole = document.getElementById("inputStaffRole");
+
+    this.modalSwapShift = document.getElementById("modalSwapShift");
+    this.btnCloseSwapShiftModal = document.getElementById("btnCloseSwapShiftModal");
+    this.btnCancelSwapShift = document.getElementById("btnCancelSwapShift");
+    this.btnConfirmSwapShift = document.getElementById("btnConfirmSwapShift");
+    this.swapShiftInfoText = document.getElementById("swapShiftInfoText");
+    this.selectSwapStaff = document.getElementById("selectSwapStaff");
+
+    // Load Staff List State
+    try {
+      const savedStaff = localStorage.getItem("DUTY_STAFF_LIST");
+      this.dutyStaffList = savedStaff ? JSON.parse(savedStaff) : (window.ToolDutyRoster ? ToolDutyRoster.defaultStaffList : []);
+    } catch (e) {
+      this.dutyStaffList = window.ToolDutyRoster ? ToolDutyRoster.defaultStaffList : [];
+    }
+
+    this.dutySchedule = [];
+    this.currentSwapTarget = null; // { day, shiftId }
+
+    if (this.btnBackToHubFromDuty) {
+      this.btnBackToHubFromDuty.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+
+    if (this.dutySelectMonth) {
+      this.dutySelectMonth.addEventListener("change", () => this.updateDutyMonthStats());
+    }
+    if (this.dutyInputYear) {
+      this.dutyInputYear.addEventListener("input", () => this.updateDutyMonthStats());
+    }
+
+    if (this.btnRunAutoSchedule) {
+      this.btnRunAutoSchedule.addEventListener("click", () => this.runAutoSchedule());
+    }
+
+    if (this.btnExportDutyExcel) {
+      this.btnExportDutyExcel.addEventListener("click", () => this.exportDutyRosterExcel());
+    }
+
+    if (this.btnTabDutyCalendar) {
+      this.btnTabDutyCalendar.addEventListener("click", () => {
+        this.btnTabDutyCalendar.classList.add("active");
+        this.btnTabDutyTable.classList.remove("active");
+        this.dutyCalendarContainer.classList.remove("hidden");
+        this.dutyTableContainer.classList.add("hidden");
+      });
+    }
+
+    if (this.btnTabDutyTable) {
+      this.btnTabDutyTable.addEventListener("click", () => {
+        this.btnTabDutyTable.classList.add("active");
+        this.btnTabDutyCalendar.classList.remove("active");
+        this.dutyTableContainer.classList.remove("hidden");
+        this.dutyCalendarContainer.classList.add("hidden");
+        this.renderDutyTableView();
+      });
+    }
+
+    // Modal Add Staff
+    if (this.btnAddStaffModalBtn) {
+      this.btnAddStaffModalBtn.addEventListener("click", () => {
+        if (this.inputStaffName) this.inputStaffName.value = "";
+        this.showModal(this.modalAddStaff);
+      });
+    }
+    if (this.btnCloseAddStaffModal) this.btnCloseAddStaffModal.addEventListener("click", () => this.hideModal(this.modalAddStaff));
+    if (this.btnCancelAddStaff) this.btnCancelAddStaff.addEventListener("click", () => this.hideModal(this.modalAddStaff));
+    if (this.btnSaveNewStaff) {
+      this.btnSaveNewStaff.addEventListener("click", () => this.saveNewStaffFromModal());
+    }
+
+    // Modal Swap Shift
+    if (this.btnCloseSwapShiftModal) this.btnCloseSwapShiftModal.addEventListener("click", () => this.hideModal(this.modalSwapShift));
+    if (this.btnCancelSwapShift) this.btnCancelSwapShift.addEventListener("click", () => this.hideModal(this.modalSwapShift));
+    if (this.btnConfirmSwapShift) {
+      this.btnConfirmSwapShift.addEventListener("click", () => this.confirmSwapShift());
+    }
+  }
+
+  updateDutyMonthStats() {
+    if (!window.ToolDutyRoster) return;
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+    const totalDays = ToolDutyRoster.getDaysInMonth(year, month);
+    
+    let weekends = 0;
+    for (let d = 1; d <= totalDays; d++) {
+      const dow = ToolDutyRoster.getDayOfWeek(year, month, d);
+      if (dow === 0 || dow === 6) weekends++;
+    }
+
+    if (this.dutyTotalDaysPill) this.dutyTotalDaysPill.textContent = `${totalDays} Ngày`;
+    if (this.dutyWeekendDaysPill) this.dutyWeekendDaysPill.textContent = `${weekends} Ngày T7/CN`;
+  }
+
+  renderStaffList() {
+    if (!this.dutyStaffListContainer) return;
+    this.dutyStaffListContainer.innerHTML = "";
+    if (this.staffCountDisplay) this.staffCountDisplay.textContent = this.dutyStaffList.length;
+
+    this.dutyStaffList.forEach(s => {
+      const item = document.createElement("div");
+      item.className = "staff-card-item";
+      item.innerHTML = `
+        <div class="staff-info">
+          <span class="staff-name">${s.name}</span>
+          <span class="staff-role-badge">${s.role}</span>
+        </div>
+        <button type="button" class="btn-remove-staff" data-id="${s.id}" title="Xóa nhân viên">&times;</button>
+      `;
+      item.querySelector(".btn-remove-staff").addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.removeStaff(s.id);
+      });
+      this.dutyStaffListContainer.appendChild(item);
+    });
+  }
+
+  saveNewStaffFromModal() {
+    const name = this.inputStaffName ? this.inputStaffName.value.trim() : "";
+    if (!name) {
+      this.showToast("Vui lòng nhập họ và tên nhân viên!", "warning");
+      return;
+    }
+    const group = this.selectStaffGroup ? this.selectStaffGroup.value : "bacsi";
+    const role = this.inputStaffRole && this.inputStaffRole.value.trim() ? this.inputStaffRole.value.trim() : "Nhân viên trực";
+    const newStaff = {
+      id: "nv_" + Date.now(),
+      name: name,
+      group: group,
+      role: role,
+      offDays: []
+    };
+    this.dutyStaffList.push(newStaff);
+    localStorage.setItem("DUTY_STAFF_LIST", JSON.stringify(this.dutyStaffList));
+    this.renderStaffList();
+    this.hideModal(this.modalAddStaff);
+    this.showToast(`Đã thêm nhân sự: ${name}`, "success");
+    this.runAutoSchedule();
+  }
+
+  removeStaff(staffId) {
+    this.dutyStaffList = this.dutyStaffList.filter(s => s.id !== staffId);
+    localStorage.setItem("DUTY_STAFF_LIST", JSON.stringify(this.dutyStaffList));
+    this.renderStaffList();
+    this.showToast("Đã xóa nhân viên khỏi danh sách trực!", "info");
+    this.runAutoSchedule();
+  }
+
+  runAutoSchedule() {
+    if (!window.ToolDutyRoster) return;
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+    this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList, ToolDutyRoster.defaultShiftRoles);
+    this.renderDutyCalendarView();
+    this.renderDutyTableView();
+  }
+
+  renderDutyCalendarView() {
+    if (!this.dutyCalendarContainer || !window.ToolDutyRoster) return;
+    this.dutyCalendarContainer.innerHTML = "";
+
+    const grid = document.createElement("div");
+    grid.className = "calendar-month-grid";
+
+    // 7 Column Headers (T2 -> CN)
+    const dayHeaders = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
+    dayHeaders.forEach(dh => {
+      const colHead = document.createElement("div");
+      colHead.className = "calendar-col-header";
+      colHead.textContent = dh;
+      grid.appendChild(colHead);
+    });
+
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+
+    // First day offset (0: CN -> 6, 1: T2 -> 0, ..., 6: T7 -> 5)
+    const firstDayDow = ToolDutyRoster.getDayOfWeek(year, month, 1);
+    const offset = (firstDayDow === 0) ? 6 : (firstDayDow - 1);
+
+    for (let i = 0; i < offset; i++) {
+      const blank = document.createElement("div");
+      blank.className = "calendar-day-cell blank";
+      blank.style.opacity = "0.25";
+      grid.appendChild(blank);
+    }
+
+    this.dutySchedule.forEach(dayObj => {
+      const cell = document.createElement("div");
+      cell.className = `calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""}`;
+      
+      let shiftsHtml = "";
+      ToolDutyRoster.defaultShiftRoles.forEach(role => {
+        const assigned = dayObj.shifts[role.id];
+        const assignedName = assigned ? assigned.name : "Chưa có";
+        let roleClass = "role-lanhdao";
+        if (role.id.includes("capcuu")) roleClass = "role-capcuu";
+        else if (role.id.includes("noi")) roleClass = "role-noi";
+        else if (role.id.includes("ngoai")) roleClass = "role-ngoai";
+        else if (role.id.includes("dieuduong")) roleClass = "role-dieuduong";
+        else if (role.id.includes("ktv")) roleClass = "role-ktv";
+        else if (role.id.includes("cntt")) roleClass = "role-cntt";
+
+        shiftsHtml += `
+          <div class="cal-shift-badge ${roleClass}" data-day="${dayObj.day}" data-shift="${role.id}" title="Bấm để đổi người trực">
+            <span class="shift-title-lbl">${role.name}</span>
+            <span class="shift-person-name">${assignedName}</span>
+          </div>
+        `;
+      });
+
+      cell.innerHTML = `
+        <div class="cal-day-header">
+          <span class="cal-date-num">${dayObj.day}</span>
+          <span class="cal-day-tag">${dayObj.dayName}</span>
+        </div>
+        <div class="cal-shift-list">
+          ${shiftsHtml}
+        </div>
+      `;
+
+      cell.querySelectorAll(".cal-shift-badge").forEach(badge => {
+        badge.addEventListener("click", () => {
+          const d = parseInt(badge.dataset.day, 10);
+          const sId = badge.dataset.shift;
+          this.openSwapShiftModal(d, sId);
+        });
+      });
+
+      grid.appendChild(cell);
+    });
+
+    this.dutyCalendarContainer.appendChild(grid);
+  }
+
+  renderDutyTableView() {
+    if (!this.dutyTableContainer || !window.ToolDutyRoster) return;
+    this.dutyTableContainer.innerHTML = "";
+
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+
+    const wrap = document.createElement("div");
+    wrap.className = "duty-table-wrap";
+
+    let theadHtml = `<tr><th>Ngày</th><th>Thứ</th>`;
+    ToolDutyRoster.defaultShiftRoles.forEach(r => {
+      theadHtml += `<th>${r.name}</th>`;
+    });
+    theadHtml += `</tr>`;
+
+    let tbodyHtml = "";
+    this.dutySchedule.forEach(dayObj => {
+      tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""}">
+        <td><strong>Ngày ${dayObj.day}/${month}</strong></td>
+        <td>${dayObj.dayName}</td>`;
+      ToolDutyRoster.defaultShiftRoles.forEach(r => {
+        const assigned = dayObj.shifts[r.id];
+        tbodyHtml += `<td>${assigned ? assigned.name : "-"}</td>`;
+      });
+      tbodyHtml += `</tr>`;
+    });
+
+    wrap.innerHTML = `<table class="duty-table"><thead>${theadHtml}</thead><tbody>${tbodyHtml}</tbody></table>`;
+    this.dutyTableContainer.appendChild(wrap);
+  }
+
+  openSwapShiftModal(day, shiftId) {
+    this.currentSwapTarget = { day, shiftId };
+    const dayObj = this.dutySchedule.find(d => d.day === day);
+    const shiftRole = ToolDutyRoster.defaultShiftRoles.find(r => r.id === shiftId);
+    const currentAssigned = dayObj ? dayObj.shifts[shiftId] : null;
+
+    if (this.swapShiftInfoText) {
+      this.swapShiftInfoText.innerHTML = `<strong>Ngày ${day}</strong> &bull; Ca trực: <strong>${shiftRole ? shiftRole.name : shiftId}</strong><br>Người trực hiện tại: <span style="color:#38bdf8;font-weight:700;">${currentAssigned ? currentAssigned.name : "Chưa phân công"}</span>`;
+    }
+
+    if (this.selectSwapStaff) {
+      this.selectSwapStaff.innerHTML = "";
+      this.dutyStaffList.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.role})`;
+        if (currentAssigned && currentAssigned.id === s.id) opt.selected = true;
+        this.selectSwapStaff.appendChild(opt);
+      });
+    }
+
+    this.showModal(this.modalSwapShift);
+  }
+
+  confirmSwapShift() {
+    if (!this.currentSwapTarget || !this.selectSwapStaff) return;
+    const { day, shiftId } = this.currentSwapTarget;
+    const newStaffId = this.selectSwapStaff.value;
+    const newStaff = this.dutyStaffList.find(s => s.id === newStaffId);
+
+    const dayObj = this.dutySchedule.find(d => d.day === day);
+    if (dayObj && newStaff) {
+      dayObj.shifts[shiftId] = { id: newStaff.id, name: newStaff.name, group: newStaff.group };
+      this.renderDutyCalendarView();
+      this.renderDutyTableView();
+      this.hideModal(this.modalSwapShift);
+      this.showToast(`Đã đổi người trực Ngày ${day} thành: ${newStaff.name}`, "success");
+    }
+  }
+
+  exportDutyRosterExcel() {
+    if (!window.ToolDutyRoster || this.dutySchedule.length === 0) {
+      this.showToast("Chưa có lịch trực để xuất Excel!", "warning");
+      return;
+    }
+    const month = parseInt(this.dutySelectMonth ? this.dutySelectMonth.value : "9", 10);
+    const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
+    const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
+    ToolDutyRoster.exportToExcel(year, month, this.dutySchedule, this.dutyStaffList, ToolDutyRoster.defaultShiftRoles, orgCfg);
+    this.showToast(`Đã xuất file Excel Lịch Trực Tháng ${month}/${year} thành công!`, "success");
   }
 
   showModal(modalEl) {
