@@ -321,8 +321,10 @@ class AppController {
     // Hash change for SPA routing
     window.addEventListener("hashchange", () => this.handleUrlHash());
 
+    this.initNetworkStatus();
     this.initSqlBuilderEvents();
     this.initDutyRosterEvents();
+    this.initBhytXmlEvents();
 
     // Sidebar Drawer & Desktop Collapse Toggle
     if (this.sidebarToggleBtn) {
@@ -1266,6 +1268,8 @@ class AppController {
       this.showSqlBuilderView();
     } else if (hash === "duty-roster") {
       this.showDutyRosterView();
+    } else if (hash === "bhyt-xml") {
+      this.showBhytXmlView();
     } else if (hash === "word-to-html") {
       this.showWordToHtmlView();
     } else if (hash === "pdf-to-image") {
@@ -1273,7 +1277,9 @@ class AppController {
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
-        if (tool.id === "word-to-html") {
+        if (tool.id === "bhyt-xml") {
+          this.showBhytXmlView();
+        } else if (tool.id === "word-to-html") {
           this.showWordToHtmlView();
         } else if (tool.id === "pdf-to-image") {
           this.showPdfToImageView();
@@ -1299,6 +1305,7 @@ class AppController {
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -1315,6 +1322,7 @@ class AppController {
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
     this.schemaView.classList.remove("hidden");
 
@@ -1342,6 +1350,7 @@ class AppController {
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.remove("hidden");
 
@@ -1361,6 +1370,7 @@ class AppController {
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.remove("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.remove("hidden");
 
@@ -1376,6 +1386,25 @@ class AppController {
     this.runAutoSchedule();
   }
 
+  showBhytXmlView() {
+    this.currentToolId = "bhyt-xml";
+    this.hubView.classList.add("hidden");
+    this.toolView.classList.add("hidden");
+    this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "bhyt-xml");
+    });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   showWordToHtmlView() {
     this.currentToolId = "word-to-html";
     this.hubView.classList.add("hidden");
@@ -1384,6 +1413,7 @@ class AppController {
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.remove("hidden");
 
@@ -1402,6 +1432,7 @@ class AppController {
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.remove("hidden");
 
@@ -1425,6 +1456,10 @@ class AppController {
       this.showDutyRosterView();
       return;
     }
+    if (toolId === "bhyt-xml") {
+      this.showBhytXmlView();
+      return;
+    }
     if (toolId === "word-to-html") {
       this.showWordToHtmlView();
       return;
@@ -1444,10 +1479,7 @@ class AppController {
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    this.toolView.classList.remove("hidden");
-    this.hubView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     this.toolView.classList.remove("hidden");
     this.resetToolState();
     this.loadOrgConfigToUi();
@@ -3835,6 +3867,377 @@ ${this.currentW2hHtmlOutput}
     const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
     ToolDutyRoster.exportToExcel(year, month, this.dutySchedule, this.dutyStaffList, null, orgCfg);
     this.showToast(`Đã xuất file Excel Lịch Trực Phòng CNTT Tháng ${month}/${year} thành công!`, "success");
+  }
+
+  // =========================================================================
+  // NETWORK STATUS MONITOR (ONLINE / OFFLINE DETECTION)
+  // =========================================================================
+  initNetworkStatus() {
+    this.connectionStatusBadge = document.getElementById("connectionStatusBadge");
+    this.connectionStatusDot = document.getElementById("connectionStatusDot");
+    this.connectionStatusText = document.getElementById("connectionStatusText");
+    this.offlineAlertBanner = document.getElementById("offlineAlertBanner");
+    this.btnDismissOfflineBanner = document.getElementById("btnDismissOfflineBanner");
+
+    const updateStatus = (isOnline, notify = false) => {
+      if (this.connectionStatusBadge) {
+        this.connectionStatusBadge.classList.toggle("online", isOnline);
+        this.connectionStatusBadge.classList.toggle("offline", !isOnline);
+      }
+      if (this.connectionStatusText) {
+        this.connectionStatusText.textContent = isOnline ? "Trực tuyến" : "Ngoại tuyến (Offline)";
+      }
+      if (this.offlineAlertBanner) {
+        this.offlineAlertBanner.classList.toggle("hidden", isOnline);
+      }
+
+      if (notify) {
+        if (isOnline) {
+          this.showToast("🌐 Đã kết nối Internet trở lại! Hệ thống đang ở trạng thái Trực tuyến.", "success");
+        } else {
+          this.showToast("⚠️ Mất kết nối Internet! Hệ thống đã chuyển sang Chế độ Ngoại tuyến (Offline Mode) an toàn.", "warning");
+        }
+      }
+    };
+
+    window.addEventListener("online", () => updateStatus(true, true));
+    window.addEventListener("offline", () => updateStatus(false, true));
+
+    if (this.btnDismissOfflineBanner) {
+      this.btnDismissOfflineBanner.addEventListener("click", () => {
+        if (this.offlineAlertBanner) this.offlineAlertBanner.classList.add("hidden");
+      });
+    }
+
+    // Initial check
+    updateStatus(navigator.onLine !== false, false);
+  }
+
+  // =========================================================================
+  // BHYT XML 4210 & 130 VALIDATOR CONTROLLER METHODS
+  // =========================================================================
+  initBhytXmlEvents() {
+    this.bhytXmlView = document.getElementById("bhytXmlView");
+    this.btnBackToHubFromXml = document.getElementById("btnBackToHubFromXml");
+    this.btnXmlRecheck = document.getElementById("btnXmlRecheck");
+    this.btnExportXmlErrorReport = document.getElementById("btnExportXmlErrorReport");
+
+    this.xmlDropzoneWrapper = document.getElementById("xmlDropzoneWrapper");
+    this.xmlDropzone = document.getElementById("xmlDropzone");
+    this.xmlFileInput = document.getElementById("xmlFileInput");
+    this.btnBrowseXmlFiles = document.getElementById("btnBrowseXmlFiles");
+
+    this.xmlProgressContainer = document.getElementById("xmlProgressContainer");
+    this.xmlProgressLabel = document.getElementById("xmlProgressLabel");
+    this.xmlProgressPercent = document.getElementById("xmlProgressPercent");
+    this.xmlProgressBarFill = document.getElementById("xmlProgressBarFill");
+
+    this.xmlResultsDashboard = document.getElementById("xmlResultsDashboard");
+    this.xmlStatTotal = document.getElementById("xmlStatTotal");
+    this.xmlStatValid = document.getElementById("xmlStatValid");
+    this.xmlStatWarning = document.getElementById("xmlStatWarning");
+    this.xmlStatCritical = document.getElementById("xmlStatCritical");
+
+    this.xmlCategoryTabs = document.getElementById("xmlCategoryTabs");
+    this.countTabAll = document.getElementById("countTabAll");
+    this.countTabCritical = document.getElementById("countTabCritical");
+    this.countTabWarning = document.getElementById("countTabWarning");
+    this.countTabValid = document.getElementById("countTabValid");
+
+    this.xmlSearchInput = document.getElementById("xmlSearchInput");
+    this.xmlTableBody = document.getElementById("xmlTableBody");
+
+    // Modal Detail Elements
+    this.modalXmlDetail = document.getElementById("modalXmlDetail");
+    this.xmlModalMaLk = document.getElementById("xmlModalMaLk");
+    this.btnCloseXmlDetailModal = document.getElementById("btnCloseXmlDetailModal");
+    this.btnCloseXmlDetailFooter = document.getElementById("btnCloseXmlDetailFooter");
+    this.xmlModalPatientInfo = document.getElementById("xmlModalPatientInfo");
+    this.xmlModalErrorsList = document.getElementById("xmlModalErrorsList");
+    this.xmlModalRawData = document.getElementById("xmlModalRawData");
+    this.btnCopyXmlRawData = document.getElementById("btnCopyXmlRawData");
+
+    this.currentXmlFilter = "all";
+    this.xmlValidationResult = null;
+    this.currentModalEncounter = null;
+
+    // Event Bindings
+    if (this.btnBackToHubFromXml) {
+      this.btnBackToHubFromXml.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+
+    if (this.btnBrowseXmlFiles && this.xmlFileInput) {
+      this.btnBrowseXmlFiles.addEventListener("click", () => this.xmlFileInput.click());
+    }
+
+    if (this.xmlFileInput) {
+      this.xmlFileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handleXmlFilesUpload(Array.from(e.target.files));
+        }
+      });
+    }
+
+    if (this.xmlDropzone) {
+      this.xmlDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        this.xmlDropzone.classList.add("dragover");
+      });
+      this.xmlDropzone.addEventListener("dragleave", () => {
+        this.xmlDropzone.classList.remove("dragover");
+      });
+      this.xmlDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        this.xmlDropzone.classList.remove("dragover");
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.handleXmlFilesUpload(Array.from(e.dataTransfer.files));
+        }
+      });
+    }
+
+    if (this.btnXmlRecheck) {
+      this.btnXmlRecheck.addEventListener("click", () => {
+        this.resetBhytXmlState();
+      });
+    }
+
+    if (this.btnExportXmlErrorReport) {
+      this.btnExportXmlErrorReport.addEventListener("click", () => {
+        this.exportXmlErrorReport();
+      });
+    }
+
+    // Filter tabs
+    if (this.xmlCategoryTabs) {
+      this.xmlCategoryTabs.querySelectorAll(".xml-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          this.xmlCategoryTabs.querySelectorAll(".xml-tab-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          this.currentXmlFilter = btn.dataset.cat;
+          this.renderXmlTable();
+        });
+      });
+    }
+
+    if (this.xmlSearchInput) {
+      this.xmlSearchInput.addEventListener("input", () => this.renderXmlTable());
+    }
+
+    // Modal
+    if (this.btnCloseXmlDetailModal) this.btnCloseXmlDetailModal.addEventListener("click", () => this.hideModal(this.modalXmlDetail));
+    if (this.btnCloseXmlDetailFooter) this.btnCloseXmlDetailFooter.addEventListener("click", () => this.hideModal(this.modalXmlDetail));
+    if (this.btnCopyXmlRawData) {
+      this.btnCopyXmlRawData.addEventListener("click", () => {
+        if (this.xmlModalRawData) {
+          navigator.clipboard.writeText(this.xmlModalRawData.textContent).then(() => {
+            this.showToast("Đã sao chép dữ liệu XML của hồ sơ vào Clipboard!", "success");
+          });
+        }
+      });
+    }
+  }
+
+  async handleXmlFilesUpload(files) {
+    if (!files || files.length === 0) return;
+
+    if (!window.ToolBhytXml) {
+      this.showToast("Mô-đun kiểm tra XML BHYT chưa sẵn sàng. Vui lòng tải lại trang.", "error");
+      return;
+    }
+
+    try {
+      if (this.xmlProgressContainer) {
+        this.xmlProgressContainer.classList.remove("hidden");
+        this.xmlProgressLabel.textContent = "Đang đọc và phân tích gói tệp XML...";
+        this.xmlProgressPercent.textContent = "5%";
+        this.xmlProgressBarFill.style.width = "5%";
+      }
+
+      this.showToast(`Bắt đầu phân tích ${files.length} tệp...`, "info");
+
+      const result = await ToolBhytXml.validateFiles(files, (pct, msg) => {
+        if (this.xmlProgressPercent) this.xmlProgressPercent.textContent = `${pct}%`;
+        if (this.xmlProgressBarFill) this.xmlProgressBarFill.style.width = `${pct}%`;
+        if (this.xmlProgressLabel) this.xmlProgressLabel.textContent = msg;
+      });
+
+      this.xmlValidationResult = result;
+
+      // Update stat cards
+      if (this.xmlStatTotal) this.xmlStatTotal.textContent = result.totalEncounters.toLocaleString("vi-VN");
+      if (this.xmlStatValid) this.xmlStatValid.textContent = result.validCount.toLocaleString("vi-VN");
+      if (this.xmlStatWarning) this.xmlStatWarning.textContent = result.warningCount.toLocaleString("vi-VN");
+      if (this.xmlStatCritical) this.xmlStatCritical.textContent = result.criticalCount.toLocaleString("vi-VN");
+
+      // Update tab count badges
+      if (this.countTabAll) this.countTabAll.textContent = result.totalEncounters;
+      if (this.countTabCritical) this.countTabCritical.textContent = result.criticalCount;
+      if (this.countTabWarning) this.countTabWarning.textContent = result.warningCount;
+      if (this.countTabValid) this.countTabValid.textContent = result.validCount;
+
+      // Render table
+      this.renderXmlTable();
+
+      // Show results, hide progress
+      if (this.xmlProgressContainer) this.xmlProgressContainer.classList.add("hidden");
+      if (this.xmlDropzoneWrapper) this.xmlDropzoneWrapper.classList.add("hidden");
+      if (this.xmlResultsDashboard) this.xmlResultsDashboard.classList.remove("hidden");
+      if (this.btnXmlRecheck) this.btnXmlRecheck.classList.remove("hidden");
+      if (this.btnExportXmlErrorReport) this.btnExportXmlErrorReport.classList.remove("hidden");
+
+      this.showToast(`Đã kiểm tra xong ${result.totalEncounters} hồ sơ! Phát hiện ${result.criticalCount} hồ sơ lỗi nặng.`, result.criticalCount > 0 ? "warning" : "success");
+    } catch (err) {
+      console.error(err);
+      this.showToast(`Lỗi xử lý file XML: ${err.message}`, "error");
+      if (this.xmlProgressContainer) this.xmlProgressContainer.classList.add("hidden");
+    }
+  }
+
+  renderXmlTable() {
+    if (!this.xmlTableBody || !this.xmlValidationResult) return;
+    this.xmlTableBody.innerHTML = "";
+
+    const encounters = this.xmlValidationResult.encounters || [];
+    const filter = this.currentXmlFilter;
+    const searchTerm = (this.xmlSearchInput ? this.xmlSearchInput.value : "").trim().toLowerCase();
+
+    const filtered = encounters.filter(enc => {
+      // Category filter
+      if (filter === "critical" && enc.errors.length === 0) return false;
+      if (filter === "warning" && (enc.warnings.length === 0 || enc.errors.length > 0)) return false;
+      if (filter === "valid" && (enc.errors.length > 0 || enc.warnings.length > 0)) return false;
+
+      // Search filter
+      if (searchTerm) {
+        const text = `${enc.maLk} ${enc.patientName} ${enc.cardNo} ${enc.dept} ${enc.primaryIcd}`.toLowerCase();
+        if (!text.includes(searchTerm)) return false;
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      this.xmlTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 28px; color: #94a3b8;">
+            Không có hồ sơ nào phù hợp với bộ lọc hiện tại.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    filtered.slice(0, 300).forEach((enc, idx) => {
+      const tr = document.createElement("tr");
+
+      let statusBadge = `<span class="xml-status-tag valid">✓ Hợp Lệ</span>`;
+      if (enc.errors.length > 0) {
+        statusBadge = `<span class="xml-status-tag critical">✕ Lỗi Nặng (${enc.errors.length})</span>`;
+      } else if (enc.warnings.length > 0) {
+        statusBadge = `<span class="xml-status-tag warning">⚠️ Cảnh Báo (${enc.warnings.length})</span>`;
+      }
+
+      // Format Error Summaries
+      let errorPillsHtml = "";
+      if (enc.errors.length === 0 && enc.warnings.length === 0) {
+        errorPillsHtml = `<span style="color: #10b981; font-size: 0.74rem;">Đầy đủ trường bắt buộc, định dạng thẻ và cân đối tài chính chuẩn.</span>`;
+      } else {
+        const allMsg = [
+          ...enc.errors.map(e => `<div class="xml-error-pill critical"><strong>[${e.category}]</strong> ${e.message}</div>`),
+          ...enc.warnings.map(w => `<div class="xml-error-pill warning"><strong>[${w.category}]</strong> ${w.message}</div>`)
+        ];
+        errorPillsHtml = `<div class="xml-error-pill-list">${allMsg.slice(0, 3).join("")}${allMsg.length > 3 ? `<span style="font-size:0.7rem;color:#94a3b8;">...và còn ${allMsg.length - 3} cảnh báo khác</span>` : ""}</div>`;
+      }
+
+      tr.innerHTML = `
+        <td style="text-align: center; color: #64748b; font-weight: 600;">${idx + 1}</td>
+        <td><strong style="color: #38bdf8; font-family: monospace;">${enc.maLk}</strong></td>
+        <td><strong>${enc.patientName}</strong></td>
+        <td><span style="font-family: monospace; color: #e2e8f0;">${enc.cardNo || "—"}</span></td>
+        <td style="text-align: center;">${statusBadge}</td>
+        <td>${errorPillsHtml}</td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-view-xml-item" data-lk="${enc.maLk}">Xem</button>
+        </td>
+      `;
+
+      const btnView = tr.querySelector(".btn-view-xml-item");
+      if (btnView) {
+        btnView.addEventListener("click", () => this.openXmlDetailModal(enc));
+      }
+
+      this.xmlTableBody.appendChild(tr);
+    });
+  }
+
+  openXmlDetailModal(enc) {
+    if (!enc) return;
+    this.currentModalEncounter = enc;
+
+    if (this.xmlModalMaLk) this.xmlModalMaLk.textContent = enc.maLk;
+
+    if (this.xmlModalPatientInfo) {
+      this.xmlModalPatientInfo.innerHTML = `
+        <div><strong>Họ và tên:</strong> ${enc.patientName}</div>
+        <div><strong>Mã Thẻ BHYT:</strong> ${enc.cardNo || "—"}</div>
+        <div><strong>Ngày vào:</strong> ${enc.dateIn || "—"}</div>
+        <div><strong>Ngày ra:</strong> ${enc.dateOut || "—"}</div>
+        <div><strong>Mã bệnh (ICD-10):</strong> ${enc.primaryIcd || "—"} - ${enc.primaryDisease || ""}</div>
+        <div><strong>Tổng chi:</strong> ${enc.totalCost.toLocaleString("vi-VN")} đ</div>
+        <div><strong>BHYT thanh toán:</strong> ${enc.bhtt.toLocaleString("vi-VN")} đ</div>
+        <div><strong>Người bệnh cùng chi trả:</strong> ${enc.bncct.toLocaleString("vi-VN")} đ</div>
+        <div><strong>Tệp nguồn:</strong> ${enc.fileName || "XML"}</div>
+      `;
+    }
+
+    if (this.xmlModalErrorsList) {
+      const allErr = [...enc.errors, ...enc.warnings];
+      if (allErr.length === 0) {
+        this.xmlModalErrorsList.innerHTML = `
+          <div style="padding: 12px; background: rgba(16, 185, 129, 0.12); border-radius: 6px; color: #10b981; font-size: 0.78rem;">
+            ✓ Hồ sơ này hoàn toàn hợp lệ, không phát hiện lỗi cấu trúc hay tài chính nào!
+          </div>
+        `;
+      } else {
+        this.xmlModalErrorsList.innerHTML = allErr.map(e => `
+          <div class="xml-modal-err-box ${e.severity}">
+            <div><strong>[${e.category} • ${e.field}]</strong> ${e.message}</div>
+            <div class="err-sugg">💡 <em>Gợi ý khắc phục:</em> ${e.suggestion}</div>
+          </div>
+        `).join("");
+      }
+    }
+
+    if (this.xmlModalRawData) {
+      const rawDump = JSON.stringify(enc.xml1Data || enc, null, 2);
+      this.xmlModalRawData.textContent = rawDump;
+    }
+
+    this.showModal(this.modalXmlDetail);
+  }
+
+  exportXmlErrorReport() {
+    if (!this.xmlValidationResult || !window.ToolBhytXml) {
+      this.showToast("Chưa có kết quả kiểm tra để xuất báo cáo!", "warning");
+      return;
+    }
+
+    const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
+    ToolBhytXml.exportErrorReportExcel(this.xmlValidationResult, orgCfg);
+    this.showToast("Đang xuất file Excel Báo Cáo Lỗi BHYT chi tiết...", "info");
+  }
+
+  resetBhytXmlState() {
+    this.xmlValidationResult = null;
+    if (this.xmlFileInput) this.xmlFileInput.value = "";
+    if (this.xmlDropzoneWrapper) this.xmlDropzoneWrapper.classList.remove("hidden");
+    if (this.xmlResultsDashboard) this.xmlResultsDashboard.classList.add("hidden");
+    if (this.btnXmlRecheck) this.btnXmlRecheck.classList.add("hidden");
+    if (this.btnExportXmlErrorReport) this.btnExportXmlErrorReport.classList.add("hidden");
+    if (this.xmlTableBody) this.xmlTableBody.innerHTML = "";
+    this.showToast("Đã làm mới khung tải tệp XML.", "info");
   }
 
   showModal(modalEl) {
