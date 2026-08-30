@@ -11551,142 +11551,150 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
    XML BHYT – FEATURE GUIDE CARDS
    ========================================================= */
 .xml-features-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  width: 100%;
-  max-width: 840px;
-  margin: 0 auto;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 840px !important;
+  margin: 10px auto 0 !important;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .xml-features-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 }
 
 .xml-feature-card {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  border-radius: 16px;
-  padding: 22px 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border-radius: 16px !important;
+  padding: 22px 18px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
 }
 
 .xml-feature-card::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.06), transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 70%);
   pointer-events: none;
 }
 
 .xml-feature-card:hover {
-  border-color: rgba(56, 189, 248, 0.45);
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.15) !important;
 }
 
 .feature-card-icon {
-  font-size: 1.7rem;
-  line-height: 1;
-  margin-bottom: 2px;
+  font-size: 1.7rem !important;
+  line-height: 1 !important;
+  margin-bottom: 2px !important;
 }
 
 .feature-card-content h4 {
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #e2e8f0;
-  margin: 0 0 7px;
-  letter-spacing: 0.01em;
-  line-height: 1.3;
+  font-size: 0.9rem !important;
+  font-weight: 700 !important;
+  color: #f1f5f9 !important;
+  margin: 0 0 7px !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1.3 !important;
 }
 
 .feature-card-content p {
-  font-size: 0.79rem;
-  color: #94a3b8;
-  line-height: 1.55;
-  margin: 0;
+  font-size: 0.79rem !important;
+  color: #94a3b8 !important;
+  line-height: 1.55 !important;
+  margin: 0 !important;
 }
 
 /* =========================================================
    DUTY ROSTER – GUEST LOGIN BANNER
    ========================================================= */
 .duty-guest-login-banner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(37, 99, 235, 0.1) 100%);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 14px;
-  padding: 16px 20px;
-  margin: 0 0 16px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.16) 0%, rgba(37, 99, 235, 0.12) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 14px !important;
+  padding: 16px 20px !important;
+  margin: 16px 0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.duty-guest-login-banner.hidden {
+  display: none !important;
 }
 
 .duty-guest-login-banner .guest-banner-icon {
-  font-size: 1.6rem;
-  flex-shrink: 0;
+  font-size: 1.6rem !important;
+  flex-shrink: 0 !important;
 }
 
 .duty-guest-login-banner .guest-banner-content {
-  flex: 1;
-  min-width: 0;
+  flex: 1 !important;
+  min-width: 0 !important;
 }
 
 .duty-guest-login-banner .guest-banner-content strong {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #e2e8f0;
-  margin-bottom: 4px;
+  display: block !important;
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  margin-bottom: 4px !important;
 }
 
 .duty-guest-login-banner .guest-banner-content p {
-  font-size: 0.79rem;
-  color: #94a3b8;
-  margin: 0;
-  line-height: 1.45;
+  font-size: 0.8rem !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+  line-height: 1.45 !important;
 }
 
 .btn-duty-login-now {
-  flex-shrink: 0;
-  background: linear-gradient(135deg, #0284c7, #2563eb);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  padding: 9px 18px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  flex-shrink: 0 !important;
+  background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  border-radius: 10px !important;
+  padding: 9px 18px !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
 }
 
 .btn-duty-login-now:hover {
-  opacity: 0.88;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.4);
+  background: linear-gradient(135deg, #0369a1, #1d4ed8) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5) !important;
 }
 
 /* =========================================================
    DUTY ROSTER – UNIFIED CONTROL BAR
    ========================================================= */
 .duty-control-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
-  padding: 10px 16px;
-  margin-bottom: 18px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  margin-bottom: 18px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
 }
 
 .duty-mode-tabs {
