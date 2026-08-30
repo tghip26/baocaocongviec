@@ -6,6 +6,10 @@
   <title>Hệ Thống Báo Cáo & Cổng Công Cụ Nghiệp Vụ - BVĐK Bắc Ninh Số 2</title>
   <meta name="description" content="Cổng tổng hợp công cụ Báo cáo Giám định Bảo hiểm, Báo cáo Công việc CNTT, Cấp Chữ ký số và Tra cứu Database Schema VIMES" />
 
+  <!-- Favicon Vector SVG for Google Chrome & Web Browser Tabs -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="alternate icon" href="favicon.svg" />
+
   <!-- Google Fonts: Inter & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -553,7 +557,14 @@
                       </select>
                     </div>
                   </div>
-
+                  <!-- Cài đặt: Đường dẫn lưu file trên máy -->
+                  <div class="w2h-setting-group save-path-group">
+                    <div class="save-path-header">
+                      <label class="setting-lbl">📂 Thư mục lưu file HTML trên máy:</label>
+                      <button type="button" class="btn-quick-path" id="btnBrowseW2hSavePath" title="Chọn thư mục trên máy">Duyệt...</button>
+                    </div>
+                    <input type="text" id="w2hSavePathInput" class="w2h-text-input path-input" value="D:\Website_CMS\" placeholder="Ví dụ: D:\Website_CMS\" />
+                  </div>
 
                   <!-- Tùy chọn Bảng biểu & Tinh gọn -->
                   <div class="w2h-checkbox-group-wrap">
@@ -809,6 +820,15 @@
                     <label class="setting-lbl">🏷️ Tiền tố tên file ảnh xuất:</label>
                     <input type="text" id="pdfFilenamePrefix" class="w2h-text-input" placeholder="Trang" value="Trang" />
                   </div>
+
+                  <!-- Cài đặt: Đường dẫn lưu file ảnh trên máy -->
+                  <div class="w2h-setting-group save-path-group">
+                    <div class="save-path-header">
+                      <label class="setting-lbl">📂 Thư mục lưu ảnh xuất trên máy:</label>
+                      <button type="button" class="btn-quick-path" id="btnBrowsePdfSavePath" title="Chọn thư mục trên máy">Duyệt...</button>
+                    </div>
+                    <input type="text" id="pdfSavePathInput" class="w2h-text-input path-input" value="D:\XuatAnhPDF\" placeholder="Ví dụ: D:\XuatAnhPDF\" />
+                  </div>
                 </div>
               </div>
 
@@ -998,6 +1018,15 @@
                 <div class="org-line" id="orgLine2">Sở Y Tế</div>
                 <div class="org-line highlight" id="orgLine3">BV Đa Khoa Bắc Ninh Số 2</div>
               </div>
+
+              <!-- Quick Target Save Path Box -->
+              <div class="save-path-box" id="toolSavePathBox">
+                <div class="save-path-header">
+                  <span>📂 Thư mục lưu tệp trên máy:</span>
+                  <button type="button" class="btn-edit-org" id="btnChangeSavePathTool" title="Đổi thư mục">Đổi</button>
+                </div>
+                <div class="save-path-val" id="toolSavePathVal">D:\BaoCao\GiamDinh\</div>
+              </div>
             </div>
 
             <!-- Right Column: Upload, Console & Execution -->
@@ -1154,6 +1183,42 @@
         <div class="config-form-group">
           <label class="form-label">Tỉnh / Thành phố:</label>
           <input type="text" id="cfgProvince" class="form-input" placeholder="Ví dụ: Bắc Ninh" />
+        </div>
+
+        <div class="config-section-divider">
+          <span>📂 ĐƯỜNG DẪN THƯ MỤC LƯU TỆP TRÊN MÁY TÍNH</span>
+        </div>
+
+        <div class="config-form-group">
+          <div class="config-path-lbl-row">
+            <label class="form-label">📂 Lưu Báo cáo Giám định & CNTT:</label>
+            <button type="button" class="btn-browse-folder" data-target="cfgPathGiamDinh">Duyệt...</button>
+          </div>
+          <input type="text" id="cfgPathGiamDinh" class="form-input path-input" placeholder="Ví dụ: D:\BaoCao\GiamDinh\" />
+        </div>
+
+        <div class="config-form-group">
+          <div class="config-path-lbl-row">
+            <label class="form-label">📂 Lưu Bài viết HTML Web / CMS:</label>
+            <button type="button" class="btn-browse-folder" data-target="cfgPathW2h">Duyệt...</button>
+          </div>
+          <input type="text" id="cfgPathW2h" class="form-input path-input" placeholder="Ví dụ: D:\Website_CMS\" />
+        </div>
+
+        <div class="config-form-group">
+          <div class="config-path-lbl-row">
+            <label class="form-label">📂 Lưu Tệp Xuất Ảnh PDF:</label>
+            <button type="button" class="btn-browse-folder" data-target="cfgPathPdf">Duyệt...</button>
+          </div>
+          <input type="text" id="cfgPathPdf" class="form-input path-input" placeholder="Ví dụ: D:\XuatAnhPDF\" />
+        </div>
+
+        <div class="config-form-group">
+          <div class="config-path-lbl-row">
+            <label class="form-label">📂 Lưu Tệp CKS & Email VGCA:</label>
+            <button type="button" class="btn-browse-folder" data-target="cfgPathVgca">Duyệt...</button>
+          </div>
+          <input type="text" id="cfgPathVgca" class="form-input path-input" placeholder="Ví dụ: D:\VGCA\" />
         </div>
       </div>
       <div class="modal-footer flex-between">

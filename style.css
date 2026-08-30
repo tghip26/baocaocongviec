@@ -4312,6 +4312,111 @@ mark.highlight-term {
 }
 
 /* ==========================================================================
+   SAVE FILE PATH & LOCAL DIRECTORY CONFIG STYLES
+   ========================================================================== */
+.save-path-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.save-path-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #93c5fd;
+}
+
+.save-path-val {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #38bdf8;
+  background: #080c14;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  word-break: break-all;
+}
+
+.save-path-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.btn-quick-path {
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-quick-path:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+.path-input {
+  font-family: var(--font-mono) !important;
+  font-size: 0.8rem !important;
+  color: #38bdf8 !important;
+}
+
+.config-section-divider {
+  margin: 18px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.config-section-divider span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #38bdf8;
+}
+
+.config-path-lbl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.btn-browse-folder {
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  color: #93c5fd;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-browse-folder:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* ==========================================================================
    RESPONSIVE DESIGN (Tablets & Mobile Optimization)
    ========================================================================== */
 

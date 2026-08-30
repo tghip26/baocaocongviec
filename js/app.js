@@ -36,6 +36,7 @@ class AppController {
     this.initElements();
     this.initEvents();
     this.loadOrgConfigToUi();
+    this.loadSavePathsToUi();
     this.renderToolGrid();
     this.handleUrlHash();
   }
@@ -176,6 +177,16 @@ class AppController {
     this.cfgOrg2 = document.getElementById("cfgOrg2");
     this.cfgOrg3 = document.getElementById("cfgOrg3");
     this.cfgProvince = document.getElementById("cfgProvince");
+    this.cfgPathGiamDinh = document.getElementById("cfgPathGiamDinh");
+    this.cfgPathW2h = document.getElementById("cfgPathW2h");
+    this.cfgPathPdf = document.getElementById("cfgPathPdf");
+    this.cfgPathVgca = document.getElementById("cfgPathVgca");
+    this.w2hSavePathInput = document.getElementById("w2hSavePathInput");
+    this.btnBrowseW2hSavePath = document.getElementById("btnBrowseW2hSavePath");
+    this.pdfSavePathInput = document.getElementById("pdfSavePathInput");
+    this.btnBrowsePdfSavePath = document.getElementById("btnBrowsePdfSavePath");
+    this.toolSavePathVal = document.getElementById("toolSavePathVal");
+    this.btnChangeSavePathTool = document.getElementById("btnChangeSavePathTool");
     this.btnSaveConfig = document.getElementById("btnSaveConfig");
     this.btnResetConfigDefault = document.getElementById("btnResetConfigDefault");
 
@@ -392,13 +403,64 @@ class AppController {
       this.cfgOrg2.value = cfg.org2;
       this.cfgOrg3.value = cfg.org3;
       this.cfgProvince.value = cfg.province;
+
+      const paths = this.getSavePathConfig();
+      if (this.cfgPathGiamDinh) this.cfgPathGiamDinh.value = paths.giamdinh;
+      if (this.cfgPathW2h) this.cfgPathW2h.value = paths.w2h;
+      if (this.cfgPathPdf) this.cfgPathPdf.value = paths.pdf;
+      if (this.cfgPathVgca) this.cfgPathVgca.value = paths.vgca;
+
       this.showModal(this.modalConfig);
     };
 
     if (this.btnOpenConfigHeader) this.btnOpenConfigHeader.addEventListener("click", openConfigModal);
     if (this.btnOpenConfigSidebar) this.btnOpenConfigSidebar.addEventListener("click", openConfigModal);
     if (this.btnEditOrgInline) this.btnEditOrgInline.addEventListener("click", openConfigModal);
+    if (this.btnChangeSavePathTool) this.btnChangeSavePathTool.addEventListener("click", openConfigModal);
     if (this.btnCloseConfigModal) this.btnCloseConfigModal.addEventListener("click", () => this.hideModal(this.modalConfig));
+
+    // Save Path Browse Events
+    if (this.btnBrowseW2hSavePath) {
+      this.btnBrowseW2hSavePath.addEventListener("click", () => {
+        this.selectDirectoryForInput(this.w2hSavePathInput, "w2h");
+      });
+    }
+
+    if (this.w2hSavePathInput) {
+      this.w2hSavePathInput.addEventListener("change", () => {
+        const paths = this.getSavePathConfig();
+        paths.w2h = this.w2hSavePathInput.value.trim() || "D:\\Website_CMS\\";
+        this.savePathConfig(paths);
+        this.showToast(`Đã lưu đường dẫn HTML: ${paths.w2h}`, "success");
+      });
+    }
+
+    if (this.btnBrowsePdfSavePath) {
+      this.btnBrowsePdfSavePath.addEventListener("click", () => {
+        this.selectDirectoryForInput(this.pdfSavePathInput, "pdf");
+      });
+    }
+
+    if (this.pdfSavePathInput) {
+      this.pdfSavePathInput.addEventListener("change", () => {
+        const paths = this.getSavePathConfig();
+        paths.pdf = this.pdfSavePathInput.value.trim() || "D:\\XuatAnhPDF\\";
+        this.savePathConfig(paths);
+        this.showToast(`Đã lưu đường dẫn Ảnh PDF: ${paths.pdf}`, "success");
+      });
+    }
+
+    document.querySelectorAll(".btn-browse-folder").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.target;
+        const targetInput = document.getElementById(targetId);
+        let pathKey = "giamdinh";
+        if (targetId === "cfgPathW2h") pathKey = "w2h";
+        else if (targetId === "cfgPathPdf") pathKey = "pdf";
+        else if (targetId === "cfgPathVgca") pathKey = "vgca";
+        this.selectDirectoryForInput(targetInput, pathKey);
+      });
+    });
 
     if (this.btnSaveConfig) {
       this.btnSaveConfig.addEventListener("click", () => {
@@ -410,15 +472,27 @@ class AppController {
         };
         localStorage.setItem("APP_ORG_CONFIG", JSON.stringify(newCfg));
         this.loadOrgConfigToUi();
+
+        const newPaths = {
+          giamdinh: this.cfgPathGiamDinh ? this.cfgPathGiamDinh.value.trim() || "D:\\BaoCao\\GiamDinh\\" : "D:\\BaoCao\\GiamDinh\\",
+          w2h: this.cfgPathW2h ? this.cfgPathW2h.value.trim() || "D:\\Website_CMS\\" : "D:\\Website_CMS\\",
+          pdf: this.cfgPathPdf ? this.cfgPathPdf.value.trim() || "D:\\XuatAnhPDF\\" : "D:\\XuatAnhPDF\\",
+          vgca: this.cfgPathVgca ? this.cfgPathVgca.value.trim() || "D:\\VGCA\\" : "D:\\VGCA\\",
+          schema: "D:\\Database_Schema\\"
+        };
+        this.savePathConfig(newPaths);
+
         this.hideModal(this.modalConfig);
-        this.showToast("Đã lưu cấu hình đơn vị mục tiêu thành công!", "success");
+        this.showToast("Đã lưu cấu hình đơn vị & đường dẫn lưu tệp thành công!", "success");
       });
     }
 
     if (this.btnResetConfigDefault) {
       this.btnResetConfigDefault.addEventListener("click", () => {
         localStorage.removeItem("APP_ORG_CONFIG");
+        localStorage.removeItem("APP_SAVE_PATHS");
         this.loadOrgConfigToUi();
+        this.loadSavePathsToUi();
         const cfg = ToolVgcaDoiChieu.getOrgConfig();
         this.cfgOrg1.value = cfg.org1;
         this.cfgOrg2.value = cfg.org2;
@@ -1279,6 +1353,7 @@ class AppController {
     this.toolView.classList.remove("hidden");
     this.resetToolState();
     this.loadOrgConfigToUi();
+    this.loadSavePathsToUi();
 
     // Render tool header info
     this.toolBreadcrumb.textContent = tool.title;
@@ -2764,6 +2839,74 @@ ${this.currentW2hHtmlOutput}
     }).catch(err => {
       this.showToast("Không thể sao chép: " + err.message, "error");
     });
+  }
+
+  getSavePathConfig() {
+    try {
+      const raw = localStorage.getItem("APP_SAVE_PATHS");
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+      giamdinh: "D:\\BaoCao\\GiamDinh\\",
+      w2h: "D:\\Website_CMS\\",
+      pdf: "D:\\XuatAnhPDF\\",
+      vgca: "D:\\VGCA\\",
+      schema: "D:\\Database_Schema\\"
+    };
+  }
+
+  savePathConfig(cfg) {
+    localStorage.setItem("APP_SAVE_PATHS", JSON.stringify(cfg));
+    this.loadSavePathsToUi();
+  }
+
+  loadSavePathsToUi() {
+    const paths = this.getSavePathConfig();
+    if (this.w2hSavePathInput) this.w2hSavePathInput.value = paths.w2h || "D:\\Website_CMS\\";
+    if (this.pdfSavePathInput) this.pdfSavePathInput.value = paths.pdf || "D:\\XuatAnhPDF\\";
+    if (this.cfgPathGiamDinh) this.cfgPathGiamDinh.value = paths.giamdinh || "D:\\BaoCao\\GiamDinh\\";
+    if (this.cfgPathW2h) this.cfgPathW2h.value = paths.w2h || "D:\\Website_CMS\\";
+    if (this.cfgPathPdf) this.cfgPathPdf.value = paths.pdf || "D:\\XuatAnhPDF\\";
+    if (this.cfgPathVgca) this.cfgPathVgca.value = paths.vgca || "D:\\VGCA\\";
+
+    if (this.toolSavePathVal) {
+      if (this.currentToolId && this.currentToolId.startsWith("vgca-")) {
+        this.toolSavePathVal.textContent = paths.vgca || "D:\\VGCA\\";
+      } else {
+        this.toolSavePathVal.textContent = paths.giamdinh || "D:\\BaoCao\\GiamDinh\\";
+      }
+    }
+  }
+
+  async selectDirectoryForInput(inputEl, pathKey) {
+    if (window.showDirectoryPicker) {
+      try {
+        const handle = await window.showDirectoryPicker();
+        if (handle && handle.name) {
+          const currentVal = inputEl ? inputEl.value.trim() : "D:\\";
+          const baseDrive = currentVal.match(/^[A-Z]:\\/i) ? currentVal.match(/^[A-Z]:\\/i)[0] : "D:\\";
+          const newPath = `${baseDrive}${handle.name}\\`;
+          if (inputEl) {
+            inputEl.value = newPath;
+            inputEl.dispatchEvent(new Event("input"));
+            inputEl.dispatchEvent(new Event("change"));
+          }
+          if (pathKey) {
+            const paths = this.getSavePathConfig();
+            paths[pathKey] = newPath;
+            this.savePathConfig(paths);
+          }
+          this.showToast(`Đã chọn thư mục lưu: ${newPath}`, "success");
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          console.warn("Directory picker error:", err);
+          this.showToast("Bạn có thể nhập trực tiếp đường dẫn thư mục lưu vào ô", "info");
+        }
+      }
+    } else {
+      this.showToast("Nhập trực tiếp đường dẫn thư mục lưu trên máy vào ô", "info");
+    }
   }
 
   showModal(modalEl) {
