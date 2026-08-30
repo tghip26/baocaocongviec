@@ -388,11 +388,25 @@ class AppController {
       if (appLayout) {
         const isCollapsed = appLayout.classList.toggle("sidebar-collapsed");
         localStorage.setItem("APP_SIDEBAR_COLLAPSED", isCollapsed ? "true" : "false");
+        if (this.btnSidebarCollapseDesktop) {
+          this.btnSidebarCollapseDesktop.title = isCollapsed ? "Mở rộng Sidebar" : "Thu gọn Sidebar";
+        }
       }
     };
 
     if (this.btnSidebarCollapseDesktop) {
       this.btnSidebarCollapseDesktop.addEventListener("click", toggleDesktopSidebar);
+    }
+
+    // Nhấp vào logo/tiêu đề khi đang thu gọn cũng sẽ mở rộng sidebar trở lại
+    const sidebarBrand = document.querySelector(".sidebar-brand");
+    if (sidebarBrand) {
+      sidebarBrand.addEventListener("click", () => {
+        const appLayout = document.querySelector(".app-layout");
+        if (appLayout && appLayout.classList.contains("sidebar-collapsed")) {
+          toggleDesktopSidebar();
+        }
+      });
     }
 
     if (this.sidebarToggleBtn) {
