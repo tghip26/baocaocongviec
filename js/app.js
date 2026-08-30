@@ -59,6 +59,9 @@ class AppController {
     this.schemaView = document.getElementById("schemaView");
     this.wordToHtmlView = document.getElementById("wordToHtmlView");
     this.pdfToImageView = document.getElementById("pdfToImageView");
+    this.sqlBuilderView = document.getElementById("sqlBuilderView");
+    this.dutyRosterView = document.getElementById("dutyRosterView");
+    this.bhytXmlView = document.getElementById("bhytXmlView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
