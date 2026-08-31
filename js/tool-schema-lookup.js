@@ -17,7 +17,7 @@ window.VIMES_CLINICAL_FORMS = [
     title: "GIẤY RA VIỆN",
     category: "Nội trú & Xuất viện",
     icon: "📄",
-    keywords: ["giấy ra viện", "giay ra vien", "ra viện", "02/tt25", "mau 02", "xuat vien", "nghi them", "nghi bhxh", "giay chung nhan ra vien", "hms_discharge_certificate", "hms_clinical_record", "hms_doc",
+    keywords: ["giấy ra viện", "giay ra vien", "mã đt kcb", "ma dt kcb", "hd_ma_doituong_kcb", "ra viện", "02/tt25", "mau 02", "xuat vien", "nghi them", "nghi bhxh", "giay chung nhan ra vien", "hms_discharge_certificate", "hms_clinical_record", "hms_doc",
                "hp_surname", "hp_midname", "hp_firstname", "hp_birthdate", "hp_sex", "hp_ethnic", "hp_occupation", "hp_sin",
                "hp_dtladdr", "hp_provid", "hp_distid", "hp_villid", "hd_docno", "hd_admitdate", "hd_enddate", "hd_icd",
                "hd_diagnostic", "hd_cardno", "hc_cardno", "hd_yofage", "hd_mofage", "hd_enddept", "hd_doctor",
@@ -118,6 +118,15 @@ window.VIMES_CLINICAL_FORMS = [
       },
       {
         no: 11,
+        docField: "Mã ĐT KCB (Đối tượng KCB BHYT)",
+        example: "DN4",
+        table: "hms_doc",
+        column: "hd_ma_doituong_kcb",
+        type: "character varying(4)",
+        note: "Mã đối tượng KCB BHYT (VD: DN4, HT2, TE1...). Ô Mã ĐT KCB trên màn hình Tiếp nhận / Thông tin thẻ"
+      },
+      {
+        no: 11.5,
         docField: "Mã số BHXH / Thẻ BHYT số",
         example: "DN424272131563527008",
         table: "hms_card / hms_doc / bh_ct01",
