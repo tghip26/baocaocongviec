@@ -1,49 +1,49 @@
 /**
  * tool-sql-builder.js
- * Trình Sinh Câu Lệnh Báo Cáo SQL Tự Động Từ CSDL VIMES
- * Cung cấp các mẫu truy vấn nghiệp vụ thường quy & Trình dựng câu lệnh tùy biến trực quan
+ * Trình Sinh Câu Lệnh Báo Cáo SQL Tự Động Từ CSDL VIMES HIS (PostgreSQL)
+ * Cung cấp các mẫu truy vấn nghiệp vụ bệnh viện thực tế & Trình dựng câu lệnh tùy biến trực quan
  */
 
 const ToolSqlBuilder = {
-  // Kho mẫu truy vấn SQL báo cáo bệnh viện thường dùng
+  // Kho mẫu truy vấn SQL báo cáo bệnh viện chuẩn xác trên CSDL VIMES
   templates: [
     {
       id: "rpt_kcb_ngoaitru",
       name: "Báo cáo Khám chữa bệnh Ngoại trú",
       category: "KCB & Tiếp đón",
-      description: "Thống kê lượt khám ngoại trú, thông tin bệnh nhân, mã thẻ BHYT, phòng khám, bác sĩ khám và chẩn đoán ICD-10",
+      description: "Thống kê lượt tiếp đón khám ngoại trú, thông tin bệnh nhân, mã thẻ BHYT, phòng khám, bác sĩ khám và chẩn đoán ICD-10",
       sql: `-- =========================================================================
--- BÁO CÁO THỐNG KÊ LƯỢT KHÁM CHỮA BỆNH NGOẠI TRÚ
--- Nguồn dữ liệu: CSDL VIMES (hsp_treatment, hsp_patient, hsp_dept, hsp_icd)
+-- BÁO CÁO THỐNG KÊ LƯỢT TIẾP ĐÓN & KHÁM CHỮA BỆNH NGOẠI TRÚ
+-- Nguồn dữ liệu: CSDL VIMES (hms_doc, hms_patient, hms_dept, sys_user, sys_icd)
 -- =========================================================================
 SELECT 
-    t.treatmentno AS "Mã Điều Trị",
-    p.patientno AS "Mã Bệnh Nhân",
-    p.fullname AS "Họ Và Tên",
-    TO_CHAR(p.birthday, 'DD/MM/YYYY') AS "Ngày Sinh",
-    CASE WHEN p.gender = 1 THEN 'Nam' ELSE 'Nữ' END AS "Giới Tính",
-    p.healthinsuranceno AS "Mã Thẻ BHYT",
-    p.address AS "Địa Chỉ",
-    d.deptname AS "Khoa/Phòng Khám",
-    TO_CHAR(t.regdate, 'DD/MM/YYYY HH24:MI') AS "Thời Gian Đến Khám",
-    t.icdcode AS "Mã Bệnh ICD10",
-    icd.icdname AS "Chẩn Đoán Bệnh",
-    t.doctorname AS "Bác Sĩ Khám",
+    d.hd_docno AS "Số Hồ Sơ KCB",
+    p.hp_patientno AS "Mã Bệnh Nhân",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname, ''), ' ', p.hp_firstname)) AS "Họ Tên Người Bệnh",
+    TO_CHAR(p.hp_birthdate, 'DD/MM/YYYY') AS "Ngày Sinh",
+    d.hd_yofage AS "Tuổi",
+    CASE WHEN p.hp_sex IN ('M', '1') THEN 'Nam' ELSE 'Nữ' END AS "Giới Tính",
+    d.hd_cardno AS "Mã Thẻ BHYT",
+    p.hp_dtladdr AS "Địa Chỉ Thường Trú",
+    dept.hd_name AS "Khoa/Phòng Khám",
+    TO_CHAR(d.hd_admitdate, 'DD/MM/YYYY HH24:MI') AS "Thời Gian Tiếp Đón",
+    d.hd_icd AS "Mã Bệnh ICD-10",
+    d.hd_diagnostic AS "Chẩn Đoán Khám Bệnh",
+    u.su_fullname AS "Bác Sĩ Khám",
     CASE 
-        WHEN t.status = 1 THEN 'Đang khám'
-        WHEN t.status = 2 THEN 'Đã kết thúc khám'
-        WHEN t.status = 3 THEN 'Chuyển vào nội trú'
-        WHEN t.status = 4 THEN 'Chuyển tuyến viện'
+        WHEN d.hd_status = 'O' THEN 'Đang khám ngoại trú'
+        WHEN d.hd_status = 'T' THEN 'Đã kết thúc đợt KCB'
+        WHEN d.hd_status = 'I' THEN 'Đã chuyển vào nội trú'
+        WHEN d.hd_status = 'X' THEN 'Đã chuyển tuyến viện'
         ELSE 'Khác'
     END AS "Trạng Thái Xử Trí"
-FROM hsp_treatment t
-INNER JOIN hsp_patient p ON t.patientid = p.patientid
-LEFT JOIN hsp_dept d ON t.deptid = d.deptid
-LEFT JOIN hsp_icd icd ON t.icdcode = icd.icdcode
-WHERE t.treatmenttype = 1 -- 1: Khám Ngoại trú
-  AND t.regdate >= DATE_TRUNC('month', CURRENT_DATE) -- Từ đầu tháng hiện tại
-  AND t.regdate < CURRENT_DATE + INTERVAL '1 day'
-ORDER BY t.regdate DESC;`
+FROM hms_doc d
+INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno
+LEFT JOIN hms_dept dept ON d.hd_enddept = dept.hd_deptid
+LEFT JOIN sys_user u ON d.hd_doctor = u.su_userid
+WHERE d.hd_admitdate >= DATE_TRUNC('month', CURRENT_DATE) -- Từ đầu tháng hiện tại
+  AND d.hd_admitdate < CURRENT_DATE + INTERVAL '1 day'
+ORDER BY d.hd_admitdate DESC;`
     },
     {
       id: "rpt_benhnhan_noitru",
@@ -52,30 +52,29 @@ ORDER BY t.regdate DESC;`
       description: "Thống kê danh sách người bệnh đang điều trị nội trú, khoa điều trị, số buồng, số giường và số ngày nằm viện",
       sql: `-- =========================================================================
 -- BÁO CÁO DANH SÁCH BỆNH NHÂN ĐANG ĐIỀU TRỊ NỘI TRÚ & NGÀY GIƯỜNG
--- Nguồn dữ liệu: CSDL VIMES (hsp_treatment, hsp_patient, hsp_dept, hsp_bed_history)
+-- Nguồn dữ liệu: CSDL VIMES (hms_doc, hms_patient, hms_clinical_record, hms_dept, sys_user)
 -- =========================================================================
 SELECT 
-    t.treatmentno AS "Mã Hồ Sơ Bệnh Án",
-    p.patientno AS "Mã Bệnh Nhân",
-    p.fullname AS "Họ Tên Người Bệnh",
-    p.healthinsuranceno AS "Số Thẻ BHYT",
-    d.deptname AS "Khoa Điều Trị",
-    b.roomname AS "Buồng Bệnh",
-    b.bedcode AS "Số Giường",
-    TO_CHAR(t.admitdate, 'DD/MM/YYYY HH24:MI') AS "Ngày Giờ Vào Viện",
-    ROUND(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - t.admitdate)) / 86400, 1) AS "Số Ngày Đang Điều Trị",
-    t.mainicd AS "Mã Bệnh Chính",
-    icd.icdname AS "Chẩn Đoán Vào Khoa",
-    t.treatingdoctor AS "Bác Sĩ Phụ Trách",
-    t.depositamount AS "Tạm Ứng (VNĐ)"
-FROM hsp_treatment t
-INNER JOIN hsp_patient p ON t.patientid = p.patientid
-INNER JOIN hsp_dept d ON t.deptid = d.deptid
-LEFT JOIN hsp_bed_history b ON t.treatmentid = b.treatmentid AND b.isactive = 1
-LEFT JOIN hsp_icd icd ON t.mainicd = icd.icdcode
-WHERE t.treatmenttype = 2 -- 2: Điều trị Nội trú
-  AND (t.dischargedate IS NULL OR t.status = 1) -- Đang còn nằm viện
-ORDER BY d.deptname ASC, t.admitdate ASC;`
+    d.hd_docno AS "Số Hồ Sơ KCB",
+    cr.hcr_recordno AS "Số Lưu Trữ Bệnh Án",
+    p.hp_patientno AS "Mã Bệnh Nhân",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname, ''), ' ', p.hp_firstname)) AS "Họ Tên Người Bệnh",
+    d.hd_cardno AS "Số Thẻ BHYT",
+    dept.hd_name AS "Khoa Điều Trị",
+    TO_CHAR(d.hd_admitdate, 'DD/MM/YYYY HH24:MI') AS "Thời Gian Vào Viện",
+    TO_CHAR(cr.hcr_admitdate, 'DD/MM/YYYY HH24:MI') AS "Thời Gian Vào Khoa",
+    ROUND(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - cr.hcr_admitdate)) / 86400, 1) AS "Số Ngày Đang Nằm Viện",
+    d.hd_icd AS "Mã Bệnh Chính",
+    d.hd_diagnostic AS "Chẩn Đoán Vào Khoa",
+    u.su_fullname AS "Bác Sĩ Phụ Trách",
+    cr.hcr_treatment_method AS "Phương Pháp Điều Trị"
+FROM hms_doc d
+INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno
+INNER JOIN hms_clinical_record cr ON d.hd_docno = cr.hcr_docno
+LEFT JOIN hms_dept dept ON d.hd_enddept = dept.hd_deptid
+LEFT JOIN sys_user u ON cr.hcr_doctor = u.su_userid
+WHERE (d.hd_enddate IS NULL OR d.hd_status = 'I') -- Đang còn nằm viện
+ORDER BY dept.hd_name ASC, d.hd_admitdate ASC;`
     },
     {
       id: "rpt_doanhthu_vienphi",
@@ -84,100 +83,168 @@ ORDER BY d.deptname ASC, t.admitdate ASC;`
       description: "Tổng hợp doanh thu chi tiết theo đối tượng BHYT, Viện phí, Bệnh nhân cùng chi trả, Nguồn thu viện phí",
       sql: `-- =========================================================================
 -- BÁO CÁO TỔNG HỢP DOANH THU VIỆN PHÍ & BẢO HIỂM Y TẾ
--- Nguồn dữ liệu: CSDL VIMES (hsp_invoice, hsp_treatment, hsp_patient, hsp_dept)
+-- Nguồn dữ liệu: CSDL VIMES (hms_fee, hms_fee_invoice, hms_doc, hms_dept)
 -- =========================================================================
 SELECT 
-    d.deptname AS "Khoa Chỉ Định / Thu Viện Phí",
-    COUNT(DISTINCT inv.invoiceno) AS "Tổng Số Phiếu Thu",
-    SUM(inv.totalamount) AS "Tổng Chi Phí KCB (VNĐ)",
-    SUM(inv.bhxhamount) AS "BHYT Thanh Toán (VNĐ)",
-    SUM(inv.copayamount) AS "Bệnh Nhân Cùng Chi Trả (VNĐ)",
-    SUM(inv.selfamount) AS "Bệnh Nhân Tự Trả / Dịch Vụ (VNĐ)",
-    SUM(inv.exemptionamount) AS "Miễn Giảm Viện Phí (VNĐ)",
-    SUM(inv.actualamount) AS "Thực Thu Tiền Mặt (VNĐ)"
-FROM hsp_invoice inv
-INNER JOIN hsp_treatment t ON inv.treatmentid = t.treatmentid
-INNER JOIN hsp_dept d ON inv.deptid = d.deptid
-WHERE inv.invoicedate >= DATE_TRUNC('month', CURRENT_DATE)
-  AND inv.invoicedate < CURRENT_DATE + INTERVAL '1 day'
-  AND inv.isactive = 1 AND inv.iscanceled = 0
-GROUP BY d.deptname
-ORDER BY SUM(inv.totalamount) DESC;`
+    dept.hd_name AS "Khoa Chỉ Định / Nơi Phát Sinh",
+    COUNT(DISTINCT f.hfe_docno) AS "Tổng Số Lượt Bệnh Nhân",
+    SUM(f.hfe_cost) AS "Tổng Chi Phí KCB (VNĐ)",
+    SUM(f.hfe_inspaid_amount) AS "Quỹ BHYT Thanh Toán (VNĐ)",
+    SUM(f.hfe_patpaid_amount) AS "Bệnh Nhân Cùng Chi Trả (VNĐ)",
+    SUM(f.hfe_exam_amount) AS "Tiền Khám Bệnh (VNĐ)",
+    SUM(f.hfe_bed_amount) AS "Tiền Ngày Giường (VNĐ)",
+    SUM(f.hfe_lab_amount) AS "Tiền Xét Nghiệm (VNĐ)",
+    SUM(f.hfe_image_amount) AS "Tiền CĐHA & TDCN (VNĐ)",
+    SUM(f.hfe_drug_amount) AS "Tiền Thuốc (VNĐ)",
+    SUM(f.hfe_material_amount) AS "Tiền Vật Tư Y Tế (VNĐ)",
+    SUM(f.hfe_deposit_amount) AS "Tổng Tạm Ứng Đã Nộp (VNĐ)"
+FROM hms_fee f
+INNER JOIN hms_doc d ON f.hfe_docno = d.hd_docno
+LEFT JOIN hms_dept dept ON d.hd_enddept = dept.hd_deptid
+WHERE d.hd_admitdate >= DATE_TRUNC('month', CURRENT_DATE)
+  AND d.hd_admitdate < CURRENT_DATE + INTERVAL '1 day'
+GROUP BY dept.hd_name
+ORDER BY SUM(f.hfe_cost) DESC;`
     },
     {
       id: "rpt_kedon_duoc",
       name: "Báo cáo Kê đơn Thuốc & Sử dụng Dược",
       category: "Dược & Kho thuốc",
-      description: "Chi tiết số lượng thuốc đã kê đơn, hàm lượng, số lượng phát, đơn giá và tổng thành tiền theo từng bác sĩ",
+      description: "Chi tiết số lượng thuốc đã kê đơn, hàm lượng, số lượng phát, đơn vị tính và bác sĩ kê đơn",
       sql: `-- =========================================================================
 -- BÁO CÁO TỔNG HỢP KÊ ĐƠN THUỐC & SỬ DỤNG DƯỢC
--- Nguồn dữ liệu: CSDL VIMES (hsp_prescription, hsp_prescription_item, med_medicine)
+-- Nguồn dữ liệu: CSDL VIMES (hms_pharma_order, hms_pharma_order_line, m_productitem, sys_user)
 -- =========================================================================
 SELECT 
-    m.medicinecode AS "Mã Thuốc",
-    m.medicinename AS "Tên Thuốc & Biệt Dược",
-    m.unitname AS "Đơn Vị Tính",
-    m.concentration AS "Hàm Lượng",
-    SUM(pi.quantity) AS "Tổng Số Lượng Kê",
-    pi.unitprice AS "Đơn Giá (VNĐ)",
-    SUM(pi.quantity * pi.unitprice) AS "Thành Tiền (VNĐ)",
-    COUNT(DISTINCT p.prescriptionno) AS "Số Lượt Đơn Kê",
-    pr.deptname AS "Khoa Kê Đơn"
-FROM hsp_prescription p
-INNER JOIN hsp_prescription_item pi ON p.prescriptionid = pi.prescriptionid
-INNER JOIN med_medicine m ON pi.medicineid = m.medicineid
-INNER JOIN hsp_dept pr ON p.deptid = pr.deptid
-WHERE p.prescriptiondate >= DATE_TRUNC('month', CURRENT_DATE)
-  AND p.prescriptiondate < CURRENT_DATE + INTERVAL '1 day'
-  AND p.isactive = 1
-GROUP BY m.medicinecode, m.medicinename, m.unitname, m.concentration, pi.unitprice, pr.deptname
-ORDER BY SUM(pi.quantity * pi.unitprice) DESC;`
+    pi.mp_product_id AS "Mã Thuốc",
+    pi.mp_name AS "Tên Thuốc & Biệt Dược",
+    pi.mp_active_ingredient AS "Hoạt Chất Chính",
+    pi.mp_strength AS "Hàm Lượng",
+    pi.mp_unit AS "Đơn Vị Tính",
+    SUM(pol.hpol_qtyissue) AS "Tổng Số Lượng Cấp Phát",
+    COUNT(DISTINCT po.hpo_orderid) AS "Số Lượt Đơn Thuốc",
+    u.su_fullname AS "Bác Sĩ Kê Đơn",
+    dept.hd_name AS "Khoa/Phòng Kê Đơn"
+FROM hms_pharma_order po
+INNER JOIN hms_pharma_order_line pol ON po.hpo_orderid = pol.hpol_orderid
+INNER JOIN m_productitem pi ON pol.hpol_product_id = pi.mp_product_id
+INNER JOIN hms_doc d ON po.hpo_docno = d.hd_docno
+LEFT JOIN hms_dept dept ON d.hd_enddept = dept.hd_deptid
+LEFT JOIN sys_user u ON po.hpo_doctor = u.su_userid
+WHERE po.hpo_orderdate >= DATE_TRUNC('month', CURRENT_DATE)
+  AND po.hpo_orderdate < CURRENT_DATE + INTERVAL '1 day'
+GROUP BY pi.mp_product_id, pi.mp_name, pi.mp_active_ingredient, pi.mp_strength, pi.mp_unit, u.su_fullname, dept.hd_name
+ORDER BY SUM(pol.hpol_qtyissue) DESC;`
     },
     {
-      id: "rpt_phauthuat_thuthuat",
-      name: "Báo cáo Thống kê Phẫu thuật - Thủ thuật",
-      category: "Ngoại khoa & PTTT",
-      description: "Thống kê ca mổ theo phân loại (Đặc biệt, Loại 1, Loại 2, Loại 3), phẫu thuật viên chính, phương pháp vô cảm",
+      id: "rpt_ra_vien_bhxh",
+      name: "Báo cáo Bệnh nhân Ra viện & Nghỉ BHXH (MS: 02/TT25)",
+      category: "Nội trú & Xuất viện",
+      description: "Danh sách người bệnh xuất viện, số lưu trữ hồ sơ, chẩn đoán, số ngày nghỉ thêm hưởng chế độ BHXH",
       sql: `-- =========================================================================
--- BÁO CÁO THỐNG KÊ PHẪU THUẬT & THỦ THUẬT
--- Nguồn dữ liệu: CSDL VIMES (hsp_surgery, hsp_treatment, hsp_patient, hsp_icd)
+-- BÁO CÁO DANH SÁCH BỆNH NHÂN RA VIỆN & CẤP GIẤY NGHỈ BHXH (02/TT25)
+-- Nguồn dữ liệu: CSDL VIMES (hms_doc, hms_patient, hms_clinical_record, hms_dept, sys_user)
 -- =========================================================================
 SELECT 
-    s.surgeryno AS "Mã Ca Mổ/Thủ Thuật",
-    p.patientno AS "Mã BN",
-    p.fullname AS "Họ Tên Người Bệnh",
-    s.surgeryname AS "Tên Phẫu Thuật / Thủ Thuật",
-    s.surgerytype AS "Phân Loại PTTT",
-    TO_CHAR(s.starttime, 'DD/MM/YYYY HH24:MI') AS "Thời Gian Bắt Đầu",
-    TO_CHAR(s.endtime, 'DD/MM/YYYY HH24:MI') AS "Thời Gian Kết Thúc",
-    s.maindoctor AS "Phẫu Thuật Viên Chính",
-    s.anesthesiadoctor AS "Bác Sĩ Gây Mê",
-    s.anesthesiamethod AS "Phương Pháp Vô Cảm",
-    s.preopdiagnosis AS "Chẩn Đoán Trước Mổ",
-    s.postopdiagnosis AS "Chẩn Đoán Sau Mổ",
-    CASE 
-        WHEN s.status = 1 THEN 'Hoàn thành an toàn'
-        WHEN s.status = 2 THEN 'Có tai biến/biến chứng'
-        ELSE 'Khác'
-    END AS "Kết Quả"
-FROM hsp_surgery s
-INNER JOIN hsp_treatment t ON s.treatmentid = t.treatmentid
-INNER JOIN hsp_patient p ON t.patientid = p.patientid
-WHERE s.starttime >= DATE_TRUNC('month', CURRENT_DATE)
-  AND s.starttime < CURRENT_DATE + INTERVAL '1 day'
-ORDER BY s.starttime DESC;`
+    d.hd_docno AS "Số Hồ Sơ KCB",
+    cr.hcr_recordno AS "Số Lưu Trữ Bệnh Án",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname, ''), ' ', p.hp_firstname)) AS "Họ Tên Bệnh Nhân",
+    p.hp_sin AS "Số CCCD/Định Danh",
+    d.hd_cardno AS "Mã Thẻ BHYT",
+    dept.hd_name AS "Khoa Điều Trị",
+    TO_CHAR(d.hd_admitdate, 'DD/MM/YYYY HH24:MI') AS "Vào Viện Lúc",
+    TO_CHAR(d.hd_enddate, 'DD/MM/YYYY HH24:MI') AS "Ra Viện Lúc",
+    '[' || d.hd_icd || '] ' || d.hd_diagnostic AS "Chẩn Đoán Ra Viện",
+    cr.hcr_treatment_method AS "Phương Pháp Điều Trị",
+    cr.hcr_rest_days AS "Số Ngày Nghỉ BHXH",
+    TO_CHAR(cr.hcr_rest_from, 'DD/MM/YYYY') AS "Nghỉ Từ Ngày",
+    TO_CHAR(cr.hcr_rest_to, 'DD/MM/YYYY') AS "Nghỉ Đến Ngày",
+    u_treat.su_fullname AS "Bác Sĩ Điều Trị",
+    u_head.su_fullname AS "Trưởng Khoa / Lãnh Đạo Ký"
+FROM hms_doc d
+INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno
+INNER JOIN hms_clinical_record cr ON d.hd_docno = cr.hcr_docno
+LEFT JOIN hms_dept dept ON d.hd_enddept = dept.hd_deptid
+LEFT JOIN sys_user u_treat ON cr.hcr_doctor = u_treat.su_userid
+LEFT JOIN sys_user u_head ON d.hd_doctor = u_head.su_userid
+WHERE d.hd_enddate >= DATE_TRUNC('month', CURRENT_DATE)
+  AND d.hd_enddate < CURRENT_DATE + INTERVAL '1 day'
+ORDER BY d.hd_enddate DESC;`
+    },
+    {
+      id: "rpt_giam_dinh_xml",
+      name: "Báo cáo Đối soát Dữ liệu XML 130 BHYT",
+      category: "Giám định BHYT",
+      description: "Tổng hợp dữ liệu chi phí KCB BHYT XML 130 (XML1, XML2, XML3) phục vụ kiểm tra đối soát cổng BHXH",
+      sql: `-- =========================================================================
+-- BÁO CÁO ĐỐI SOÁT DỮ LIỆU BẢNG KÊ TỔNG HỢP XML 130 BHYT (bh_ct01, bh_ct02, bh_ct03)
+-- Nguồn dữ liệu: CSDL VIMES (bh_ct01, bh_ct02, bh_ct03, hms_doc)
+-- =========================================================================
+SELECT 
+    ct1.ma_lk AS "Mã Liên Kết",
+    ct1.ho_ten AS "Họ Tên Người Bệnh",
+    ct1.ma_the_bhyt AS "Mã Thẻ BHYT",
+    ct1.ngay_vao AS "Ngày Vào KCB",
+    ct1.ngay_ra AS "Ngày Ra KCB",
+    ct1.ma_benh AS "Mã ICD-10",
+    ct1.ten_benh AS "Tên Bệnh",
+    ct1.t_tongchi AS "Tổng Chi Phí (XML1)",
+    ct1.t_bhtt AS "BHYT Thanh Toán (XML1)",
+    ct1.t_bntt AS "Người Bệnh Trả (XML1)",
+    ct1.t_bncct AS "Đồng Chi Trả (XML1)",
+    ct1.t_thuoc AS "Tiền Thuốc (XML1)",
+    ct1.t_vtyt AS "Tiền VTYT (XML1)",
+    ct1.t_xn AS "Tiền Xét Nghiệm (XML1)",
+    ct1.t_cdha AS "Tiền CĐHA (XML1)"
+FROM bh_ct01 ct1
+WHERE ct1.ngay_ra >= TO_CHAR(DATE_TRUNC('month', CURRENT_DATE), 'YYYYMMDDHH24MI')
+ORDER BY ct1.ngay_ra DESC;`
+    },
+    {
+      id: "rpt_ton_kho_duoc",
+      name: "Báo cáo Tồn kho Dược & Vật tư Y tế",
+      category: "Dược & Kho thuốc",
+      description: "Thống kê lượng thuốc, vật tư y tế tồn kho theo từng nhóm danh mục và hạn dùng",
+      sql: `-- =========================================================================
+-- BÁO CÁO THỐNG KÊ TỒN KHO DƯỢC & VẬT TƯ Y TẾ
+-- Nguồn dữ liệu: CSDL VIMES (m_productitem, m_transaction, m_stock)
+-- =========================================================================
+SELECT 
+    pi.mp_product_id AS "Mã Hàng Hóa",
+    pi.mp_name AS "Tên Thuốc / Vật Tư",
+    pi.mp_active_ingredient AS "Hoạt Chất",
+    pi.mp_strength AS "Hàm Lượng",
+    pi.mp_unit AS "Đơn Vị",
+    pi.mp_category AS "Nhóm Dược",
+    COALESCE(SUM(t.mt_qtyonhand), 0) AS "Số Lượng Tồn Kho",
+    pi.mp_unitprice AS "Đơn Giá (VNĐ)",
+    COALESCE(SUM(t.mt_qtyonhand), 0) * COALESCE(pi.mp_unitprice, 0) AS "Tổng Giá Trị Tồn (VNĐ)"
+FROM m_productitem pi
+LEFT JOIN m_transaction t ON pi.mp_product_id = t.mt_product_id
+GROUP BY pi.mp_product_id, pi.mp_name, pi.mp_active_ingredient, pi.mp_strength, pi.mp_unit, pi.mp_category, pi.mp_unitprice
+HAVING COALESCE(SUM(t.mt_qtyonhand), 0) > 0
+ORDER BY pi.mp_name ASC;`
     }
   ],
 
-  // Khởi tạo và cấu hình câu lệnh tùy biến
+  // Khởi tạo và cấu hình câu lệnh tùy biến chuẩn VIMES
   generateCustomSql(options = {}) {
     const {
-      mainTable = "hsp_treatment",
-      selectedFields = ["t.treatmentno", "p.fullname", "p.healthinsuranceno", "d.deptname", "t.regdate"],
+      mainTable = "hms_doc",
+      selectedFields = [
+        "d.hd_docno AS \"Số Hồ Sơ KCB\"",
+        "p.hp_patientno AS \"Mã Bệnh Nhân\"",
+        "TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname, ''), ' ', p.hp_firstname)) AS \"Họ Tên Bệnh Nhân\"",
+        "d.hd_cardno AS \"Số Thẻ BHYT\"",
+        "dept.hd_name AS \"Khoa Điều Trị\"",
+        "TO_CHAR(d.hd_admitdate, 'DD/MM/YYYY HH24:MI') AS \"Ngày Tiếp Đón\"",
+        "d.hd_icd AS \"Mã ICD-10\"",
+        "d.hd_diagnostic AS \"Chẩn Đoán Bệnh\""
+      ],
       includePatient = true,
       includeDept = true,
-      includeIcd = true,
-      includeInvoice = false,
+      includeClinical = true,
+      includeFee = false,
       dateRangeType = "month", // "month" | "year" | "today" | "all"
       statusFilter = "all", // "all" | "active" | "completed"
       limit = 100
@@ -185,7 +252,7 @@ ORDER BY s.starttime DESC;`
 
     let sql = `-- =========================================================================\n`;
     sql += `-- CÂU LỆNH SQL ĐƯỢC SINH TỰ ĐỘNG TỪ BẢNG: ${mainTable.toUpperCase()}\n`;
-    sql += `-- Hệ thống CSDL VIMES - BVĐK Bắc Ninh Số 2\n`;
+    sql += `-- Hệ thống CSDL VIMES HIS - BVĐK Bắc Ninh Số 2\n`;
     sql += `-- Thời gian sinh: ${new Date().toLocaleString("vi-VN")}\n`;
     sql += `-- =========================================================================\n\n`;
 
@@ -193,43 +260,43 @@ ORDER BY s.starttime DESC;`
     if (selectedFields && selectedFields.length > 0) {
       sql += selectedFields.map(f => `    ${f}`).join(",\n");
     } else {
-      sql += `    t.*, p.fullname, p.healthinsuranceno, d.deptname`;
+      sql += `    d.hd_docno, p.hp_patientno, p.hp_surname, p.hp_firstname, d.hd_cardno, dept.hd_name`;
     }
-    sql += `\nFROM ${mainTable} t\n`;
+    sql += `\nFROM ${mainTable} d\n`;
 
     if (includePatient) {
-      sql += `INNER JOIN hsp_patient p ON t.patientid = p.patientid\n`;
+      sql += `INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno\n`;
     }
     if (includeDept) {
-      sql += `LEFT JOIN hsp_dept d ON t.deptid = d.deptid\n`;
+      sql += `LEFT JOIN hms_dept dept ON d.hd_enddept = dept.hd_deptid\n`;
     }
-    if (includeIcd) {
-      sql += `LEFT JOIN hsp_icd icd ON t.icdcode = icd.icdcode\n`;
+    if (includeClinical) {
+      sql += `LEFT JOIN hms_clinical_record cr ON d.hd_docno = cr.hcr_docno\n`;
     }
-    if (includeInvoice) {
-      sql += `LEFT JOIN hsp_invoice inv ON t.treatmentid = inv.treatmentid AND inv.isactive = 1\n`;
+    if (includeFee) {
+      sql += `LEFT JOIN hms_fee f ON d.hd_docno = f.hfe_docno\n`;
     }
 
     const whereClauses = [];
     if (dateRangeType === "today") {
-      whereClauses.push("t.regdate >= CURRENT_DATE");
+      whereClauses.push("d.hd_admitdate >= CURRENT_DATE");
     } else if (dateRangeType === "month") {
-      whereClauses.push("t.regdate >= DATE_TRUNC('month', CURRENT_DATE)");
+      whereClauses.push("d.hd_admitdate >= DATE_TRUNC('month', CURRENT_DATE)");
     } else if (dateRangeType === "year") {
-      whereClauses.push("t.regdate >= DATE_TRUNC('year', CURRENT_DATE)");
+      whereClauses.push("d.hd_admitdate >= DATE_TRUNC('year', CURRENT_DATE)");
     }
 
     if (statusFilter === "active") {
-      whereClauses.push("t.status = 1");
+      whereClauses.push("(d.hd_enddate IS NULL OR d.hd_status IN ('O', 'I'))");
     } else if (statusFilter === "completed") {
-      whereClauses.push("t.status = 2");
+      whereClauses.push("d.hd_status = 'T'");
     }
 
     if (whereClauses.length > 0) {
       sql += `WHERE ` + whereClauses.join("\n  AND ") + `\n`;
     }
 
-    sql += `ORDER BY t.regdate DESC\n`;
+    sql += `ORDER BY d.hd_admitdate DESC\n`;
     if (limit > 0) {
       sql += `LIMIT ${limit};`;
     } else {
@@ -258,6 +325,7 @@ ORDER BY s.starttime DESC;`
       "SELECT", "FROM", "WHERE", "JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "ON",
       "GROUP BY", "ORDER BY", "HAVING", "LIMIT", "AS", "AND", "OR", "NOT", "IN", "IS", "NULL",
       "CASE", "WHEN", "THEN", "ELSE", "END", "DISTINCT", "COUNT", "SUM", "AVG", "ROUND",
+      "COALESCE", "TRIM", "CONCAT", "SUBSTRING",
       "TO_CHAR", "DATE_TRUNC", "CURRENT_DATE", "CURRENT_TIMESTAMP", "INTERVAL", "EXTRACT", "EPOCH", "DESC", "ASC"
     ];
 
