@@ -11144,109 +11144,142 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   transform: translateY(-1px) !important;
 }
 
-/* 2. Single Unified Control Bar */
+/* =========================================================
+   DUTY ROSTER – FULLSCREEN CALENDAR & POPUP BUTTONS (v2.8.5)
+   ========================================================= */
+
+/* 1. Single Unified Control Bar */
 .duty-control-bar {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  flex-wrap: wrap !important;
   gap: 12px !important;
-  background: rgba(15, 23, 42, 0.8) !important;
-  backdrop-filter: blur(12px) !important;
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 12px !important;
-  padding: 8px 14px !important;
-  margin-bottom: 16px !important;
-  flex-wrap: wrap !important;
+  padding: 10px 16px !important;
+  margin-bottom: 14px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 .duty-mode-tabs {
   display: flex !important;
-  gap: 4px !important;
-  background: rgba(0, 0, 0, 0.3) !important;
-  padding: 3px !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  gap: 6px !important;
 }
 
 .duty-tab-btn {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: transparent !important;
-  border: none !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #94a3b8 !important;
-  font-size: 0.78rem !important;
+  font-size: 0.8rem !important;
   font-weight: 600 !important;
-  padding: 5px 12px !important;
-  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
-  transition: all 0.18s ease !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .duty-tab-btn:hover {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  color: #38bdf8 !important;
 }
 
 .duty-tab-btn.active {
-  background: #0284c7 !important;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+  border-color: #38bdf8 !important;
   color: #ffffff !important;
-  font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4) !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35) !important;
 }
 
+/* 2. Quick Panel Toggle Buttons */
+.duty-quick-panels-btns {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.btn-duty-panel-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(30, 41, 59, 0.75) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  color: #f1f5f9 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.btn-duty-panel-toggle:hover {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25) !important;
+}
+
+.btn-duty-panel-toggle .btn-panel-icon {
+  font-size: 0.95rem !important;
+}
+
+/* 3. Filter Cluster */
 .duty-filter-right-cluster {
   display: flex !important;
   align-items: center !important;
   gap: 14px !important;
-  flex-wrap: wrap !important;
 }
 
 .duty-staff-filter-pill {
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: rgba(255, 255, 255, 0.04) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 8px !important;
-  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  padding: 3px 10px !important;
   color: #94a3b8 !important;
 }
 
 .duty-filter-select-sm {
   background: transparent !important;
   border: none !important;
-  color: #f8fafc !important;
+  color: #f1f5f9 !important;
   font-size: 0.78rem !important;
-  font-family: inherit !important;
+  font-weight: 500 !important;
   outline: none !important;
   cursor: pointer !important;
 }
 
-.duty-filter-select-sm option {
-  background: #0f172a !important;
-  color: #f8fafc !important;
-}
-
 .duty-legend {
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 12px !important;
-  font-size: 0.74rem !important;
+  gap: 10px !important;
+  font-size: 0.72rem !important;
   color: #94a3b8 !important;
 }
 
 .legend-item {
-  display: inline-flex !important;
+  display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
 }
 
 .legend-dot {
-  display: inline-block !important;
-  width: 8px !important;
-  height: 8px !important;
+  width: 7px !important;
+  height: 7px !important;
   border-radius: 50% !important;
+  display: inline-block !important;
 }
 
 .legend-dot.normal {
@@ -11259,135 +11292,12 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.6) !important;
 }
 
-/* 3. 2-Column Dashboard Layout */
-.duty-roster-grid {
-  display: grid !important;
-  grid-template-columns: 280px 1fr !important;
-  gap: 16px !important;
-  align-items: start !important;
+/* 4. Fullscreen Workspace & 7-Column Calendar Grid */
+.duty-fullscreen-workspace {
   width: 100% !important;
-}
-
-@media (max-width: 1024px) {
-  .duty-roster-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-.duty-sidebar {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 14px !important;
-}
-
-.duty-personal-card,
-.duty-staff-card {
-  background: rgba(15, 23, 42, 0.75) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  border-radius: 12px !important;
-  padding: 14px !important;
-}
-
-.duty-card-header,
-.duty-staff-header {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 10px !important;
-  padding-bottom: 8px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-}
-
-.header-inline,
-.staff-header-left {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
-.card-icon {
-  font-size: 1.1rem !important;
-}
-
-.header-inline h3,
-.staff-title {
-  font-size: 0.85rem !important;
-  font-weight: 700 !important;
-  color: #ffffff !important;
-  margin: 0 !important;
-}
-
-.personal-status-pill {
-  font-size: 0.66rem !important;
-  font-weight: 700 !important;
-  padding: 2px 7px !important;
-  border-radius: 4px !important;
-  background: rgba(56, 189, 248, 0.12) !important;
-  color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.25) !important;
-}
-
-.personal-next-shift-box {
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-  border-radius: 8px !important;
-  padding: 8px 10px !important;
-  margin-bottom: 10px !important;
-}
-
-.next-shift-lbl {
-  display: block !important;
-  font-size: 0.68rem !important;
-  font-weight: 700 !important;
-  color: #fbbf24 !important;
-  margin-bottom: 2px !important;
-}
-
-.next-shift-val {
-  font-size: 0.78rem !important;
-  font-weight: 600 !important;
-  color: #f8fafc !important;
-  line-height: 1.3 !important;
-}
-
-.personal-stats-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, 1fr) !important;
-  gap: 6px !important;
-}
-
-.personal-stat-item {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-  border-radius: 6px !important;
-  padding: 6px 4px !important;
-  text-align: center !important;
-}
-
-.p-stat-val {
-  display: block !important;
-  font-size: 1.1rem !important;
-  font-weight: 800 !important;
-  color: #38bdf8 !important;
-}
-
-.p-stat-lbl {
-  font-size: 0.64rem !important;
-  color: #94a3b8 !important;
-}
-
-.personal-stat-item.weekend .p-stat-val {
-  color: #f59e0b !important;
-}
-
-/* 4. Duty Main Workspace & 7-Column Calendar Grid */
-.duty-main-workspace {
-  display: flex !important;
-  flex-direction: column !important;
   min-width: 0 !important;
-  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .duty-calendar-view {
@@ -11396,38 +11306,47 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   -webkit-backdrop-filter: blur(16px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 14px !important;
-  padding: 14px !important;
+  padding: 16px !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
   width: 100% !important;
+  overflow-x: auto !important;
 }
 
 .calendar-month-grid {
   display: grid !important;
-  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-  gap: 6px !important;
+  grid-template-columns: repeat(7, minmax(130px, 1fr)) !important;
+  gap: 8px !important;
   width: 100% !important;
+  min-width: 920px !important;
 }
 
 .calendar-col-header {
-  background: rgba(30, 41, 59, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #94a3b8 !important;
-  font-size: 0.75rem !important;
+  font-size: 0.82rem !important;
   font-weight: 700 !important;
   text-align: center !important;
-  padding: 8px 4px !important;
-  border-radius: 6px !important;
+  padding: 10px 6px !important;
+  border-radius: 8px !important;
   letter-spacing: 0.3px !important;
+}
+
+.calendar-col-header.col-weekend {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  color: #fbbf24 !important;
 }
 
 .calendar-day-cell {
   background: rgba(255, 255, 255, 0.03) !important;
   border: 1px solid rgba(255, 255, 255, 0.07) !important;
-  border-radius: 8px !important;
-  padding: 8px !important;
-  min-height: 80px !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  min-height: 110px !important;
   display: flex !important;
   flex-direction: column !important;
+  justify-content: space-between !important;
   gap: 6px !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative !important;
@@ -11436,19 +11355,24 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .calendar-day-cell:hover {
   background: rgba(255, 255, 255, 0.06) !important;
   border-color: rgba(56, 189, 248, 0.4) !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4) !important;
 }
 
 .calendar-day-cell.weekend {
   background: rgba(245, 158, 11, 0.04) !important;
-  border-color: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.16) !important;
 }
 
 .calendar-day-cell.blank {
   border: 1px dashed rgba(255, 255, 255, 0.04) !important;
   background: transparent !important;
   pointer-events: none !important;
+}
+
+.calendar-day-cell.my-duty-highlight {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35) !important;
 }
 
 .cal-day-header {
@@ -11459,15 +11383,19 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 .cal-date-num {
   font-family: var(--font-display) !important;
-  font-size: 0.85rem !important;
+  font-size: 0.95rem !important;
   font-weight: 800 !important;
   color: #ffffff !important;
 }
 
 .cal-day-tag {
-  font-size: 0.62rem !important;
+  font-size: 0.68rem !important;
   font-weight: 600 !important;
   color: #64748b !important;
+}
+
+.cal-day-tag.tag-weekend {
+  color: #fbbf24 !important;
 }
 
 .cal-shift-list {
@@ -11478,14 +11406,14 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .cal-duty-badge {
-  border-radius: 6px !important;
-  padding: 5px 6px !important;
+  border-radius: 8px !important;
+  padding: 6px 8px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
-  min-height: 30px !important;
+  transition: all 0.2s ease !important;
+  min-height: 48px !important;
   justify-content: center !important;
 }
 
@@ -11501,18 +11429,18 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .cal-duty-badge.has-staff {
-  background: rgba(56, 189, 248, 0.09) !important;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(37, 99, 235, 0.06) 100%) !important;
   border: 1px solid rgba(56, 189, 248, 0.25) !important;
 }
 
 .cal-duty-badge.has-staff:hover {
-  background: rgba(56, 189, 248, 0.22) !important;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(37, 99, 235, 0.15) 100%) !important;
   border-color: #38bdf8 !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35) !important;
 }
 
 .duty-badge-empty {
-  font-size: 0.68rem !important;
+  font-size: 0.7rem !important;
   color: #64748b !important;
   font-weight: 500 !important;
   text-align: center !important;
@@ -11520,9 +11448,19 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .duty-badge-name {
-  font-size: 0.72rem !important;
+  font-size: 0.8rem !important;
   font-weight: 700 !important;
   color: #38bdf8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  line-height: 1.3 !important;
+}
+
+.duty-badge-role {
+  font-size: 0.68rem !important;
+  color: #94a3b8 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -11530,22 +11468,31 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .duty-badge-phone {
-  font-size: 0.64rem !important;
-  color: #94a3b8 !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  color: #34d399 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  display: block !important;
 }
 
 .cal-duty-badge.highlight-duty {
   background: linear-gradient(135deg, rgba(2, 132, 199, 0.3) 0%, rgba(37, 99, 235, 0.25) 100%) !important;
   border-color: #38bdf8 !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45) !important;
 }
 
 .cal-duty-badge.badge-day-off {
   background: rgba(248, 113, 113, 0.08) !important;
   border: 1px dashed rgba(248, 113, 113, 0.35) !important;
+  text-align: center !important;
+}
+
+.cal-duty-badge.badge-day-off:hover {
+  background: rgba(248, 113, 113, 0.16) !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.3) !important;
 }
 
 .calendar-day-cell.day-off-duty {
@@ -11556,9 +11503,16 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .duty-badge-off {
   color: #f87171 !important;
   font-weight: 700 !important;
-  font-size: 0.72rem !important;
+  font-size: 0.76rem !important;
   text-align: center !important;
   display: block !important;
+}
+
+.duty-badge-sub-off {
+  color: #64748b !important;
+  font-size: 0.66rem !important;
+  display: block !important;
+  text-align: center !important;
 }
 
 /* =========================================================

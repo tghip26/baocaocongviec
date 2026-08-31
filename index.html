@@ -28,7 +28,7 @@
   </script>
 
   <!-- Master Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="style.css?v=2.8.0" />
+  <link rel="stylesheet" href="style.css?v=2.9.0" />
 </head>
 <body>
   <!-- App Layout Wrapper -->
@@ -1415,7 +1415,7 @@
             <button type="button" class="btn-duty-login-now" id="btnDutyLoginNow">Đăng Nhập Ngay</button>
           </div>
 
-          <!-- Single Unified Control Bar: Tabs + Filter + Legend -->
+          <!-- Single Unified Control Bar: Tabs + Quick Panel Buttons + Filter + Legend -->
           <div class="duty-control-bar">
             <!-- View Tabs -->
             <div class="duty-mode-tabs">
@@ -1430,6 +1430,18 @@
               <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 <span>Bảng Chấm Công</span>
+              </button>
+            </div>
+
+            <!-- 2 Quick Action Buttons: Thống Kê & Danh Sách Cán Bộ (Tiết kiệm không gian) -->
+            <div class="duty-quick-panels-btns">
+              <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStatsModal" title="Xem tổng hợp ca trực, ca sắp tới & thống kê chi tiết">
+                <span class="btn-panel-icon">📊</span>
+                <span>Thống Kê Ca Trực</span>
+              </button>
+              <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStaffModal" title="Xem & quản lý danh sách cán bộ P.CNTT">
+                <span class="btn-panel-icon">👥</span>
+                <span>Cán Bộ (<strong id="staffCountBtnBadge" style="color: #38bdf8;">0</strong>)</span>
               </button>
             </div>
 
@@ -1449,70 +1461,16 @@
             </div>
           </div>
 
-          <!-- Duty Roster Workspace Layout (2 columns: Sidebar & Main Calendar) -->
-          <div class="duty-roster-grid">
-            <!-- Cột trái: Thông tin cá nhân & Danh sách cán bộ -->
-            <div class="duty-sidebar">
-              <!-- Card 1: Thông tin & Thống kê trực -->
-              <div class="w2h-card duty-personal-card" id="dutyPersonalCard">
-                <div class="duty-card-header">
-                  <div class="header-inline">
-                    <span class="card-icon">⭐</span>
-                    <h3 id="personalCardTitle">Thông Tin Trực Cán Bộ</h3>
-                  </div>
-                  <span class="personal-status-pill" id="personalRolePill">Phòng CNTT</span>
-                </div>
-                <div class="w2h-card-body">
-                  <div class="personal-next-shift-box" id="personalNextShiftBox">
-                    <span class="next-shift-lbl">⏰ Ca trực sắp tới:</span>
-                    <div class="next-shift-val" id="personalNextShiftText">Đang tính toán...</div>
-                  </div>
-                  <div class="personal-stats-grid">
-                    <div class="personal-stat-item">
-                      <span class="p-stat-val" id="personalTotalShifts">0</span>
-                      <span class="p-stat-lbl">Tổng ca</span>
-                    </div>
-                    <div class="personal-stat-item">
-                      <span class="p-stat-val" id="personalWeekdayShifts">0</span>
-                      <span class="p-stat-lbl">Ngày thường</span>
-                    </div>
-                    <div class="personal-stat-item weekend">
-                      <span class="p-stat-val" id="personalWeekendShifts">0</span>
-                      <span class="p-stat-lbl">Thứ 7 / CN</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <!-- Duty Roster Full-Width Workspace (Không còn bị ép cột trái) -->
+          <div class="duty-fullscreen-workspace">
+            <!-- View A: Lưới Lịch Tháng (Calendar View - Chiếm toàn bộ chiều rộng) -->
+            <div class="duty-calendar-view" id="dutyCalendarContainer"></div>
 
-              <!-- Card 2: Danh sách Cán bộ Phòng CNTT -->
-              <div class="w2h-card duty-staff-card">
-                <div class="duty-staff-header">
-                  <div class="staff-header-left">
-                    <span class="card-icon">👥</span>
-                    <h3 class="staff-title">Cán Bộ (<span id="staffCountDisplay">0</span>)</h3>
-                  </div>
-                  <div class="staff-header-actions">
-                    <button type="button" class="btn-card-small admin-only-btn" id="btnAddStaffModalBtn" title="Thêm cán bộ mới">+ Thêm</button>
-                    <button type="button" class="btn-card-small btn-card-danger admin-only-btn" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ mẫu để tự nhập danh sách thực tế">Dọn Sạch</button>
-                  </div>
-                </div>
-                <div class="w2h-card-body">
-                  <div class="staff-list-container" id="dutyStaffListContainer"></div>
-                </div>
-              </div>
-            </div>
+            <!-- View B: Bảng Lịch Trực Cá Nhân (Personal List View) -->
+            <div class="duty-personal-view hidden" id="dutyPersonalScheduleContainer"></div>
 
-            <!-- Cột phải: Lịch tháng & Bảng thống kê công -->
-            <div class="duty-main-workspace">
-              <!-- View A: Lưới Lịch Tháng (Calendar View) -->
-              <div class="duty-calendar-view" id="dutyCalendarContainer"></div>
-
-              <!-- View B: Bảng Lịch Trực Cá Nhân (Personal List View) -->
-              <div class="duty-personal-view hidden" id="dutyPersonalScheduleContainer"></div>
-
-              <!-- View C: Bảng Phân Công & Chấm Công (Table View) -->
-              <div class="duty-table-view hidden" id="dutyTableContainer"></div>
-            </div>
+            <!-- View C: Bảng Phân Công & Chấm Công (Table View) -->
+            <div class="duty-table-view hidden" id="dutyTableContainer"></div>
           </div>
         </section>
 
@@ -1902,6 +1860,76 @@
       <div class="modal-footer flex-between">
         <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng cửa sổ</button>
         <span style="font-size: 0.72rem; color: #64748b;">Mọi thay đổi được lưu tự động</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Thống Kê & Tổng Hợp Ca Trực P.CNTT -->
+  <div class="modal-overlay hidden" id="modalDutyStats">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="flex-row gap-8 align-center">
+          <span style="font-size: 1.2rem;">📊</span>
+          <h3 class="modal-title" id="personalCardTitle">THỐNG KÊ CA TRỰC PHÒNG CNTT</h3>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseDutyStatsModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Ca trực sắp tới banner -->
+        <div class="personal-next-shift-box" id="personalNextShiftBox" style="margin-bottom: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 12px 16px;">
+          <span class="next-shift-lbl" style="color: #fbbf24; font-weight: 700; font-size: 0.8rem; display: block; margin-bottom: 4px;">⏰ Ca trực sắp tới:</span>
+          <div class="next-shift-val" id="personalNextShiftText" style="color: #f1f5f9; font-size: 0.85rem; font-weight: 600;">Đang tính toán...</div>
+        </div>
+
+        <!-- 3 Thẻ chỉ số tổng hợp -->
+        <div class="personal-stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+          <div class="personal-stat-item" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 12px 10px; text-align: center;">
+            <span class="p-stat-val" id="personalTotalShifts" style="font-size: 1.5rem; font-weight: 800; color: #38bdf8; display: block;">0</span>
+            <span class="p-stat-lbl" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Tổng ca</span>
+          </div>
+          <div class="personal-stat-item" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 12px 10px; text-align: center;">
+            <span class="p-stat-val" id="personalWeekdayShifts" style="font-size: 1.5rem; font-weight: 800; color: #34d399; display: block;">0</span>
+            <span class="p-stat-lbl" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Ngày thường</span>
+          </div>
+          <div class="personal-stat-item weekend" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px 10px; text-align: center;">
+            <span class="p-stat-val" id="personalWeekendShifts" style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; display: block;">0</span>
+            <span class="p-stat-lbl" style="font-size: 0.72rem; color: #fbbf24; font-weight: 600; text-transform: uppercase;">Thứ 7 / CN</span>
+          </div>
+        </div>
+
+        <!-- Bảng chi tiết phân bổ ca trực theo cán bộ -->
+        <div style="margin-top: 10px;">
+          <h4 style="font-size: 0.84rem; font-weight: 700; color: #e2e8f0; margin-bottom: 8px;">📋 Bảng Phân Bổ Ca Trực Từng Cán Bộ</h4>
+          <div class="duty-stats-breakdown-container" id="dutyStatsBreakdownContainer" style="max-height: 220px; overflow-y: auto;"></div>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnDismissDutyStats">Đóng</button>
+        <span style="font-size: 0.74rem; color: #64748b;" id="personalRolePill">Phòng CNTT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Danh Sách & Quản Lý Cán Bộ P.CNTT -->
+  <div class="modal-overlay hidden" id="modalDutyStaffList">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <div class="staff-header-left flex-row gap-8 align-center">
+          <span style="font-size: 1.2rem;">👥</span>
+          <h3 class="modal-title">DANH SÁCH CÁN BỘ P.CNTT (<span id="staffCountDisplay">0</span>)</h3>
+        </div>
+        <div class="staff-header-actions flex-row gap-8 align-center">
+          <button type="button" class="btn-card-small admin-only-btn" id="btnAddStaffModalBtn" title="Thêm cán bộ mới" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.76rem;">+ Thêm Cán Bộ</button>
+          <button type="button" class="btn-card-small btn-card-danger admin-only-btn" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ mẫu để tự nhập danh sách thực tế" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">Dọn Sạch</button>
+          <button type="button" class="modal-close" id="btnCloseDutyStaffListModal">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
+        <div class="staff-list-container" id="dutyStaffListContainer"></div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnDismissDutyStaffList">Đóng</button>
+        <span style="font-size: 0.74rem; color: #94a3b8;">Nhấn ✏️ để sửa/đăng ký ngày nghỉ phép, 🗑️ để xóa</span>
       </div>
     </div>
   </div>

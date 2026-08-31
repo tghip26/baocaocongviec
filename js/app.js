@@ -3474,6 +3474,18 @@ ${this.currentW2hHtmlOutput}
     this.swapShiftInfoText = document.getElementById("swapShiftInfoText");
     this.selectSwapStaff = document.getElementById("selectSwapStaff");
 
+    // Quick Panel Buttons & Modals (Thống Kê & Cán Bộ)
+    this.btnOpenDutyStatsModal = document.getElementById("btnOpenDutyStatsModal");
+    this.btnOpenDutyStaffModal = document.getElementById("btnOpenDutyStaffModal");
+    this.staffCountBtnBadge = document.getElementById("staffCountBtnBadge");
+    this.modalDutyStats = document.getElementById("modalDutyStats");
+    this.btnCloseDutyStatsModal = document.getElementById("btnCloseDutyStatsModal");
+    this.btnDismissDutyStats = document.getElementById("btnDismissDutyStats");
+    this.dutyStatsBreakdownContainer = document.getElementById("dutyStatsBreakdownContainer");
+    this.modalDutyStaffList = document.getElementById("modalDutyStaffList");
+    this.btnCloseDutyStaffListModal = document.getElementById("btnCloseDutyStaffListModal");
+    this.btnDismissDutyStaffList = document.getElementById("btnDismissDutyStaffList");
+
     // State Initialization
     this.currentDutyFilter = "all";
     this.currentFilterStaffId = "all";
@@ -3572,10 +3584,28 @@ ${this.currentW2hHtmlOutput}
     // Shift Adjustment & Swap Modal
     if (this.btnCloseSwapShiftModal) this.btnCloseSwapShiftModal.addEventListener("click", () => this.hideModal(this.modalSwapShift));
     if (this.btnCancelSwapShift) this.btnCancelSwapShift.addEventListener("click", () => this.hideModal(this.modalSwapShift));
-    if (this.btnConfirmSwapShift) this.btnConfirmSwapShift.addEventListener("click", () => this.confirmSwapStaff());
     if (this.btnConfirmSwapStaff) this.btnConfirmSwapStaff.addEventListener("click", () => this.confirmSwapStaff());
     if (this.btnConfirmSwapTwoDays) this.btnConfirmSwapTwoDays.addEventListener("click", () => this.confirmSwapTwoDays());
     if (this.btnSetDayOffDuty) this.btnSetDayOffDuty.addEventListener("click", () => this.setDayOffDuty());
+
+    // Quick Modals: Thống Kê & Cán Bộ
+    if (this.btnOpenDutyStatsModal) {
+      this.btnOpenDutyStatsModal.addEventListener("click", () => {
+        this.updatePersonalDutyStatsUI();
+        this.showModal(this.modalDutyStats);
+      });
+    }
+    if (this.btnCloseDutyStatsModal) this.btnCloseDutyStatsModal.addEventListener("click", () => this.hideModal(this.modalDutyStats));
+    if (this.btnDismissDutyStats) this.btnDismissDutyStats.addEventListener("click", () => this.hideModal(this.modalDutyStats));
+
+    if (this.btnOpenDutyStaffModal) {
+      this.btnOpenDutyStaffModal.addEventListener("click", () => {
+        this.renderStaffList();
+        this.showModal(this.modalDutyStaffList);
+      });
+    }
+    if (this.btnCloseDutyStaffListModal) this.btnCloseDutyStaffListModal.addEventListener("click", () => this.hideModal(this.modalDutyStaffList));
+    if (this.btnDismissDutyStaffList) this.btnDismissDutyStaffList.addEventListener("click", () => this.hideModal(this.modalDutyStaffList));
 
     this.updateDutySessionUI();
   }
@@ -3846,7 +3876,7 @@ ${this.currentW2hHtmlOutput}
       if (this.inputEditStaffId) this.inputEditStaffId.value = s.id;
       if (this.inputStaffName) this.inputStaffName.value = s.name;
       if (this.inputStaffRole) this.inputStaffRole.value = s.role;
-      if (this.inputStaffPhone) this.inputStaffPhone.value = s.phone || "";
+    if (this.inputStaffPhone) this.inputStaffPhone.value = s.phone || "";
       if (this.inputStaffOffDays) {
         this.inputStaffOffDays.value = Array.isArray(s.offDays) ? s.offDays.join(", ") : (s.offDays || "");
       }
@@ -3869,7 +3899,7 @@ ${this.currentW2hHtmlOutput}
     }
     const role = this.inputStaffRole && this.inputStaffRole.value.trim() ? this.inputStaffRole.value.trim() : "Kỹ sư CNTT";
     const phone = this.inputStaffPhone && this.inputStaffPhone.value.trim() ? this.inputStaffPhone.value.trim() : "";
-    const offDays = this.inputStaffOffDays ? this.inputStaffOffDays.value.trim() : "";
+    const offDays = this.inputStaffOffDays ? this.inputStaffOffDays.value.split(",").map(d => d.trim()).filter(d => d !== "") : [];
     const editId = this.inputEditStaffId ? this.inputEditStaffId.value : "";
     this.dutyStaffList = ToolDutyRoster.getStaffList();
     if (editId) {
@@ -3904,10 +3934,11 @@ ${this.currentW2hHtmlOutput}
   }
 
   renderStaffList() {
-    if (!this.dutyStaffListContainer) return;
     this.dutyStaffList = ToolDutyRoster.getStaffList();
-    this.dutyStaffListContainer.innerHTML = "";
     if (this.staffCountDisplay) this.staffCountDisplay.textContent = this.dutyStaffList.length;
+    if (this.staffCountBtnBadge) this.staffCountBtnBadge.textContent = this.dutyStaffList.length;
+    if (!this.dutyStaffListContainer) return;
+    this.dutyStaffListContainer.innerHTML = "";
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
 
     if (this.dutyStaffList.length === 0) {
@@ -3915,26 +3946,33 @@ ${this.currentW2hHtmlOutput}
         <div style="text-align: center; padding: 24px 10px; color: #94a3b8; font-size: 0.78rem; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2); border-radius: 8px;">
           <div style="font-size: 1.6rem; margin-bottom: 6px;">👥</div>
           <strong style="color:#f1f5f9; display:block; margin-bottom: 4px;">Chưa có cán bộ trong danh sách</strong>
-          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"+ Thêm"</strong> ở trên để tự nhập danh sách cán bộ thực tế của bạn.</p>
+          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"+ Thêm Cán Bộ"</strong> ở trên để nhập danh sách thực tế của phòng.</p>
         </div>
       `;
       this.populateStaffFilterDropdown();
       return;
     }
 
-    this.dutyStaffList.forEach(s => {
+    this.dutyStaffList.forEach((s, idx) => {
       const item = document.createElement("div");
       item.className = "staff-card-item";
+      const offDaysStr = Array.isArray(s.offDays) ? s.offDays.join(", ") : (s.offDays || "");
       item.innerHTML = `
-        <div class="staff-info">
-          <span class="staff-name">💻 ${s.name}</span>
-          <span class="staff-role-badge">${s.role}</span>
-          ${s.phone ? `<span class="staff-phone-badge">📞 ${s.phone}</span>` : ""}
+        <div class="staff-info" style="flex: 1;">
+          <div class="flex-row gap-8 align-center" style="margin-bottom: 4px;">
+            <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">#${idx + 1}</span>
+            <span class="staff-name" style="font-size: 0.88rem; font-weight: 700; color: #f1f5f9;">💻 ${s.name}</span>
+          </div>
+          <div class="flex-row gap-6 align-center flex-wrap" style="font-size: 0.74rem;">
+            <span class="staff-role-badge" style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; padding: 2px 6px; border-radius: 4px;">${s.role}</span>
+            ${s.phone ? `<span class="staff-phone-badge" style="color: #34d399; font-weight: 600;">📞 ${s.phone}</span>` : ""}
+            ${offDaysStr ? `<span style="color: #f87171; font-size: 0.7rem; background: rgba(248, 113, 113, 0.1); padding: 1px 6px; border-radius: 4px;">💤 Nghỉ: Ngày ${offDaysStr}</span>` : ""}
+          </div>
         </div>
         ${isAdmin ? `
-          <div class="staff-card-actions">
-            <button type="button" class="btn-staff-act btn-edit-staff" title="Sửa thông tin cán bộ" data-id="${s.id}">✏️</button>
-            <button type="button" class="btn-staff-act btn-del-staff" title="Xóa cán bộ" data-id="${s.id}">🗑️</button>
+          <div class="staff-card-actions" style="display: flex; gap: 6px;">
+            <button type="button" class="btn-staff-act btn-edit-staff" title="Sửa thông tin / ngày nghỉ" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; cursor: pointer; color: #38bdf8;">✏️</button>
+            <button type="button" class="btn-staff-act btn-del-staff" title="Xóa cán bộ" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; color: #f87171;">🗑️</button>
           </div>
         ` : ""}
       `;
@@ -3959,9 +3997,8 @@ ${this.currentW2hHtmlOutput}
     });
   }
 
-  switchDutyViewMode(mode) {
-    if (mode === "personal" && !this.currentDutySession) {
-      this.showToast("Vui lòng đăng nhập tài khoản để xem tab 'Lịch Của Tôi'!", "info", 4000, "Đăng Nhập", () => this.openDutyLoginModal());
+  switchDutyView(mode) {
+    if (mode === "personal" && (!this.currentDutySession || !this.currentDutySession.username)) {
       this.openDutyLoginModal();
       return;
     }
@@ -3985,67 +4022,85 @@ ${this.currentW2hHtmlOutput}
   }
 
   renderDutyViews() {
-    this.updatePersonalDashboard();
+    this.updatePersonalDutyStatsUI();
     if (this.dutyViewMode === "calendar") this.renderDutyCalendarView();
     else if (this.dutyViewMode === "personal") this.renderDutyPersonalView();
     else if (this.dutyViewMode === "table") this.renderDutyTableView();
   }
 
+  updatePersonalDutyStatsUI() {
+    this.updatePersonalDashboard();
+  }
+
   updatePersonalDashboard() {
+    if (this.staffCountBtnBadge) this.staffCountBtnBadge.textContent = this.dutyStaffList ? this.dutyStaffList.length : 0;
+    if (this.staffCountDisplay) this.staffCountDisplay.textContent = this.dutyStaffList ? this.dutyStaffList.length : 0;
+
     if (!this.dutyStaffList || this.dutyStaffList.length === 0) {
       if (this.personalCardTitle) this.personalCardTitle.textContent = "Chưa có cán bộ";
       if (this.personalRolePill) this.personalRolePill.textContent = "0 Cán Bộ";
       if (this.personalTotalShifts) this.personalTotalShifts.textContent = "0";
       if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = "0";
       if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = "0";
-      if (this.personalNextShiftText) this.personalNextShiftText.innerHTML = "Nhấn nút <strong>'+ Thêm'</strong> ở danh sách cán bộ để bắt đầu nhập.";
+      if (this.personalNextShiftText) this.personalNextShiftText.innerHTML = "Nhấn nút <strong>'+ Thêm Cán Bộ'</strong> ở danh sách cán bộ để bắt đầu nhập.";
+      if (this.dutyStatsBreakdownContainer) {
+        this.dutyStatsBreakdownContainer.innerHTML = `<div style="text-align:center; padding:12px; color:#94a3b8; font-size:0.75rem;">Chưa có dữ liệu cán bộ.</div>`;
+      }
       return;
     }
 
-    if (!this.dutySchedule || this.dutySchedule.length === 0) return;
-    const isAllMode = (!this.currentFilterStaffId || this.currentFilterStaffId === "all");
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    if (!this.dutySchedule || this.dutySchedule.length === 0) {
+      this.dutySchedule = ToolDutyRoster.getSchedule(year, month);
+    }
 
-    if (isAllMode) {
-      if (this.personalCardTitle) this.personalCardTitle.textContent = "Toàn Thể P.CNTT";
-      if (this.personalRolePill) this.personalRolePill.textContent = `${this.dutyStaffList.length} Cán Bộ`;
+    const stats = ToolDutyRoster.calculateStatistics(this.dutyStaffList, this.dutySchedule);
+    const assignedDays = this.dutySchedule.filter(d => d.shifts && d.shifts["shift_cntt"] && d.shifts["shift_cntt"].id && !d.shifts["shift_cntt"].isOffDay && d.shifts["shift_cntt"].name !== "Nghỉ trực");
+    const total = assignedDays.length;
+    const weekend = assignedDays.filter(d => d.isWeekend).length;
+    const weekday = total - weekend;
 
-      const total = this.dutySchedule.filter(d => d.shifts && d.shifts["shift_cntt"] && d.shifts["shift_cntt"].id).length;
-      const weekend = this.dutySchedule.filter(d => d.isWeekend && d.shifts && d.shifts["shift_cntt"] && d.shifts["shift_cntt"].id).length;
-      const weekday = total - weekend;
+    if (this.personalCardTitle) this.personalCardTitle.textContent = `Thống Kê Ca Trực Tháng ${month}/${year}`;
+    if (this.personalRolePill) this.personalRolePill.textContent = `${this.dutyStaffList.length} Cán Bộ`;
+    if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
+    if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
+    if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
 
-      if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
-      if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
-      if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
-
-      if (this.personalNextShiftText) {
-        const month = this.getSelectedDutyMonth();
-        const year = this.getSelectedDutyYear();
-        this.personalNextShiftText.innerHTML = `⚡ Đã xếp đủ <strong>${total} ca trực</strong> Tháng ${month}/${year} chia đều cho <strong>${this.dutyStaffList.length} cán bộ</strong>`;
-      }
-    } else {
-      const staff = this.dutyStaffList.find(s => s.id === this.currentFilterStaffId);
-      if (!staff) return;
-
-      if (this.personalCardTitle) this.personalCardTitle.textContent = `Lịch Trực: ${staff.name}`;
-      if (this.personalRolePill) this.personalRolePill.textContent = staff.role || "Phòng CNTT";
-
-      const personalShifts = ToolDutyRoster.getPersonalSchedule(staff.id, this.dutySchedule);
-      const total = personalShifts.length;
-      const weekend = personalShifts.filter(s => s.isWeekend).length;
-      const weekday = total - weekend;
-
-      if (this.personalTotalShifts) this.personalTotalShifts.textContent = total;
-      if (this.personalWeekdayShifts) this.personalWeekdayShifts.textContent = weekday;
-      if (this.personalWeekendShifts) this.personalWeekendShifts.textContent = weekend;
-
-      if (this.personalNextShiftText) {
-        if (personalShifts.length > 0) {
-          const next = personalShifts[0];
-          this.personalNextShiftText.innerHTML = `📅 Ca trực đầu tiên: Ngày <strong>${next.day}</strong> (${next.dayName}) &bull; <span style="color:#38bdf8;">Tổng ${total} ca/tháng</span>`;
-        } else {
-          this.personalNextShiftText.textContent = "Không có ca trực trong tháng này.";
+    if (this.personalNextShiftText) {
+      const today = new Date();
+      let nextShiftStr = `⚡ Đã xếp đủ <strong>${total} ca trực</strong> Tháng ${month}/${year} chia đều cho <strong>${this.dutyStaffList.length} cán bộ</strong>`;
+      if (today.getMonth() + 1 === month && today.getFullYear() === year) {
+        const curDay = today.getDate();
+        const upcoming = this.dutySchedule.find(d => d.day >= curDay && d.shifts["shift_cntt"] && !d.shifts["shift_cntt"].isOffDay && d.shifts["shift_cntt"].id);
+        if (upcoming) {
+          nextShiftStr = `📅 Ca trực tiếp theo: <strong>Ngày ${upcoming.day} (${upcoming.dayName})</strong> &bull; Trực: <span style="color:#38bdf8;">${upcoming.shifts["shift_cntt"].name}</span>`;
         }
       }
+      this.personalNextShiftText.innerHTML = nextShiftStr;
+    }
+
+    // Populate Detailed Breakdown in Modal
+    if (this.dutyStatsBreakdownContainer) {
+      let breakdownHtml = "";
+      stats.forEach(st => {
+        const staffObj = this.dutyStaffList.find(s => s.id === st.id);
+        const daysListStr = st.days && st.days.length > 0 ? st.days.join(", ") : "Chưa có";
+        breakdownHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:6px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+            <div>
+              <strong style="color:#f1f5f9; font-size:0.83rem;">💻 ${st.name}</strong>
+              <span style="font-size:0.7rem; color:#94a3b8; display:block; margin-top:2px;">${staffObj ? staffObj.role : 'Kỹ sư'} &bull; Các ngày trực: <span style="color:#38bdf8;">${daysListStr}</span></span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">${st.total} ca</span>
+              <span style="background:rgba(52,211,153,0.12); color:#34d399; padding:3px 6px; border-radius:6px; font-size:0.7rem;">${st.weekday} ngày thường</span>
+              <span style="background:rgba(245,158,11,0.12); color:#fbbf24; padding:3px 6px; border-radius:6px; font-size:0.7rem;">${st.weekend} T7/CN</span>
+            </div>
+          </div>
+        `;
+      });
+      this.dutyStatsBreakdownContainer.innerHTML = breakdownHtml;
     }
   }
 
@@ -4056,10 +4111,10 @@ ${this.currentW2hHtmlOutput}
     const grid = document.createElement("div");
     grid.className = "calendar-month-grid";
     const dayHeaders = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
-    dayHeaders.forEach(dh => {
+    dayHeaders.forEach((dh, idx) => {
       const colHead = document.createElement("div");
-      colHead.className = "calendar-col-header";
-      colHead.textContent = dh;
+      colHead.className = `calendar-col-header ${idx >= 5 ? 'col-weekend' : ''}`;
+      colHead.innerHTML = `<span>${dh}</span>${idx >= 5 ? '<small style="display:block;font-size:0.65rem;color:#fbbf24;">(Cuối tuần)</small>' : ''}`;
       grid.appendChild(colHead);
     });
 
@@ -4071,7 +4126,7 @@ ${this.currentW2hHtmlOutput}
     for (let i = 0; i < offset; i++) {
       const blank = document.createElement("div");
       blank.className = "calendar-day-cell blank";
-      blank.style.opacity = "0.2";
+      blank.style.opacity = "0.15";
       grid.appendChild(blank);
     }
 
@@ -4085,6 +4140,7 @@ ${this.currentW2hHtmlOutput}
       const isAssigned = (assigned && assigned.id && assigned.name && assigned.name !== "Chưa có cán bộ" && !isOff);
       const assignedName = isOff ? "Nghỉ trực" : (isAssigned ? assigned.name : "Trống");
       const assignedPhone = (isAssigned && assigned.phone) ? assigned.phone : "";
+      const assignedRole = (isAssigned && assigned.role) ? assigned.role : "";
       
       const isMyDay = (isAssigned && targetStaffId && assigned.id === targetStaffId);
       const isDimmed = (isFilteringSpecific && !isMyDay && !isOff);
@@ -4093,16 +4149,25 @@ ${this.currentW2hHtmlOutput}
       cell.className = `calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""}`;
       cell.innerHTML = `
         <div class="cal-day-header">
-          <span class="cal-date-num">${dayObj.day}</span>
-          <span class="cal-day-tag">${dayObj.dayName}</span>
+          <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
+          <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
         </div>
         <div class="cal-shift-list">
-          <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ, hoán đổi ca hoặc đặt ngày nghỉ' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? assignedName : 'Chưa phân công'))}" style="cursor: pointer;">
+          <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ, hoán đổi ca hoặc đặt ngày nghỉ' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
             ${isOff 
-              ? `<span class="duty-badge-off" style="color: #f87171; font-weight: 700; font-size: 0.74rem;">💤 Nghỉ trực</span>`
+              ? `<div class="duty-cell-off-content">
+                  <span class="duty-badge-off">💤 Nghỉ trực</span>
+                  <span class="duty-badge-sub-off">Không phân công</span>
+                </div>`
               : (isAssigned 
-                ? `<span class="duty-badge-name" title="${assignedName}">💻 ${assignedName}</span>${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}`
-                : `<span class="duty-badge-empty">- Trống -</span>`
+                ? `<div class="duty-cell-staff-content">
+                    <span class="duty-badge-name" title="${assignedName}">💻 ${assignedName}</span>
+                    ${assignedRole ? `<span class="duty-badge-role" title="${assignedRole}">${assignedRole}</span>` : ''}
+                    ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
+                  </div>`
+                : `<div class="duty-cell-empty-content">
+                    <span class="duty-badge-empty">- Trống ca -</span>
+                  </div>`
               )
             }
           </div>
