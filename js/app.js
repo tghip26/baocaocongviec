@@ -1938,17 +1938,6 @@ class AppController {
       return;
     }
 
-    // SMART AUTO-DETECT: Nếu từ khóa trùng với biểu mẫu y tế (như giấy ra viện, chuyển tuyến, bảng kê, đơn thuốc...)
-    const smartFormMatches = window.schemaLookupEngine.searchByForm(query);
-    if (smartFormMatches.length > 0 && smartFormMatches[0].score >= 80) {
-      this.schemaSearchMode = "form";
-      if (this.btnModeForm) this.btnModeForm.classList.add("active");
-      if (this.btnModeTable) this.btnModeTable.classList.remove("active");
-      if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
-      this.performSchemaSearch();
-      return;
-    }
-
     // 3. CHẾ ĐỘ CỘT / BIẾN
     if (this.schemaSearchMode === "column") {
       const results = window.schemaLookupEngine.searchByColumn(query, section, prefix);
