@@ -371,6 +371,7 @@ const ToolDutyRoster = {
         total: 0,
         weekday: 0,
         weekend: 0,
+        days: [],
         shifts: []
       };
     });
@@ -384,6 +385,7 @@ const ToolDutyRoster = {
         } else {
           stats[assignedStaff.id].weekday++;
         }
+        stats[assignedStaff.id].days.push(dayObj.day);
         stats[assignedStaff.id].shifts.push({ day: dayObj.day, dayName: dayObj.dayName, isWeekend: dayObj.isWeekend });
       }
     });
