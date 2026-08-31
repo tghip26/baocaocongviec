@@ -107,41 +107,61 @@ const ToolDutyRoster = {
     }
   ],
 
+  _staffListCache: null,
+  _accountsCache: null,
+
   getStaffList() {
+    if (this._staffListCache !== null) return this._staffListCache;
     try {
       const raw = localStorage.getItem("DUTY_CNTT_STAFF_LIST");
       if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          this._staffListCache = parsed;
+          return parsed;
+        }
       }
     } catch (e) {}
     this.saveStaffList(this.defaultStaffList);
-    return [...this.defaultStaffList];
+    this._staffListCache = [...this.defaultStaffList];
+    return this._staffListCache;
   },
 
   saveStaffList(list) {
-    localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(list));
+    this._staffListCache = list;
+    try {
+      localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(list));
+    } catch (e) {}
   },
 
   clearAllStaff() {
+    this._staffListCache = [];
     this.saveStaffList([]);
     return [];
   },
 
   getAccounts() {
+    if (this._accountsCache !== null) return this._accountsCache;
     try {
       const raw = localStorage.getItem("DUTY_CNTT_ACCOUNTS");
       if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          this._accountsCache = parsed;
+          return parsed;
+        }
       }
     } catch (e) {}
     this.saveAccounts(this.defaultAccounts);
-    return [...this.defaultAccounts];
+    this._accountsCache = [...this.defaultAccounts];
+    return this._accountsCache;
   },
 
   saveAccounts(accounts) {
-    localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(accounts));
+    this._accountsCache = accounts;
+    try {
+      localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(accounts));
+    } catch (e) {}
   },
 
   getCurrentSession() {

@@ -792,12 +792,16 @@ class AppController {
     }
 
     if (this.schemaSearchInput) {
+      let schemaSearchDebounce = null;
       this.schemaSearchInput.addEventListener("input", (e) => {
         const val = e.target.value.trim();
         if (this.btnClearSchemaSearch) {
           this.btnClearSchemaSearch.classList.toggle("hidden", !val);
         }
-        this.performSchemaSearch();
+        clearTimeout(schemaSearchDebounce);
+        schemaSearchDebounce = setTimeout(() => {
+          this.performSchemaSearch();
+        }, 100);
       });
     }
 
@@ -834,8 +838,13 @@ class AppController {
     }
 
     if (this.inspectorColumnFilterInput) {
+      let colFilterDebounce = null;
       this.inspectorColumnFilterInput.addEventListener("input", (e) => {
-        this.filterInspectorColumns(e.target.value);
+        const val = e.target.value;
+        clearTimeout(colFilterDebounce);
+        colFilterDebounce = setTimeout(() => {
+          this.filterInspectorColumns(val);
+        }, 80);
       });
     }
 
@@ -1501,7 +1510,7 @@ class AppController {
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
       item.classList.toggle("active", item.dataset.tool === "hub");
@@ -1524,7 +1533,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === "schema-lookup");
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
     this.schemaSearchMode = "table";
     if (this.btnModeTable) this.btnModeTable.classList.add("active");
     if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
@@ -1552,7 +1561,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === "sql-builder");
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
     this.renderSqlTemplatesList();
   }
 
@@ -1572,7 +1581,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === "duty-roster");
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
     const now = new Date();
     if (this.dutySelectMonth && !this.dutyMonthInitialized) {
       this.dutySelectMonth.value = String(now.getMonth() + 1);
@@ -1583,38 +1592,9 @@ class AppController {
       this.dutyInputYear.value = String(now.getFullYear());
     }
     this.dutyMonthInitialized = true;
-
-    this.dutyStaffList = ToolDutyRoster.getStaffList();
-    this.currentDutySession = ToolDutyRoster.getCurrentSession();
-
-    if (!this.currentDutySession) {
-      // Khi chưa đăng nhập: Mặc định hiển thị lịch chung toàn bộ Phòng CNTT
-      this.currentFilterStaffId = "all";
-      this.currentDutyFilter = "all";
-      this.dutyViewMode = "calendar";
-      if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.classList.add("active");
-      if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.classList.remove("active");
-      if (this.btnTabDutyTable) this.btnTabDutyTable.classList.remove("active");
-      if (this.dutyCalendarContainer) this.dutyCalendarContainer.classList.remove("hidden");
-      if (this.dutyPersonalScheduleContainer) this.dutyPersonalScheduleContainer.classList.add("hidden");
-      if (this.dutyTableContainer) this.dutyTableContainer.classList.add("hidden");
-
-      if (this.dutyGuestLoginBanner) this.dutyGuestLoginBanner.classList.remove("hidden");
-      this.showToast("🔐 Đăng nhập tài khoản để xem lịch trực cá nhân của bạn! Hiện đang hiển thị lịch chung toàn bộ Phòng CNTT.", "info", 5000, "Đăng Nhập", () => this.openDutyLoginModal());
-    } else {
-      if (this.dutyGuestLoginBanner) this.dutyGuestLoginBanner.classList.add("hidden");
-      if (this.currentDutySession.role !== "admin" && this.currentDutySession.staffId) {
-        this.currentFilterStaffId = this.currentDutySession.staffId;
-        this.currentDutyFilter = "personal";
-      } else {
-        this.currentFilterStaffId = "all";
-        this.currentDutyFilter = "all";
-      }
-    }
-
     this.updateDutySessionUI();
     this.renderStaffList();
-    this.runAutoSchedule();
+    this.renderDutyViews();
   }
 
   showBhytXmlView() {
@@ -1633,7 +1613,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === "bhyt-xml");
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }
 
   showWordToHtmlView() {
@@ -1652,7 +1632,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === "word-to-html");
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }
 
   showPdfToImageView() {
@@ -1671,7 +1651,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === "pdf-to-image");
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }
 
   showToolView(toolId) {
@@ -1755,7 +1735,7 @@ class AppController {
       item.classList.toggle("active", item.dataset.tool === toolId);
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }
 
   renderToolGrid(searchTerm = "") {
@@ -4189,34 +4169,26 @@ ${this.currentW2hHtmlOutput}
 
   renderDutyCalendarView() {
     if (!this.dutyCalendarContainer || !window.ToolDutyRoster) return;
-    this.dutyCalendarContainer.innerHTML = "";
-
-    const grid = document.createElement("div");
-    grid.className = "calendar-month-grid";
-    const dayHeaders = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
-    dayHeaders.forEach((dh, idx) => {
-      const colHead = document.createElement("div");
-      colHead.className = `calendar-col-header ${idx >= 5 ? 'col-weekend' : ''}`;
-      colHead.innerHTML = `<span>${dh}</span>${idx >= 5 ? '<small style="display:block;font-size:0.65rem;color:#fbbf24;">(Cuối tuần)</small>' : ''}`;
-      grid.appendChild(colHead);
-    });
 
     const month = this.getSelectedDutyMonth();
     const year = this.getSelectedDutyYear();
     const firstDayDow = ToolDutyRoster.getDayOfWeek(year, month, 1);
     const offset = (firstDayDow === 0) ? 6 : (firstDayDow - 1);
 
-    for (let i = 0; i < offset; i++) {
-      const blank = document.createElement("div");
-      blank.className = "calendar-day-cell blank";
-      blank.style.opacity = "0.15";
-      grid.appendChild(blank);
-    }
-
     const isFilteringSpecific = (this.currentFilterStaffId && this.currentFilterStaffId !== "all");
     const targetStaffId = isFilteringSpecific ? this.currentFilterStaffId : null;
-
     const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
+
+    let html = `<div class="calendar-month-grid">`;
+    const dayHeaders = ["Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ Nhật"];
+    dayHeaders.forEach((dh, idx) => {
+      html += `<div class="calendar-col-header ${idx >= 5 ? 'col-weekend' : ''}"><span>${dh}</span>${idx >= 5 ? '<small style="display:block;font-size:0.65rem;color:#fbbf24;">(Cuối tuần)</small>' : ''}</div>`;
+    });
+
+    for (let i = 0; i < offset; i++) {
+      html += `<div class="calendar-day-cell blank" style="opacity: 0.15;"></div>`;
+    }
+
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
       const isOff = assigned && (assigned.isOffDay || assigned.name === "Nghỉ trực");
@@ -4228,40 +4200,47 @@ ${this.currentW2hHtmlOutput}
       const isMyDay = (isAssigned && targetStaffId && assigned.id === targetStaffId);
       const isDimmed = (isFilteringSpecific && !isMyDay && !isOff);
 
-      const cell = document.createElement("div");
-      cell.className = `calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""}`;
-      cell.innerHTML = `
-        <div class="cal-day-header">
-          <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
-          <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
-        </div>
-        <div class="cal-shift-list">
-          <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ, hoán đổi ca hoặc đặt ngày nghỉ' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
-            ${isOff 
-              ? `<div class="duty-cell-off-content">
-                  <span class="duty-badge-off">💤 Nghỉ trực</span>
-                  <span class="duty-badge-sub-off">Không phân công</span>
-                </div>`
-              : (isAssigned 
-                ? `<div class="duty-cell-staff-content">
-                    <span class="duty-badge-name" title="${assignedName}">${assignedName}</span>
-                    ${assignedRole ? `<span class="duty-badge-role" title="${assignedRole}">${assignedRole}</span>` : ''}
-                    ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
+      html += `
+        <div class="calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""}">
+          <div class="cal-day-header">
+            <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
+            <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
+          </div>
+          <div class="cal-shift-list">
+            <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ, hoán đổi ca hoặc đặt ngày nghỉ' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
+              ${isOff 
+                ? `<div class="duty-cell-off-content">
+                    <span class="duty-badge-off">💤 Nghỉ trực</span>
+                    <span class="duty-badge-sub-off">Không phân công</span>
                   </div>`
-                : `<div class="duty-cell-empty-content">
-                    <span class="duty-badge-empty">- Trống ca -</span>
-                  </div>`
-              )
-            }
+                : (isAssigned 
+                  ? `<div class="duty-cell-staff-content">
+                      <span class="duty-badge-name" title="${assignedName}">${assignedName}</span>
+                      ${assignedRole ? `<span class="duty-badge-role" title="${assignedRole}">${assignedRole}</span>` : ''}
+                      ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
+                    </div>`
+                  : `<div class="duty-cell-empty-content">
+                      <span class="duty-badge-empty">- Trống ca -</span>
+                    </div>`
+                )
+              }
+            </div>
           </div>
         </div>
       `;
-      cell.querySelector(".cal-duty-badge").addEventListener("click", () => {
-        this.openSwapShiftModal(dayObj.day);
-      });
-      grid.appendChild(cell);
     });
-    this.dutyCalendarContainer.appendChild(grid);
+    html += `</div>`;
+    this.dutyCalendarContainer.innerHTML = html;
+
+    const grid = this.dutyCalendarContainer.querySelector(".calendar-month-grid");
+    if (grid) {
+      grid.addEventListener("click", (e) => {
+        const badge = e.target.closest(".cal-duty-badge");
+        if (badge && badge.dataset.day) {
+          this.openSwapShiftModal(parseInt(badge.dataset.day, 10));
+        }
+      });
+    }
   }
 
   renderDutyPersonalView() {
@@ -4895,7 +4874,13 @@ ${this.currentW2hHtmlOutput}
     }
 
     if (this.xmlSearchInput) {
-      this.xmlSearchInput.addEventListener("input", () => this.renderXmlTable());
+      let xmlSearchDebounce = null;
+      this.xmlSearchInput.addEventListener("input", () => {
+        clearTimeout(xmlSearchDebounce);
+        xmlSearchDebounce = setTimeout(() => {
+          this.renderXmlTable();
+        }, 100);
+      });
     }
 
     // Modal

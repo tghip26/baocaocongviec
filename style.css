@@ -88,7 +88,8 @@
 
 html {
   font-size: 15px;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
+  text-rendering: optimizeSpeed;
 }
 
 body {
@@ -99,6 +100,18 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* GPU Composited Layers for Smooth Interaction */
+.app-header, .app-sidebar, .modal-card, .workspace-header {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Content visibility containment for performance */
+.tool-card, .calendar-day-cell {
+  contain: layout style;
 }
 
 /* ==========================================================================
