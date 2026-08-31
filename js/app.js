@@ -3502,9 +3502,9 @@ ${this.currentW2hHtmlOutput}
     this.btnDismissDutyStats = document.getElementById("btnDismissDutyStats");
     this.dutyStatsBreakdownContainer = document.getElementById("dutyStatsBreakdownContainer");
     this.modalDutyStaffList = document.getElementById("modalDutyStaffList");
+    this.staffCountDisplay = document.getElementById("staffCountDisplay");
     this.btnCloseDutyStaffListModal = document.getElementById("btnCloseDutyStaffListModal");
     this.btnDismissDutyStaffList = document.getElementById("btnDismissDutyStaffList");
-    this.btnRestoreDefaultStaffBtn = document.getElementById("btnRestoreDefaultStaffBtn");
 
     // State Initialization
     this.currentDutyFilter = "all";
@@ -4025,7 +4025,7 @@ ${this.currentW2hHtmlOutput}
         <div style="text-align: center; padding: 24px 10px; color: #94a3b8; font-size: 0.78rem; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2); border-radius: 8px;">
           <div style="font-size: 1.6rem; margin-bottom: 6px;">👥</div>
           <strong style="color:#f1f5f9; display:block; margin-bottom: 4px;">Chưa có cán bộ trong danh sách</strong>
-          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"➕ Thêm Cán Bộ"</strong> hoặc <strong>"🔄 Khôi Phục Mẫu"</strong> ở trên để bắt đầu.</p>
+          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"➕ Thêm Cán Bộ"</strong> ở trên để bắt đầu thêm nhân sự.</p>
         </div>
       `;
       this.populateStaffFilterDropdown();
