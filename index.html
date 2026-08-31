@@ -22,8 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.0.0" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.0.0" />
+  <link rel="preload" href="style.css?v=3.0.2" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.0.2" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1391,25 +1391,20 @@
                 </select>
               </div>
 
-              <!-- Admin Only Actions -->
-              <button type="button" class="btn-duty-action btn-duty-users admin-only-btn" id="btnOpenUserManageModal" title="Quản lý & cấp tài khoản người dùng">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Người Dùng</span>
-              </button>
-
-              <button type="button" class="btn-duty-action btn-duty-auto admin-only-btn" id="btnRunAutoSchedule" title="Thuật toán tự động xếp lịch chia đều công P.CNTT">
+              <!-- Action Buttons (Always visible & interactive) -->
+              <button type="button" class="btn-duty-action btn-duty-auto" id="btnRunAutoSchedule" title="Tự động xếp lịch trực (Công bằng hoặc Tuần tự)">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>Xếp Lịch Tự Động</span>
+                <span>⚡ Xếp Lịch Tự Động</span>
               </button>
 
-              <button type="button" class="btn-duty-action btn-duty-clear admin-only-btn" id="btnClearDutySchedule" title="Xóa toàn bộ ca trực của tháng này để xếp lại từ đầu">
+              <button type="button" class="btn-duty-action btn-duty-clear" id="btnClearDutySchedule" title="Xóa toàn bộ ca trực của tháng này để xếp lại từ đầu">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                <span>Xóa Lịch Trực</span>
+                <span>🗑️ Xóa Lịch Tháng</span>
               </button>
 
               <button type="button" class="btn-duty-action btn-duty-excel" id="btnExportDutyExcel" title="Xuất file Excel bảng chấm công chuẩn Phòng CNTT">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span>Xuất Excel</span>
+                <span>📥 Xuất Excel</span>
               </button>
             </div>
           </div>
@@ -1815,60 +1810,124 @@
     </div>
   </div>
 
-  <!-- MODAL: Quản Lý & Điều Chỉnh Ca Trực Chi Tiết Từng Ngày -->
+  <!-- MODAL: Điều Chỉnh Ca Trực Ngày (Bố cục 3 Tab Gọn Gàng & Hiện Đại) -->
   <div class="modal-overlay hidden" id="modalSwapShift">
-    <div class="modal-card" style="max-width: 520px;">
+    <div class="modal-card modal-adjust-shift-card" style="max-width: 500px;">
       <div class="modal-header">
-        <h3 class="modal-title">⚙️ ĐIỀU CHỈNH CA TRỰC NGÀY</h3>
+        <div class="flex-row gap-8 align-center">
+          <span style="font-size: 1.15rem;">⚙️</span>
+          <h3 class="modal-title">ĐIỀU CHỈNH CA TRỰC NGÀY</h3>
+        </div>
         <button type="button" class="modal-close" id="btnCloseSwapShiftModal">&times;</button>
       </div>
-      <div class="modal-body">
-        <!-- Thông tin ca trực hiện tại -->
-        <div class="modal-info-box" id="swapShiftInfoText" style="margin-bottom: 16px;">
+      <div class="modal-body" style="padding: 18px 20px;">
+        <!-- Banner thông tin ngày & ca trực hiện tại -->
+        <div class="shift-adjust-banner" id="swapShiftInfoText">
           Đang tải thông tin ca trực...
         </div>
 
-        <!-- Tùy chọn 1: Chuyển cho cán bộ khác -->
-        <div class="duty-adjust-section">
-          <label class="form-label" style="font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-            <span>1. Chuyển Phân Công Cho Cán Bộ Khác:</span>
+        <!-- 3 Tab Chuyển Thao Tác Gọn Gàng -->
+        <div class="shift-adjust-tabs">
+          <button type="button" class="shift-adj-tab-btn active" data-tab="assign" id="tabBtnAdjAssign">
+            <span>👤 Đổi Cán Bộ</span>
+          </button>
+          <button type="button" class="shift-adj-tab-btn" data-tab="swap" id="tabBtnAdjSwap">
+            <span>🔄 Đổi Chéo Ngày</span>
+          </button>
+          <button type="button" class="shift-adj-tab-btn" data-tab="dayoff" id="tabBtnAdjDayoff">
+            <span>💤 Nghỉ Trực</span>
+          </button>
+        </div>
+
+        <!-- Tab Panel 1: Đổi cán bộ -->
+        <div class="shift-adj-panel" id="panelAdjAssign">
+          <label class="form-label" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px;">
+            Chọn cán bộ tiếp nhận ca trực ngày này:
           </label>
-          <div class="flex-row gap-8" style="margin-top: 6px;">
-            <select id="selectSwapStaff" class="form-select" style="flex: 1;"></select>
-            <button type="button" class="btn-modal-confirm" id="btnConfirmSwapStaff" style="white-space: nowrap; padding: 8px 14px; font-size: 0.8rem;">
-              💾 Gán Ca
+          <div class="flex-column gap-10">
+            <select id="selectSwapStaff" class="form-select"></select>
+            <button type="button" class="btn-modal-confirm" id="btnConfirmSwapStaff" style="width: 100%; justify-content: center; padding: 10px; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);">
+              💾 Lưu Cán Bộ Phân Công
             </button>
           </div>
         </div>
 
-        <!-- Tùy chọn 2: Hoán đổi chéo ca với ngày khác -->
-        <div class="duty-adjust-section" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
-          <label class="form-label" style="font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
-            <span>2. Hoán Đổi Ca Trực (Đổi chéo với ngày khác trong tháng):</span>
+        <!-- Tab Panel 2: Đổi chéo 2 ngày -->
+        <div class="shift-adj-panel hidden" id="panelAdjSwap">
+          <label class="form-label" style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px;">
+            Chọn ngày trong tháng để hoán đổi chéo ca trực:
           </label>
-          <div class="flex-row gap-8" style="margin-top: 6px;">
-            <select id="selectSwapTargetDay" class="form-select" style="flex: 1;"></select>
-            <button type="button" class="btn-duty-action btn-duty-auto" id="btnConfirmSwapTwoDays" style="white-space: nowrap; padding: 8px 14px; font-size: 0.8rem;">
-              🔄 Đổi Chéo 2 Ngày
+          <div class="flex-column gap-10">
+            <select id="selectSwapTargetDay" class="form-select"></select>
+            <button type="button" class="btn-duty-action btn-duty-auto" id="btnConfirmSwapTwoDays" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.85rem;">
+              🔄 Xác Nhận Hoán Đổi 2 Ngày
             </button>
           </div>
         </div>
 
-        <!-- Tùy chọn 3: Xóa ca trực / Đặt ngày nghỉ -->
-        <div class="duty-adjust-section" style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
-          <label class="form-label" style="font-weight: 700; color: #f87171; display: flex; align-items: center; gap: 6px;">
-            <span>3. Trường Hợp Ngày Nghỉ Trực / Nghỉ Lễ / Trống Ca:</span>
-          </label>
-          <div class="flex-row gap-8" style="margin-top: 6px;">
-            <button type="button" class="btn-duty-action btn-duty-clear" id="btnSetDayOffDuty" style="flex: 1; justify-content: center; padding: 9px 12px; font-size: 0.8rem;">
-              💤 Đặt Ngày Này Nghỉ Trực (Xóa Ca)
-            </button>
+        <!-- Tab Panel 3: Đặt ngày nghỉ / Xóa ca -->
+        <div class="shift-adj-panel hidden" id="panelAdjDayoff">
+          <div style="background: rgba(248, 113, 113, 0.08); border: 1px dashed rgba(248, 113, 113, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 12px; font-size: 0.78rem; color: #fca5a5; line-height: 1.4;">
+            Đánh dấu ngày này là <strong>Nghỉ trực (Nghỉ Lễ / Không phân công ca trực)</strong> hoặc hủy ca đã xếp.
           </div>
+          <button type="button" class="btn-duty-action btn-duty-clear" id="btnSetDayOffDuty" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.85rem; color: #f87171; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35);">
+            💤 Đặt Ngày Này Nghỉ Trực (Xóa Ca)
+          </button>
         </div>
       </div>
       <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng cửa sổ</button>
-        <span style="font-size: 0.72rem; color: #64748b;">Mọi thay đổi được lưu tự động</span>
+        <button type="button" class="btn-modal-reset" id="btnCancelSwapShift">Đóng</button>
+        <span style="font-size: 0.72rem; color: #64748b;">⚡ Thay đổi được lưu tự động</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Tùy Chọn Xếp Lịch Tự Động P.CNTT -->
+  <div class="modal-overlay hidden" id="modalAutoScheduleOptions">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="flex-row gap-8 align-center">
+          <span style="font-size: 1.2rem;">⚡</span>
+          <h3 class="modal-title">XẾP LỊCH TRỰC TỰ ĐỘNG</h3>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseAutoScheduleModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction" style="color: #cbd5e1; font-size: 0.84rem; margin-bottom: 14px;">
+          Chọn phương thức xếp lịch trực cho <strong style="color: #38bdf8;" id="txtAutoScheduleTargetMonth">Tháng 08/2026</strong>:
+        </p>
+
+        <div class="modal-radio-group" style="gap: 10px;">
+          <label class="radio-option">
+            <input type="radio" name="autoScheduleAlgorithm" value="fair" checked />
+            <div class="radio-card" style="padding: 12px 14px;">
+              <div class="radio-title" style="color: #38bdf8; font-size: 0.9rem; margin-bottom: 3px;">
+                ⚖️ 1. Tự Động Công Bằng (Tránh Ngày Nghỉ)
+              </div>
+              <div class="radio-desc" style="font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">
+                Chia đều số ca ngày thường và ca Thứ 7 / CN. Tự động kiểm tra và bỏ qua các ngày nghỉ phép mà cán bộ đã đăng ký.
+              </div>
+            </div>
+          </label>
+
+          <label class="radio-option">
+            <input type="radio" name="autoScheduleAlgorithm" value="sequential" />
+            <div class="radio-card" style="padding: 12px 14px;">
+              <div class="radio-title" style="color: #fbbf24; font-size: 0.9rem; margin-bottom: 3px;">
+                🔢 2. Xoay Vòng Theo Thứ Tự (1 &rarr; N)
+              </div>
+              <div class="radio-desc" style="font-size: 0.76rem; color: #94a3b8; line-height: 1.4;">
+                Xếp lần lượt tuần tự từ Cán bộ #1 đến Cán bộ #N theo danh sách, lặp lại từ ngày 1 đến ngày cuối tháng.
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnCancelAutoScheduleModal">Hủy</button>
+        <button type="button" class="btn-modal-confirm" id="btnConfirmRunAutoSchedule" style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);">
+          🚀 XẾP LỊCH NGAY
+        </button>
       </div>
     </div>
   </div>
@@ -1921,15 +1980,16 @@
 
   <!-- MODAL: Danh Sách & Quản Lý Cán Bộ P.CNTT -->
   <div class="modal-overlay hidden" id="modalDutyStaffList">
-    <div class="modal-card" style="max-width: 640px;">
+    <div class="modal-card" style="max-width: 660px;">
       <div class="modal-header">
         <div class="staff-header-left flex-row gap-8 align-center">
           <span style="font-size: 1.2rem;">👥</span>
           <h3 class="modal-title">DANH SÁCH CÁN BỘ P.CNTT (<span id="staffCountDisplay">0</span>)</h3>
         </div>
-        <div class="staff-header-actions flex-row gap-8 align-center">
-          <button type="button" class="btn-card-small admin-only-btn" id="btnAddStaffModalBtn" title="Thêm cán bộ mới" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.76rem;">+ Thêm Cán Bộ</button>
-          <button type="button" class="btn-card-small btn-card-danger admin-only-btn" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ mẫu để tự nhập danh sách thực tế" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">Dọn Sạch</button>
+        <div class="staff-header-actions flex-row gap-8 align-center flex-wrap">
+          <button type="button" class="btn-duty-action" id="btnAddStaffModalBtn" title="Thêm cán bộ mới" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.76rem;">➕ Thêm Cán Bộ</button>
+          <button type="button" class="btn-duty-action" id="btnRestoreDefaultStaffBtn" title="Khôi phục danh sách 8 cán bộ mẫu ban đầu" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🔄 Khôi Phục Mẫu</button>
+          <button type="button" class="btn-duty-action" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🗑️ Dọn Sạch</button>
           <button type="button" class="modal-close" id="btnCloseDutyStaffListModal">&times;</button>
         </div>
       </div>
@@ -2147,20 +2207,20 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Application Scripts (Deferred for instant interactivity) -->
-  <script defer src="js/vimes-schema-data.js?v=3.0.0"></script>
-  <script defer src="js/docx-parser.js?v=3.0.0"></script>
-  <script defer src="js/tools-registry.js?v=3.0.0"></script>
-  <script defer src="js/tool-schema-lookup.js?v=3.0.0"></script>
-  <script defer src="js/tool-sql-builder.js?v=3.0.0"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.0.0"></script>
-  <script defer src="js/tool-bhyt-xml.js?v=3.0.0"></script>
-  <script defer src="js/tool-word-to-html.js?v=3.0.0"></script>
-  <script defer src="js/tool-pdf-to-image.js?v=3.0.0"></script>
-  <script defer src="js/tool-giamdinh.js?v=3.0.0"></script>
-  <script defer src="js/tool-vgca-doichieu.js?v=3.0.0"></script>
-  <script defer src="js/tool-vgca-cks.js?v=3.0.0"></script>
-  <script defer src="js/tool-vgca-email.js?v=3.0.0"></script>
-  <script defer src="js/notification-manager.js?v=3.0.0"></script>
-  <script defer src="js/app.js?v=3.0.0"></script>
+  <script defer src="js/vimes-schema-data.js?v=3.0.2"></script>
+  <script defer src="js/docx-parser.js?v=3.0.2"></script>
+  <script defer src="js/tools-registry.js?v=3.0.2"></script>
+  <script defer src="js/tool-schema-lookup.js?v=3.0.2"></script>
+  <script defer src="js/tool-sql-builder.js?v=3.0.2"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.0.2"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.0.2"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.0.2"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.0.2"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.0.2"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.0.2"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.0.2"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.0.2"></script>
+  <script defer src="js/notification-manager.js?v=3.0.2"></script>
+  <script defer src="js/app.js?v=3.0.2"></script>
 </body>
 </html>

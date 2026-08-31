@@ -3478,6 +3478,21 @@ ${this.currentW2hHtmlOutput}
     this.swapShiftInfoText = document.getElementById("swapShiftInfoText");
     this.selectSwapStaff = document.getElementById("selectSwapStaff");
 
+    // Segmented Tabs inside Modal Adjust Shift
+    this.tabBtnAdjAssign = document.getElementById("tabBtnAdjAssign");
+    this.tabBtnAdjSwap = document.getElementById("tabBtnAdjSwap");
+    this.tabBtnAdjDayoff = document.getElementById("tabBtnAdjDayoff");
+    this.panelAdjAssign = document.getElementById("panelAdjAssign");
+    this.panelAdjSwap = document.getElementById("panelAdjSwap");
+    this.panelAdjDayoff = document.getElementById("panelAdjDayoff");
+
+    // Modal Auto Schedule Options
+    this.modalAutoScheduleOptions = document.getElementById("modalAutoScheduleOptions");
+    this.btnCloseAutoScheduleModal = document.getElementById("btnCloseAutoScheduleModal");
+    this.btnCancelAutoScheduleModal = document.getElementById("btnCancelAutoScheduleModal");
+    this.btnConfirmRunAutoSchedule = document.getElementById("btnConfirmRunAutoSchedule");
+    this.txtAutoScheduleTargetMonth = document.getElementById("txtAutoScheduleTargetMonth");
+
     // Quick Panel Buttons & Modals (Thống Kê & Cán Bộ)
     this.btnOpenDutyStatsModal = document.getElementById("btnOpenDutyStatsModal");
     this.btnOpenDutyStaffModal = document.getElementById("btnOpenDutyStaffModal");
@@ -3489,6 +3504,7 @@ ${this.currentW2hHtmlOutput}
     this.modalDutyStaffList = document.getElementById("modalDutyStaffList");
     this.btnCloseDutyStaffListModal = document.getElementById("btnCloseDutyStaffListModal");
     this.btnDismissDutyStaffList = document.getElementById("btnDismissDutyStaffList");
+    this.btnRestoreDefaultStaffBtn = document.getElementById("btnRestoreDefaultStaffBtn");
 
     // State Initialization
     this.currentDutyFilter = "all";
@@ -3527,11 +3543,30 @@ ${this.currentW2hHtmlOutput}
       this.dutyInputYear.addEventListener("input", () => this.runAutoSchedule());
     }
 
+    // Modal Xếp Lịch Tự Động
     if (this.btnRunAutoSchedule) {
       this.btnRunAutoSchedule.addEventListener("click", () => {
-        this.runAutoSchedule();
-        this.showToast("Đã xếp lịch trực tự động công bằng cho P.CNTT!", "success");
-        this.recordOfflineChange("Xếp Lịch Tự Động", `Đã xếp lịch cho Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()}`);
+        if (this.txtAutoScheduleTargetMonth) {
+          this.txtAutoScheduleTargetMonth.textContent = `Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()}`;
+        }
+        this.showModal(this.modalAutoScheduleOptions);
+      });
+    }
+    if (this.btnCloseAutoScheduleModal) {
+      this.btnCloseAutoScheduleModal.addEventListener("click", () => this.hideModal(this.modalAutoScheduleOptions));
+    }
+    if (this.btnCancelAutoScheduleModal) {
+      this.btnCancelAutoScheduleModal.addEventListener("click", () => this.hideModal(this.modalAutoScheduleOptions));
+    }
+    if (this.btnConfirmRunAutoSchedule) {
+      this.btnConfirmRunAutoSchedule.addEventListener("click", () => {
+        const selectedAlgo = document.querySelector('input[name="autoScheduleAlgorithm"]:checked');
+        const algo = selectedAlgo ? selectedAlgo.value : "fair";
+        this.runAutoSchedule(algo);
+        this.hideModal(this.modalAutoScheduleOptions);
+        const algoName = (algo === "sequential") ? "Xoay vòng tuần tự (1 -> N)" : "Tự động công bằng & tránh ngày nghỉ";
+        this.showToast(`Đã xếp lịch ${algoName} cho Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()}!`, "success");
+        this.recordOfflineChange("Xếp Lịch Tự Động", `Đã xếp lịch (${algoName}) cho Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()}`);
       });
     }
 
@@ -3577,15 +3612,29 @@ ${this.currentW2hHtmlOutput}
     if (this.btnSubmitCreateAccount) this.btnSubmitCreateAccount.addEventListener("click", () => this.saveUserAccount());
     if (this.btnResetAccountForm) this.btnResetAccountForm.addEventListener("click", () => this.resetAccountForm());
 
-    // Add / Edit Staff Modal & Clean All Staff
+    // Add / Edit Staff Modal & Clean All Staff & Restore Default Staff
     if (this.btnAddStaffModalBtn) this.btnAddStaffModalBtn.addEventListener("click", () => this.openStaffModal());
     this.btnClearAllStaffBtn = document.getElementById("btnClearAllStaffBtn");
     if (this.btnClearAllStaffBtn) this.btnClearAllStaffBtn.addEventListener("click", () => this.clearAllStaffData());
+    if (this.btnRestoreDefaultStaffBtn) this.btnRestoreDefaultStaffBtn.addEventListener("click", () => this.restoreDefaultStaffList());
     if (this.btnCloseAddStaffModal) this.btnCloseAddStaffModal.addEventListener("click", () => this.hideModal(this.modalAddStaff));
     if (this.btnCancelAddStaff) this.btnCancelAddStaff.addEventListener("click", () => this.hideModal(this.modalAddStaff));
     if (this.btnSaveNewStaff) this.btnSaveNewStaff.addEventListener("click", () => this.saveStaffFromModal());
 
-    // Shift Adjustment & Swap Modal
+    // Shift Adjustment & Swap Modal Segmented Tabs
+    const switchAdjTab = (tabName) => {
+      if (this.tabBtnAdjAssign) this.tabBtnAdjAssign.classList.toggle("active", tabName === "assign");
+      if (this.tabBtnAdjSwap) this.tabBtnAdjSwap.classList.toggle("active", tabName === "swap");
+      if (this.tabBtnAdjDayoff) this.tabBtnAdjDayoff.classList.toggle("active", tabName === "dayoff");
+      if (this.panelAdjAssign) this.panelAdjAssign.classList.toggle("hidden", tabName !== "assign");
+      if (this.panelAdjSwap) this.panelAdjSwap.classList.toggle("hidden", tabName !== "swap");
+      if (this.panelAdjDayoff) this.panelAdjDayoff.classList.toggle("hidden", tabName !== "dayoff");
+    };
+
+    if (this.tabBtnAdjAssign) this.tabBtnAdjAssign.addEventListener("click", () => switchAdjTab("assign"));
+    if (this.tabBtnAdjSwap) this.tabBtnAdjSwap.addEventListener("click", () => switchAdjTab("swap"));
+    if (this.tabBtnAdjDayoff) this.tabBtnAdjDayoff.addEventListener("click", () => switchAdjTab("dayoff"));
+
     if (this.btnCloseSwapShiftModal) this.btnCloseSwapShiftModal.addEventListener("click", () => this.hideModal(this.modalSwapShift));
     if (this.btnCancelSwapShift) this.btnCancelSwapShift.addEventListener("click", () => this.hideModal(this.modalSwapShift));
     if (this.btnConfirmSwapStaff) this.btnConfirmSwapStaff.addEventListener("click", () => this.confirmSwapStaff());
@@ -3631,22 +3680,38 @@ ${this.currentW2hHtmlOutput}
   clearDutySchedule() {
     const month = this.getSelectedDutyMonth();
     const year = this.getSelectedDutyYear();
-    if (!confirm(`Bạn có chắc chắn muốn xóa toàn bộ ca trực của Tháng ${month}/${year} không?`)) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa toàn bộ ca trực của Tháng ${month}/${year} để trống toàn bộ lịch không?`)) return;
     this.dutySchedule = ToolDutyRoster.clearSchedule(year, month);
     this.renderDutyViews();
     this.showToast(`Đã xóa toàn bộ ca trực Tháng ${month}/${year}!`, "info");
     this.recordOfflineChange("Xóa Lịch Trực", `Đã xóa toàn bộ ca trực Tháng ${month}/${year}`);
   }
 
+  restoreDefaultStaffList() {
+    if (!confirm("Khôi phục lại danh sách 8 cán bộ mẫu ban đầu của Phòng CNTT?")) return;
+    this.dutyStaffList = [...ToolDutyRoster.defaultStaffList];
+    ToolDutyRoster.saveStaffList(this.dutyStaffList);
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList, "fair");
+    this.renderStaffList();
+    this.renderDutyViews();
+    this.showToast("Đã khôi phục danh sách 8 cán bộ mẫu ban đầu!", "success");
+    this.recordOfflineChange("Khôi Phục Cán Bộ", "Khôi phục 8 cán bộ mẫu ban đầu");
+  }
+
   clearAllStaffData() {
-    if (!confirm("Bạn có chắc chắn muốn xóa sạch toàn bộ danh sách cán bộ mẫu để tự nhập danh sách cán bộ thực tế của bạn không?")) return;
+    if (!confirm("Bạn có chắc chắn muốn XÓA SẠCH toàn bộ cán bộ để tự nhập danh sách thực tế của phòng không?")) return;
     this.dutyStaffList = ToolDutyRoster.clearAllStaff();
     this.currentFilterStaffId = "all";
     this.currentDutyFilter = "all";
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    this.dutySchedule = ToolDutyRoster.clearSchedule(year, month);
     this.renderStaffList();
-    this.runAutoSchedule();
-    this.showToast("Đã dọn sạch danh sách cán bộ! Bạn có thể nhấn '+ Thêm' để bắt đầu nhập dữ liệu mới.", "success");
-    this.recordOfflineChange("Xóa Danh Sách Cán Bộ", "Đã dọn sạch danh sách cán bộ để nhập mới");
+    this.renderDutyViews();
+    this.showToast("Đã dọn sạch danh sách cán bộ! Bạn có thể nhấn '+ Thêm Cán Bộ' để nhập danh sách thực tế.", "warning");
+    this.recordOfflineChange("Xóa Danh Sách Cán Bộ", "Đã dọn sạch danh sách cán bộ");
   }
 
   updateDutySessionUI() {
@@ -3932,9 +3997,20 @@ ${this.currentW2hHtmlOutput}
     if (!confirm(`Bạn có chắc chắn muốn xóa cán bộ "${s.name}" khỏi danh sách xếp lịch?`)) return;
     this.dutyStaffList = this.dutyStaffList.filter(st => st.id !== staffId);
     ToolDutyRoster.saveStaffList(this.dutyStaffList);
+    
+    // Xóa cache và tạo lại lịch trực tháng với danh sách cán bộ còn lại
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    if (this.dutyStaffList.length > 0) {
+      this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList, "fair");
+    } else {
+      this.dutySchedule = ToolDutyRoster.clearSchedule(year, month);
+    }
+    
     this.renderStaffList();
-    this.runAutoSchedule();
-    this.showToast(`Đã xóa cán bộ "${s.name}"!`, "info");
+    this.renderDutyViews();
+    this.showToast(`Đã xóa cán bộ "${s.name}" thành công!`, "info");
+    this.recordOfflineChange("Xóa Cán Bộ", `Đã xóa cán bộ ${s.name}`);
   }
 
   renderStaffList() {
@@ -3943,14 +4019,13 @@ ${this.currentW2hHtmlOutput}
     if (this.staffCountBtnBadge) this.staffCountBtnBadge.textContent = this.dutyStaffList.length;
     if (!this.dutyStaffListContainer) return;
     this.dutyStaffListContainer.innerHTML = "";
-    const isAdmin = (this.currentDutySession && this.currentDutySession.role === "admin");
 
     if (this.dutyStaffList.length === 0) {
       this.dutyStaffListContainer.innerHTML = `
         <div style="text-align: center; padding: 24px 10px; color: #94a3b8; font-size: 0.78rem; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2); border-radius: 8px;">
           <div style="font-size: 1.6rem; margin-bottom: 6px;">👥</div>
           <strong style="color:#f1f5f9; display:block; margin-bottom: 4px;">Chưa có cán bộ trong danh sách</strong>
-          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"+ Thêm Cán Bộ"</strong> ở trên để nhập danh sách thực tế của phòng.</p>
+          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"➕ Thêm Cán Bộ"</strong> hoặc <strong>"🔄 Khôi Phục Mẫu"</strong> ở trên để bắt đầu.</p>
         </div>
       `;
       this.populateStaffFilterDropdown();
@@ -3973,17 +4048,13 @@ ${this.currentW2hHtmlOutput}
             ${offDaysStr ? `<span style="color: #f87171; font-size: 0.7rem; background: rgba(248, 113, 113, 0.1); padding: 1px 6px; border-radius: 4px;">💤 Nghỉ: Ngày ${offDaysStr}</span>` : ""}
           </div>
         </div>
-        ${isAdmin ? `
-          <div class="staff-card-actions" style="display: flex; gap: 6px;">
-            <button type="button" class="btn-staff-act btn-edit-staff" title="Sửa thông tin / ngày nghỉ" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; cursor: pointer; color: #38bdf8;">✏️</button>
-            <button type="button" class="btn-staff-act btn-del-staff" title="Xóa cán bộ" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; color: #f87171;">🗑️</button>
-          </div>
-        ` : ""}
+        <div class="staff-card-actions" style="display: flex; gap: 6px;">
+          <button type="button" class="btn-staff-act btn-edit-staff" title="Sửa thông tin / ngày nghỉ phép" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; cursor: pointer; color: #38bdf8;">✏️</button>
+          <button type="button" class="btn-staff-act btn-del-staff" title="Xóa cán bộ này" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; color: #f87171;">🗑️</button>
+        </div>
       `;
-      if (isAdmin) {
-        item.querySelector(".btn-edit-staff").addEventListener("click", () => this.openStaffModal(s.id));
-        item.querySelector(".btn-del-staff").addEventListener("click", () => this.deleteStaff(s.id));
-      }
+      item.querySelector(".btn-edit-staff").addEventListener("click", () => this.openStaffModal(s.id));
+      item.querySelector(".btn-del-staff").addEventListener("click", () => this.deleteStaff(s.id));
       this.dutyStaffListContainer.appendChild(item);
     });
     this.populateStaffFilterDropdown();
@@ -4018,12 +4089,12 @@ ${this.currentW2hHtmlOutput}
     this.switchDutyView(mode);
   }
 
-  runAutoSchedule() {
+  runAutoSchedule(algorithm = "fair") {
     if (!window.ToolDutyRoster) return;
     this.dutyStaffList = ToolDutyRoster.getStaffList();
     const month = this.getSelectedDutyMonth();
     const year = this.getSelectedDutyYear();
-    this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList);
+    this.dutySchedule = ToolDutyRoster.generateSchedule(year, month, this.dutyStaffList, algorithm);
     this.renderDutyViews();
   }
 
@@ -4316,19 +4387,27 @@ ${this.currentW2hHtmlOutput}
 
     if (this.swapShiftInfoText) {
       this.swapShiftInfoText.innerHTML = `
-        <div style="font-size:0.92rem; margin-bottom:4px;">
-          📅 <strong>Ngày ${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year} (${dayObj ? dayObj.dayName : ''})</strong> 
-          <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; margin-left:6px; background:${dayObj && dayObj.isWeekend ? 'rgba(245,158,11,0.2);color:#fbbf24;' : 'rgba(56,189,248,0.2);color:#38bdf8;'}">${dayObj && dayObj.isWeekend ? 'Cuối tuần (T7/CN)' : 'Ngày trong tuần'}</span>
+        <div style="font-size:0.92rem; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+          <span>📅 <strong>Ngày ${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year} (${dayObj ? dayObj.dayName : ''})</strong></span>
+          <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; font-weight:600; background:${dayObj && dayObj.isWeekend ? 'rgba(245,158,11,0.2);color:#fbbf24;' : 'rgba(56,189,248,0.2);color:#38bdf8;'}">${dayObj && dayObj.isWeekend ? 'Cuối tuần (T7/CN)' : 'Ngày thường'}</span>
         </div>
-        <div style="font-size:0.83rem; color:#cbd5e1;">
-          👤 Trạng thái hiện tại: 
+        <div style="font-size:0.83rem; color:#cbd5e1; background:rgba(15,23,42,0.4); padding:6px 10px; border-radius:6px;">
+          👤 Hiện tại: 
           ${isOff 
-            ? '<strong style="color:#f87171;">💤 Nghỉ trực (Không phân công ca trực)</strong>' 
-            : `<strong style="color:#38bdf8;">${currentAssigned && currentAssigned.name ? currentAssigned.name : 'Chưa phân công'}</strong> ${currentAssigned && currentAssigned.phone ? `(📞 ${currentAssigned.phone})` : ''}`
+            ? '<strong style="color:#f87171;">💤 Nghỉ trực (Trống ca)</strong>' 
+            : `<strong style="color:#38bdf8;">${currentAssigned && currentAssigned.name ? currentAssigned.name : 'Chưa phân công'}</strong> ${currentAssigned && currentAssigned.phone ? `<span style="color:#34d399;font-size:0.75rem;">(📞 ${currentAssigned.phone})</span>` : ''}`
           }
         </div>
       `;
     }
+
+    // Reset về Tab 1 mặc định (Đổi Cán Bộ)
+    if (this.tabBtnAdjAssign) this.tabBtnAdjAssign.classList.add("active");
+    if (this.tabBtnAdjSwap) this.tabBtnAdjSwap.classList.remove("active");
+    if (this.tabBtnAdjDayoff) this.tabBtnAdjDayoff.classList.remove("active");
+    if (this.panelAdjAssign) this.panelAdjAssign.classList.remove("hidden");
+    if (this.panelAdjSwap) this.panelAdjSwap.classList.add("hidden");
+    if (this.panelAdjDayoff) this.panelAdjDayoff.classList.add("hidden");
 
     // 1. Dropdown chọn cán bộ thay thế
     if (this.selectSwapStaff) {
@@ -4365,9 +4444,13 @@ ${this.currentW2hHtmlOutput}
       if (isOff) {
         this.btnSetDayOffDuty.textContent = "⚡ Hủy Nghỉ & Phân Công Lại Cán Bộ";
         this.btnSetDayOffDuty.className = "btn-duty-action btn-duty-auto";
+        this.btnSetDayOffDuty.style.background = "linear-gradient(135deg, #0284c7, #2563eb)";
+        this.btnSetDayOffDuty.style.color = "#fff";
       } else {
         this.btnSetDayOffDuty.textContent = "💤 Đặt Ngày Này Nghỉ Trực (Xóa Ca)";
         this.btnSetDayOffDuty.className = "btn-duty-action btn-duty-clear";
+        this.btnSetDayOffDuty.style.background = "rgba(239, 68, 68, 0.12)";
+        this.btnSetDayOffDuty.style.color = "#f87171";
       }
     }
 

@@ -112,7 +112,7 @@ const ToolDutyRoster = {
       const raw = localStorage.getItem("DUTY_CNTT_STAFF_LIST");
       if (raw !== null) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {}
     this.saveStaffList(this.defaultStaffList);
@@ -214,12 +214,32 @@ const ToolDutyRoster = {
   },
 
   clearSchedule(year, month) {
-    const cacheKey = `${year}_${month}`;
-    delete this._cacheSchedule[cacheKey];
-    try {
-      localStorage.removeItem(`DUTY_SCHEDULE_${year}_${month}`);
-    } catch (e) {}
-    return [];
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    const totalDays = this.getDaysInMonth(y, m);
+    const schedule = [];
+    for (let d = 1; d <= totalDays; d++) {
+      const dayOfWeek = this.getDayOfWeek(y, m, d);
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      schedule.push({
+        day: d,
+        dayOfWeek: dayOfWeek,
+        dayName: ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][dayOfWeek],
+        isWeekend: isWeekend,
+        shifts: {
+          "shift_cntt": {
+            id: "",
+            name: "Nghỉ trực",
+            role: "Không phân công ca trực",
+            phone: "",
+            dept: "Phòng CNTT",
+            isOffDay: true
+          }
+        }
+      });
+    }
+    this.saveSchedule(y, m, schedule);
+    return schedule;
   },
 
   // Cập nhật ca trực cho 1 ngày cụ thể (Đổi người hoặc Đặt ngày nghỉ)
@@ -269,33 +289,67 @@ const ToolDutyRoster = {
     return schedule;
   },
 
-  // Thuật toán Tự Động Xếp Lịch Trực Phòng CNTT (Tôn trọng ngày nghỉ phép offDays của từng cán bộ)
-  generateSchedule(year, month, staffList = null) {
+  // Thuật toán Tự Động Xếp Lịch Trực Phòng CNTT (Hỗ trợ 2 phương thức: Công bằng & Tuần tự 1->N)
+  generateSchedule(year, month, staffList = null, method = "fair") {
+    if (method === "sequential") {
+      return this.generateScheduleSequential(year, month, staffList);
+    }
+    return this.generateScheduleFair(year, month, staffList);
+  },
+
+  // Phương thức 1: Xếp Xoay Vòng Tuần Tự (Thứ tự 1 -> N)
+  generateScheduleSequential(year, month, staffList = null) {
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
+    const totalDays = this.getDaysInMonth(y, m);
+    const schedule = [];
+
+    if (!activeStaffList || activeStaffList.length === 0) {
+      return this.clearSchedule(y, m);
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+      const dayOfWeek = this.getDayOfWeek(y, m, d);
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      const staffIdx = (d - 1) % activeStaffList.length;
+      const s = activeStaffList[staffIdx];
+
+      schedule.push({
+        day: d,
+        dayOfWeek: dayOfWeek,
+        dayName: ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][dayOfWeek],
+        isWeekend: isWeekend,
+        shifts: {
+          "shift_cntt": {
+            id: s.id,
+            name: s.name,
+            role: s.role,
+            phone: s.phone || "",
+            dept: "Phòng CNTT",
+            isOffDay: false
+          }
+        }
+      });
+    }
+
+    this.saveSchedule(y, m, schedule);
+    return schedule;
+  },
+
+  // Phương thức 2: Tự Động Công Bằng (Chia đều ca thường/T7/CN & Tránh ngày nghỉ phép)
+  generateScheduleFair(year, month, staffList = null) {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
     const totalDays = this.getDaysInMonth(y, m);
     const schedule = [];
     
-    if (activeStaffList.length === 0) {
-      for (let d = 1; d <= totalDays; d++) {
-        const dayOfWeek = this.getDayOfWeek(y, m, d);
-        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-        schedule.push({
-          day: d,
-          dayOfWeek: dayOfWeek,
-          dayName: ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][dayOfWeek],
-          isWeekend: isWeekend,
-          shifts: {
-            "shift_cntt": { id: "", name: "Chưa có cán bộ", role: "", phone: "", dept: "", isOffDay: false }
-          }
-        });
-      }
-      return schedule;
+    if (!activeStaffList || activeStaffList.length === 0) {
+      return this.clearSchedule(y, m);
     }
 
     const staffPool = activeStaffList.map(s => {
-      // Parse offDays if stored as comma separated string
       let parsedOffDays = [];
       if (Array.isArray(s.offDays)) {
         parsedOffDays = s.offDays.map(n => parseInt(n, 10)).filter(n => !isNaN(n));
@@ -312,27 +366,23 @@ const ToolDutyRoster = {
     });
 
     for (let d = 1; d <= totalDays; d++) {
-      const dayOfWeek = this.getDayOfWeek(year, month, d);
+      const dayOfWeek = this.getDayOfWeek(y, m, d);
       const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
       const dayShifts = {};
 
-      // Ứng viên: Không đăng ký nghỉ phép ngày d và không trực ngày hôm trước (d - 1)
       let candidates = staffPool.filter(s => {
         const isOff = s.offDaysList && s.offDaysList.includes(d);
         const isConsecutive = (s.lastAssignedDay === d - 1);
         return !isOff && !isConsecutive;
       });
 
-      // Nếu tất cả đều kẹt trực hôm trước, tìm người không nghỉ phép
       if (candidates.length === 0) {
         candidates = staffPool.filter(s => !(s.offDaysList && s.offDaysList.includes(d)));
       }
-      // Nếu vẫn không có ai, dùng toàn bộ danh sách
       if (candidates.length === 0) {
         candidates = [...staffPool];
       }
 
-      // Ưu tiên chia đều số ca & ca cuối tuần
       candidates.sort((a, b) => {
         if (isWeekend && a.weekendCount !== b.weekendCount) return a.weekendCount - b.weekendCount;
         if (a.shiftCount !== b.shiftCount) return a.shiftCount - b.shiftCount;
@@ -353,7 +403,7 @@ const ToolDutyRoster = {
           isOffDay: false
         };
       } else {
-        dayShifts["shift_cntt"] = { id: "", name: "Chưa phân công", role: "", phone: "", dept: "", isOffDay: false };
+        dayShifts["shift_cntt"] = { id: "", name: "Nghỉ trực", role: "Không phân công", phone: "", dept: "Phòng CNTT", isOffDay: true };
       }
 
       schedule.push({
@@ -365,7 +415,7 @@ const ToolDutyRoster = {
       });
     }
 
-    this.saveSchedule(year, month, schedule);
+    this.saveSchedule(y, m, schedule);
     return schedule;
   },
 
