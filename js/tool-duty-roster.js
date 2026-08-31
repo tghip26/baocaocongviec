@@ -302,18 +302,19 @@ const ToolDutyRoster = {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
+    const dutyEligibleStaff = activeStaffList.filter(s => !s.noDuty);
     const totalDays = this.getDaysInMonth(y, m);
     const schedule = [];
 
-    if (!activeStaffList || activeStaffList.length === 0) {
+    if (!dutyEligibleStaff || dutyEligibleStaff.length === 0) {
       return this.clearSchedule(y, m);
     }
 
     for (let d = 1; d <= totalDays; d++) {
       const dayOfWeek = this.getDayOfWeek(y, m, d);
       const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-      const staffIdx = (d - 1) % activeStaffList.length;
-      const s = activeStaffList[staffIdx];
+      const staffIdx = (d - 1) % dutyEligibleStaff.length;
+      const s = dutyEligibleStaff[staffIdx];
 
       schedule.push({
         day: d,
@@ -342,14 +343,15 @@ const ToolDutyRoster = {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
+    const dutyEligibleStaff = activeStaffList.filter(s => !s.noDuty);
     const totalDays = this.getDaysInMonth(y, m);
     const schedule = [];
     
-    if (!activeStaffList || activeStaffList.length === 0) {
+    if (!dutyEligibleStaff || dutyEligibleStaff.length === 0) {
       return this.clearSchedule(y, m);
     }
 
-    const staffPool = activeStaffList.map(s => {
+    const staffPool = dutyEligibleStaff.map(s => {
       let parsedOffDays = [];
       if (Array.isArray(s.offDays)) {
         parsedOffDays = s.offDays.map(n => parseInt(n, 10)).filter(n => !isNaN(n));
@@ -394,6 +396,7 @@ const ToolDutyRoster = {
         selectedStaff.shiftCount++;
         if (isWeekend) selectedStaff.weekendCount++;
         selectedStaff.lastAssignedDay = d;
+
         dayShifts["shift_cntt"] = {
           id: selectedStaff.id,
           name: selectedStaff.name,
@@ -429,6 +432,7 @@ const ToolDutyRoster = {
         role: s.role,
         dept: "Phòng CNTT",
         phone: s.phone || "",
+        noDuty: !!s.noDuty,
         total: 0,
         weekday: 0,
         weekend: 0,

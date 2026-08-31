@@ -22,8 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.0.5" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.0.5" />
+  <link rel="preload" href="style.css?v=3.0.6" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.0.6" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -2028,6 +2028,15 @@
           <input type="text" id="inputStaffOffDays" class="form-input" placeholder="Ví dụ: 5, 12, 28 (Thuật toán tự động tránh các ngày này)" />
           <span style="display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">Khi bấm Xếp Lịch Tự Động, hệ thống sẽ tự động không phân công ca trực vào các ngày nghỉ này.</span>
         </div>
+        <div class="config-form-group" style="margin-top: 14px;">
+          <label class="custom-toggle-card" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+            <input type="checkbox" id="inputStaffNoDuty" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #ef4444; cursor: pointer;" />
+            <div style="flex: 1;">
+              <strong style="color: #fca5a5; font-size: 0.85rem; display: block; margin-bottom: 2px;">🚫 Miễn trực / Không phân công lịch trực</strong>
+              <span style="display: block; font-size: 0.74rem; color: #94a3b8; line-height: 1.4;">Khi bật tùy chọn này, hệ thống xếp lịch tự động sẽ <strong>KHÔNG</strong> chia ca trực cho cán bộ này (Phù hợp cho: Lãnh đạo phòng, nhân sự nghỉ thai sản, nghỉ ốm dài ngày, đi học hoặc không tham gia ca trực 24/7).</span>
+            </div>
+          </label>
+        </div>
       </div>
       <div class="modal-footer flex-between">
         <button type="button" class="btn-modal-reset" id="btnCancelAddStaff">Hủy bỏ</button>
@@ -2206,20 +2215,20 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Application Scripts (Deferred for instant interactivity) -->
-  <script defer src="js/vimes-schema-data.js?v=3.0.5"></script>
-  <script defer src="js/docx-parser.js?v=3.0.5"></script>
-  <script defer src="js/tools-registry.js?v=3.0.5"></script>
-  <script defer src="js/tool-schema-lookup.js?v=3.0.5"></script>
-  <script defer src="js/tool-sql-builder.js?v=3.0.5"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.0.5"></script>
-  <script defer src="js/tool-bhyt-xml.js?v=3.0.5"></script>
-  <script defer src="js/tool-word-to-html.js?v=3.0.5"></script>
-  <script defer src="js/tool-pdf-to-image.js?v=3.0.5"></script>
-  <script defer src="js/tool-giamdinh.js?v=3.0.5"></script>
-  <script defer src="js/tool-vgca-doichieu.js?v=3.0.5"></script>
-  <script defer src="js/tool-vgca-cks.js?v=3.0.5"></script>
-  <script defer src="js/tool-vgca-email.js?v=3.0.5"></script>
-  <script defer src="js/notification-manager.js?v=3.0.5"></script>
-  <script defer src="js/app.js?v=3.0.5"></script>
+  <script defer src="js/vimes-schema-data.js?v=3.0.6"></script>
+  <script defer src="js/docx-parser.js?v=3.0.6"></script>
+  <script defer src="js/tools-registry.js?v=3.0.6"></script>
+  <script defer src="js/tool-schema-lookup.js?v=3.0.6"></script>
+  <script defer src="js/tool-sql-builder.js?v=3.0.6"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.0.6"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.0.6"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.0.6"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.0.6"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.0.6"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.0.6"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.0.6"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.0.6"></script>
+  <script defer src="js/notification-manager.js?v=3.0.6"></script>
+  <script defer src="js/app.js?v=3.0.6"></script>
 </body>
 </html>

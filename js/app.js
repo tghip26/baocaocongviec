@@ -3465,6 +3465,7 @@ ${this.currentW2hHtmlOutput}
     this.inputStaffRole = document.getElementById("inputStaffRole");
     this.inputStaffPhone = document.getElementById("inputStaffPhone");
     this.inputStaffOffDays = document.getElementById("inputStaffOffDays");
+    this.inputStaffNoDuty = document.getElementById("inputStaffNoDuty");
 
     // Modal: Swap / Adjust Day Shift
     this.modalSwapShift = document.getElementById("modalSwapShift");
@@ -3949,6 +3950,7 @@ ${this.currentW2hHtmlOutput}
       if (this.inputStaffOffDays) {
         this.inputStaffOffDays.value = Array.isArray(s.offDays) ? s.offDays.join(", ") : (s.offDays || "");
       }
+      if (this.inputStaffNoDuty) this.inputStaffNoDuty.checked = !!s.noDuty;
     } else {
       if (this.modalStaffTitle) this.modalStaffTitle.textContent = "➕ THÊM CÁN BỘ PHÒNG CNTT";
       if (this.inputEditStaffId) this.inputEditStaffId.value = "";
@@ -3956,6 +3958,7 @@ ${this.currentW2hHtmlOutput}
       if (this.inputStaffRole) this.inputStaffRole.value = "";
       if (this.inputStaffPhone) this.inputStaffPhone.value = "";
       if (this.inputStaffOffDays) this.inputStaffOffDays.value = "";
+      if (this.inputStaffNoDuty) this.inputStaffNoDuty.checked = false;
     }
     this.showModal(this.modalAddStaff);
   }
@@ -3969,6 +3972,7 @@ ${this.currentW2hHtmlOutput}
     const role = this.inputStaffRole && this.inputStaffRole.value.trim() ? this.inputStaffRole.value.trim() : "Kỹ sư CNTT";
     const phone = this.inputStaffPhone && this.inputStaffPhone.value.trim() ? this.inputStaffPhone.value.trim() : "";
     const offDays = this.inputStaffOffDays ? this.inputStaffOffDays.value.split(",").map(d => d.trim()).filter(d => d !== "") : [];
+    const noDuty = this.inputStaffNoDuty ? this.inputStaffNoDuty.checked : false;
     const editId = this.inputEditStaffId ? this.inputEditStaffId.value : "";
     this.dutyStaffList = ToolDutyRoster.getStaffList();
     if (editId) {
@@ -3978,10 +3982,11 @@ ${this.currentW2hHtmlOutput}
         s.role = role;
         s.phone = phone;
         s.offDays = offDays;
+        s.noDuty = noDuty;
         this.showToast(`Đã cập nhật cán bộ "${name}"!`, "success");
       }
     } else {
-      const newStaff = { id: "nv_" + Date.now(), name: name, role: role, dept: "Phòng CNTT", phone: phone, offDays: offDays };
+      const newStaff = { id: "nv_" + Date.now(), name: name, role: role, dept: "Phòng CNTT", phone: phone, offDays: offDays, noDuty: noDuty };
       this.dutyStaffList.push(newStaff);
       this.showToast(`Đã thêm cán bộ "${name}" vào danh sách!`, "success");
     }
@@ -4045,7 +4050,8 @@ ${this.currentW2hHtmlOutput}
           <div class="flex-row gap-6 align-center flex-wrap" style="font-size: 0.74rem;">
             <span class="staff-role-badge" style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; padding: 2px 6px; border-radius: 4px;">${s.role}</span>
             ${s.phone ? `<span class="staff-phone-badge" style="color: #34d399; font-weight: 600;">📞 ${s.phone}</span>` : ""}
-            ${offDaysStr ? `<span style="color: #f87171; font-size: 0.7rem; background: rgba(248, 113, 113, 0.1); padding: 1px 6px; border-radius: 4px;">💤 Nghỉ: Ngày ${offDaysStr}</span>` : ""}
+            ${s.noDuty ? `<span style="color: #f87171; font-size: 0.7rem; font-weight: 700; background: rgba(248, 113, 113, 0.18); border: 1px solid rgba(248, 113, 113, 0.35); padding: 1px 6px; border-radius: 4px;">🚫 Miễn trực</span>` : ""}
+            ${offDaysStr ? `<span style="color: #fbbf24; font-size: 0.7rem; background: rgba(245, 158, 11, 0.1); padding: 1px 6px; border-radius: 4px;">💤 Nghỉ: Ngày ${offDaysStr}</span>` : ""}
           </div>
         </div>
         <div class="staff-card-actions" style="display: flex; gap: 6px;">
