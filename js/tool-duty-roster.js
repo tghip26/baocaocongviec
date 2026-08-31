@@ -185,12 +185,19 @@ const ToolDutyRoster = {
     return new Date(year, month - 1, day).getDay();
   },
 
+  _cacheSchedule: {},
+
   getSchedule(year, month) {
+    const cacheKey = `${year}_${month}`;
+    if (this._cacheSchedule[cacheKey]) return this._cacheSchedule[cacheKey];
     try {
       const raw = localStorage.getItem(`DUTY_SCHEDULE_${year}_${month}`);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this._cacheSchedule[cacheKey] = parsed;
+          return parsed;
+        }
       }
     } catch (e) {}
     const generated = this.generateSchedule(year, month);
@@ -199,12 +206,16 @@ const ToolDutyRoster = {
   },
 
   saveSchedule(year, month, schedule) {
+    const cacheKey = `${year}_${month}`;
+    this._cacheSchedule[cacheKey] = schedule;
     try {
       localStorage.setItem(`DUTY_SCHEDULE_${year}_${month}`, JSON.stringify(schedule));
     } catch (e) {}
   },
 
   clearSchedule(year, month) {
+    const cacheKey = `${year}_${month}`;
+    delete this._cacheSchedule[cacheKey];
     try {
       localStorage.removeItem(`DUTY_SCHEDULE_${year}_${month}`);
     } catch (e) {}

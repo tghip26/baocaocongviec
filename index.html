@@ -10,25 +10,34 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="alternate icon" href="favicon.svg" />
 
-  <!-- Google Fonts: Inter & Outfit -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- DNS Prefetch & Preconnect for High Speed CDN Delivery -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-  <!-- Core Client-side Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <!-- Google Fonts: Inter & Outfit with font-display swap -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
+  <link rel="preload" href="style.css?v=3.0.0" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.0.0" />
+
+  <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <!-- PDF.js CDN for Client-side PDF Rendering -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>
-    if (window.pdfjsLib) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script defer>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
+    });
   </script>
-
-  <!-- Master Stylesheet with Cache Buster -->
-  <link rel="stylesheet" href="style.css?v=2.9.0" />
 </head>
 <body>
   <!-- App Layout Wrapper -->
@@ -2137,21 +2146,21 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Application Scripts -->
-  <script src="js/vimes-schema-data.js?v=2.7.0"></script>
-  <script src="js/docx-parser.js?v=2.7.0"></script>
-  <script src="js/tools-registry.js?v=2.7.0"></script>
-  <script src="js/tool-schema-lookup.js?v=2.7.0"></script>
-  <script src="js/tool-sql-builder.js?v=2.7.0"></script>
-  <script src="js/tool-duty-roster.js?v=2.7.0"></script>
-  <script src="js/tool-bhyt-xml.js?v=2.7.0"></script>
-  <script src="js/tool-word-to-html.js?v=2.7.0"></script>
-  <script src="js/tool-pdf-to-image.js?v=2.7.0"></script>
-  <script src="js/tool-giamdinh.js?v=2.7.0"></script>
-  <script src="js/tool-vgca-doichieu.js?v=2.7.0"></script>
-  <script src="js/tool-vgca-cks.js?v=2.7.0"></script>
-  <script src="js/tool-vgca-email.js?v=2.7.0"></script>
-  <script src="js/notification-manager.js?v=2.7.0"></script>
-  <script src="js/app.js?v=2.7.0"></script>
+  <!-- Application Scripts (Deferred for instant interactivity) -->
+  <script defer src="js/vimes-schema-data.js?v=3.0.0"></script>
+  <script defer src="js/docx-parser.js?v=3.0.0"></script>
+  <script defer src="js/tools-registry.js?v=3.0.0"></script>
+  <script defer src="js/tool-schema-lookup.js?v=3.0.0"></script>
+  <script defer src="js/tool-sql-builder.js?v=3.0.0"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.0.0"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.0.0"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.0.0"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.0.0"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.0.0"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.0.0"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.0.0"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.0.0"></script>
+  <script defer src="js/notification-manager.js?v=3.0.0"></script>
+  <script defer src="js/app.js?v=3.0.0"></script>
 </body>
 </html>

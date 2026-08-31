@@ -537,8 +537,12 @@ class AppController {
         this.renderToolGrid(q);
       };
 
+      let searchDebounceTimer = null;
       this.globalSearchInput.addEventListener("input", (e) => {
-        handleGlobalSearch(e.target.value);
+        clearTimeout(searchDebounceTimer);
+        searchDebounceTimer = setTimeout(() => {
+          handleGlobalSearch(e.target.value);
+        }, 80);
       });
 
       this.globalSearchInput.addEventListener("focus", (e) => {
@@ -5306,11 +5310,21 @@ ${this.currentW2hHtmlOutput}
   }
 
   showModal(modalEl) {
-    if (modalEl) modalEl.classList.remove("hidden");
+    if (!modalEl) return;
+    modalEl.classList.remove("hidden");
+    requestAnimationFrame(() => {
+      modalEl.classList.add("modal-visible");
+    });
   }
 
   hideModal(modalEl) {
-    if (modalEl) modalEl.classList.add("hidden");
+    if (!modalEl) return;
+    modalEl.classList.remove("modal-visible");
+    setTimeout(() => {
+      if (!modalEl.classList.contains("modal-visible")) {
+        modalEl.classList.add("hidden");
+      }
+    }, 180);
   }
 
   showToast(message, type = "info", duration = 4000, actionText = null, actionHash = null) {
