@@ -4002,18 +4002,20 @@ ${this.currentW2hHtmlOutput}
   }
 
   switchDutyView(mode) {
-    if (mode === "personal" && (!this.currentDutySession || !this.currentDutySession.username)) {
-      this.openDutyLoginModal();
-      return;
-    }
     this.dutyViewMode = mode;
     if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.classList.toggle("active", mode === "calendar");
     if (this.btnTabDutyPersonal) this.btnTabDutyPersonal.classList.toggle("active", mode === "personal");
     if (this.btnTabDutyTable) this.btnTabDutyTable.classList.toggle("active", mode === "table");
+
     if (this.dutyCalendarContainer) this.dutyCalendarContainer.classList.toggle("hidden", mode !== "calendar");
     if (this.dutyPersonalScheduleContainer) this.dutyPersonalScheduleContainer.classList.toggle("hidden", mode !== "personal");
     if (this.dutyTableContainer) this.dutyTableContainer.classList.toggle("hidden", mode !== "table");
+
     this.renderDutyViews();
+  }
+
+  switchDutyViewMode(mode) {
+    this.switchDutyView(mode);
   }
 
   runAutoSchedule() {
@@ -4209,7 +4211,7 @@ ${this.currentW2hHtmlOutput}
       this.dutyPersonalScheduleContainer.appendChild(headerCard);
 
       const listWrap = document.createElement("div");
-      listWrap.className = "duty-personal-view";
+      listWrap.className = "duty-personal-grid";
       this.dutySchedule.forEach(dayObj => {
         const assigned = dayObj.shifts["shift_cntt"];
         const card = document.createElement("div");
@@ -4217,7 +4219,7 @@ ${this.currentW2hHtmlOutput}
         card.innerHTML = `
           <div class="p-shift-left">
             <div class="p-shift-date-badge">
-              <span class="p-shift-date-num">${dayObj.day}</span>
+              <span class="p-shift-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
               <span class="p-shift-dayname">${dayObj.dayName}</span>
             </div>
             <div class="p-shift-meta">
@@ -4258,14 +4260,14 @@ ${this.currentW2hHtmlOutput}
         return;
       }
       const listWrap = document.createElement("div");
-      listWrap.className = "duty-personal-view";
+      listWrap.className = "duty-personal-grid";
       personalShifts.forEach(shift => {
         const card = document.createElement("div");
         card.className = `personal-shift-card ${shift.isWeekend ? "weekend" : ""}`;
         card.innerHTML = `
           <div class="p-shift-left">
             <div class="p-shift-date-badge">
-              <span class="p-shift-date-num">${shift.day}</span>
+              <span class="p-shift-date-num">${shift.day < 10 ? '0' + shift.day : shift.day}</span>
               <span class="p-shift-dayname">${shift.dayName}</span>
             </div>
             <div class="p-shift-meta">
