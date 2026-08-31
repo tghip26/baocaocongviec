@@ -4040,7 +4040,7 @@ ${this.currentW2hHtmlOutput}
         <div class="staff-info" style="flex: 1;">
           <div class="flex-row gap-8 align-center" style="margin-bottom: 4px;">
             <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">#${idx + 1}</span>
-            <span class="staff-name" style="font-size: 0.88rem; font-weight: 700; color: #f1f5f9;">💻 ${s.name}</span>
+            <span class="staff-name" style="font-size: 0.88rem; font-weight: 700; color: #f1f5f9;">${s.name}</span>
           </div>
           <div class="flex-row gap-6 align-center flex-wrap" style="font-size: 0.74rem;">
             <span class="staff-role-badge" style="background: rgba(148, 163, 184, 0.12); color: #94a3b8; padding: 2px 6px; border-radius: 4px;">${s.role}</span>
@@ -4166,7 +4166,7 @@ ${this.currentW2hHtmlOutput}
         breakdownHtml += `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:6px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
             <div>
-              <strong style="color:#f1f5f9; font-size:0.83rem;">💻 ${st.name}</strong>
+              <strong style="color:#f1f5f9; font-size:0.83rem;">${st.name}</strong>
               <span style="font-size:0.7rem; color:#94a3b8; display:block; margin-top:2px;">${staffObj ? staffObj.role : 'Kỹ sư'} &bull; Các ngày trực: <span style="color:#38bdf8;">${daysListStr}</span></span>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -4238,7 +4238,7 @@ ${this.currentW2hHtmlOutput}
                 </div>`
               : (isAssigned 
                 ? `<div class="duty-cell-staff-content">
-                    <span class="duty-badge-name" title="${assignedName}">💻 ${assignedName}</span>
+                    <span class="duty-badge-name" title="${assignedName}">${assignedName}</span>
                     ${assignedRole ? `<span class="duty-badge-role" title="${assignedRole}">${assignedRole}</span>` : ''}
                     ${assignedPhone ? `<span class="duty-badge-phone">📞 ${assignedPhone}</span>` : ''}
                   </div>`
@@ -4294,7 +4294,7 @@ ${this.currentW2hHtmlOutput}
               <span class="p-shift-dayname">${dayObj.dayName}</span>
             </div>
             <div class="p-shift-meta">
-              <span class="p-shift-role-title">💻 ${assigned ? assigned.name : "Chưa phân công"}</span>
+              <span class="p-shift-role-title">${assigned ? assigned.name : "Chưa phân công"}</span>
               <span style="font-size:0.75rem;color:#94a3b8;">${assigned ? assigned.role : "Phòng CNTT"} ${assigned && assigned.phone ? `&bull; 📞 ${assigned.phone}` : ""}</span>
             </div>
           </div>
@@ -4342,7 +4342,7 @@ ${this.currentW2hHtmlOutput}
               <span class="p-shift-dayname">${shift.dayName}</span>
             </div>
             <div class="p-shift-meta">
-              <span class="p-shift-role-title">💻 Trực Phòng Công Nghệ Thông Tin (24/7)</span>
+              <span class="p-shift-role-title">Trực Phòng Công Nghệ Thông Tin (24/7)</span>
               <span style="font-size:0.75rem;color:#94a3b8;">Phụ trách: Hệ thống HIS VIMES, Máy Chủ, Cổng BHYT, Ký số & Mạng LAN Khoa/Phòng</span>
             </div>
           </div>
@@ -4367,7 +4367,7 @@ ${this.currentW2hHtmlOutput}
       tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""}">
         <td><strong>Ngày ${dayObj.day}/${month}</strong></td>
         <td>${dayObj.dayName}</td>
-        <td><strong style="color:#93c5fd;">💻 ${assigned ? assigned.name : "-"}</strong></td>
+        <td><strong style="color:#93c5fd;">${assigned ? assigned.name : "-"}</strong></td>
         <td>${assigned ? (assigned.phone || "-") : "-"}</td>
         <td>${dayObj.isWeekend ? '<span class="tool-badge badge-amber" style="font-size:0.65rem;">Cuối tuần</span>' : '<span style="color:#94a3b8;font-size:0.75rem;">Ngày thường</span>'}</td>
       </tr>`;
@@ -4508,16 +4508,16 @@ ${this.currentW2hHtmlOutput}
     this.recordOfflineChange("Điều Chỉnh Ca Trực", `Cập nhật trạng thái Ngày ${day}/${month}`);
   }
 
-  exportDutyRosterExcel() {
+  async exportDutyRosterExcel() {
     if (!window.ToolDutyRoster || this.dutySchedule.length === 0) {
       this.showToast("Chưa có lịch trực để xuất Excel!", "warning");
       return;
     }
     const month = this.getSelectedDutyMonth();
     const year = this.getSelectedDutyYear();
-    const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
-    ToolDutyRoster.exportToExcel(year, month, this.dutySchedule, this.dutyStaffList, null, orgCfg);
-    this.showToast(`Đã xuất file Excel Lịch Trực Phòng CNTT Tháng ${month}/${year} thành công!`, "success");
+    const orgCfg = window.ToolVgcaDoiChieu ? window.ToolVgcaDoiChieu.getOrgConfig() : {};
+    await ToolDutyRoster.exportToExcel(year, month, this.dutySchedule, this.dutyStaffList, null, orgCfg);
+    this.showToast(`Đã xuất bản file Excel Lịch Trực Phòng CNTT Tháng ${month}/${year} thành công!`, "success");
   }
 
   // =========================================================================

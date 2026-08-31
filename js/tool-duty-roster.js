@@ -473,68 +473,369 @@ const ToolDutyRoster = {
     return personalShifts;
   },
 
-  exportToExcel(year, month, schedule, staffList = null, shiftRoles = null, orgConfig = {}) {
-    if (!window.XLSX) {
-      alert("Thư viện SheetJS XLSX chưa được tải!");
+  async exportToExcel(year, month, schedule, staffList = null, shiftRoles = null, orgConfig = {}) {
+    const activeStaffList = (staffList && staffList.length > 0) ? staffList : this.getStaffList();
+    const province = orgConfig.province || "Bắc Ninh";
+    const filename = `Lich_Truc_PCNTT_Thang_${month}_${year}_BVDK_Bac_Ninh_2.xlsx`;
+
+    // Sử dụng ExcelJS nếu có sẵn để tạo bảng tính tuyệt đẹp có màu sắc và định dạng chuẩn
+    if (window.ExcelJS) {
+      const wb = new window.ExcelJS.Workbook();
+      wb.creator = "Phòng Công Nghệ Thông Tin - BVĐK Bắc Ninh Số 2";
+      wb.created = new Date();
+      
+      const ws = wb.addWorksheet(`Lịch Trực T${month}-${year}`, {
+        views: [{ showGridLines: true }]
+      });
+
+      // Thiết lập độ rộng cột chuẩn
+      ws.columns = [
+        { key: "stt", width: 7 },       // A: STT
+        { key: "date", width: 15 },      // B: Ngày
+        { key: "dayName", width: 14 },   // C: Thứ
+        { key: "staff", width: 28 },     // D: Cán Bộ Trực
+        { key: "role", width: 28 },      // E: Chức Danh / Vị Trí
+        { key: "phone", width: 18 },     // F: Số Điện Thoại
+        { key: "type", width: 20 }       // G: Phân Loại Ca
+      ];
+
+      const borderThin = {
+        top: { style: "thin", color: { argb: "FFCBD5E1" } },
+        left: { style: "thin", color: { argb: "FFCBD5E1" } },
+        bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+        right: { style: "thin", color: { argb: "FFCBD5E1" } }
+      };
+
+      const borderHeader = {
+        top: { style: "medium", color: { argb: "FF1E3A8A" } },
+        left: { style: "thin", color: { argb: "FF94A3B8" } },
+        bottom: { style: "medium", color: { argb: "FF1E3A8A" } },
+        right: { style: "thin", color: { argb: "FF94A3B8" } }
+      };
+
+      // 1. Header Đơn Vị & Quốc Hiệu
+      ws.mergeCells("A1:C1");
+      const cA1 = ws.getCell("A1");
+      cA1.value = "SỞ Y TẾ BẮC NINH";
+      cA1.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1E3A8A" } };
+      cA1.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells("D1:G1");
+      const cD1 = ws.getCell("D1");
+      cD1.value = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM";
+      cD1.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF111827" } };
+      cD1.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells("A2:C2");
+      const cA2 = ws.getCell("A2");
+      cA2.value = "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2";
+      cA2.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1E3A8A" } };
+      cA2.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells("D2:G2");
+      const cD2 = ws.getCell("D2");
+      cD2.value = "Độc lập - Tự do - Hạnh phúc";
+      cD2.font = { name: "Segoe UI", size: 10, bold: true, italic: true, color: { argb: "FF111827" } };
+      cD2.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells("A3:C3");
+      const cA3 = ws.getCell("A3");
+      cA3.value = "PHÒNG CÔNG NGHỆ THÔNG TIN";
+      cA3.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FF0284C7" } };
+      cA3.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells("D3:G3");
+      const cD3 = ws.getCell("D3");
+      cD3.value = "-------------------";
+      cD3.font = { name: "Segoe UI", size: 9, color: { argb: "FF94A3B8" } };
+      cD3.alignment = { horizontal: "center", vertical: "middle" };
+
+      // 2. Tiêu Đề Bảng Lịch Trực
+      ws.mergeCells("A5:G5");
+      const cTitle = ws.getCell("A5");
+      cTitle.value = "BẢNG PHÂN CÔNG LỊCH TRỰC PHÒNG CÔNG NGHỆ THÔNG TIN";
+      cTitle.font = { name: "Segoe UI", size: 14, bold: true, color: { argb: "FF1E3A8A" } };
+      cTitle.alignment = { horizontal: "center", vertical: "middle" };
+      ws.getRow(5).height = 26;
+
+      ws.mergeCells("A6:G6");
+      const cSub = ws.getCell("A6");
+      cSub.value = `THÁNG ${month} NĂM ${year} - BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2`;
+      cSub.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FF0284C7" } };
+      cSub.alignment = { horizontal: "center", vertical: "middle" };
+      ws.getRow(6).height = 20;
+
+      ws.mergeCells("A7:G7");
+      const cNote = ws.getCell("A7");
+      cNote.value = "* Phụ trách: Hệ thống HIS VIMES, Cổng Giám Định BHYT, Ký số, Hạ tầng Server & Mạng LAN Khoa/Phòng 24/7 *";
+      cNote.font = { name: "Segoe UI", size: 9, italic: true, color: { argb: "FF64748B" } };
+      cNote.alignment = { horizontal: "center", vertical: "middle" };
+      ws.getRow(7).height = 18;
+
+      // 3. Tiêu Đề Cột (Table Header)
+      const tableHeaders = ["STT", "Ngày", "Thứ", "Cán Bộ Trực Ca P.CNTT", "Chức Danh / Vị Trí", "Số Điện Thoại Trực", "Phân Loại Ca"];
+      const headerRow = ws.getRow(9);
+      headerRow.height = 26;
+      tableHeaders.forEach((th, idx) => {
+        const cell = headerRow.getCell(idx + 1);
+        cell.value = th;
+        cell.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E40AF" } };
+        cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+        cell.border = borderHeader;
+      });
+
+      // 4. Dữ Liệu Các Ngày Trong Tháng
+      let curRowIdx = 10;
+      schedule.forEach((d, idx) => {
+        const assigned = d.shifts["shift_cntt"];
+        const isOff = assigned && (assigned.isOffDay || assigned.name === "Nghỉ trực");
+        const isAssigned = (assigned && assigned.id && assigned.name && assigned.name !== "Chưa có cán bộ" && !isOff);
+        const row = ws.getRow(curRowIdx);
+        row.height = 22;
+
+        const isWeekend = d.isWeekend;
+        let rowBgColor = (idx % 2 === 0) ? "FFFFFFFF" : "FFF8FAFC";
+        if (isWeekend) rowBgColor = "FFFEF3C7"; // Vàng hổ phách dịu cho cuối tuần
+        if (isOff) rowBgColor = "FFFEE2E2";     // Hồng đỏ dịu cho ngày nghỉ
+
+        // STT
+        const c1 = row.getCell(1);
+        c1.value = idx + 1;
+        c1.alignment = { horizontal: "center", vertical: "middle" };
+        c1.font = { name: "Segoe UI", size: 9.5, color: { argb: "FF475569" } };
+
+        // Ngày
+        const c2 = row.getCell(2);
+        c2.value = `Ngày ${d.day < 10 ? '0' + d.day : d.day}/${month < 10 ? '0' + month : month}`;
+        c2.alignment = { horizontal: "center", vertical: "middle" };
+        c2.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: isWeekend ? "FF92400E" : "FF0F172A" } };
+
+        // Thứ
+        const c3 = row.getCell(3);
+        c3.value = d.dayName;
+        c3.alignment = { horizontal: "center", vertical: "middle" };
+        c3.font = { name: "Segoe UI", size: 9.5, bold: isWeekend, color: { argb: isWeekend ? "FFB45309" : "FF475569" } };
+
+        // Cán Bộ Trực
+        const c4 = row.getCell(4);
+        c4.value = isOff ? "Nghỉ trực (Không phân công)" : (isAssigned ? assigned.name : "Chưa phân công");
+        c4.alignment = { horizontal: "left", vertical: "middle" };
+        c4.font = { name: "Segoe UI", size: 10, bold: isAssigned, color: { argb: isOff ? "FFB91C1C" : (isAssigned ? "FF0369A1" : "FF94A3B8") } };
+
+        // Chức Danh / Vị Trí
+        const c5 = row.getCell(5);
+        c5.value = isOff ? "Nghỉ Lễ / Nghỉ Trực" : (isAssigned ? (assigned.role || "Phòng CNTT") : "-");
+        c5.alignment = { horizontal: "left", vertical: "middle" };
+        c5.font = { name: "Segoe UI", size: 9.5, color: { argb: "FF475569" } };
+
+        // Số Điện Thoại
+        const c6 = row.getCell(6);
+        c6.value = (isAssigned && assigned.phone) ? assigned.phone : "-";
+        c6.alignment = { horizontal: "center", vertical: "middle" };
+        c6.font = { name: "Segoe UI", size: 9.5, bold: !!(isAssigned && assigned.phone), color: { argb: "FF059669" } };
+
+        // Phân Loại Ca
+        const c7 = row.getCell(7);
+        c7.value = isOff ? "Nghỉ trực" : (isWeekend ? "Trực Cuối Tuần (24/24)" : "Trực Ngày Thường (24/24)");
+        c7.alignment = { horizontal: "center", vertical: "middle" };
+        c7.font = { name: "Segoe UI", size: 9, bold: isWeekend, color: { argb: isOff ? "FFB91C1C" : (isWeekend ? "FFD97706" : "FF2563EB") } };
+
+        for (let c = 1; c <= 7; c++) {
+          const cell = row.getCell(c);
+          cell.border = borderThin;
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
+        }
+
+        curRowIdx++;
+      });
+
+      // 5. Bảng Tổng Hợp Chấm Công & Phân Bổ Ca
+      curRowIdx += 2;
+      ws.mergeCells(`A${curRowIdx}:G${curRowIdx}`);
+      const cSummaryTitle = ws.getCell(`A${curRowIdx}`);
+      cSummaryTitle.value = "BẢNG TỔNG HỢP CHẤM CÔNG VÀ PHÂN BỔ CA TRỰC PHÒNG CNTT";
+      cSummaryTitle.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+      cSummaryTitle.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F766E" } };
+      cSummaryTitle.alignment = { horizontal: "center", vertical: "middle" };
+      ws.getRow(curRowIdx).height = 25;
+      curRowIdx++;
+
+      const statsHeaders = ["STT", "Họ Và Tên Cán Bộ", "Chuyên Môn Phụ Trách", "Số Điện Thoại", "Tổng Ca Trực", "Ca Ngày Thường", "Ca Thứ 7 / CN"];
+      const statsHeaderRow = ws.getRow(curRowIdx);
+      statsHeaderRow.height = 24;
+      statsHeaders.forEach((sh, idx) => {
+        const cell = statsHeaderRow.getCell(idx + 1);
+        cell.value = sh;
+        cell.font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FF0F766E" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFCCFBF1" } };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.border = borderThin;
+      });
+      curRowIdx++;
+
+      const stats = this.calculateStatistics(activeStaffList, schedule);
+      let totalAllShifts = 0, totalWeekdayShifts = 0, totalWeekendShifts = 0;
+
+      stats.forEach((st, idx) => {
+        const row = ws.getRow(curRowIdx);
+        row.height = 22;
+        totalAllShifts += st.total;
+        totalWeekdayShifts += st.weekday;
+        totalWeekendShifts += st.weekend;
+
+        const rowBgColor = (idx % 2 === 0) ? "FFFFFFFF" : "FFF0FDF4";
+
+        row.getCell(1).value = idx + 1;
+        row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+
+        row.getCell(2).value = st.name;
+        row.getCell(2).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF0F172A" } };
+        row.getCell(2).alignment = { horizontal: "left", vertical: "middle" };
+
+        row.getCell(3).value = st.role || "Phòng CNTT";
+        row.getCell(3).alignment = { horizontal: "left", vertical: "middle" };
+
+        row.getCell(4).value = st.phone || "-";
+        row.getCell(4).alignment = { horizontal: "center", vertical: "middle" };
+        row.getCell(4).font = { name: "Segoe UI", size: 9.5, color: { argb: "FF059669" } };
+
+        row.getCell(5).value = `${st.total} ca`;
+        row.getCell(5).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF0284C7" } };
+        row.getCell(5).alignment = { horizontal: "center", vertical: "middle" };
+
+        row.getCell(6).value = `${st.weekday} ca`;
+        row.getCell(6).font = { name: "Segoe UI", size: 9.5, color: { argb: "FF16A34A" } };
+        row.getCell(6).alignment = { horizontal: "center", vertical: "middle" };
+
+        row.getCell(7).value = `${st.weekend} ca`;
+        row.getCell(7).font = { name: "Segoe UI", size: 9.5, bold: true, color: { argb: "FFD97706" } };
+        row.getCell(7).alignment = { horizontal: "center", vertical: "middle" };
+
+        for (let c = 1; c <= 7; c++) {
+          const cell = row.getCell(c);
+          cell.border = borderThin;
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: rowBgColor } };
+        }
+        curRowIdx++;
+      });
+
+      // Dòng Tổng Cộng
+      const totalRow = ws.getRow(curRowIdx);
+      totalRow.height = 24;
+      ws.mergeCells(`A${curRowIdx}:D${curRowIdx}`);
+      const cTotalLbl = totalRow.getCell(1);
+      cTotalLbl.value = "TỔNG CỘNG TOÀN BỘ PHÒNG CNTT:";
+      cTotalLbl.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF0F172A" } };
+      cTotalLbl.alignment = { horizontal: "right", vertical: "middle" };
+
+      const cTot5 = totalRow.getCell(5);
+      cTot5.value = `${totalAllShifts} ca`;
+      cTot5.font = { name: "Segoe UI", size: 10.5, bold: true, color: { argb: "FF0284C7" } };
+      cTot5.alignment = { horizontal: "center", vertical: "middle" };
+
+      const cTot6 = totalRow.getCell(6);
+      cTot6.value = `${totalWeekdayShifts} ca`;
+      cTot6.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF16A34A" } };
+      cTot6.alignment = { horizontal: "center", vertical: "middle" };
+
+      const cTot7 = totalRow.getCell(7);
+      cTot7.value = `${totalWeekendShifts} ca`;
+      cTot7.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FFD97706" } };
+      cTot7.alignment = { horizontal: "center", vertical: "middle" };
+
+      for (let c = 1; c <= 7; c++) {
+        const cell = totalRow.getCell(c);
+        cell.border = {
+          top: { style: "thin", color: { argb: "FF0F766E" } },
+          bottom: { style: "double", color: { argb: "FF0F766E" } },
+          left: { style: "thin", color: { argb: "FFCBD5E1" } },
+          right: { style: "thin", color: { argb: "FFCBD5E1" } }
+        };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+      }
+      curRowIdx += 2;
+
+      // 6. Chữ Ký Phê Duyệt Hành Chính
+      ws.mergeCells(`E${curRowIdx}:G${curRowIdx}`);
+      const cDateSig = ws.getCell(`E${curRowIdx}`);
+      cDateSig.value = `${province}, ngày ${new Date().getDate()} tháng ${month} năm ${year}`;
+      cDateSig.font = { name: "Segoe UI", size: 10, italic: true, color: { argb: "FF475569" } };
+      cDateSig.alignment = { horizontal: "center", vertical: "middle" };
+      curRowIdx++;
+
+      ws.mergeCells(`A${curRowIdx}:C${curRowIdx}`);
+      const cSigL1 = ws.getCell(`A${curRowIdx}`);
+      cSigL1.value = "NGƯỜI LẬP BẢNG";
+      cSigL1.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1E3A8A" } };
+      cSigL1.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells(`D${curRowIdx}:G${curRowIdx}`);
+      const cSigR1 = ws.getCell(`D${curRowIdx}`);
+      cSigR1.value = "TRƯỞNG PHÒNG CÔNG NGHỆ THÔNG TIN";
+      cSigR1.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FF1E3A8A" } };
+      cSigR1.alignment = { horizontal: "center", vertical: "middle" };
+      curRowIdx++;
+
+      ws.mergeCells(`A${curRowIdx}:C${curRowIdx}`);
+      const cSigL2 = ws.getCell(`A${curRowIdx}`);
+      cSigL2.value = "(Ký và ghi rõ họ tên)";
+      cSigL2.font = { name: "Segoe UI", size: 8.5, italic: true, color: { argb: "FF64748B" } };
+      cSigL2.alignment = { horizontal: "center", vertical: "middle" };
+
+      ws.mergeCells(`D${curRowIdx}:G${curRowIdx}`);
+      const cSigR2 = ws.getCell(`D${curRowIdx}`);
+      cSigR2.value = "(Ký, ghi rõ họ tên & đóng dấu)";
+      cSigR2.font = { name: "Segoe UI", size: 8.5, italic: true, color: { argb: "FF64748B" } };
+      cSigR2.alignment = { horizontal: "center", vertical: "middle" };
+
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
       return;
     }
 
-    const activeStaffList = (staffList && staffList.length > 0) ? staffList : this.getStaffList();
-    const org1 = orgConfig.org1 || "ỦY BAN NHÂN DÂN TỈNH BẮC NINH";
-    const org2 = orgConfig.org2 || "SỞ Y TẾ";
-    const org3 = orgConfig.org3 || "BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2";
-    const province = orgConfig.province || "Bắc Ninh";
+    // Fallback: SheetJS nếu không có ExcelJS
+    if (window.XLSX) {
+      const rows = [];
+      rows.push(["SỞ Y TẾ BẮC NINH", "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"]);
+      rows.push(["BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2", "", "Độc lập - Tự do - Hạnh phúc"]);
+      rows.push(["PHÒNG CÔNG NGHỆ THÔNG TIN", "", "---------------"]);
+      rows.push([""]);
+      rows.push([`BẢNG PHÂN CÔNG LỊCH TRỰC PHÒNG CÔNG NGHỆ THÔNG TIN`]);
+      rows.push([`THÁNG ${month} NĂM ${year} - BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2`]);
+      rows.push([""]);
+      rows.push(["STT", "Ngày", "Thứ", "Cán Bộ Trực P.CNTT", "Chức Danh / Vị Trí", "Số Điện Thoại Trực", "Ghi Chú"]);
 
-    const rows = [];
-    rows.push([org1.toUpperCase(), "", "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM"]);
-    rows.push([org2.toUpperCase(), "", "Độc lập - Tự do - Hạnh phúc"]);
-    rows.push([org3.toUpperCase(), "", "---------------"]);
-    rows.push(["PHÒNG CÔNG NGHỆ THÔNG TIN", "", ""]);
-    rows.push([""]);
-    rows.push([`BẢNG PHÂN CÔNG LỊCH TRỰC PHÒNG CÔNG NGHỆ THÔNG TIN`]);
-    rows.push([`THÁNG ${month} NĂM ${year} - BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2`]);
-    rows.push([`Phụ trách toàn diện: Hệ thống HIS VIMES, Cổng BHYT, Máy Chủ, Ký số & Mạng LAN Khoa/Phòng 24/7`]);
-    rows.push([""]);
+      schedule.forEach((d, idx) => {
+        const assigned = d.shifts["shift_cntt"];
+        const isOff = assigned && (assigned.isOffDay || assigned.name === "Nghỉ trực");
+        rows.push([
+          idx + 1,
+          `Ngày ${d.day}/${month}`,
+          d.dayName,
+          isOff ? "Nghỉ trực" : (assigned ? assigned.name : "Chưa phân công"),
+          isOff ? "-" : (assigned ? (assigned.role || "") : ""),
+          isOff ? "" : (assigned ? (assigned.phone || "") : ""),
+          isOff ? "Nghỉ trực" : (d.isWeekend ? "Trực Cuối tuần" : "Trực Ngày thường")
+        ]);
+      });
 
-    // Header Table
-    rows.push(["Ngày", "Thứ", "Cán Bộ Trực P.CNTT", "Số Điện Thoại Trực", "Ghi Chú"]);
-
-    // Data Rows
-    schedule.forEach(d => {
-      const assigned = d.shifts["shift_cntt"];
-      const isOff = assigned && (assigned.isOffDay || assigned.name === "Nghỉ trực");
-      rows.push([
-        `Ngày ${d.day}/${month}`,
-        d.dayName,
-        isOff ? "Nghỉ trực (Không phân công)" : (assigned ? assigned.name : "Chưa phân công"),
-        isOff ? "" : (assigned ? (assigned.phone || "") : ""),
-        isOff ? "Nghỉ trực" : (d.isWeekend ? "Trực Cuối tuần" : "Trực Ngày thường")
-      ]);
-    });
-
-    // Thống kê chấm công
-    rows.push([""]);
-    rows.push(["BẢNG TỔNG HỢP SỐ CA TRỰC PHÒNG CNTT (CHẤM CÔNG)"]);
-    rows.push(["STT", "Họ Và Tên", "Nhiệm Vụ / Vị Trí", "Tổng Số Ca Trực", "Trực Ngày Thường", "Trực Thứ 7 / CN", "Số Điện Thoại"]);
-    
-    const stats = this.calculateStatistics(activeStaffList, schedule);
-    stats.forEach((st, idx) => {
-      rows.push([idx + 1, st.name, st.role, st.total, st.weekday, st.weekend, st.phone]);
-    });
-
-    rows.push([""]);
-    rows.push(["", "", `${province}, ngày ... tháng ${month} năm ${year}`]);
-    rows.push(["NGƯỜI LẬP LỊCH", "", "TRƯỞNG PHÒNG CÔNG NGHỆ THÔNG TIN"]);
-    rows.push(["(Ký, ghi rõ họ tên)", "", "(Ký, ghi rõ họ tên)"]);
-
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Lich_Truc_CNTT_T${month}_${year}`);
-
-    const filename = `LICH_TRUC_PHONG_CNTT_THANG_${month}_${year}.xlsx`;
-    XLSX.writeFile(wb, filename);
+      const ws = window.XLSX.utils.aoa_to_sheet(rows);
+      const wb = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(wb, ws, `Lich_Truc_T${month}_${year}`);
+      window.XLSX.writeFile(wb, filename);
+    }
   }
 };
 
 window.ToolDutyRoster = ToolDutyRoster;
+
 
