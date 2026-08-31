@@ -22,8 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.0.7" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.0.7" />
+  <link rel="preload" href="style.css?v=3.0.8" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.0.8" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -356,6 +356,10 @@
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                 <span>🔍 Tra theo Biến / Cột</span>
               </button>
+              <button type="button" class="mode-btn" id="btnModeForm" data-mode="form">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                <span>📄 Mẫu Biểu / Giấy Tờ Y Tế</span>
+              </button>
             </div>
           </div>
 
@@ -364,7 +368,7 @@
             <!-- Search Input Box -->
             <div class="schema-search-box">
               <svg class="search-box-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" id="schemaSearchInput" placeholder="Nhập tên bảng hoặc tên biến (ví dụ: hms_patient, docno, invoiceno, viện phí, kho dược)..." />
+              <input type="text" id="schemaSearchInput" placeholder="Nhập tên bảng, tên biến hoặc tên giấy tờ (ví dụ: Giấy ra viện, hms_patient, docno, invoiceno)..." />
               <button type="button" class="btn-clear-search hidden" id="btnClearSchemaSearch">&times;</button>
             </div>
 
@@ -405,18 +409,17 @@
               </div>
 
               <div class="popular-tags-wrap">
-                <span class="tags-lbl">Gợi ý:</span>
+                <span class="tags-lbl">Mẫu giấy tờ & Biến hot:</span>
                 <div class="tags-list" id="popularTagsList">
+                  <button type="button" class="pop-tag pop-tag-form" data-val="giấy ra viện" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(14, 165, 233, 0.12);">📄 Giấy ra viện (02/TT25)</button>
+                  <button type="button" class="pop-tag pop-tag-form" data-val="giấy chuyển tuyến" style="border-color: rgba(245, 158, 11, 0.45); color: #fbbf24; background: rgba(245, 158, 11, 0.12);">🚑 Giấy chuyển tuyến</button>
+                  <button type="button" class="pop-tag pop-tag-form" data-val="bảng kê" style="border-color: rgba(52, 211, 153, 0.45); color: #34d399; background: rgba(16, 185, 129, 0.12);">🧾 Bảng kê 01/BV</button>
+                  <button type="button" class="pop-tag pop-tag-form" data-val="đơn thuốc" style="border-color: rgba(168, 85, 247, 0.45); color: #c084fc; background: rgba(168, 85, 247, 0.12);">💊 Đơn thuốc</button>
                   <button type="button" class="pop-tag" data-val="patientno">patientno</button>
                   <button type="button" class="pop-tag" data-val="docno">docno</button>
-                  <button type="button" class="pop-tag" data-val="invoiceno">invoiceno</button>
                   <button type="button" class="pop-tag" data-val="doctor_id">doctor_id</button>
-                  <button type="button" class="pop-tag" data-val="productitem_id">productitem_id</button>
                   <button type="button" class="pop-tag" data-val="card_id">card_id</button>
-                  <button type="button" class="pop-tag" data-val="icd10">icd10</button>
-                  <button type="button" class="pop-tag" data-val="deptid">deptid</button>
-                  <button type="button" class="pop-tag" data-val="roomid">roomid</button>
-                  <button type="button" class="pop-tag" data-val="created_date">created_date</button>
+                  <button type="button" class="pop-tag" data-val="invoiceno">invoiceno</button>
                 </div>
               </div>
             </div>
@@ -2215,20 +2218,20 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Application Scripts (Deferred for instant interactivity) -->
-  <script defer src="js/vimes-schema-data.js?v=3.0.7"></script>
-  <script defer src="js/docx-parser.js?v=3.0.7"></script>
-  <script defer src="js/tools-registry.js?v=3.0.7"></script>
-  <script defer src="js/tool-schema-lookup.js?v=3.0.7"></script>
-  <script defer src="js/tool-sql-builder.js?v=3.0.7"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.0.7"></script>
-  <script defer src="js/tool-bhyt-xml.js?v=3.0.7"></script>
-  <script defer src="js/tool-word-to-html.js?v=3.0.7"></script>
-  <script defer src="js/tool-pdf-to-image.js?v=3.0.7"></script>
-  <script defer src="js/tool-giamdinh.js?v=3.0.7"></script>
-  <script defer src="js/tool-vgca-doichieu.js?v=3.0.7"></script>
-  <script defer src="js/tool-vgca-cks.js?v=3.0.7"></script>
-  <script defer src="js/tool-vgca-email.js?v=3.0.7"></script>
-  <script defer src="js/notification-manager.js?v=3.0.7"></script>
-  <script defer src="js/app.js?v=3.0.7"></script>
+  <script defer src="js/vimes-schema-data.js?v=3.0.8"></script>
+  <script defer src="js/docx-parser.js?v=3.0.8"></script>
+  <script defer src="js/tools-registry.js?v=3.0.8"></script>
+  <script defer src="js/tool-schema-lookup.js?v=3.0.8"></script>
+  <script defer src="js/tool-sql-builder.js?v=3.0.8"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.0.8"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.0.8"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.0.8"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.0.8"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.0.8"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.0.8"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.0.8"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.0.8"></script>
+  <script defer src="js/notification-manager.js?v=3.0.8"></script>
+  <script defer src="js/app.js?v=3.0.8"></script>
 </body>
 </html>

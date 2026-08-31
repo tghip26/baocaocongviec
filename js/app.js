@@ -246,6 +246,8 @@ class AppController {
     this.btnBackFromSchema = document.getElementById("btnBackFromSchema");
     this.btnModeColumn = document.getElementById("btnModeColumn");
     this.btnModeTable = document.getElementById("btnModeTable");
+    this.btnModeForm = document.getElementById("btnModeForm");
+    this.currentInspectedForm = null;
     this.schemaSearchInput = document.getElementById("schemaSearchInput");
     this.btnClearSchemaSearch = document.getElementById("btnClearSchemaSearch");
     this.selectSchemaSection = document.getElementById("selectSchemaSection");
@@ -776,6 +778,7 @@ class AppController {
         this.schemaSearchMode = "column";
         this.btnModeColumn.classList.add("active");
         this.btnModeTable.classList.remove("active");
+        if (this.btnModeForm) this.btnModeForm.classList.remove("active");
         this.schemaSearchInput.placeholder = "Nhập tên biến/cột (ví dụ: patientno, docno, invoiceno, doctor_id, card_id, roomid, icd10)...";
         this.performSchemaSearch();
       });
@@ -786,7 +789,19 @@ class AppController {
         this.schemaSearchMode = "table";
         this.btnModeTable.classList.add("active");
         this.btnModeColumn.classList.remove("active");
+        if (this.btnModeForm) this.btnModeForm.classList.remove("active");
         this.schemaSearchInput.placeholder = "Nhập tên bảng (ví dụ: hms_patient, hms_doc, m_transaction, sys_user, hms_fee)...";
+        this.performSchemaSearch();
+      });
+    }
+
+    if (this.btnModeForm) {
+      this.btnModeForm.addEventListener("click", () => {
+        this.schemaSearchMode = "form";
+        this.btnModeForm.classList.add("active");
+        if (this.btnModeTable) this.btnModeTable.classList.remove("active");
+        if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+        this.schemaSearchInput.placeholder = "Nhập tên mẫu biểu y tế (ví dụ: Giấy ra viện, Giấy chuyển tuyến, Bảng kê 01, Đơn thuốc, Chứng sinh)...";
         this.performSchemaSearch();
       });
     }
@@ -827,9 +842,17 @@ class AppController {
         const tagBtn = e.target.closest(".pop-tag");
         if (tagBtn) {
           const val = tagBtn.dataset.val;
-          this.schemaSearchMode = "column";
-          this.btnModeColumn.classList.add("active");
-          this.btnModeTable.classList.remove("active");
+          if (tagBtn.classList.contains("pop-tag-form")) {
+            this.schemaSearchMode = "form";
+            if (this.btnModeForm) this.btnModeForm.classList.add("active");
+            if (this.btnModeTable) this.btnModeTable.classList.remove("active");
+            if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+          } else {
+            this.schemaSearchMode = "column";
+            this.btnModeColumn.classList.add("active");
+            this.btnModeTable.classList.remove("active");
+            if (this.btnModeForm) this.btnModeForm.classList.remove("active");
+          }
           this.schemaSearchInput.value = val;
           if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.remove("hidden");
           this.performSchemaSearch();
@@ -843,25 +866,37 @@ class AppController {
         const val = e.target.value;
         clearTimeout(colFilterDebounce);
         colFilterDebounce = setTimeout(() => {
-          this.filterInspectorColumns(val);
+          if (this.currentInspectedForm) {
+            this.filterInspectorFormFields(val);
+          } else {
+            this.filterInspectorColumns(val);
+          }
         }, 80);
       });
     }
 
     if (this.btnCopySqlSelect) {
       this.btnCopySqlSelect.addEventListener("click", () => {
-        if (!this.currentInspectedTable) return;
-        const sql = window.schemaLookupEngine.generateSelectSql(this.currentInspectedTable);
-        this.sqlModalTitle.textContent = `CÂU LỆNH SQL SELECT: ${this.currentInspectedTable.name}`;
-        this.sqlCodeContent.textContent = sql;
-        this.showModal(this.modalSqlView);
+        if (this.currentInspectedForm) {
+          this.sqlModalTitle.textContent = `CÂU LỆNH SQL SELECT CHO MẪU BIỂU: ${this.currentInspectedForm.title}`;
+          this.sqlCodeContent.textContent = this.currentInspectedForm.sqlSample || "-- Chưa có mẫu SQL";
+          this.showModal(this.modalSqlView);
+        } else if (this.currentInspectedTable) {
+          const sql = window.schemaLookupEngine.generateSelectSql(this.currentInspectedTable);
+          this.sqlModalTitle.textContent = `CÂU LỆNH SQL SELECT: ${this.currentInspectedTable.name}`;
+          this.sqlCodeContent.textContent = sql;
+          this.showModal(this.modalSqlView);
+        }
       });
     }
 
     if (this.btnExportTableExcel) {
       this.btnExportTableExcel.addEventListener("click", () => {
-        if (!this.currentInspectedTable) return;
-        this.exportTableDictionaryToExcel(this.currentInspectedTable);
+        if (this.currentInspectedForm) {
+          this.exportFormMappingToExcel(this.currentInspectedForm);
+        } else if (this.currentInspectedTable) {
+          this.exportTableDictionaryToExcel(this.currentInspectedTable);
+        }
       });
     }
 
@@ -1537,9 +1572,10 @@ class AppController {
     this.schemaSearchMode = "table";
     if (this.btnModeTable) this.btnModeTable.classList.add("active");
     if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+    if (this.btnModeForm) this.btnModeForm.classList.remove("active");
     if (this.schemaSearchInput) {
       this.schemaSearchInput.value = "";
-      this.schemaSearchInput.placeholder = "Nhập tên bảng hoặc chủ đề (ví dụ: hms_patient, hms_doc, m_transaction, sys_user, viện phí, kho dược)...";
+      this.schemaSearchInput.placeholder = "Nhập tên bảng, tên biến hoặc tên giấy tờ (ví dụ: Giấy ra viện, hms_patient, docno, invoiceno)...";
     }
     if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.add("hidden");
     this.performSchemaSearch();
@@ -1804,10 +1840,61 @@ class AppController {
 
     this.schemaResultsList.innerHTML = "";
 
-    // KHI Ô TÌM KIẾM TRỐNG: Hiển thị đầy đủ toàn bộ danh sách các bảng dữ liệu
+    // 1. CHẾ ĐỘ FORM MẪU BIỂU Y TẾ
+    if (this.schemaSearchMode === "form") {
+      const formResults = window.schemaLookupEngine.searchByForm(query, section);
+      this.schemaResultCount.textContent = `Tìm thấy ${formResults.length} biểu mẫu y tế khớp từ khóa "${query || 'Tất cả'}"`;
+
+      if (formResults.length === 0) {
+        this.schemaResultsList.innerHTML = `
+          <div class="schema-no-results">
+            <span>🔍 Không tìm thấy mẫu biểu nào khớp từ khóa "<strong>${query}</strong>"</span>
+          </div>
+        `;
+        return;
+      }
+
+      formResults.forEach((form, idx) => {
+        const row = document.createElement("div");
+        row.className = "schema-item-card";
+        const hlTitle = window.schemaLookupEngine.highlight(form.title, query);
+        const hlCode = window.schemaLookupEngine.highlight(form.code, query);
+        const hlDesc = window.schemaLookupEngine.highlight(form.description, query);
+
+        row.innerHTML = `
+          <div class="item-card-top">
+            <span class="item-tbl-title">${form.icon || '📄'} <strong>${hlTitle}</strong></span>
+            <span class="item-form-code">${hlCode}</span>
+          </div>
+          <div class="item-card-desc">
+            <span>${hlDesc}</span>
+          </div>
+          <div class="item-card-bottom">
+            <span class="item-form-badge">📑 ${form.category}</span>
+            <span class="item-col-badge">${form.fields.length} trường</span>
+          </div>
+        `;
+
+        row.addEventListener("click", () => {
+          this.inspectForm(form.id);
+          this.schemaResultsList.querySelectorAll(".schema-item-card").forEach(c => c.classList.remove("selected"));
+          row.classList.add("selected");
+        });
+
+        this.schemaResultsList.appendChild(row);
+      });
+
+      if (formResults.length > 0) {
+        this.inspectForm(formResults[0].id);
+        this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
+      }
+      return;
+    }
+
+    // 2. KHI Ô TÌM KIẾM TRỐNG: Hiển thị toàn bộ bảng CSDL
     if (!query) {
       const allTables = window.schemaLookupEngine.searchByTable("", section, prefix);
-      this.schemaResultCount.textContent = `Danh sách toàn bộ ${allTables.length} bảng CSDL VIMES (Nhập từ khóa để tìm biến hoặc bảng)`;
+      this.schemaResultCount.textContent = `Danh sách toàn bộ ${allTables.length} bảng CSDL VIMES (Nhập từ khóa để tìm biến, bảng hoặc giấy tờ)`;
 
       if (allTables.length === 0) {
         this.schemaResultsList.innerHTML = `
@@ -1844,7 +1931,6 @@ class AppController {
         this.schemaResultsList.appendChild(row);
       });
 
-      // Tự động kiểm tra bảng đầu tiên nếu chưa có bảng nào được chọn
       if (!this.currentInspectedTable && allTables.length > 0) {
         this.inspectTable(allTables[0].name);
         this.schemaResultsList.querySelector(".schema-item-card")?.classList.add("selected");
@@ -1852,7 +1938,18 @@ class AppController {
       return;
     }
 
-    // KHI CÓ TỪ KHÓA TÌM KIẾM:
+    // SMART AUTO-DETECT: Nếu từ khóa trùng với biểu mẫu y tế (như giấy ra viện, chuyển tuyến, bảng kê, đơn thuốc...)
+    const smartFormMatches = window.schemaLookupEngine.searchByForm(query);
+    if (smartFormMatches.length > 0 && smartFormMatches[0].score >= 80) {
+      this.schemaSearchMode = "form";
+      if (this.btnModeForm) this.btnModeForm.classList.add("active");
+      if (this.btnModeTable) this.btnModeTable.classList.remove("active");
+      if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+      this.performSchemaSearch();
+      return;
+    }
+
+    // 3. CHẾ ĐỘ CỘT / BIẾN
     if (this.schemaSearchMode === "column") {
       const results = window.schemaLookupEngine.searchByColumn(query, section, prefix);
       this.schemaResultCount.textContent = `Tìm thấy ${results.length} vị trí biến khớp từ khóa "${query}"`;
@@ -1905,7 +2002,7 @@ class AppController {
       }
 
     } else {
-      // Table search mode
+      // 4. CHẾ ĐỘ BẢNG CSDL
       const results = window.schemaLookupEngine.searchByTable(query, section, prefix);
       this.schemaResultCount.textContent = `Tìm thấy ${results.length} bảng khớp từ khóa "${query}"`;
 
@@ -1959,8 +2056,13 @@ class AppController {
     if (!table) return;
 
     this.currentInspectedTable = table;
+    this.currentInspectedForm = null;
     this.inspectorEmptyState.classList.add("hidden");
     this.inspectorContent.classList.remove("hidden");
+
+    // Xóa liên kết bảng của form nếu có
+    const oldWrap = this.inspectorContent.querySelector(".form-linked-tables-wrap");
+    if (oldWrap) oldWrap.remove();
 
     this.inspectorTableName.textContent = table.name;
     this.inspectorTableVnTitle.textContent = table.title || table.name;
@@ -1970,7 +2072,151 @@ class AppController {
     this.inspectorTableColCount.textContent = `Tổng cộng: ${table.columns.length} cột / biến`;
 
     this.inspectorColumnFilterInput.value = "";
+    this.inspectorColumnFilterInput.placeholder = "Lọc nhanh tên cột hoặc ý nghĩa tiếng Việt trong bảng này...";
+
+    // Khôi phục tiêu đề cột chuẩn của bảng
+    const thead = this.inspectorColumnsTable ? this.inspectorColumnsTable.querySelector("thead") : null;
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 50px; text-align: center;">STT</th>
+          <th style="width: 220px;">Tên Biến / Tên Cột</th>
+          <th>Ý Nghĩa / Ghi Chú Nghiệp Vụ</th>
+          <th style="width: 140px;">Kiểu Dữ Liệu</th>
+          <th style="width: 90px; text-align: center;">Nullable</th>
+          <th style="width: 140px;">Giá Trị Mặc Định</th>
+        </tr>
+      `;
+    }
+
     this.renderInspectorColumns(table.columns, highlightCol);
+  }
+
+  inspectForm(formId, highlightField = "") {
+    const form = window.schemaLookupEngine.getFormById(formId);
+    if (!form) return;
+
+    this.currentInspectedForm = form;
+    this.currentInspectedTable = null;
+    this.inspectorEmptyState.classList.add("hidden");
+    this.inspectorContent.classList.remove("hidden");
+
+    this.inspectorTableName.innerHTML = `${form.icon || '📄'} ${form.title}`;
+    this.inspectorTableVnTitle.innerHTML = `<span class="item-form-code">${form.code}</span> &bull; <span style="color: #93c5fd;">${form.standard}</span>`;
+    this.inspectorTableTopic.textContent = form.category;
+    this.inspectorTableDesc.textContent = form.description;
+    this.inspectorTableType.textContent = "BIỂU MẪU Y TẾ";
+    this.inspectorTableColCount.textContent = `Tổng cộng: ${form.fields.length} trường trên văn bản`;
+
+    // Hiển thị danh sách các bảng CSDL liên quan dưới dạng nút bấm chuyển nhanh
+    const oldWrap = this.inspectorContent.querySelector(".form-linked-tables-wrap");
+    if (oldWrap) oldWrap.remove();
+
+    const linkedWrap = document.createElement("div");
+    linkedWrap.className = "form-linked-tables-wrap";
+    linkedWrap.innerHTML = `<span class="form-linked-tables-title">Bảng CSDL cấu thành:</span>`;
+    form.primaryTables.forEach(tblName => {
+      const tag = document.createElement("span");
+      tag.className = "form-field-tbl-tag";
+      tag.innerHTML = `📋 ${tblName}`;
+      tag.title = `Nhấp để chuyển sang tra cứu toàn bộ bảng ${tblName}`;
+      tag.addEventListener("click", () => {
+        this.schemaSearchMode = "table";
+        if (this.btnModeTable) this.btnModeTable.classList.add("active");
+        if (this.btnModeForm) this.btnModeForm.classList.remove("active");
+        if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+        this.inspectTable(tblName);
+      });
+      linkedWrap.appendChild(tag);
+    });
+    this.inspectorTableDesc.parentNode.insertBefore(linkedWrap, this.inspectorTableDesc.nextSibling);
+
+    this.inspectorColumnFilterInput.value = "";
+    this.inspectorColumnFilterInput.placeholder = "Lọc nhanh tên trường trên giấy tờ, bảng CSDL, biến hoặc giá trị mẫu...";
+    this.renderInspectorFormFields(form.fields, highlightField);
+  }
+
+  renderInspectorFormFields(fields, highlightField = "") {
+    const thead = this.inspectorColumnsTable ? this.inspectorColumnsTable.querySelector("thead") : null;
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 45px; text-align: center;">STT</th>
+          <th style="width: 220px;">Trường Trên Mẫu Giấy Tờ</th>
+          <th style="width: 170px;">Giá Trị Ví Dụ Thực Tế</th>
+          <th style="width: 180px;">Bảng CSDL VIMES</th>
+          <th style="width: 220px;">Tên Biến / Cột CSDL</th>
+          <th style="width: 110px;">Kiểu DL</th>
+          <th style="min-width: 240px;">Ghi Chú Nghiệp Vụ & Khóa JOIN</th>
+        </tr>
+      `;
+    }
+
+    this.inspectorColumnsBody.innerHTML = "";
+    const hField = (highlightField || "").toLowerCase();
+
+    fields.forEach((f, idx) => {
+      const tr = document.createElement("tr");
+      if (hField && (f.docField.toLowerCase().includes(hField) || f.column.toLowerCase().includes(hField))) {
+        tr.classList.add("highlight-column-row");
+      }
+
+      tr.innerHTML = `
+        <td style="text-align: center; color: var(--text-muted); font-weight: 600;">${f.no || idx + 1}</td>
+        <td>
+          <span style="font-weight: 700; color: #fff; font-size: 0.85rem;">${f.docField}</span>
+        </td>
+        <td>
+          <span class="form-example-badge">${f.example || '-'}</span>
+        </td>
+        <td>
+          <span class="form-field-tbl-tag" title="Nhấp để xem chi tiết bảng CSDL">${f.table}</span>
+        </td>
+        <td>
+          <span class="col-name-link" style="font-family: var(--font-mono); font-weight: 600; color: #67e8f9;" title="Tên biến / cột trong CSDL VIMES">
+            ${f.column}
+          </span>
+        </td>
+        <td>
+          <span class="col-type-tag type-${this.getTypeClass(f.type)}">${f.type}</span>
+        </td>
+        <td>
+          <span style="color: #cbd5e1; font-size: 0.78rem; line-height: 1.4;">${f.note}</span>
+        </td>
+      `;
+
+      // Nhấp vào tag bảng để chuyển thẳng sang xem bảng đó
+      tr.querySelector(".form-field-tbl-tag").addEventListener("click", () => {
+        const rawTbl = f.table.split(" ")[0].split("/")[0].trim();
+        if (rawTbl) {
+          this.schemaSearchMode = "table";
+          if (this.btnModeTable) this.btnModeTable.classList.add("active");
+          if (this.btnModeForm) this.btnModeForm.classList.remove("active");
+          if (this.btnModeColumn) this.btnModeColumn.classList.remove("active");
+          this.inspectTable(rawTbl);
+        }
+      });
+
+      this.inspectorColumnsBody.appendChild(tr);
+    });
+  }
+
+  filterInspectorFormFields(filterText) {
+    if (!this.currentInspectedForm) return;
+    const term = (filterText || "").trim().toLowerCase();
+    const termNorm = DocxTableParser ? DocxTableParser.removeAccents(term) : term;
+
+    const filtered = this.currentInspectedForm.fields.filter(f => {
+      const fDocNorm = DocxTableParser ? DocxTableParser.removeAccents(f.docField.toLowerCase()) : f.docField.toLowerCase();
+      const fTblNorm = DocxTableParser ? DocxTableParser.removeAccents(f.table.toLowerCase()) : f.table.toLowerCase();
+      const fColNorm = f.column.toLowerCase();
+      const fNoteNorm = DocxTableParser ? DocxTableParser.removeAccents(f.note.toLowerCase()) : f.note.toLowerCase();
+      const fExNorm = DocxTableParser ? DocxTableParser.removeAccents((f.example || "").toLowerCase()) : (f.example || "").toLowerCase();
+
+      return fDocNorm.includes(termNorm) || fTblNorm.includes(termNorm) || fColNorm.includes(term) || fNoteNorm.includes(termNorm) || fExNorm.includes(termNorm);
+    });
+
+    this.renderInspectorFormFields(filtered);
   }
 
   renderInspectorColumns(columns, highlightCol = "") {
@@ -2010,6 +2256,7 @@ class AppController {
         this.schemaSearchMode = "column";
         this.btnModeColumn.classList.add("active");
         this.btnModeTable.classList.remove("active");
+        if (this.btnModeForm) this.btnModeForm.classList.remove("active");
         this.schemaSearchInput.value = col.name;
         if (this.btnClearSchemaSearch) this.btnClearSchemaSearch.classList.remove("hidden");
         this.performSchemaSearch();
@@ -2032,6 +2279,66 @@ class AppController {
       return cNameNorm.includes(termNorm) || cDescNorm.includes(termNorm) || cTypeNorm.includes(term);
     });
     this.renderInspectorColumns(filtered);
+  }
+
+  async exportFormMappingToExcel(form) {
+    if (!form || !window.ExcelJS) return;
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet((form.code || form.title).slice(0, 30));
+
+    // Title Rows
+    ws.addRow([`BẢN ĐỒ ÁNH XẠ MẪU BIỂU Y TẾ & TRƯỜNG CSDL VIMES HIS: ${form.title}`]);
+    ws.addRow([`Mã biểu mẫu: ${form.code} | Tiêu chuẩn: ${form.standard} | Phân hệ: ${form.category}`]);
+    ws.addRow([`Mô tả: ${form.description}`]);
+    ws.addRow([]);
+
+    // Headers
+    ws.addRow(["STT", "Trường Trên Mẫu Biểu Giấy Tờ", "Giá Trị Mẫu Thực Tế", "Bảng CSDL VIMES", "Tên Biến / Cột CSDL", "Kiểu Dữ Liệu", "Ghi Chú Nghiệp Vụ & Khóa JOIN"]);
+    const headerRow = ws.getRow(5);
+    headerRow.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0284C7" } };
+    headerRow.alignment = { vertical: "middle", horizontal: "center" };
+    headerRow.height = 28;
+
+    form.fields.forEach((f, idx) => {
+      const row = ws.addRow([
+        f.no || idx + 1,
+        f.docField,
+        f.example || "",
+        f.table,
+        f.column,
+        f.type,
+        f.note
+      ]);
+      row.font = { name: "Arial", size: 9 };
+      row.alignment = { vertical: "middle" };
+      row.height = 22;
+      if (idx % 2 === 1) {
+        row.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F9FF" } };
+      }
+    });
+
+    ws.columns = [
+      { width: 8, alignment: { horizontal: "center" } },
+      { width: 35 },
+      { width: 28 },
+      { width: 32 },
+      { width: 38 },
+      { width: 20 },
+      { width: 48 }
+    ];
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `AnhXa_${form.id}_VIMES_HIS.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.showToast(`Đã xuất bản đồ trường cho "${form.title}" thành công!`, "success");
   }
 
   getTypeClass(typeStr) {
