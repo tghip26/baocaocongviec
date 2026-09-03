@@ -4019,10 +4019,34 @@ ${this.currentW2hHtmlOutput}
         this.showModal(this.modalDutyStaffList);
       });
     }
+    this.btnResetStaffOrderBtn = document.getElementById("btnResetStaffOrderBtn");
+    if (this.btnResetStaffOrderBtn) {
+      this.btnResetStaffOrderBtn.addEventListener("click", () => this.resetStaffOrderToDefault());
+    }
     if (this.btnCloseDutyStaffListModal) this.btnCloseDutyStaffListModal.addEventListener("click", () => this.hideModal(this.modalDutyStaffList));
     if (this.btnDismissDutyStaffList) this.btnDismissDutyStaffList.addEventListener("click", () => this.hideModal(this.modalDutyStaffList));
 
     this.updateDutySessionUI();
+  }
+
+  resetStaffOrderToDefault() {
+    if (!window.ToolDutyRoster || !ToolDutyRoster.defaultStaffList) return;
+    if (!confirm("Khôi phục lại thứ tự cán bộ theo cấu hình chuẩn ban đầu (#1 Nguyễn Minh Họa, #2 Nguyễn Duy Phương, #3 Bùi Minh Chí...)?")) return;
+    
+    const defaultIds = ToolDutyRoster.defaultStaffList.map(s => s.id);
+    this.dutyStaffList.sort((a, b) => {
+      const idxA = defaultIds.indexOf(a.id);
+      const idxB = defaultIds.indexOf(b.id);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
+
+    ToolDutyRoster.saveStaffList(this.dutyStaffList, true);
+    this.renderStaffList();
+    this.showToast("Đã khôi phục thứ tự cán bộ theo chuẩn ban đầu thành công!", "success");
+    this.recordOfflineChange("Đổi Thứ Tự Cán Bộ", "Khôi phục thứ tự cán bộ chuẩn ban đầu");
   }
 
   getSelectedDutyMonth() {
@@ -4401,11 +4425,22 @@ ${this.currentW2hHtmlOutput}
     this.dutyStaffList.forEach((s, idx) => {
       const item = document.createElement("div");
       item.className = "staff-card-item";
+      item.setAttribute("draggable", "true");
+      item.dataset.id = s.id;
+      item.dataset.index = String(idx);
+
       const offDaysStr = Array.isArray(s.offDays) ? s.offDays.join(", ") : (s.offDays || "");
       item.innerHTML = `
-        <div class="staff-info" style="flex: 1;">
+        <div class="staff-drag-handle" title="Giữ và kéo thả để đổi thứ tự ca trực">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/>
+            <circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+            <circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+          </svg>
+        </div>
+        <div class="staff-info" style="flex: 1; min-width: 0;">
           <div class="flex-row gap-8 align-center" style="margin-bottom: 4px;">
-            <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 800; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">#${idx + 1}</span>
+            <span class="staff-order-pill">#${idx + 1}</span>
             <span class="staff-name" style="font-size: 0.88rem; font-weight: 700; color: #f1f5f9;">${s.name}</span>
           </div>
           <div class="flex-row gap-6 align-center flex-wrap" style="font-size: 0.74rem;">
@@ -4415,11 +4450,99 @@ ${this.currentW2hHtmlOutput}
             ${offDaysStr ? `<span style="color: #fbbf24; font-size: 0.7rem; background: rgba(245, 158, 11, 0.1); padding: 1px 6px; border-radius: 4px;">💤 Nghỉ: Ngày ${offDaysStr}</span>` : ""}
           </div>
         </div>
-        <div class="staff-card-actions" style="display: flex; gap: 6px;">
+        <div class="staff-card-actions" style="display: flex; gap: 4px; align-items: center;">
+          <button type="button" class="btn-staff-act btn-move-staff btn-move-up" title="Di chuyển lên trên" ${idx === 0 ? 'disabled' : ''}>⬆️</button>
+          <button type="button" class="btn-staff-act btn-move-staff btn-move-down" title="Di chuyển xuống dưới" ${idx === this.dutyStaffList.length - 1 ? 'disabled' : ''}>⬇️</button>
           <button type="button" class="btn-staff-act btn-edit-staff" title="Sửa thông tin / ngày nghỉ phép" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; cursor: pointer; color: #38bdf8;">✏️</button>
           <button type="button" class="btn-staff-act btn-del-staff" title="Xóa cán bộ này" data-id="${s.id}" style="padding: 5px 8px; font-size: 0.8rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; color: #f87171;">🗑️</button>
         </div>
       `;
+
+      // Nút di chuyển vị trí lên / xuống
+      item.querySelector(".btn-move-up")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (idx > 0) {
+          const moved = this.dutyStaffList.splice(idx, 1)[0];
+          this.dutyStaffList.splice(idx - 1, 0, moved);
+          ToolDutyRoster.saveStaffList(this.dutyStaffList, true);
+          this.renderStaffList();
+          this.showToast(`Đã chuyển ${moved.name} lên vị trí #${idx}!`, "success");
+          this.recordOfflineChange("Đổi Thứ Tự Cán Bộ", `Chuyển ${moved.name} lên #${idx}`);
+        }
+      });
+
+      item.querySelector(".btn-move-down")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (idx < this.dutyStaffList.length - 1) {
+          const moved = this.dutyStaffList.splice(idx, 1)[0];
+          this.dutyStaffList.splice(idx + 1, 0, moved);
+          ToolDutyRoster.saveStaffList(this.dutyStaffList, true);
+          this.renderStaffList();
+          this.showToast(`Đã chuyển ${moved.name} xuống vị trí #${idx + 2}!`, "success");
+          this.recordOfflineChange("Đổi Thứ Tự Cán Bộ", `Chuyển ${moved.name} xuống #${idx + 2}`);
+        }
+      });
+
+      // Drag & Drop reordering
+      item.addEventListener("dragstart", (e) => {
+        this._draggedStaffIndex = idx;
+        item.classList.add("is-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(idx));
+      });
+
+      item.addEventListener("dragend", () => {
+        this._draggedStaffIndex = null;
+        this.dutyStaffListContainer.querySelectorAll(".staff-card-item").forEach(c => {
+          c.classList.remove("is-dragging", "drag-over-top", "drag-over-bottom");
+        });
+      });
+
+      item.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        if (this._draggedStaffIndex === null || this._draggedStaffIndex === idx) return;
+
+        const rect = item.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+          item.classList.add("drag-over-top");
+          item.classList.remove("drag-over-bottom");
+        } else {
+          item.classList.add("drag-over-bottom");
+          item.classList.remove("drag-over-top");
+        }
+      });
+
+      item.addEventListener("dragleave", () => {
+        item.classList.remove("drag-over-top", "drag-over-bottom");
+      });
+
+      item.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const isAbove = item.classList.contains("drag-over-top");
+        item.classList.remove("drag-over-top", "drag-over-bottom");
+
+        const fromIdx = this._draggedStaffIndex !== null ? this._draggedStaffIndex : parseInt(e.dataTransfer.getData("text/plain"), 10);
+        if (isNaN(fromIdx) || fromIdx === idx) return;
+
+        const movedStaff = this.dutyStaffList.splice(fromIdx, 1)[0];
+        let targetIdx = idx;
+        if (fromIdx < idx) {
+          targetIdx = isAbove ? idx - 1 : idx;
+        } else {
+          targetIdx = isAbove ? idx : idx + 1;
+        }
+        if (targetIdx < 0) targetIdx = 0;
+        if (targetIdx > this.dutyStaffList.length) targetIdx = this.dutyStaffList.length;
+
+        this.dutyStaffList.splice(targetIdx, 0, movedStaff);
+        ToolDutyRoster.saveStaffList(this.dutyStaffList, true);
+        this.renderStaffList();
+        this.showToast(`Đã chuyển ${movedStaff.name} sang vị trí #${targetIdx + 1}!`, "success");
+        this.recordOfflineChange("Đổi Thứ Tự Cán Bộ", `Di chuyển ${movedStaff.name} sang #${targetIdx + 1}`);
+      });
+
       item.querySelector(".btn-edit-staff").addEventListener("click", () => this.openStaffModal(s.id));
       item.querySelector(".btn-del-staff").addEventListener("click", () => this.deleteStaff(s.id));
       this.dutyStaffListContainer.appendChild(item);
@@ -4801,7 +4924,7 @@ ${this.currentW2hHtmlOutput}
             <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
           </div>
           <div class="cal-shift-list">
-            <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" title="${isAdmin ? 'Nhấp để đổi cán bộ, hoán đổi ca hoặc đặt ngày nghỉ' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
+            <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" draggable="${isAssigned ? 'true' : 'false'}" title="${isAdmin ? 'Kéo thả sang ngày khác để đổi ca, hoặc nhấp để điều chỉnh chi tiết' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
               ${isOff 
                 ? `<div class="duty-cell-off-content">
                     <span class="duty-badge-off">💤 Nghỉ trực</span>
@@ -4828,11 +4951,57 @@ ${this.currentW2hHtmlOutput}
 
     const grid = this.dutyCalendarContainer.querySelector(".calendar-month-grid");
     if (grid) {
+      let isDraggingBadge = false;
+
       grid.addEventListener("click", (e) => {
+        if (isDraggingBadge) return;
         const badge = e.target.closest(".cal-duty-badge");
         if (badge && badge.dataset.day) {
           this.openSwapShiftModal(parseInt(badge.dataset.day, 10));
         }
+      });
+
+      // Kéo thả thẻ ca trực giữa các ngày để hoán đổi trực quan
+      grid.querySelectorAll(".cal-duty-badge").forEach(badge => {
+        const day = parseInt(badge.dataset.day, 10);
+
+        badge.addEventListener("dragstart", (e) => {
+          isDraggingBadge = true;
+          this._draggedCalendarDay = day;
+          badge.classList.add("is-shift-dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", String(day));
+        });
+
+        badge.addEventListener("dragend", () => {
+          setTimeout(() => { isDraggingBadge = false; }, 120);
+          this._draggedCalendarDay = null;
+          grid.querySelectorAll(".cal-duty-badge").forEach(b => b.classList.remove("is-shift-dragging", "can-drop-swap"));
+        });
+
+        badge.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (this._draggedCalendarDay && this._draggedCalendarDay !== day) {
+            e.dataTransfer.dropEffect = "move";
+            badge.classList.add("can-drop-swap");
+          }
+        });
+
+        badge.addEventListener("dragleave", () => {
+          badge.classList.remove("can-drop-swap");
+        });
+
+        badge.addEventListener("drop", (e) => {
+          e.preventDefault();
+          badge.classList.remove("can-drop-swap");
+          const fromDay = this._draggedCalendarDay || parseInt(e.dataTransfer.getData("text/plain"), 10);
+          if (fromDay && fromDay !== day) {
+            this.dutySchedule = ToolDutyRoster.swapDayShifts(year, month, fromDay, day);
+            this.renderDutyViews();
+            this.showToast(`Đã hoán đổi ca trực giữa Ngày ${fromDay} và Ngày ${day} thành công!`, "success");
+            this.recordOfflineChange("Hoán Đổi Ca Trực", `Đổi ca Ngày ${fromDay} và Ngày ${day}`);
+          }
+        });
       });
     }
   }

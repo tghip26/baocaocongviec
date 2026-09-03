@@ -12531,6 +12531,147 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   gap: 10px;
 }
 
+/* Thanh thông báo gợi ý di chuyển thẻ sắp xếp cán bộ */
+.staff-reorder-hint-bar {
+  background: rgba(14, 165, 233, 0.08);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.18);
+  padding: 8px 16px;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.staff-reorder-hint-bar code.drag-code-tag {
+  background: rgba(15, 23, 42, 0.7);
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+/* Thẻ Cán Bộ Kéo Thả Sắp Xếp */
+.staff-card-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 9px 12px;
+  margin-bottom: 7px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  user-select: none;
+  position: relative;
+}
+
+.staff-card-item:hover {
+  background: rgba(30, 41, 59, 0.88);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.staff-card-item.is-dragging {
+  opacity: 0.35;
+  background: rgba(14, 165, 233, 0.18) !important;
+  border: 1.5px dashed #38bdf8 !important;
+  transform: scale(0.98);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45);
+}
+
+.staff-card-item.drag-over-top {
+  border-top: 3px solid #38bdf8 !important;
+}
+
+.staff-card-item.drag-over-bottom {
+  border-bottom: 3px solid #38bdf8 !important;
+}
+
+.staff-drag-handle {
+  cursor: grab;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.staff-card-item:hover .staff-drag-handle {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.staff-drag-handle:active {
+  cursor: grabbing;
+}
+
+.staff-order-pill {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+}
+
+.btn-staff-act.btn-move-staff {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  padding: 4px 7px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-staff-act.btn-move-staff:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: scale(1.08);
+}
+
+.btn-staff-act.btn-move-staff:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* Kéo thả hoán đổi ca trực trên lưới lịch tháng */
+.cal-duty-badge[draggable="true"] {
+  cursor: grab !important;
+}
+
+.cal-duty-badge.is-shift-dragging {
+  opacity: 0.4 !important;
+  border: 1.5px dashed #38bdf8 !important;
+  transform: scale(0.96) !important;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.45) !important;
+}
+
+.cal-duty-badge.can-drop-swap {
+  background: rgba(2, 132, 199, 0.35) !important;
+  border: 2px dashed #38bdf8 !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.6) !important;
+  transform: scale(1.03) !important;
+  animation: dropSwapPulse 1.2s infinite alternate;
+}
+
+@keyframes dropSwapPulse {
+  0% { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+  100% { border-color: #06b6d4; box-shadow: 0 0 22px rgba(6, 182, 212, 0.85); }
+}
+
 .shift-adjust-banner {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.75) 100%);
   border: 1px solid rgba(56, 189, 248, 0.25);

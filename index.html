@@ -2055,7 +2055,7 @@
 
   <!-- MODAL: Danh Sách & Quản Lý Cán Bộ P.CNTT -->
   <div class="modal-overlay hidden" id="modalDutyStaffList">
-    <div class="modal-card" style="max-width: 660px;">
+    <div class="modal-card" style="max-width: 680px;">
       <div class="modal-header">
         <div class="staff-header-left flex-row gap-8 align-center">
           <span style="font-size: 1.2rem;">👥</span>
@@ -2063,16 +2063,21 @@
         </div>
         <div class="staff-header-actions flex-row gap-8 align-center flex-wrap">
           <button type="button" class="btn-duty-action" id="btnAddStaffModalBtn" title="Thêm cán bộ mới" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.76rem;">➕ Thêm Cán Bộ</button>
+          <button type="button" class="btn-duty-action" id="btnResetStaffOrderBtn" title="Khôi phục thứ tự cán bộ chuẩn ban đầu" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🔄 Thứ Tự Chuẩn</button>
           <button type="button" class="btn-duty-action" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🗑️ Dọn Sạch</button>
           <button type="button" class="modal-close" id="btnCloseDutyStaffListModal">&times;</button>
         </div>
+      </div>
+      <!-- Thanh gợi ý di chuyển thẻ sắp xếp thứ tự -->
+      <div class="staff-reorder-hint-bar">
+        <span>💡 <strong>Mẹo:</strong> Kéo thả thẻ <code class="drag-code-tag">⋮⋮</code> hoặc nhấn nút <strong style="color:#38bdf8;">⬆️ / ⬇️</strong> để xếp lại thứ tự cán bộ. Thứ tự này sẽ quyết định vòng quay khi bấm <strong>"Xếp Lịch Tự Động"</strong>.</span>
       </div>
       <div class="modal-body" style="max-height: 480px; overflow-y: auto;">
         <div class="staff-list-container" id="dutyStaffListContainer"></div>
       </div>
       <div class="modal-footer flex-between">
         <button type="button" class="btn-modal-reset" id="btnDismissDutyStaffList">Đóng</button>
-        <span style="font-size: 0.74rem; color: #94a3b8;">Nhấn ✏️ để sửa/đăng ký ngày nghỉ phép, 🗑️ để xóa</span>
+        <span style="font-size: 0.74rem; color: #94a3b8;">Dùng ⬆️/⬇️ hoặc giữ kéo thẻ ⋮⋮ để xếp thứ tự • Nhấn ✏️ để sửa/đăng ký nghỉ phép</span>
       </div>
     </div>
   </div>
