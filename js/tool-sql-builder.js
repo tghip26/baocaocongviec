@@ -224,6 +224,160 @@ LEFT JOIN m_transaction t ON pi.mp_product_id = t.mt_product_id
 GROUP BY pi.mp_product_id, pi.mp_name, pi.mp_active_ingredient, pi.mp_strength, pi.mp_unit, pi.mp_category, pi.mp_unitprice
 HAVING COALESCE(SUM(t.mt_qtyonhand), 0) > 0
 ORDER BY pi.mp_name ASC;`
+    },
+    {
+      id: "rpt_phieu_cls",
+      name: "Báo cáo Phiếu Chỉ Định & Kết Quả Cận Lâm Sàng",
+      category: "Cận lâm sàng & Xét nghiệm",
+      description: "Tra cứu danh sách số phiếu chỉ định Xét nghiệm (hpc_orderid) và Chẩn đoán hình ảnh (hpo_orderid), thời gian chỉ định, bác sĩ chỉ định và trạng thái kết quả",
+      sql: `-- =========================================================================
+-- BÁO CÁO THỐNG KÊ PHIẾU CHỈ ĐỊNH XÉT NGHIỆM & CHẨN ĐOÁN HÌNH ẢNH (CLS)
+-- Nguồn dữ liệu: CSDL VIMES (hms_testorder, hms_doc, hms_patient, hms_dept, sys_user)
+-- Trường tạo phiếu: hpc_orderid (Số phiếu xét nghiệm), hpo_orderid (Số phiếu CĐHA)
+-- =========================================================================
+SELECT 
+    t.hpc_orderid AS "Số Phiếu Chỉ Định XN",
+    t.hpc_docno AS "Số Hồ Sơ KCB",
+    p.hp_patientno AS "Mã Bệnh Nhân",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname,''), ' ', p.hp_firstname)) AS "Họ Tên Bệnh Nhân",
+    dept.hd_name AS "Khoa Chỉ Định",
+    u.su_fullname AS "Bác Sĩ Chỉ Định",
+    TO_CHAR(t.hpc_createddate, 'HH24:MI DD/MM/YYYY') AS "Thời Gian Chỉ Định",
+    CASE 
+        WHEN t.hpc_iscomplete = 'Y' THEN 'Đã hoàn thành có kết quả'
+        ELSE 'Đang chờ thực hiện'
+    END AS "Trạng Thái Thực Hiện"
+FROM hms_testorder t
+INNER JOIN hms_doc d ON t.hpc_docno = d.hd_docno
+INNER JOIN hms_patient p ON t.hpc_patientno = p.hp_patientno
+LEFT JOIN hms_dept dept ON t.hpc_deptid = dept.hd_deptid
+LEFT JOIN sys_user u ON t.hpc_doctor = u.su_userid
+WHERE t.hpc_createddate >= DATE_TRUNC('month', CURRENT_DATE)
+ORDER BY t.hpc_createddate DESC;`
+    },
+    {
+      id: "rpt_phieu_tamung_hoanung",
+      name: "Báo cáo Phiếu Thu Tạm Ứng, Hoàn Ứng & Quyết Toán Viện Phí",
+      category: "Viện phí & Thu ngân",
+      description: "Thống kê chi tiết từng số phiếu thu tạm ứng (hfe_type = 'P'), phiếu hoàn trả viện phí (hfe_type = 'R') và hóa đơn ra viện (hfe_type = 'F')",
+      sql: `-- =========================================================================
+-- BÁO CÁO CHI TIẾT CÁC PHIẾU TẠM ỨNG & HOÀN ỨNG VIỆN PHÍ (HFE_TYPE)
+-- Nguồn dữ liệu: CSDL VIMES (hms_fee, hms_doc, hms_patient, sys_user)
+-- Lưu ý phân loại: 'P' = Phiếu Tạm Ứng | 'R' = Phiếu Hoàn Ứng | 'F' = Quyết Toán Ra Viện
+-- =========================================================================
+SELECT 
+    f.hfe_invoiceno AS "Số Phiếu / Biên Lai",
+    CASE 
+        WHEN f.hfe_type = 'P' THEN 'Phiếu Thu Tạm Ứng'
+        WHEN f.hfe_type = 'R' THEN 'Phiếu Hoàn Ứng / Thoái Thu'
+        WHEN f.hfe_type = 'F' THEN 'Hóa Đơn Quyết Toán Ra Viện'
+        WHEN f.hfe_type = 'E' THEN 'Phiếu Thu Tiền Khám Ngoại Trú'
+        ELSE 'Loại Phiếu Khác (' || f.hfe_type || ')'
+    END AS "Loại Phiếu Viện Phí",
+    f.hfe_docno AS "Số Hồ Sơ KCB",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname,''), ' ', p.hp_firstname)) AS "Họ Tên Bệnh Nhân",
+    d.hd_cardno AS "Số Thẻ BHYT",
+    f.hfe_amount AS "Số Tiền Giao Dịch (VNĐ)",
+    TO_CHAR(f.hfe_createddate, 'HH24:MI DD/MM/YYYY') AS "Thời Gian Thu/Chi",
+    u.su_fullname AS "Thu Ngân Thực Hiện"
+FROM hms_fee f
+INNER JOIN hms_doc d ON f.hfe_docno = d.hd_docno
+INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno
+LEFT JOIN sys_user u ON f.hfe_createdby = u.su_userid
+WHERE f.hfe_type IN ('P', 'R', 'F') -- Lọc các loại phiếu viện phí
+  AND f.hfe_createddate >= DATE_TRUNC('month', CURRENT_DATE)
+ORDER BY f.hfe_createddate DESC;`
+    },
+    {
+      id: "rpt_phieu_linh_kho",
+      name: "Báo cáo Phiếu Lĩnh & Xuất Nhập Kho Dược - VTYT",
+      category: "Dược & Kho thuốc",
+      description: "Thống kê danh sách phiếu lĩnh thuốc khoa phòng (mt_doctype = 'DO'), phiếu nhập kho (mt_doctype = 'PO') và phiếu xuất kho (mt_doctype = 'EX')",
+      sql: `-- =========================================================================
+-- BÁO CÁO DANH SÁCH CÁC LOẠI PHIẾU KHO DƯỢC & VẬT TƯ TIÊU HAO (M_TRANSACTION)
+-- Nguồn dữ liệu: CSDL VIMES (m_transaction, hms_dept, sys_user)
+-- Lưu ý phân loại: 'DO' = Phiếu Lĩnh | 'PO' = Phiếu Nhập | 'EX' = Phiếu Xuất | 'TO' = Điều Chuyển
+-- =========================================================================
+SELECT 
+    t.mt_orderno AS "Số Phiếu Kho",
+    CASE 
+        WHEN t.mt_doctype IN ('DO', 'REQ', 'D') THEN 'Phiếu Lĩnh Thuốc/VTYT Khoa Phòng'
+        WHEN t.mt_doctype IN ('PO', 'IN') THEN 'Phiếu Nhập Kho Dược (Mua Hàng)'
+        WHEN t.mt_doctype IN ('EX', 'OUT') THEN 'Phiếu Xuất Kho Dược'
+        WHEN t.mt_doctype IN ('TO', 'TRA') THEN 'Phiếu Điều Chuyển Kho Nội Bộ'
+        WHEN t.mt_doctype IN ('RO', 'RET') THEN 'Phiếu Trả Lại Kho Dược'
+        ELSE 'Phiếu Khác (' || t.mt_doctype || ')'
+    END AS "Loại Phiếu Kho",
+    dept.hd_name AS "Khoa Phòng Lĩnh / Nhận",
+    t.mt_storage_id AS "Mã Kho Xuất",
+    t.mt_storage_to_id AS "Mã Kho Nhận",
+    TO_CHAR(t.mt_createddate, 'HH24:MI DD/MM/YYYY') AS "Ngày Lập Phiếu",
+    t.mt_description AS "Diễn Giải / Nội Dung",
+    u.su_fullname AS "Người Lập Phiếu"
+FROM m_transaction t
+LEFT JOIN hms_dept dept ON t.mt_department_id = dept.hd_deptid
+LEFT JOIN sys_user u ON t.mt_createdby = u.su_userid
+WHERE t.mt_createddate >= DATE_TRUNC('month', CURRENT_DATE)
+ORDER BY t.mt_createddate DESC;`
+    },
+    {
+      id: "rpt_phieu_ylech_noitru",
+      name: "Báo cáo Phiếu Y Lệnh Thuốc Nội Trú Theo Bệnh Án",
+      category: "Dược & Kho thuốc",
+      description: "Chi tiết các phiếu y lệnh thuốc hàng ngày (hms_ipharmaorder) của người bệnh nội trú, tên thuốc, số lượng và bác sĩ chỉ định",
+      sql: `-- =========================================================================
+-- BÁO CÁO CHI TIẾT PHIẾU Y LỆNH THUỐC NỘI TRÚ (HMS_IPHARMAORDER)
+-- Nguồn dữ liệu: CSDL VIMES (hms_ipharmaorder, hms_ipharmaorderline, m_productitem, sys_user)
+-- Trường tạo phiếu: hpo_orderid (Số phiếu y lệnh thuốc nội trú)
+-- =========================================================================
+SELECT 
+    ipo.hpo_orderid AS "Số Phiếu Y Lệnh",
+    ipo.hpo_docno AS "Số Hồ Sơ KCB",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname,''), ' ', p.hp_firstname)) AS "Họ Tên Bệnh Nhân",
+    pi.mp_name AS "Tên Thuốc / Biệt Dược",
+    pi.mp_strength AS "Hàm Lượng",
+    ipol.hpol_qtyorder AS "Số Lượng Chỉ Định",
+    pi.mp_unit AS "Đơn Vị Tính",
+    ipol.hpol_usage AS "Đường Dùng (Uống/Tiêm)",
+    ipol.hpol_instruction AS "Cách Dùng / Lời Dặn",
+    TO_CHAR(ipo.hpo_orderdate, 'DD/MM/YYYY') AS "Ngày Dùng Thuốc",
+    u.su_fullname AS "Bác Sĩ Ra Y Lệnh"
+FROM hms_ipharmaorder ipo
+INNER JOIN hms_ipharmaorderline ipol ON ipo.hpo_orderid = ipol.hpol_orderid
+INNER JOIN m_productitem pi ON ipol.hpol_product_id = pi.mp_product_id
+INNER JOIN hms_doc d ON ipo.hpo_docno = d.hd_docno
+INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno
+LEFT JOIN sys_user u ON ipo.hpo_doctor = u.su_userid
+WHERE ipo.hpo_orderdate >= DATE_TRUNC('month', CURRENT_DATE)
+ORDER BY ipo.hpo_orderdate DESC, ipo.hpo_orderid DESC;`
+    },
+    {
+      id: "rpt_to_dieutri_phauthuat",
+      name: "Báo cáo Tờ Điều Trị & Phiếu Phẫu Thuật Thủ Thuật EMR",
+      category: "Nội trú & Giường bệnh",
+      description: "Thống kê danh sách Tờ điều trị hàng ngày (htr_idx) và Phiếu phẫu thuật - thủ thuật (ho_docno) của người bệnh nội trú",
+      sql: `-- =========================================================================
+-- BÁO CÁO DANH SÁCH TỜ ĐIỀU TRỊ HÀNG NGÀY & PHIẾU PHẪU THUẬT (EMR)
+-- Nguồn dữ liệu: CSDL VIMES (hms_treatment_record, hms_operation, hms_doc, sys_user)
+-- Trường tạo phiếu: htr_idx (Tờ điều trị), ho_docno (Phiếu phẫu thuật)
+-- =========================================================================
+SELECT 
+    tr.htr_idx AS "Mã Tờ Điều Trị",
+    tr.htr_recordno AS "Số Bệnh Án",
+    tr.htr_docno AS "Số Hồ Sơ KCB",
+    TRIM(CONCAT(p.hp_surname, ' ', COALESCE(p.hp_midname,''), ' ', p.hp_firstname)) AS "Họ Tên Bệnh Nhân",
+    dept.hd_name AS "Khoa Điều Trị",
+    TO_CHAR(tr.htr_createddate, 'HH24:MI DD/MM/YYYY') AS "Thời Gian Khám",
+    tr.htr_desc AS "Diễn Biến Bệnh",
+    tr.htr_order AS "Y Lệnh Điều Trị",
+    u.su_fullname AS "Bác Sĩ Điều Trị"
+FROM hms_treatment_record tr
+INNER JOIN hms_doc d ON tr.htr_docno = d.hd_docno
+INNER JOIN hms_patient p ON d.hd_patientno = p.hp_patientno
+LEFT JOIN hms_dept dept ON tr.htr_deptid = dept.hd_deptid
+LEFT JOIN sys_user u ON tr.htr_createdby = u.su_userid
+WHERE tr.htr_createddate >= DATE_TRUNC('month', CURRENT_DATE)
+ORDER BY tr.htr_createddate DESC;`
     }
   ],
 

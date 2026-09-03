@@ -1863,11 +1863,14 @@ class AppController {
         const hlCode = window.schemaLookupEngine.highlight(form.code, query);
         const hlDesc = window.schemaLookupEngine.highlight(form.description, query);
 
+        const creatorSnippet = form.slipCreatorField ? `<div class="item-card-creator"><span class="creator-tag">🎯 CSDL Tạo Phiếu:</span> <code>${form.slipCreatorField.split('(')[0].trim()}</code></div>` : '';
+
         row.innerHTML = `
           <div class="item-card-top">
             <span class="item-tbl-title">${form.icon || '📄'} <strong>${hlTitle}</strong></span>
             <span class="item-form-code">${hlCode}</span>
           </div>
+          ${creatorSnippet}
           <div class="item-card-desc">
             <span>${hlDesc}</span>
           </div>
@@ -2102,6 +2105,19 @@ class AppController {
     // Hiển thị danh sách các bảng CSDL liên quan dưới dạng nút bấm chuyển nhanh
     const oldWrap = this.inspectorContent.querySelector(".form-linked-tables-wrap");
     if (oldWrap) oldWrap.remove();
+
+    const oldTipWrap = this.inspectorContent.querySelector(".form-distinction-tips-wrap");
+    if (oldTipWrap) oldTipWrap.remove();
+
+    if (form.slipCreatorField || form.distinctionTip) {
+      const tipWrap = document.createElement("div");
+      tipWrap.className = "form-distinction-tips-wrap";
+      tipWrap.innerHTML = `
+        ${form.slipCreatorField ? `<div class="form-creator-field-box"><div class="tip-badge-lbl">🎯 TRƯỜNG CSDL TẠO RA PHIẾU</div><div class="tip-creator-val">${form.slipCreatorField}</div></div>` : ''}
+        ${form.distinctionTip ? `<div class="form-distinction-tip-box"><div class="tip-badge-lbl">💡 MẸO PHÂN BIỆT & LƯU Ý NGHIỆP VỤ</div><div class="tip-distinction-val">${form.distinctionTip}</div></div>` : ''}
+      `;
+      this.inspectorTableDesc.parentNode.insertBefore(tipWrap, this.inspectorTableDesc.nextSibling);
+    }
 
     const linkedWrap = document.createElement("div");
     linkedWrap.className = "form-linked-tables-wrap";
@@ -4781,10 +4797,7 @@ ${this.currentW2hHtmlOutput}
       html += `
         <div class="calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""} ${isToday ? "is-today today-cell" : ""}">
           <div class="cal-day-header">
-            <div class="cal-date-wrap">
-              <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
-              ${isToday ? `<span class="cal-today-pill"><span class="today-pulse-dot"></span>Hôm nay</span>` : ''}
-            </div>
+            <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
             <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
           </div>
           <div class="cal-shift-list">
@@ -4937,7 +4950,7 @@ ${this.currentW2hHtmlOutput}
       const assigned = dayObj.shifts["shift_cntt"];
       const isToday = (dayObj.day === curRealDay && month === curRealMonth && year === curRealYear);
       tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""} ${isToday ? "today-table-row" : ""}">
-        <td><strong>Ngày ${dayObj.day}/${month}</strong> ${isToday ? '<span class="cal-today-pill" style="margin-left: 6px;">Hôm nay</span>' : ''}</td>
+        <td><strong>Ngày ${dayObj.day}/${month}</strong></td>
         <td>${dayObj.dayName}</td>
         <td><strong style="color:${isToday ? '#38bdf8' : '#93c5fd'};">${assigned ? assigned.name : "-"}</strong></td>
         <td>${assigned ? (assigned.phone || "-") : "-"}</td>
