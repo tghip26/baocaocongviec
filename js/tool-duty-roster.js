@@ -7,14 +7,19 @@
 const ToolDutyRoster = {
   // Danh sách cán bộ chính thức Phòng Công Nghệ Thông Tin (BVĐK Bắc Ninh Số 2)
   defaultStaffList: [
-    { id: "nv1", name: "KS. Ngô Thanh Tùng", role: "Kỹ sư HIS & CSDL VIMES", dept: "Phòng CNTT", phone: "0912.345.678", offDays: [] },
-    { id: "nv2", name: "KS. Trần Văn Nam", role: "Kỹ sư Hạ tầng Mạng & Server", dept: "Phòng CNTT", phone: "0988.112.233", offDays: [] },
-    { id: "nv3", name: "CN. Nguyễn Hải Đăng", role: "Cử nhân Phần mềm & Cổng BHYT", dept: "Phòng CNTT", phone: "0977.445.566", offDays: [] },
-    { id: "nv4", name: "KTV. Lê Quang Huy", role: "KTV Phần cứng & Máy trạm", dept: "Phòng CNTT", phone: "0966.778.899", offDays: [] },
-    { id: "nv5", name: "KTV. Vũ Minh Tuấn", role: "KTV Hỗ trợ Lâm sàng & HIS", dept: "Phòng CNTT", phone: "0944.556.677", offDays: [] },
-    { id: "nv6", name: "KS. Phạm Đức Trọng", role: "Kỹ sư Mạng LAN & Viễn thông", dept: "Phòng CNTT", phone: "0933.221.144", offDays: [] },
-    { id: "nv7", name: "CN. Đặng Hoàng Long", role: "Cử nhân Ký số & An toàn TT", dept: "Phòng CNTT", phone: "0918.998.877", offDays: [] },
-    { id: "nv8", name: "KTV. Bùi Văn Kiên", role: "KTV Thiết bị Ngoại vi & In ấn", dept: "Phòng CNTT", phone: "0904.332.211", offDays: [] }
+    { id: "nv1", name: "Nguyễn Minh Họa", role: "Trưởng phòng", dept: "Phòng CNTT", phone: "0916126118", offDays: [], noDuty: true, exempt: true },
+    { id: "nv2", name: "Nguyễn Duy Phương", role: "Phó phòng", dept: "Phòng CNTT", phone: "0779331919", offDays: [], noDuty: false },
+    { id: "nv3", name: "Bùi Minh Chí", role: "Phần cứng", dept: "Phòng CNTT", phone: "0914969918", offDays: [], noDuty: false },
+    { id: "nv4", name: "Vương Bá Tuấn", role: "Phần cứng", dept: "Phòng CNTT", phone: "0982568994", offDays: [], noDuty: false },
+    { id: "nv5", name: "Phí Đức Phương", role: "Phần cứng", dept: "Phòng CNTT", phone: "0914798292", offDays: [], noDuty: false },
+    { id: "nv6", name: "Chu Thị Dương", role: "Phần mềm", dept: "Phòng CNTT", phone: "0918894838", offDays: [], noDuty: false },
+    { id: "nv7", name: "Nguyễn Trọng Nhân", role: "Phần cứng", dept: "Phòng CNTT", phone: "0916671838", offDays: [], noDuty: false },
+    { id: "nv8", name: "Nguyễn Thu Huyền", role: "Phần mềm", dept: "Phòng CNTT", phone: "0969199177", offDays: [], noDuty: false },
+    { id: "nv9", name: "Nguyễn Đức Lâm", role: "Phần cứng & mềm", dept: "Phòng CNTT", phone: "0915100888", offDays: [], noDuty: false },
+    { id: "nv10", name: "Nguyễn Thị Quyên", role: "Phần cứng & mềm", dept: "Phòng CNTT", phone: "0349858893", offDays: [], noDuty: false },
+    { id: "nv11", name: "Dương Văn Phương", role: "Phần cứng & mềm", dept: "Phòng CNTT", phone: "", offDays: [], noDuty: false },
+    { id: "nv12", name: "Lê Thị Huyền Ly", role: "Phần mềm", dept: "Phòng CNTT", phone: "0394022958", offDays: [], noDuty: true, exempt: true },
+    { id: "nv13", name: "Trương Hoàng Hiệp", role: "Phần cứng & mềm", dept: "Phòng CNTT", phone: "0968224279", offDays: [], noDuty: true, exempt: true }
   ],
 
   // Vị trí ca trực: Cán bộ trực P.CNTT (chịu trách nhiệm toàn diện 24/7)
@@ -22,88 +27,133 @@ const ToolDutyRoster = {
     { id: "shift_cntt", name: "Cán Bộ Trực P.CNTT", badgeColor: "blue" }
   ],
 
-  // Danh sách tài khoản người dùng Phòng CNTT (Mặc định: admin / admin)
+  // Danh sách tài khoản người dùng Phòng CNTT (Mặc định: admin / admin hoặc tên_cán_bộ / admin)
   defaultAccounts: [
     {
       id: "acc_admin",
       username: "admin",
       password: "admin",
-      fullname: "Trưởng Phòng CNTT (Quản trị)",
+      fullname: "Quản Trị Hệ Thống (P.CNTT)",
       role: "admin",
-      dept: "Lãnh Đạo P.CNTT",
-      staffId: null
-    },
-    {
-      id: "acc_tungnt",
-      username: "tungnt",
-      password: "admin",
-      fullname: "KS. Ngô Thanh Tùng",
-      role: "user",
       dept: "Phòng CNTT",
       staffId: "nv1"
     },
     {
-      id: "acc_namtv",
-      username: "namtv",
+      id: "acc_hoanm",
+      username: "hoanm",
       password: "admin",
-      fullname: "KS. Trần Văn Nam",
-      role: "user",
+      fullname: "Nguyễn Minh Họa",
+      role: "admin",
+      dept: "Phòng CNTT",
+      staffId: "nv1"
+    },
+    {
+      id: "acc_phuongnd",
+      username: "phuongnd",
+      password: "admin",
+      fullname: "Nguyễn Duy Phương",
+      role: "admin",
       dept: "Phòng CNTT",
       staffId: "nv2"
     },
     {
-      id: "acc_dangnh",
-      username: "dangnh",
+      id: "acc_chibm",
+      username: "chibm",
       password: "admin",
-      fullname: "CN. Nguyễn Hải Đăng",
+      fullname: "Bùi Minh Chí",
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv3"
     },
     {
-      id: "acc_huylq",
-      username: "huylq",
+      id: "acc_tuanvb",
+      username: "tuanvb",
       password: "admin",
-      fullname: "KTV. Lê Quang Huy",
+      fullname: "Vương Bá Tuấn",
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv4"
     },
     {
-      id: "acc_tuanvm",
-      username: "tuanvm",
+      id: "acc_phuongpd",
+      username: "phuongpd",
       password: "admin",
-      fullname: "KTV. Vũ Minh Tuấn",
+      fullname: "Phí Đức Phương",
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv5"
     },
     {
-      id: "acc_trongpd",
-      username: "trongpd",
+      id: "acc_duongct",
+      username: "duongct",
       password: "admin",
-      fullname: "KS. Phạm Đức Trọng",
+      fullname: "Chu Thị Dương",
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv6"
     },
     {
-      id: "acc_longdh",
-      username: "longdh",
+      id: "acc_nhannt",
+      username: "nhannt",
       password: "admin",
-      fullname: "CN. Đặng Hoàng Long",
+      fullname: "Nguyễn Trọng Nhân",
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv7"
     },
     {
-      id: "acc_kienbv",
-      username: "kienbv",
+      id: "acc_huyennt",
+      username: "huyennt",
       password: "admin",
-      fullname: "KTV. Bùi Văn Kiên",
+      fullname: "Nguyễn Thu Huyền",
       role: "user",
       dept: "Phòng CNTT",
       staffId: "nv8"
+    },
+    {
+      id: "acc_lamnd",
+      username: "lamnd",
+      password: "admin",
+      fullname: "Nguyễn Đức Lâm",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv9"
+    },
+    {
+      id: "acc_quyennt",
+      username: "quyennt",
+      password: "admin",
+      fullname: "Nguyễn Thị Quyên",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv10"
+    },
+    {
+      id: "acc_phuongdv",
+      username: "phuongdv",
+      password: "admin",
+      fullname: "Dương Văn Phương",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv11"
+    },
+    {
+      id: "acc_lylth",
+      username: "lylth",
+      password: "admin",
+      fullname: "Lê Thị Huyền Ly",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv12"
+    },
+    {
+      id: "acc_hiepth",
+      username: "hiepth",
+      password: "admin",
+      fullname: "Trương Hoàng Hiệp",
+      role: "user",
+      dept: "Phòng CNTT",
+      staffId: "nv13"
     }
   ],
 
@@ -917,7 +967,7 @@ const ToolDutyRoster = {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
-    const dutyEligibleStaff = activeStaffList.filter(s => !s.noDuty);
+    const dutyEligibleStaff = activeStaffList.filter(s => !s.noDuty && !s.exempt);
     const totalDays = this.getDaysInMonth(y, m);
     const schedule = [];
 
@@ -958,7 +1008,7 @@ const ToolDutyRoster = {
     const y = parseInt(year, 10);
     const m = parseInt(month, 10);
     const activeStaffList = (staffList && Array.isArray(staffList)) ? staffList : this.getStaffList();
-    const dutyEligibleStaff = activeStaffList.filter(s => !s.noDuty);
+    const dutyEligibleStaff = activeStaffList.filter(s => !s.noDuty && !s.exempt);
     const totalDays = this.getDaysInMonth(y, m);
     const schedule = [];
     
