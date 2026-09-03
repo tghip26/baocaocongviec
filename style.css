@@ -14175,6 +14175,319 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   color: #fff;
 }
 
+/* ==========================================================================
+   WORD DOCUMENT CONVERTER & PREVIEW MODAL (TIMES NEW ROMAN)
+   ========================================================================== */
+.word-modal-card {
+  background: #0b1120;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 16px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(37, 99, 235, 0.25);
+  display: flex;
+  flex-direction: column;
+  max-height: 92vh;
+  overflow: hidden;
+}
+
+.word-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.word-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.word-app-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  flex-shrink: 0;
+}
+
+.word-font-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.word-format-badge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.7rem;
+}
+
+.word-ribbon-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 18px;
+  background: rgba(2, 6, 23, 0.75);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.word-ribbon-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.word-ribbon-label {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.word-view-toggle-pills {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.btn-word-pill {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-word-pill.active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.word-select-sm {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f1f5f9;
+  font-size: 0.73rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.btn-word-tool {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-word-tool:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.btn-word-tool.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+}
+
+/* Trang Giấy A4 Word Chuẩn */
+.word-sheet-wrapper {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 24px 16px;
+  max-height: 56vh;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+.word-sheet-page {
+  background: #ffffff;
+  color: #111827;
+  font-family: 'Times New Roman', Times, 'Liberation Serif', serif;
+  font-size: 13pt;
+  line-height: 1.5;
+  text-align: justify;
+  width: 100%;
+  max-width: 760px;
+  min-height: 540px;
+  padding: 44px 52px;
+  border-radius: 2px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.08);
+  outline: none;
+  cursor: text;
+  box-sizing: border-box;
+}
+
+.word-sheet-page:focus {
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 2px #38bdf8;
+}
+
+.word-sheet-page p {
+  margin: 0 0 6pt 0;
+  font-family: 'Times New Roman', Times, 'Liberation Serif', serif;
+  font-size: inherit;
+  line-height: 1.5;
+  color: #111827;
+  text-align: justify;
+}
+
+.word-sheet-page p.doc-title-line {
+  font-weight: bold;
+  text-align: center;
+  text-indent: 0 !important;
+  margin-bottom: 6pt;
+}
+
+.word-sheet-page p.doc-special-line {
+  font-weight: 600;
+  text-indent: 0 !important;
+  margin-bottom: 4pt;
+}
+
+.word-raw-wrapper {
+  max-height: 56vh;
+  overflow: hidden;
+}
+
+.word-raw-textarea {
+  width: 100%;
+  height: 52vh;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 13pt;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.word-modal-footer {
+  padding: 12px 20px;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.word-footer-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  max-width: 42%;
+  line-height: 1.35;
+}
+
+.btn-word-action-primary {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+  transition: all 0.18s ease;
+}
+
+.btn-word-action-primary:hover {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.55);
+}
+
+.btn-word-action-doc {
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.btn-word-action-doc:hover {
+  background: rgba(37, 99, 235, 0.3);
+  color: #ffffff;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.btn-word-action-secondary {
+  background: rgba(148, 163, 184, 0.12);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-word-action-secondary:hover {
+  background: rgba(148, 163, 184, 0.22);
+  color: #ffffff;
+}
+
+/* Lightbox Word Text Button */
+.btn-lightbox-action.btn-lightbox-word-text {
+  background: rgba(37, 99, 235, 0.25);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.btn-lightbox-action.btn-lightbox-word-text:hover {
+  background: rgba(37, 99, 235, 0.45);
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+}
+
 
 
 

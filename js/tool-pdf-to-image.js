@@ -371,16 +371,39 @@ class PdfToImageConverter {
 
     const page = await this.pdfDoc.getPage(pageNum);
     const textContent = await page.getTextContent();
-    let lastY, text = "";
+    
+    if (!textContent || !textContent.items || textContent.items.length === 0) {
+      return "";
+    }
 
-    for (const item of textContent.items) {
-      if (lastY !== undefined && Math.abs(item.transform[5] - lastY) > 6) {
-        text += "\n";
-      } else if (text.length > 0 && !text.endsWith("\n") && !text.endsWith(" ")) {
-        text += " ";
+    // Sắp xếp items theo tọa độ: từ trên xuống dưới (Y giảm dần), từ trái sang phải (X tăng dần)
+    const items = textContent.items.slice().sort((a, b) => {
+      const yDiff = b.transform[5] - a.transform[5];
+      if (Math.abs(yDiff) > 5) return yDiff;
+      return a.transform[4] - b.transform[4];
+    });
+
+    let lastY = undefined;
+    let text = "";
+
+    for (const item of items) {
+      if (!item.str) continue;
+      const curY = item.transform[5];
+
+      if (lastY !== undefined) {
+        const diff = Math.abs(curY - lastY);
+        if (diff > 16) {
+          // Khoảng cách Y lớn -> Ngắt đoạn văn mới
+          text += "\n\n";
+        } else if (diff > 5) {
+          // Xuống dòng thông thường
+          text += "\n";
+        } else if (text.length > 0 && !text.endsWith("\n") && !text.endsWith(" ")) {
+          text += " ";
+        }
       }
       text += item.str;
-      lastY = item.transform[5];
+      lastY = curY;
     }
     return text.trim();
   }

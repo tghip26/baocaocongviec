@@ -371,6 +371,23 @@ class AppController {
     this.btnDismissPdfTextModal = document.getElementById("btnDismissPdfTextModal");
     this.btnCopyExtractedText = document.getElementById("btnCopyExtractedText");
     this.btnDownloadExtractedTxt = document.getElementById("btnDownloadExtractedTxt");
+    this.btnDownloadWordDoc = document.getElementById("btnDownloadWordDoc");
+
+    // Word Document Conversion Elements
+    this.wordSheetWrapper = document.getElementById("wordSheetWrapper");
+    this.wordSheetPage = document.getElementById("wordSheetPage");
+    this.wordRawWrapper = document.getElementById("wordRawWrapper");
+    this.btnWordViewDoc = document.getElementById("btnWordViewDoc");
+    this.btnWordViewRaw = document.getElementById("btnWordViewRaw");
+    this.selWordFontSize = document.getElementById("selWordFontSize");
+    this.btnToggleWordReflow = document.getElementById("btnToggleWordReflow");
+    this.btnToggleWordIndent = document.getElementById("btnToggleWordIndent");
+
+    this.wordFontSize = "13pt";
+    this.wordReflowEnabled = true;
+    this.wordIndentEnabled = true;
+    this.wordCurrentView = "doc";
+    this.currentExtractedRawText = "";
 
     this.w2hStatWords = document.getElementById("w2hStatWords");
     this.w2hStatChars = document.getElementById("w2hStatChars");
@@ -1435,24 +1452,23 @@ class AppController {
       this.btnDismissPdfTextModal.addEventListener("click", () => this.hideModal(this.modalPdfTextPreview));
     }
     if (this.btnCopyExtractedText) {
-      this.btnCopyExtractedText.addEventListener("click", async () => {
-        const txt = this.pdfTextResultTextarea ? this.pdfTextResultTextarea.value : "";
-        if (!txt) return;
-        try {
-          await navigator.clipboard.writeText(txt);
-          this.showToast("Đã sao chép toàn bộ văn bản vào Clipboard!", "success");
-        } catch (err) {
-          this.showToast("Lỗi copy: " + err.message, "error");
-        }
-      });
+      this.btnCopyExtractedText.addEventListener("click", () => this.copyExtractedWordText());
+    }
+    if (this.btnDownloadWordDoc) {
+      this.btnDownloadWordDoc.addEventListener("click", () => this.downloadExtractedWordDoc());
     }
     if (this.btnDownloadExtractedTxt) {
       this.btnDownloadExtractedTxt.addEventListener("click", () => {
-        const txt = this.pdfTextResultTextarea ? this.pdfTextResultTextarea.value : "";
+        let txt = "";
+        if (this.wordCurrentView === "raw" && this.pdfTextResultTextarea) {
+          txt = this.pdfTextResultTextarea.value;
+        } else if (this.wordSheetPage) {
+          txt = this.wordSheetPage.innerText || this.wordSheetPage.textContent;
+        }
         if (!txt) return;
         const blob = new Blob([txt], { type: "text/plain;charset=utf-8" });
         const docName = (this.currentPdfFileName || "Van_Ban_PDF").replace(/\.[^/.]+$/, "");
-        const fileName = `${docName}_extracted_text.txt`;
+        const fileName = `${docName}_van_ban.txt`;
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -1461,7 +1477,92 @@ class AppController {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-        this.showToast(`Đã tải về tệp ${fileName}!`, "success");
+        this.showToast(`Đã tải về tệp text "${fileName}"!`, "success");
+      });
+    }
+
+    // Word Toolbar: Chuyển đổi chế độ xem (Trang giấy Word A4 vs Text thô)
+    if (this.btnWordViewDoc && this.btnWordViewRaw) {
+      this.btnWordViewDoc.addEventListener("click", () => {
+        this.wordCurrentView = "doc";
+        this.btnWordViewDoc.classList.add("active");
+        this.btnWordViewRaw.classList.remove("active");
+        if (this.wordSheetWrapper) this.wordSheetWrapper.classList.remove("hidden");
+        if (this.wordRawWrapper) this.wordRawWrapper.classList.add("hidden");
+        // Đồng bộ ngược lại từ textarea nếu người dùng vừa sửa ở text thô
+        if (this.pdfTextResultTextarea && this.pdfTextResultTextarea.value !== this.currentExtractedRawText) {
+          this.currentExtractedRawText = this.pdfTextResultTextarea.value;
+          this.renderWordDocumentSheet();
+        }
+      });
+
+      this.btnWordViewRaw.addEventListener("click", () => {
+        this.wordCurrentView = "raw";
+        this.btnWordViewRaw.classList.add("active");
+        this.btnWordViewDoc.classList.remove("active");
+        if (this.wordSheetWrapper) this.wordSheetWrapper.classList.add("hidden");
+        if (this.wordRawWrapper) this.wordRawWrapper.classList.remove("hidden");
+        // Đồng bộ nội dung từ trang Word sang textarea
+        if (this.wordSheetPage && this.pdfTextResultTextarea) {
+          const currentText = this.wordSheetPage.innerText || this.wordSheetPage.textContent;
+          this.pdfTextResultTextarea.value = currentText;
+        }
+      });
+    }
+
+    // Word Toolbar: Đổi cỡ chữ (13pt, 14pt, 12pt)
+    if (this.selWordFontSize) {
+      this.selWordFontSize.addEventListener("change", (e) => {
+        this.wordFontSize = e.target.value;
+        if (this.wordSheetPage) {
+          this.wordSheetPage.style.fontSize = this.wordFontSize;
+        }
+        if (this.pdfTextResultTextarea) {
+          this.pdfTextResultTextarea.style.fontSize = this.wordFontSize;
+        }
+      });
+    }
+
+    // Word Toolbar: Nối dòng mượt mà (Reflow)
+    if (this.btnToggleWordReflow) {
+      this.btnToggleWordReflow.addEventListener("click", () => {
+        this.wordReflowEnabled = !this.wordReflowEnabled;
+        this.btnToggleWordReflow.classList.toggle("active", this.wordReflowEnabled);
+        this.renderWordDocumentSheet();
+        this.showToast(this.wordReflowEnabled ? "Đã bật nối dòng đoạn văn mượt mà" : "Đã tắt nối dòng, giữ nguyên ngắt dòng gốc", "info");
+      });
+    }
+
+    // Word Toolbar: Thụt lề đầu dòng 1.27cm
+    if (this.btnToggleWordIndent) {
+      this.btnToggleWordIndent.addEventListener("click", () => {
+        this.wordIndentEnabled = !this.wordIndentEnabled;
+        this.btnToggleWordIndent.classList.toggle("active", this.wordIndentEnabled);
+        this.renderWordDocumentSheet();
+        this.showToast(this.wordIndentEnabled ? "Đã bật thụt lề đầu dòng 1.27cm chuẩn văn thư" : "Đã tắt thụt lề đầu dòng", "info");
+      });
+    }
+
+    // Soạn thảo trực tiếp trên trang giấy Word -> Cập nhật bộ đếm từ/ký tự
+    if (this.wordSheetPage) {
+      this.wordSheetPage.addEventListener("input", () => {
+        const txt = this.wordSheetPage.innerText || "";
+        const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+        const chars = txt.length;
+        if (this.pdfTextCounter) {
+          this.pdfTextCounter.textContent = `${words.toLocaleString('vi-VN')} từ • ${chars.toLocaleString('vi-VN')} ký tự`;
+        }
+      });
+    }
+
+    if (this.pdfTextResultTextarea) {
+      this.pdfTextResultTextarea.addEventListener("input", () => {
+        const txt = this.pdfTextResultTextarea.value || "";
+        const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+        const chars = txt.length;
+        if (this.pdfTextCounter) {
+          this.pdfTextCounter.textContent = `${words.toLocaleString('vi-VN')} từ • ${chars.toLocaleString('vi-VN')} ký tự`;
+        }
       });
     }
 
@@ -3292,9 +3393,9 @@ ${this.currentW2hHtmlOutput}
             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span>Ảnh</span>
           </button>
-          <button type="button" class="btn-card-action btn-card-text" data-page="${p}" title="Trích xuất văn bản của trang này">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            <span>Chữ</span>
+          <button type="button" class="btn-card-action btn-card-text" data-page="${p}" title="Chuyển sang văn bản chuẩn Word (Times New Roman)">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+            <span>Text</span>
           </button>
         </div>
       `;
@@ -3399,7 +3500,7 @@ ${this.currentW2hHtmlOutput}
   }
 
   /**
-   * Mở modal xem và copy văn bản trích xuất từ PDF
+   * Mở modal xem và copy văn bản trích xuất từ PDF (Chuẩn Word & Times New Roman)
    */
   async showPdfTextModal(targetPage = "all") {
     if (!this.pdfConverter || !this.pdfConverter.pdfDoc) {
@@ -3408,28 +3509,42 @@ ${this.currentW2hHtmlOutput}
     }
 
     try {
-      this.showToast("Đang trích xuất văn bản từ tài liệu PDF...", "info");
+      this.showToast("Đang chuyển đổi văn bản sang chuẩn Word...", "info");
       let extractedText = "";
 
       if (targetPage === "all") {
         if (this.pdfConverter.selectedPages.size === 0) {
-          this.showToast("Vui lòng chọn ít nhất một trang để trích xuất chữ!", "warning");
+          this.showToast("Vui lòng chọn ít nhất một trang để chuyển sang text!", "warning");
           return;
         }
         extractedText = await this.pdfConverter.extractAllPagesText();
         if (this.pdfTextModalTitle) {
-          this.pdfTextModalTitle.textContent = `VĂN BẢN TẤT CẢ CÁC TRANG (${this.pdfConverter.selectedPages.size} TRANG)`;
+          this.pdfTextModalTitle.textContent = `CHUYỂN SANG VĂN BẢN CHUẨN WORD (${this.pdfConverter.selectedPages.size} TRANG)`;
         }
       } else {
         extractedText = await this.pdfConverter.extractPageText(targetPage);
         if (this.pdfTextModalTitle) {
-          this.pdfTextModalTitle.textContent = `VĂN BẢN TRANG ${targetPage} / ${this.pdfConverter.totalPages}`;
+          this.pdfTextModalTitle.textContent = `CHUYỂN SANG VĂN BẢN CHUẨN WORD (TRANG ${targetPage} / ${this.pdfConverter.totalPages})`;
         }
       }
 
+      this.currentExtractedRawText = extractedText;
+
+      // Đồng bộ vào textarea text thô
       if (this.pdfTextResultTextarea) {
         this.pdfTextResultTextarea.value = extractedText;
+        this.pdfTextResultTextarea.style.fontSize = this.wordFontSize || "13pt";
       }
+
+      // Render sang trang giấy Word A4 chuẩn Times New Roman
+      this.renderWordDocumentSheet();
+
+      // Mặc định hiển thị tab Trang Word A4
+      this.wordCurrentView = "doc";
+      if (this.btnWordViewDoc) this.btnWordViewDoc.classList.add("active");
+      if (this.btnWordViewRaw) this.btnWordViewRaw.classList.remove("active");
+      if (this.wordSheetWrapper) this.wordSheetWrapper.classList.remove("hidden");
+      if (this.wordRawWrapper) this.wordRawWrapper.classList.add("hidden");
 
       const words = extractedText.trim() ? extractedText.trim().split(/\s+/).length : 0;
       const chars = extractedText.length;
@@ -3438,10 +3553,283 @@ ${this.currentW2hHtmlOutput}
       }
 
       this.showModal(this.modalPdfTextPreview);
-      this.showToast("Đã trích xuất văn bản thành công!", "success");
+      this.showToast("Đã chuyển đổi văn bản chuẩn Word (Times New Roman) thành công!", "success");
     } catch (err) {
-      this.showToast("Lỗi trích xuất chữ: " + err.message, "error");
+      this.showToast("Lỗi chuyển đổi văn bản: " + err.message, "error");
     }
+  }
+
+  escapeHtml(str) {
+    if (!str) return "";
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /**
+   * Định dạng văn bản thô thành các đoạn văn chuẩn Word (Times New Roman)
+   */
+  formatTextToWordHtml(rawText, reflow = true, indent = true, fontSize = "13pt") {
+    if (!rawText || !rawText.trim()) {
+      return "<p style='color: #64748b; font-style: italic; text-align: center; text-indent: 0;'>Không tìm thấy lớp văn bản (text layer) trong trang PDF này. Có thể đây là trang quét ảnh scan thuần túy.</p>";
+    }
+
+    const normalized = rawText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const rawLines = normalized.split("\n");
+
+    const paragraphs = [];
+    let currentPara = "";
+
+    const isHeadingOrSpecial = (line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      if (trimmed.length < 90 && trimmed === trimmed.toUpperCase() && /[A-ZÀ-Ỹ]/.test(trimmed)) return true;
+      if (/^(?:[0-9]+[\.\:]|[IVXLCDM]+[\.\:]|Điều\s+[0-9]+|Chương\s+[IVXLCDM0-9]+|Mục\s+[0-9]+)/i.test(trimmed)) return true;
+      if (/^[-+*•–—]\s+/.test(trimmed)) return true;
+      if (/^(?:Số\s*:|V\/v\s*:|Kính\s+gửi\s*:|Độc\s+lập\s*-\s*Tự\s+do\s*-\s*Hạnh\s+phúc)/i.test(trimmed)) return true;
+      if (/,\s*ngày\s+\d{1,2}\s+tháng\s+\d{1,2}\s+năm\s+\d{4}/i.test(trimmed)) return true;
+      if (/^===\s*\[TRANG\s+\d+/i.test(trimmed)) return true;
+      return false;
+    };
+
+    const isCenteredTitle = (line) => {
+      const trimmed = line.trim();
+      return /^(?:CỘNG\s+HÒA\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM|Độc\s+lập\s*-\s*Tự\s+do\s*-\s*Hạnh\s+phúc|YÊU\s+CẦU\s+BÁO\s+GIÁ|QUYẾT\s+ĐỊNH|THÔNG\s+BÁO|BÁO\s+CÁO|TỜ\s+TRÌNH|GIẤY\s+MỜI|HỢP\s+ĐỒNG|GIẤY\s+CHỨNG\s+NHẬN)/i.test(trimmed);
+    };
+
+    if (!reflow) {
+      for (const line of rawLines) {
+        const trimmed = line.trim();
+        if (trimmed) {
+          paragraphs.push({ text: trimmed, isTitle: isCenteredTitle(trimmed), isSpecial: isHeadingOrSpecial(trimmed) });
+        }
+      }
+    } else {
+      for (let i = 0; i < rawLines.length; i++) {
+        const line = rawLines[i].trim();
+        if (!line) {
+          if (currentPara) {
+            paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
+            currentPara = "";
+          }
+          continue;
+        }
+
+        if (isHeadingOrSpecial(line)) {
+          if (currentPara) {
+            paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
+            currentPara = "";
+          }
+          paragraphs.push({ text: line, isTitle: isCenteredTitle(line), isSpecial: true });
+        } else {
+          if (!currentPara) {
+            currentPara = line;
+          } else {
+            const endsWithPunctuation = /[.:;!?]$/.test(currentPara);
+            if (endsWithPunctuation) {
+              paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
+              currentPara = line;
+            } else {
+              currentPara += " " + line;
+            }
+          }
+        }
+      }
+      if (currentPara) {
+        paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
+      }
+    }
+
+    const html = paragraphs.map(p => {
+      const isTitle = p.isTitle;
+      const isSpec = p.isSpecial;
+      const alignStyle = isTitle ? "text-align: center; font-weight: bold; text-indent: 0;" : "text-align: justify;";
+      const indentStyle = (!isTitle && !isSpec && indent) ? "text-indent: 1.27cm;" : "text-indent: 0;";
+      const weightStyle = isSpec && !isTitle ? "font-weight: bold;" : "";
+      return `<p class="${isTitle ? 'doc-title-line' : (isSpec ? 'doc-special-line' : 'doc-para')}" style="font-family: 'Times New Roman', Times, 'Liberation Serif', serif; font-size: ${fontSize}; line-height: 1.5; color: #111827; margin: 0 0 6pt 0; ${alignStyle} ${indentStyle} ${weightStyle}">${this.escapeHtml(p.text)}</p>`;
+    }).join("");
+
+    return html;
+  }
+
+  /**
+   * Hiển thị nội dung lên trang giấy Word A4
+   */
+  renderWordDocumentSheet() {
+    if (!this.wordSheetPage) return;
+    const textToRender = this.currentExtractedRawText || (this.pdfTextResultTextarea ? this.pdfTextResultTextarea.value : "");
+    const fontSize = this.wordFontSize || "13pt";
+    const formattedHtml = this.formatTextToWordHtml(textToRender, this.wordReflowEnabled, this.wordIndentEnabled, fontSize);
+    this.wordSheetPage.innerHTML = formattedHtml;
+    this.wordSheetPage.style.fontSize = fontSize;
+  }
+
+  /**
+   * Sao chép nội dung văn bản chuẩn Word (Times New Roman 13pt) vào Clipboard
+   */
+  async copyExtractedWordText() {
+    let plainText = "";
+    let htmlParagraphs = "";
+
+    if (this.wordCurrentView === "raw" && this.pdfTextResultTextarea) {
+      plainText = this.pdfTextResultTextarea.value;
+      htmlParagraphs = this.formatTextToWordHtml(plainText, false, this.wordIndentEnabled, this.wordFontSize || "13pt");
+    } else if (this.wordSheetPage) {
+      plainText = this.wordSheetPage.innerText || this.wordSheetPage.textContent;
+      htmlParagraphs = this.wordSheetPage.innerHTML;
+    }
+
+    if (!plainText.trim()) {
+      this.showToast("Không có nội dung để sao chép!", "warning");
+      return;
+    }
+
+    const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body, p, div, span {
+  font-family: 'Times New Roman', Times, 'Liberation Serif', serif !important;
+  font-size: ${this.wordFontSize || '13pt'} !important;
+  line-height: 1.5 !important;
+  color: #000000 !important;
+}
+p {
+  font-family: 'Times New Roman', Times, 'Liberation Serif', serif !important;
+  font-size: ${this.wordFontSize || '13pt'} !important;
+  line-height: 1.5 !important;
+  margin: 0 0 6pt 0 !important;
+  text-align: justify !important;
+  ${this.wordIndentEnabled ? 'text-indent: 1.27cm !important;' : ''}
+}
+.doc-title-line {
+  font-weight: bold !important;
+  text-align: center !important;
+  text-indent: 0 !important;
+}
+.doc-special-line {
+  font-weight: bold !important;
+  text-indent: 0 !important;
+}
+</style>
+</head>
+<body>
+${htmlParagraphs}
+</body>
+</html>`;
+
+    let copiedRich = false;
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        const htmlBlob = new Blob([fullHtml], { type: "text/html" });
+        const textBlob = new Blob([plainText], { type: "text/plain" });
+        const item = new ClipboardItem({
+          "text/html": htmlBlob,
+          "text/plain": textBlob
+        });
+        await navigator.clipboard.write([item]);
+        copiedRich = true;
+      }
+    } catch (err) {
+      console.warn("ClipboardItem rich text copy failed, falling back to plain text:", err);
+    }
+
+    if (!copiedRich) {
+      await navigator.clipboard.writeText(plainText);
+    }
+
+    this.showToast("Đã sao chép văn bản chuẩn Word (Times New Roman 13pt)! Dán (Ctrl+V) vào Word ngay.", "success");
+  }
+
+  /**
+   * Tải tệp Microsoft Word (.doc) với định dạng chuẩn Times New Roman A4
+   */
+  downloadExtractedWordDoc() {
+    let htmlParagraphs = "";
+    if (this.wordCurrentView === "raw" && this.pdfTextResultTextarea) {
+      htmlParagraphs = this.formatTextToWordHtml(this.pdfTextResultTextarea.value, false, this.wordIndentEnabled, this.wordFontSize || "13pt");
+    } else if (this.wordSheetPage) {
+      htmlParagraphs = this.wordSheetPage.innerHTML;
+    }
+
+    if (!htmlParagraphs || !htmlParagraphs.trim()) {
+      this.showToast("Không có nội dung để xuất file Word!", "warning");
+      return;
+    }
+
+    const docName = (this.currentPdfFileName || "Van_Ban_PDF").replace(/\.[^/.]+$/, "");
+    const fileName = `${docName}_chuan_Word.doc`;
+
+    const wordContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>${docName}</title>
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page Section1 {
+  size: 210mm 297mm; /* Chuẩn khổ giấy A4 */
+  margin: 20mm 20mm 20mm 25mm; /* Chuẩn lề văn thư Nghị định 30/2020 */
+  mso-header-margin: 36.0pt;
+  mso-footer-margin: 36.0pt;
+  mso-paper-source: 0;
+}
+div.Section1 { page: Section1; }
+body {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: ${this.wordFontSize || '13.0pt'};
+  line-height: 1.5;
+  color: #000000;
+}
+p {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: ${this.wordFontSize || '13.0pt'};
+  line-height: 1.5;
+  text-align: justify;
+  margin: 0 0 6.0pt 0;
+  ${this.wordIndentEnabled ? 'text-indent: 1.27cm;' : ''}
+}
+.doc-title-line {
+  font-weight: bold;
+  text-align: center;
+  text-indent: 0 !important;
+  margin-bottom: 6pt;
+}
+.doc-special-line {
+  font-weight: bold;
+  text-indent: 0 !important;
+  margin-bottom: 4pt;
+}
+</style>
+</head>
+<body>
+<div class="Section1">
+  ${htmlParagraphs}
+</div>
+</body>
+</html>`;
+
+    const blob = new Blob(['\ufeff' + wordContent], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.showToast(`Đã xuất tệp Word "${fileName}" chuẩn Times New Roman!`, "success");
   }
 
   /**
