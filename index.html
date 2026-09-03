@@ -744,9 +744,17 @@
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                     <span>📋 Sao chép HTML</span>
                   </button>
+                  <button type="button" class="btn-w2h-action" id="btnDownloadW2hImagesZip" title="Tải toàn bộ hình ảnh nhúng trong file Word về máy dạng file nén .ZIP">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>🖼️ Tải ảnh (.ZIP)</span>
+                  </button>
                   <button type="button" class="btn-w2h-action" id="btnDownloadHtml" title="Tải tệp HTML về máy">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                     <span>💾 Tải .html</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action" id="btnToggleFindReplace" title="Mở thanh Tìm kiếm & Thay thế nội dung">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span>🔍 Tìm & Thay</span>
                   </button>
                   <button type="button" class="btn-w2h-action" id="btnBeautifyHtml" title="Định dạng mã HTML thụt dòng đẹp mắt">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
@@ -764,6 +772,24 @@
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
                     <span id="txtFullscreenBtn">⛶ Phóng to</span>
                   </button>
+                </div>
+              </div>
+
+              <!-- Thanh Tìm kiếm & Thay thế (Find & Replace) -->
+              <div class="w2h-find-replace-bar hidden" id="w2hFindReplaceBar">
+                <div class="fr-inputs-wrap">
+                  <div class="fr-input-group">
+                    <span class="fr-lbl">🔍 Tìm:</span>
+                    <input type="text" id="w2hFindInput" placeholder="Từ / đoạn text cần tìm..." class="fr-input" />
+                  </div>
+                  <div class="fr-input-group">
+                    <span class="fr-lbl">✏️ Thay bằng:</span>
+                    <input type="text" id="w2hReplaceInput" placeholder="Đoạn text thay thế..." class="fr-input" />
+                  </div>
+                </div>
+                <div class="fr-actions">
+                  <button type="button" class="btn-fr-exec" id="btnExecFindReplace">Thay Thế Tất Cả</button>
+                  <button type="button" class="btn-fr-close" id="btnCloseFindReplace" title="Đóng thanh tìm kiếm">&times;</button>
                 </div>
               </div>
 
@@ -934,9 +960,11 @@
                       <label class="setting-lbl">✨ Bộ lọc ảnh scan:</label>
                       <select id="pdfImageFilter" class="w2h-select">
                         <option value="none" selected>Gốc (Không lọc)</option>
+                        <option value="medical_scan">🏥 Bản Scan y tế (Làm trắng sạch nền & nét mực)</option>
                         <option value="enhance">✨ Tự làm trắng nền & nét chữ</option>
                         <option value="bw">⚫⚪ Trắng đen tương phản cao (B&W)</option>
                         <option value="grayscale">🔘 Màu xám sạch (Grayscale)</option>
+                        <option value="invert">🌓 Đảo màu (Phim X-Quang / CT / Dark Mode)</option>
                       </select>
                     </div>
                     <div class="w2h-setting-group" id="groupPdfQuality">
@@ -997,9 +1025,17 @@
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                   <span>📦 TẢI TRỌN BỘ TRANG ĐÃ CHỌN (.ZIP)</span>
                 </button>
-                <button type="button" class="btn-pdf-batch-long-img" id="btnPdfMergeLongImage" title="Ghép tất cả các trang đã chọn thành 1 bức ảnh dài liên tục">
+                <button type="button" class="btn-pdf-batch-secondary w-full" id="btnPdfSaveToFolderDirect" title="Chọn thư mục trên máy tính và lưu trực tiếp từng ảnh không cần giải nén ZIP" style="margin-top: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 700;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  <span>💾 LƯU TRỰC TIẾP VÀO THƯ MỤC MÁY TÍNH</span>
+                </button>
+                <button type="button" class="btn-pdf-batch-long-img" id="btnPdfMergeLongImage" title="Ghép tất cả các trang đã chọn thành 1 bức ảnh dài liên tục (Infographic)">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
                   <span>🖼️ GHÉP THÀNH 1 ẢNH DÀI (LONG IMAGE)</span>
+                </button>
+                <button type="button" class="btn-pdf-batch-secondary w-full" id="btnPdfExtractAllText" title="Trích xuất toàn bộ văn bản (Text layer) từ các trang PDF đã chọn để copy nhanh" style="margin-top: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 700;">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>📄 TRÍCH XUẤT VĂN BẢN PDF (COPY CHỮ)</span>
                 </button>
                 <div class="pdf-batch-btn-row">
                   <button type="button" class="btn-pdf-batch-secondary" id="btnPdfRotateAll" title="Xoay toàn bộ các trang 90 độ">
@@ -1086,6 +1122,10 @@
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                   <span>Copy ảnh</span>
                 </button>
+                <button type="button" class="btn-lightbox-action" id="btnLightboxExtractText" title="Trích xuất toàn bộ văn bản của trang này">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <span>Copy chữ</span>
+                </button>
                 <button type="button" class="modal-close" id="btnClosePdfLightbox">&times;</button>
               </div>
             </div>
@@ -1095,6 +1135,33 @@
                 <img id="pdfLightboxImg" alt="Xem trước trang PDF" src="" />
               </div>
               <button type="button" class="btn-lightbox-nav next" id="btnLightboxNext" title="Trang kế tiếp">&#10095;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: Xem & Sao Chép Văn Bản Trích Xuất Từ PDF -->
+        <div class="modal-overlay hidden" id="modalPdfTextPreview">
+          <div class="modal-card" style="max-width: 720px;">
+            <div class="modal-header">
+              <div class="flex-row gap-8 align-center">
+                <span style="font-size: 1.2rem;">📄</span>
+                <h3 class="modal-title" id="pdfTextModalTitle">VĂN BẢN TRÍCH XUẤT TỪ PDF</h3>
+              </div>
+              <button type="button" class="modal-close" id="btnClosePdfTextModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="flex-between align-center" style="margin-bottom: 8px; font-size: 0.76rem; color: #94a3b8;">
+                <span id="pdfTextCounter">0 từ • 0 ký tự</span>
+                <span style="color: #38bdf8;">Được trích xuất trực tiếp 100% từ lớp text layer PDF</span>
+              </div>
+              <textarea id="pdfTextResultTextarea" class="w2h-code-textarea" style="height: 360px; font-family: 'Consolas', monospace; font-size: 0.85rem;" readonly></textarea>
+            </div>
+            <div class="modal-footer flex-between">
+              <button type="button" class="btn-modal-reset" id="btnDismissPdfTextModal">Đóng</button>
+              <div class="flex-row gap-8">
+                <button type="button" class="btn-duty-action" id="btnDownloadExtractedTxt" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); padding: 7px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">💾 Tải file .txt</button>
+                <button type="button" class="btn-duty-action" id="btnCopyExtractedText" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; cursor: pointer;">📋 Sao Chép Toàn Bộ</button>
+              </div>
             </div>
           </div>
         </div>

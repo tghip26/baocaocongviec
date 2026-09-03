@@ -168,15 +168,32 @@ class PdfToImageConverter {
         data[i + 1] = gray;
         data[i + 2] = gray;
       }
-    } else if (filterType === "bw") {
-      // High-contrast Black & White
-      const threshold = 160;
+    } else if (filterType === "medical_scan") {
+      // Bộ lọc Tài liệu Y Tế: Khử ố vàng giấy scan, làm trắng sạch nền 100%, nét mực đen đậm rõ nét
       for (let i = 0; i < len; i += 4) {
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        const val = gray >= threshold ? 255 : 0;
-        data[i] = val;
-        data[i + 1] = val;
-        data[i + 2] = val;
+        let gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        if (gray > 185) {
+          data[i] = 255;
+          data[i + 1] = 255;
+          data[i + 2] = 255;
+        } else if (gray < 90) {
+          data[i] = 0;
+          data[i + 1] = 0;
+          data[i + 2] = 0;
+        } else {
+          const norm = (gray - 90) / 95;
+          const v = Math.round(Math.pow(norm, 1.35) * 255);
+          data[i] = v;
+          data[i + 1] = v;
+          data[i + 2] = v;
+        }
+      }
+    } else if (filterType === "invert") {
+      // Đảo màu phim X-Quang / CT / MRI / Dark Mode
+      for (let i = 0; i < len; i += 4) {
+        data[i] = 255 - data[i];
+        data[i + 1] = 255 - data[i + 1];
+        data[i + 2] = 255 - data[i + 2];
       }
     }
 
@@ -345,12 +362,86 @@ class PdfToImageConverter {
 
   /**
    * Ghép tất cả các trang đã chọn thành một bức ảnh dài dọc duy nhất
+  /**
+   * Trích xuất nội dung văn bản (Text Layer) từ một trang PDF
    */
-  async mergeSelectedPagesToLongImage(onProgress = null) {
+  async extractPageText(pageNum) {
+    if (!this.pdfDoc) throw new Error("Chưa có tài liệu PDF nào được nạp.");
+    if (pageNum < 1 || pageNum > this.totalPages) throw new Error(`Trang ${pageNum} không tồn tại.`);
+
+    const page = await this.pdfDoc.getPage(pageNum);
+    const textContent = await page.getTextContent();
+    let lastY, text = "";
+
+    for (const item of textContent.items) {
+      if (lastY !== undefined && Math.abs(item.transform[5] - lastY) > 6) {
+        text += "\n";
+      } else if (text.length > 0 && !text.endsWith("\n") && !text.endsWith(" ")) {
+        text += " ";
+      }
+      text += item.str;
+      lastY = item.transform[5];
+    }
+    return text.trim();
+  }
+
+  /**
+   * Trích xuất văn bản toàn bộ các trang đã chọn
+   */
+  async extractAllPagesText(onProgress = null) {
+    if (!this.pdfDoc) throw new Error("Chưa có tài liệu PDF nào được nạp.");
+    const pages = Array.from(this.selectedPages).sort((a, b) => a - b);
+    if (pages.length === 0) throw new Error("Vui lòng chọn ít nhất một trang.");
+
+    const results = [];
+    for (let i = 0; i < pages.length; i++) {
+      const p = pages[i];
+      if (onProgress) onProgress(i + 1, pages.length, `Đang đọc văn bản trang ${p}/${this.totalPages}...`);
+      const text = await this.extractPageText(p);
+      results.push(`=== [TRANG ${p} / ${this.totalPages}] ===\n${text}`);
+    }
+    return results.join("\n\n");
+  }
+
+  /**
+   * Lưu trực tiếp từng trang ảnh vào một thư mục trên máy tính qua File System Access API
+   */
+  async saveSelectedPagesToDirectory(dirHandle, onProgress = null) {
+    const pagesToExport = Array.from(this.selectedPages).sort((a, b) => a - b);
+    if (pagesToExport.length === 0) throw new Error("Chưa chọn trang nào để lưu.");
+
+    let savedCount = 0;
+    for (let i = 0; i < pagesToExport.length; i++) {
+      const p = pagesToExport[i];
+      if (onProgress) onProgress(i + 1, pagesToExport.length, `Đang ghi tệp ảnh trang ${p}...`);
+
+      let pageData = this.renderedPages.get(p);
+      if (!pageData || !pageData.blob) {
+        pageData = await this.renderPageToCanvas(p, this.options.scale, true);
+      }
+
+      const fileName = this.getPageFileName(p);
+      const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(pageData.blob);
+      await writable.close();
+      savedCount++;
+    }
+    return savedCount;
+  }
+
+  /**
+   * Ghép tất cả các trang đã chọn thành một bức ảnh dài dọc (Long Image / Infographic)
+   */
+  async mergeSelectedPagesToLongImage(customOptions = {}, onProgress = null) {
     const pagesToExport = Array.from(this.selectedPages).sort((a, b) => a - b);
     if (pagesToExport.length === 0) {
       throw new Error("Vui lòng chọn ít nhất một trang để ghép ảnh dài.");
     }
+
+    const spacing = customOptions.spacing !== undefined ? customOptions.spacing : 12; // px giữa các trang
+    const showPageBadge = customOptions.showPageBadge !== false; // hiển thị số trang
+    const maxConstraintWidth = customOptions.maxWidth || 0; // 0 = giữ nguyên
 
     let maxWidth = 0;
     let totalHeight = 0;
@@ -365,36 +456,68 @@ class PdfToImageConverter {
       if (!pageData || !pageData.canvas) {
         pageData = await this.renderPageToCanvas(p, this.options.scale, true);
       }
-      renderedList.push(pageData);
+      renderedList.push({ ...pageData, pageNum: p });
       maxWidth = Math.max(maxWidth, pageData.canvas.width);
       totalHeight += pageData.canvas.height;
     }
+
+    // Thêm khoảng cách giữa các trang
+    totalHeight += (renderedList.length - 1) * spacing;
 
     const mergedCanvas = document.createElement("canvas");
     mergedCanvas.width = maxWidth;
     mergedCanvas.height = totalHeight;
     const ctx = mergedCanvas.getContext("2d", { alpha: false });
 
-    // Nền trắng
+    // Nền trắng tinh khiết
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, maxWidth, totalHeight);
 
     let currentY = 0;
-    for (const pData of renderedList) {
+    for (let i = 0; i < renderedList.length; i++) {
+      const pData = renderedList[i];
       const xOffset = Math.round((maxWidth - pData.canvas.width) / 2);
       ctx.drawImage(pData.canvas, xOffset, currentY);
-      currentY += pData.canvas.height;
+
+      // Vẽ vạch ngăn cách & số trang nếu có khoảng cách
+      if (spacing > 0 && i < renderedList.length - 1) {
+        ctx.fillStyle = "#e2e8f0";
+        ctx.fillRect(0, currentY + pData.canvas.height, maxWidth, spacing);
+      }
+
+      // Nhãn số trang tinh tế ở góc
+      if (showPageBadge) {
+        ctx.fillStyle = "rgba(15, 23, 42, 0.65)";
+        ctx.fillRect(xOffset + 12, currentY + 12, 90, 26);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText(`Trang ${pData.pageNum}`, xOffset + 24, currentY + 29);
+      }
+
+      currentY += pData.canvas.height + spacing;
+    }
+
+    // Scale canvas nếu có ràng buộc chiều rộng
+    let outputCanvas = mergedCanvas;
+    if (maxConstraintWidth > 0 && maxWidth > maxConstraintWidth) {
+      const scaleDown = maxConstraintWidth / maxWidth;
+      const scaledCanvas = document.createElement("canvas");
+      scaledCanvas.width = maxConstraintWidth;
+      scaledCanvas.height = Math.round(totalHeight * scaleDown);
+      const sCtx = scaledCanvas.getContext("2d", { alpha: false });
+      sCtx.drawImage(mergedCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+      outputCanvas = scaledCanvas;
     }
 
     const ext = this.getFileExtension();
     const mime = this.options.format;
-    const blob = await new Promise(r => mergedCanvas.toBlob(r, mime, this.options.quality));
+    const blob = await new Promise(r => outputCanvas.toBlob(r, mime, this.options.quality));
     const mergedFileName = `${this.pdfFileName}_Ghep_dai_${pagesToExport.length}_trang.${ext}`;
 
     this.triggerDownload(blob, mergedFileName);
     return {
-      width: maxWidth,
-      height: totalHeight,
+      width: outputCanvas.width,
+      height: outputCanvas.height,
       fileName: mergedFileName
     };
   }

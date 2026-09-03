@@ -68,7 +68,8 @@ class WordToHtmlConverter {
       throw new Error(`Tệp ${fileName} không phải là tài liệu Word (.docx) hợp lệ.`);
     }
 
-    // 1. Trích xuất toàn bộ Media Images trong file zip sang Base64
+    // 1. Trích xuất toàn bộ Media Images trong file zip sang Base64 & lưu danh sách ảnh gốc
+    this.extractedImagesList = [];
     const imageBase64Map = {};
     const extractedImageNames = [];
     const mediaFolder = zip.folder("word/media");
@@ -80,12 +81,20 @@ class WordToHtmlConverter {
           const ext = fname.split(".").pop().toLowerCase();
           const mime = (ext === "jpg" || ext === "jpeg") ? "image/jpeg" : (ext === "gif" ? "image/gif" : (ext === "webp" ? "image/webp" : "image/png"));
           const b64Data = await file.async("base64");
+          const blob = await file.async("blob");
           const dataUrl = `data:${mime};base64,${b64Data}`;
           
           imageBase64Map[fname] = dataUrl;
           imageBase64Map["media/" + fname] = dataUrl;
           imageBase64Map["word/media/" + fname] = dataUrl;
           extractedImageNames.push(fname);
+          this.extractedImagesList.push({
+            name: fname,
+            blob: blob,
+            dataUrl: dataUrl,
+            size: blob.size,
+            ext: ext
+          });
           this.stats.imageCount++;
         }
       }
@@ -309,6 +318,41 @@ class WordToHtmlConverter {
         vertAlign = vaNode.getAttribute("w:val");
       }
 
+      // Highlight (Màu dạ quang / Bút nhớ dòng)
+      let highlight = null;
+      const hlNode = rPr.getElementsByTagName("w:highlight")[0];
+      if (hlNode) {
+        const hlVal = hlNode.getAttribute("w:val");
+        if (hlVal && hlVal !== "none") {
+          const hlColorMap = {
+            yellow: "#fef08a",
+            green: "#bbf7d0",
+            cyan: "#a5f3fc",
+            magenta: "#fbcfe8",
+            blue: "#bae6fd",
+            red: "#fecaca",
+            darkBlue: "#1e40af",
+            darkCyan: "#0e7490",
+            darkGreen: "#15803d",
+            darkMagenta: "#86198f",
+            darkRed: "#991b1b",
+            darkYellow: "#a16207",
+            darkGray: "#64748b",
+            lightGray: "#e2e8f0"
+          };
+          highlight = hlColorMap[hlVal] || hlVal;
+        }
+      }
+
+      // Shading / Background color của đoạn text
+      const rShd = rPr.getElementsByTagName("w:shd")[0];
+      if (rShd && !highlight) {
+        const fill = rShd.getAttribute("w:fill");
+        if (fill && fill !== "auto" && fill !== "none") {
+          highlight = "#" + fill;
+        }
+      }
+
       // Color
       const colNode = rPr.getElementsByTagName("w:color")[0];
       if (colNode) {
@@ -326,6 +370,7 @@ class WordToHtmlConverter {
       underline,
       strike,
       vertAlign,
+      highlight,
       color
     };
   }
@@ -356,10 +401,10 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Phân tích 100% cấu trúc bảng biểu (w:tbl) và từng ô dữ liệu
+   * Phân tích 100% cấu trúc bảng biểu (w:tbl), hỗ trợ Colspan và Rowspan (w:vMerge)
    */
   parseTable(tblNode, relsMap, imageBase64Map) {
-    const rows = [];
+    const rawRows = [];
     const trNodes = tblNode.getElementsByTagName("w:tr");
 
     for (let r = 0; r < trNodes.length; r++) {
@@ -382,6 +427,14 @@ class WordToHtmlConverter {
           colSpan = parseInt(gridSpan.getAttribute("w:val") || "1", 10);
         }
 
+        // vMerge (Rowspan)
+        let vMerge = null;
+        const vMergeNode = tc.getElementsByTagName("w:vMerge")[0];
+        if (vMergeNode) {
+          const vVal = vMergeNode.getAttribute("w:val");
+          vMerge = (vVal === "restart") ? "restart" : "continue";
+        }
+
         // Đọc màu nền ô (shading)
         let bgColor = "";
         const shd = tc.getElementsByTagName("w:shd")[0];
@@ -392,18 +445,53 @@ class WordToHtmlConverter {
           }
         }
 
+        // Căn lề dọc ô
+        let vAlign = "middle";
+        const va = tc.getElementsByTagName("w:vAlign")[0];
+        if (va) {
+          const vVal = va.getAttribute("w:val");
+          if (vVal === "top") vAlign = "top";
+          else if (vVal === "bottom") vAlign = "bottom";
+          else if (vVal === "center") vAlign = "middle";
+        }
+
         row.push({
           paragraphs,
           colSpan,
-          bgColor
+          rowSpan: 1,
+          vMerge,
+          isContinuation: false,
+          bgColor,
+          vAlign
         });
       }
-      if (row.length > 0) rows.push(row);
+      if (row.length > 0) rawRows.push(row);
+    }
+
+    // Pass 2: Tính toán chính xác rowSpan cho các ô vMerge dọc
+    for (let c = 0; c < 40; c++) {
+      let masterCell = null;
+      for (let r = 0; r < rawRows.length; r++) {
+        if (c < rawRows[r].length) {
+          const cell = rawRows[r][c];
+          if (cell.vMerge === "restart") {
+            masterCell = cell;
+            masterCell.rowSpan = 1;
+          } else if (cell.vMerge === "continue") {
+            if (masterCell) {
+              masterCell.rowSpan++;
+              cell.isContinuation = true;
+            }
+          } else {
+            masterCell = null;
+          }
+        }
+      }
     }
 
     return {
       type: "table",
-      rows
+      rows: rawRows
     };
   }
 
@@ -422,7 +510,7 @@ class WordToHtmlConverter {
         // 1. Render văn bản
         if (el.runs && el.runs.length > 0) {
           const align = this.options.preserveOriginalAlignment ? (el.align || "justify") : this.options.textAlign;
-          const pStyle = `text-align: ${align}; margin-bottom: 10px; line-height: 1.6;`;
+          const pStyle = `text-align: ${align}; margin-bottom: ${this.options.paragraphMarginBottom || '10px'}; line-height: ${this.options.lineHeight || '1.6'};`;
           
           let innerHtml = "";
           for (const run of el.runs) {
@@ -434,6 +522,10 @@ class WordToHtmlConverter {
             if (run.vertAlign === "superscript") chunk = `<sup>${chunk}</sup>`;
             if (run.vertAlign === "subscript") chunk = `<sub>${chunk}</sub>`;
             
+            if (run.highlight) {
+              chunk = `<mark style="background-color: ${run.highlight}; color: inherit; padding: 1px 4px; border-radius: 2px;">${chunk}</mark>`;
+            }
+
             if (run.color) {
               chunk = `<span style="color: ${run.color};">${chunk}</span>`;
             }
@@ -472,7 +564,7 @@ class WordToHtmlConverter {
   }
 
   /**
-   * Render Bảng dữ liệu bảo toàn 100% ô & style
+   * Render Bảng dữ liệu bảo toàn 100% ô & style (kèm Rowspan và Colspan chuẩn web)
    */
   renderTable(tableObj) {
     const rowsHtml = [];
@@ -484,9 +576,14 @@ class WordToHtmlConverter {
       const isHeaderRow = (rIdx === 0);
 
       row.forEach(cell => {
+        // Bỏ qua ô là phần tiếp nối của ô gộp dọc phía trên
+        if (cell.isContinuation) return;
+
         const tag = isHeaderRow ? "th" : "td";
         const spanCol = cell.colSpan > 1 ? ` colspan="${cell.colSpan}"` : "";
+        const spanRow = cell.rowSpan > 1 ? ` rowspan="${cell.rowSpan}"` : "";
         const bgStyle = cell.bgColor ? `background-color: ${cell.bgColor};` : (isHeaderRow ? "background-color: #f1f5f9;" : "");
+        const vAlignStyle = `vertical-align: ${cell.vAlign || 'middle'};`;
 
         let cellInner = "";
         if (cell.paragraphs && cell.paragraphs.length > 0) {
@@ -497,6 +594,7 @@ class WordToHtmlConverter {
               if (r.bold) chunk = `<strong>${chunk}</strong>`;
               if (r.italic) chunk = `<em>${chunk}</em>`;
               if (r.underline) chunk = `<u>${chunk}</u>`;
+              if (r.highlight) chunk = `<mark style="background-color: ${r.highlight}; color: inherit; padding: 1px 4px; border-radius: 2px;">${chunk}</mark>`;
               if (r.color) chunk = `<span style="color: ${r.color};">${chunk}</span>`;
               pText += chunk;
             });
@@ -504,10 +602,12 @@ class WordToHtmlConverter {
           }).join("<br/>");
         }
 
-        cellsHtml.push(`\t\t\t<${tag}${spanCol} style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; vertical-align: middle; ${bgStyle}"><span style="font-family: ${font}; font-size: ${size}; color: #000000;">${cellInner || "&nbsp;"}</span></${tag}>`);
+        cellsHtml.push(`\t\t\t<${tag}${spanCol}${spanRow} style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; ${vAlignStyle} ${bgStyle}"><span style="font-family: ${font}; font-size: ${size}; color: #000000;">${cellInner || "&nbsp;"}</span></${tag}>`);
       });
 
-      rowsHtml.push(`\t\t<tr>\n${cellsHtml.join("\n")}\n\t\t</tr>`);
+      if (cellsHtml.length > 0) {
+        rowsHtml.push(`\t\t<tr>\n${cellsHtml.join("\n")}\n\t\t</tr>`);
+      }
     });
 
     return `<div style="overflow-x: auto; margin: 15px 0px;">
@@ -600,6 +700,86 @@ ${rowsHtml.join("\n")}
     };
 
     return this.stats;
+  }
+
+  /**
+   * Dọn dẹp sạch toàn bộ các thẻ rác, thuộc tính mso và style thừa sinh bởi MS Word
+   */
+  cleanGarbageTags(html) {
+    if (!html) return "";
+    let cleaned = html;
+    // 1. Xóa chú thích điều kiện XML/MSO
+    cleaned = cleaned.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, "");
+    cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, "");
+    // 2. Xóa các thuộc tính CSS mso-*
+    cleaned = cleaned.replace(/mso-[^:;"]+:[^;"]*;?/gi, "");
+    // 3. Xóa các thẻ namespace đặc thù của Microsoft Office
+    cleaned = cleaned.replace(/<\/?(o|v|w|x|p):[^>]*>/gi, "");
+    // 4. Xóa các thẻ span rỗng hoặc chỉ chứa khoảng trắng
+    cleaned = cleaned.replace(/<span[^>]*>\s*<\/span>/gi, "");
+    // 5. Xóa các khối div rỗng thừa
+    cleaned = cleaned.replace(/<div[^>]*>(\s|&nbsp;|<br\/?>)*<\/div>/gi, "");
+    // 6. Rút gọn nhiều ký tự &nbsp; liên tiếp thành khoảng cách chuẩn
+    cleaned = cleaned.replace(/(&nbsp;){3,}/g, " &nbsp; ");
+    // 7. Làm sạch các dấu chấm phẩy thừa trong chuỗi style
+    cleaned = cleaned.replace(/style="([^"]*)"/gi, (match, styleVal) => {
+      const cleanStyle = styleVal
+        .split(";")
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && !s.toLowerCase().startsWith("mso-"))
+        .join("; ");
+      return cleanStyle ? `style="${cleanStyle};"` : "";
+    });
+    return cleaned.trim();
+  }
+
+  /**
+   * Tìm kiếm và thay thế nội dung trong văn bản HTML
+   */
+  findAndReplace(html, findText, replaceText, matchCase = false) {
+    if (!html || !findText) return html;
+    const flags = matchCase ? "g" : "gi";
+    const escaped = findText.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return html.replace(new RegExp(escaped, flags), replaceText);
+  }
+
+  /**
+   * Xuất toàn bộ ảnh trích xuất từ tệp Word thành file nén ZIP
+   */
+  async exportAllExtractedImagesAsZip(baseFileName = "Word_Document") {
+    if (!window.JSZip) {
+      throw new Error("Thư viện JSZip chưa sẵn sàng. Vui lòng tải lại trang.");
+    }
+    if (!this.extractedImagesList || this.extractedImagesList.length === 0) {
+      throw new Error("Tài liệu Word này không chứa hình ảnh đính kèm nào.");
+    }
+
+    const zip = new JSZip();
+    const cleanDocName = (baseFileName || "Word_Document").replace(/\.[^/.]+$/, "");
+    const folder = zip.folder(`${cleanDocName}_Images`);
+
+    this.extractedImagesList.forEach((img, idx) => {
+      const padNum = String(idx + 1).padStart(2, "0");
+      const name = img.name || `Hinh_anh_${padNum}.${img.ext || 'png'}`;
+      folder.file(name, img.blob);
+    });
+
+    const zipBlob = await zip.generateAsync({
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+
+    const zipName = `${cleanDocName}_${this.extractedImagesList.length}_Hinh_Anh.zip`;
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = zipName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return zipName;
   }
 
   escapeHtml(text) {
