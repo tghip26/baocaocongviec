@@ -100,6 +100,13 @@
           <span class="nav-text">Xuất Ảnh PDF</span>
         </a>
 
+        <a href="#word-page-remover" class="nav-item" data-tool="word-page-remover" data-tooltip="Xóa Trang Word">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </span>
+          <span class="nav-text">Xóa Trang Word</span>
+        </a>
+
         <div class="nav-section-title">CSDL & BẢO HIỂM Y TẾ</div>
         <a href="#bhyt-xml" class="nav-item" data-tool="bhyt-xml" data-tooltip="Kiểm Tra XML BHYT (QĐ 130)">
           <span class="nav-icon">
@@ -541,6 +548,10 @@
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/></svg>
                 <span>Xuất Ảnh PDF</span>
               </a>
+              <a href="#word-page-remover" class="cms-switch-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                <span>Xóa Trang Word</span>
+              </a>
             </div>
           </div>
 
@@ -880,6 +891,10 @@
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/></svg>
                 <span>Xuất Ảnh PDF</span>
               </a>
+              <a href="#word-page-remover" class="cms-switch-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                <span>Xóa Trang Word</span>
+              </a>
             </div>
           </div>
 
@@ -1109,6 +1124,172 @@
 
             </div>
 
+          </div>
+        </section>
+
+        <!-- VIEW: XÓA TRANG CỦA TỆP WORD (.DOCX) -->
+        <section class="word-page-remover-view hidden" id="wordPageRemoverView">
+          <!-- Workspace Header Navigation & Tool Switcher in 1 Compact Row -->
+          <div class="workspace-top-bar">
+            <div class="workspace-top-left">
+              <button type="button" class="btn-back" id="btnBackToHubFromWpr" title="Quay về danh mục công cụ">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Quay lại</span>
+              </button>
+              <div class="workspace-heading">
+                <h1 class="workspace-title">Xóa Trang Tệp Word (.docx)</h1>
+                <span class="tool-badge badge-blue">📄 Xóa Trang Trắng & Tùy Chọn • Bảo Toàn 100% Định Dạng</span>
+              </div>
+            </div>
+
+            <!-- Quick Hub Category Switcher -->
+            <div class="web-cms-switcher-bar">
+              <a href="#word-to-html" class="cms-switch-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span>Chuyển Word &rarr; HTML</span>
+              </a>
+              <a href="#pdf-to-image" class="cms-switch-link">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="10" cy="13" r="2"/></svg>
+                <span>Xuất Ảnh PDF</span>
+              </a>
+              <a href="#word-page-remover" class="cms-switch-link active">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                <span>Xóa Trang Word</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Main Layout Grid -->
+          <div class="wpr-layout-grid" id="wprLayoutGrid">
+            <!-- LEFT PANEL: Upload & Action Controls -->
+            <div class="wpr-sidebar-panel" id="wprSidebarPanel">
+              
+              <!-- 1. Upload Card -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">📂</span>
+                  <h3>1. Tệp Word (.docx)</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <div class="w2h-dropzone w2h-dropzone-word" id="wprDropzone">
+                    <input type="file" id="wprFilePicker" accept=".docx" class="hidden-input" />
+                    <div class="dropzone-visual-circle">
+                      <div class="dropzone-icon-glow"></div>
+                      <div class="dropzone-svg-icon">
+                        <svg viewBox="0 0 48 48" width="38" height="38" fill="none">
+                          <path d="M10 6C10 4.89543 10.8954 4 12 4H30L40 14V42C40 43.1046 39.1046 44 38 44H12C10.8954 44 10 43.1046 10 42V6Z" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+                          <path d="M30 4V14H40" stroke="#60a5fa" stroke-width="2"/>
+                          <path d="M16 23L19.5 35L24 25L28.5 35L32 23" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <span class="dropzone-floating-badge">.DOCX</span>
+                    </div>
+                    <div class="dropzone-content-wrap">
+                      <div class="dropzone-title">Kéo & thả file Word vào đây</div>
+                      <div class="dropzone-sub">
+                        hoặc <span class="dropzone-browse-btn"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Duyệt file từ máy tính</span>
+                      </div>
+                      <div class="dropzone-hint">Hỗ trợ Microsoft Word (.docx) &bull; Xử lý 100% Offline</div>
+                    </div>
+                  </div>
+
+                  <!-- Active File Info -->
+                  <div class="w2h-file-active hidden" id="wprFileActive">
+                    <div class="file-icon-badge">DOCX</div>
+                    <div class="file-meta-wrap">
+                      <span class="file-active-name" id="wprFileName">Tai_lieu.docx</span>
+                      <div class="wpr-file-tags">
+                        <span class="wpr-file-tag" id="wprFileSize">0 KB</span>
+                        <span class="wpr-file-tag tag-blue" id="wprPageCount">0 trang</span>
+                        <span class="wpr-file-tag tag-amber hidden" id="wprBlankCount">0 trang trắng</span>
+                      </div>
+                    </div>
+                    <button type="button" class="btn-clear-w2h-file" id="btnClearWprFile" title="Đổi file khác">&times;</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Thao Tác Xóa Nhanh -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">⚡</span>
+                  <h3>2. Thao Tác Xóa Nhanh</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <button type="button" class="btn-wpr-action-amber w-full" id="btnWprDeleteBlankPages" title="Tự động phát hiện và đánh dấu xóa toàn bộ các trang trắng trống rỗng">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+                    <span>⚡ XÓA SẠCH TRANG TRẮNG THỪA</span>
+                  </button>
+
+                  <div class="wpr-btn-grid-2" style="margin-top: 8px;">
+                    <button type="button" class="btn-wpr-tool-secondary" id="btnWprDeleteFirstPage" title="Xóa trang bìa (Trang 1)">
+                      <span>📄 Xóa Trang 1 (Bìa)</span>
+                    </button>
+                    <button type="button" class="btn-wpr-tool-secondary" id="btnWprDeleteLastPage" title="Xóa trang cuối cùng của tài liệu">
+                      <span>📄 Xóa trang cuối</span>
+                    </button>
+                  </div>
+
+                  <!-- Xóa theo dải trang tùy chọn -->
+                  <div class="wpr-range-box" style="margin-top: 10px;">
+                    <label class="setting-lbl">🎯 Xóa theo dải trang (ví dụ: 2, 4-6):</label>
+                    <div class="wpr-range-input-row">
+                      <input type="text" id="wprRangeInput" class="w2h-text-input" placeholder="Ví dụ: 2, 4-5, 8" />
+                      <button type="button" class="btn-wpr-apply-range" id="btnWprApplyRange">Áp dụng</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Xuất Tệp Word Mới -->
+              <div class="w2h-card">
+                <div class="w2h-card-header">
+                  <span class="card-icon">💾</span>
+                  <h3>3. Xuất Tệp Đã Xử Lý</h3>
+                </div>
+                <div class="w2h-card-body">
+                  <button type="button" class="btn-wpr-download-primary w-full" id="btnWprDownloadDocx" title="Tạo và tải tệp Word .docx đã loại bỏ các trang được chọn">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>💾 TẢI FILE WORD ĐÃ XÓA TRANG (.DOCX)</span>
+                  </button>
+
+                  <button type="button" class="btn-wpr-reset-btn w-full" id="btnWprResetAll" title="Bỏ chọn tất cả các trang bị đánh dấu xóa">
+                    <span>🔄 Khôi phục ban đầu (Bỏ chọn hết)</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- RIGHT PANEL: Visual Pages Grid -->
+            <div class="wpr-main-panel" id="wprMainPanel">
+              <div class="w2h-output-toolbar">
+                <div class="pdf-stats-row">
+                  <span class="stats-icon">📊</span>
+                  <span class="stats-title" id="wprStatsSummary">Chưa có tệp Word nào được nạp</span>
+                </div>
+                <div class="w2h-action-btns">
+                  <button type="button" class="btn-w2h-action" id="btnWprSelectAll" title="Đánh dấu chọn xóa tất cả trang">
+                    <span>Chọn tất cả</span>
+                  </button>
+                  <button type="button" class="btn-w2h-action" id="btnWprDeselectAll" title="Bỏ chọn tất cả trang">
+                    <span>Bỏ chọn</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Empty State -->
+              <div class="pdf-empty-state" id="wprEmptyState">
+                <div class="empty-icon">📑</div>
+                <h3>Chưa có tài liệu Word nào được tải lên</h3>
+                <p>Hãy kéo & thả file Word (.docx) vào khung bên trái để xem trực quan từng trang, tự động phát hiện trang trắng và xóa trang theo ý muốn.</p>
+              </div>
+
+              <!-- Visual Page Cards Grid -->
+              <div class="wpr-page-grid hidden" id="wprPageGrid">
+                <!-- Injected dynamically by JS -->
+              </div>
+            </div>
           </div>
         </section>
 
@@ -2609,6 +2790,7 @@
   <script defer src="js/tool-duty-roster.js?v=3.1.0"></script>
   <script defer src="js/tool-bhyt-xml.js?v=3.1.0"></script>
   <script defer src="js/tool-word-to-html.js?v=3.1.0"></script>
+  <script defer src="js/tool-word-page-remover.js?v=3.1.0"></script>
   <script defer src="js/tool-pdf-to-image.js?v=3.1.0"></script>
   <script defer src="js/tool-giamdinh.js?v=3.1.0"></script>
   <script defer src="js/tool-vgca-doichieu.js?v=3.1.0"></script>

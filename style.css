@@ -14488,6 +14488,157 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
 }
 
+/* ============================================================
+   WORD PAGE REMOVER TOOL STYLES
+   Công cụ Xóa Trang File Word (.docx)
+   ============================================================ */
+.word-page-remover-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  contain: layout style;
+}
+.wpr-layout-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  padding: 16px 20px 20px;
+  flex: 1;
+  min-height: 0;
+  align-items: start;
+}
+@media (max-width: 900px) { .wpr-layout-grid { grid-template-columns: 1fr; } }
+.wpr-sidebar-panel { display: flex; flex-direction: column; gap: 12px; }
+.wpr-file-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.wpr-file-tag {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px;
+  background: rgba(100,116,139,.18); border: 1px solid rgba(100,116,139,.3);
+  border-radius: 10px; font-size: .74rem; color: #94a3b8; font-weight: 500;
+}
+.wpr-file-tag.tag-blue { background: rgba(59,130,246,.15); border-color: rgba(59,130,246,.35); color: #60a5fa; }
+.wpr-file-tag.tag-amber { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.35); color: #fbbf24; }
+.btn-wpr-action-amber {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px 16px;
+  background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(217,119,6,.22));
+  border: 1px solid rgba(245,158,11,.45); border-radius: 8px;
+  color: #fbbf24; font-size: .82rem; font-weight: 700; cursor: pointer;
+  transition: all .18s ease; letter-spacing: .02em;
+}
+.btn-wpr-action-amber:hover {
+  background: linear-gradient(135deg, rgba(245,158,11,.28), rgba(217,119,6,.32));
+  border-color: rgba(245,158,11,.7); color: #fde68a;
+  transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245,158,11,.25);
+}
+.wpr-btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-wpr-tool-secondary {
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px;
+  background: rgba(71,85,105,.18); border: 1px solid rgba(71,85,105,.35);
+  border-radius: 7px; color: #94a3b8; font-size: .77rem; font-weight: 600;
+  cursor: pointer; transition: all .16s; text-align: center;
+}
+.btn-wpr-tool-secondary:hover {
+  background: rgba(99,102,241,.15); border-color: rgba(99,102,241,.4);
+  color: #a5b4fc; transform: translateY(-1px);
+}
+.wpr-range-box { display: flex; flex-direction: column; gap: 6px; }
+.wpr-range-input-row { display: flex; gap: 8px; }
+.wpr-range-input-row .w2h-text-input { flex: 1; min-width: 0; }
+.btn-wpr-apply-range {
+  padding: 7px 14px;
+  background: linear-gradient(135deg, rgba(59,130,246,.2), rgba(37,99,235,.25));
+  border: 1px solid rgba(59,130,246,.4); border-radius: 7px;
+  color: #60a5fa; font-size: .8rem; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all .16s;
+}
+.btn-wpr-apply-range:hover { background: rgba(59,130,246,.35); color: #bfdbfe; }
+.btn-wpr-download-primary {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px 18px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  border: none; border-radius: 9px; color: #fff;
+  font-size: .83rem; font-weight: 700; cursor: pointer;
+  transition: all .2s ease; letter-spacing: .02em;
+  box-shadow: 0 4px 16px rgba(37,99,235,.35);
+}
+.btn-wpr-download-primary:hover {
+  background: linear-gradient(135deg, #1e40af, #1d4ed8);
+  transform: translateY(-2px); box-shadow: 0 6px 22px rgba(37,99,235,.5);
+}
+.btn-wpr-reset-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 9px 16px; margin-top: 8px;
+  background: rgba(71,85,105,.12); border: 1px solid rgba(71,85,105,.3);
+  border-radius: 7px; color: #64748b; font-size: .8rem; font-weight: 500; cursor: pointer;
+  transition: all .16s;
+}
+.btn-wpr-reset-btn:hover { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: #f87171; }
+.wpr-main-panel { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.wpr-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px; padding-bottom: 24px;
+}
+.wpr-page-card {
+  background: rgba(30,41,59,.55);
+  border: 1.5px solid rgba(71,85,105,.3);
+  border-radius: 12px; padding: 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  transition: all .2s ease; position: relative; overflow: hidden;
+  will-change: transform, border-color;
+}
+.wpr-page-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,.4), transparent);
+  opacity: 0; transition: opacity .2s;
+}
+.wpr-page-card:hover { border-color: rgba(99,102,241,.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.wpr-page-card:hover::before { opacity: 1; }
+.wpr-page-card.blank-page { background: rgba(71,85,105,.18); border-color: rgba(100,116,139,.25); border-style: dashed; }
+.wpr-page-card.marked-delete { background: rgba(127,29,29,.22); border-color: rgba(239,68,68,.5); border-style: solid; }
+.wpr-page-card.marked-delete::before { background: linear-gradient(90deg, transparent, rgba(239,68,68,.6), transparent); opacity: 1; }
+.wpr-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.wpr-card-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.wpr-page-num { font-size: .85rem; font-weight: 700; color: #e2e8f0; }
+.wpr-delete-label {
+  display: inline-flex; align-items: center; padding: 2px 7px;
+  background: rgba(239,68,68,.2); border: 1px solid rgba(239,68,68,.4);
+  border-radius: 8px; font-size: .7rem; font-weight: 600; color: #f87171;
+}
+.wpr-card-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.wpr-badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 8px; font-size: .68rem; font-weight: 600; }
+.wpr-badge.badge-blank { background: rgba(100,116,139,.2); color: #94a3b8; border: 1px solid rgba(100,116,139,.3); }
+.wpr-badge.badge-table { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+.wpr-badge.badge-image { background: rgba(168,85,247,.15); color: #c084fc; border: 1px solid rgba(168,85,247,.3); }
+.wpr-card-preview {
+  font-size: .75rem; color: #94a3b8; line-height: 1.45;
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
+  overflow: hidden; flex: 1;
+  font-family: 'Times New Roman', Times, serif; min-height: 60px;
+}
+.wpr-page-card.blank-page .wpr-card-preview { color: #475569; font-style: italic; }
+.wpr-card-meta { font-size: .71rem; color: #475569; font-weight: 500; }
+.wpr-card-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding-top: 6px; border-top: 1px solid rgba(71,85,105,.2);
+}
+.wpr-checkbox-label {
+  display: flex; align-items: center; gap: 5px; cursor: pointer;
+  font-size: .74rem; color: #94a3b8; user-select: none;
+}
+.wpr-checkbox-label input[type="checkbox"] { width: 14px; height: 14px; accent-color: #ef4444; cursor: pointer; }
+.btn-wpr-delete-one {
+  padding: 4px 9px;
+  background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3);
+  border-radius: 6px; color: #f87171; font-size: .72rem; font-weight: 600;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.btn-wpr-delete-one:hover { background: rgba(239,68,68,.22); border-color: rgba(239,68,68,.55); color: #fca5a5; }
+.w-full { width: 100%; }
+
 
 
 

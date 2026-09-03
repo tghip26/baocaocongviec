@@ -403,6 +403,31 @@ class AppController {
     this.w2hCodeContainer = document.getElementById("w2hCodeContainer");
     this.w2hHtmlRawTextarea = document.getElementById("w2hHtmlRawTextarea");
 
+    // Word Page Remover Elements
+    this.wordPageRemover = window.WordPageRemover ? new window.WordPageRemover() : null;
+    this.wordPageRemoverView = document.getElementById("wordPageRemoverView");
+    this.btnBackToHubFromWpr = document.getElementById("btnBackToHubFromWpr");
+    this.wprDropzone = document.getElementById("wprDropzone");
+    this.wprFilePicker = document.getElementById("wprFilePicker");
+    this.wprFileActive = document.getElementById("wprFileActive");
+    this.wprFileName = document.getElementById("wprFileName");
+    this.wprFileSize = document.getElementById("wprFileSize");
+    this.wprPageCount = document.getElementById("wprPageCount");
+    this.wprBlankCount = document.getElementById("wprBlankCount");
+    this.btnClearWprFile = document.getElementById("btnClearWprFile");
+    this.btnWprDeleteBlankPages = document.getElementById("btnWprDeleteBlankPages");
+    this.btnWprDeleteFirstPage = document.getElementById("btnWprDeleteFirstPage");
+    this.btnWprDeleteLastPage = document.getElementById("btnWprDeleteLastPage");
+    this.wprRangeInput = document.getElementById("wprRangeInput");
+    this.btnWprApplyRange = document.getElementById("btnWprApplyRange");
+    this.btnWprDownloadDocx = document.getElementById("btnWprDownloadDocx");
+    this.btnWprResetAll = document.getElementById("btnWprResetAll");
+    this.wprStatsSummary = document.getElementById("wprStatsSummary");
+    this.btnWprSelectAll = document.getElementById("btnWprSelectAll");
+    this.btnWprDeselectAll = document.getElementById("btnWprDeselectAll");
+    this.wprEmptyState = document.getElementById("wprEmptyState");
+    this.wprPageGrid = document.getElementById("wprPageGrid");
+
     // Toast Container
     this.toastContainer = document.getElementById("toastContainer");
 
@@ -420,6 +445,7 @@ class AppController {
     this.initSqlBuilderEvents();
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
+    this.initWordPageRemoverEvents();
 
     // Password Visibility Toggles
     this.setupPasswordToggle("btnToggleLoginPass", "inputDutyLoginPass");
@@ -1750,6 +1776,7 @@ class AppController {
     if (this.schemaView) this.schemaView.classList.add("hidden");
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.wordPageRemoverView) this.wordPageRemoverView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
@@ -1772,6 +1799,8 @@ class AppController {
       this.showWordToHtmlView();
     } else if (hash === "pdf-to-image") {
       this.showPdfToImageView();
+    } else if (hash === "word-page-remover") {
+      this.showWordPageRemoverView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
@@ -1781,6 +1810,8 @@ class AppController {
           this.showWordToHtmlView();
         } else if (tool.id === "pdf-to-image") {
           this.showPdfToImageView();
+        } else if (tool.id === "word-page-remover") {
+          this.showWordPageRemoverView();
         } else if (tool.id === "sql-builder") {
           this.showSqlBuilderView();
         } else if (tool.id === "duty-roster") {
@@ -1902,6 +1933,342 @@ class AppController {
     });
 
     window.scrollTo(0, 0);
+  }
+
+  showWordPageRemoverView() {
+    this.currentToolId = "word-page-remover";
+    this.hideAllViews();
+    if (this.wordPageRemoverView) this.wordPageRemoverView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "word-page-remover");
+    });
+
+    window.scrollTo(0, 0);
+  }
+
+  /**
+   * Khởi tạo sự kiện cho công cụ Xóa Trang Word (.docx)
+   */
+  initWordPageRemoverEvents() {
+    // Back button
+    if (this.btnBackToHubFromWpr) {
+      this.btnBackToHubFromWpr.addEventListener("click", () => {
+        window.location.hash = "#hub";
+      });
+    }
+
+    // File Picker & Dropzone
+    const handleWprFile = async (file) => {
+      if (!file || !file.name.toLowerCase().endsWith(".docx")) {
+        this.showToast("Vui lòng chọn tệp Word định dạng .docx!", "warning");
+        return;
+      }
+      if (!this.wordPageRemover) {
+        this.wordPageRemover = new window.WordPageRemover();
+      }
+      try {
+        this.showToast("Đang phân tích cấu trúc trang của tài liệu Word...", "info");
+        const result = await this.wordPageRemover.loadDocx(file, file.name);
+        if (this.wprFilePicker) this.wprFilePicker.value = "";
+
+        // Cập nhật thông tin file
+        if (this.wprDropzone) this.wprDropzone.classList.add("hidden");
+        if (this.wprFileActive) this.wprFileActive.classList.remove("hidden");
+        if (this.wprFileName) this.wprFileName.textContent = result.fileName;
+        if (this.wprFileSize) this.wprFileSize.textContent = (file.size / 1024).toFixed(1) + " KB";
+        if (this.wprPageCount) this.wprPageCount.textContent = result.totalPages + " trang";
+        if (this.wprBlankCount) {
+          if (result.blankPagesCount > 0) {
+            this.wprBlankCount.textContent = result.blankPagesCount + " trang trắng";
+            this.wprBlankCount.classList.remove("hidden");
+          } else {
+            this.wprBlankCount.classList.add("hidden");
+          }
+        }
+
+        this.wprRenderPageGrid(result.pages);
+        this.showToast(`Đã phân tích xong: ${result.totalPages} trang, ${result.blankPagesCount} trang trắng thừa.`, "success");
+      } catch (err) {
+        this.showToast("Lỗi đọc file Word: " + err.message, "error");
+      }
+    };
+
+    if (this.wprFilePicker) {
+      this.wprFilePicker.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleWprFile(e.target.files[0]);
+        }
+      });
+    }
+
+    if (this.wprDropzone) {
+      this.wprDropzone.addEventListener("click", () => {
+        if (this.wprFilePicker) this.wprFilePicker.click();
+      });
+      this.wprDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        this.wprDropzone.classList.add("dragover");
+      });
+      this.wprDropzone.addEventListener("dragleave", () => {
+        this.wprDropzone.classList.remove("dragover");
+      });
+      this.wprDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        this.wprDropzone.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file) handleWprFile(file);
+      });
+    }
+
+    // Xóa file đang chọn
+    if (this.btnClearWprFile) {
+      this.btnClearWprFile.addEventListener("click", () => {
+        this.wprResetState();
+      });
+    }
+
+    // Nút xóa trang trắng thừa
+    if (this.btnWprDeleteBlankPages) {
+      this.btnWprDeleteBlankPages.addEventListener("click", () => {
+        if (!this.wordPageRemover || !this.wordPageRemover.pages.length) {
+          this.showToast("Chưa có tài liệu nào được tải lên!", "warning"); return;
+        }
+        const count = this.wordPageRemover.selectBlankPagesForDeletion();
+        if (count === 0) {
+          this.showToast("Không phát hiện trang trắng thừa nào trong tài liệu này.", "info");
+        } else {
+          this.wprRefreshPageGrid();
+          this.showToast(`Đã chọn xóa ${count} trang trắng. Nhấn "Tải file Word" để tải về.`, "success");
+        }
+      });
+    }
+
+    // Nút xóa trang đầu (trang 1)
+    if (this.btnWprDeleteFirstPage) {
+      this.btnWprDeleteFirstPage.addEventListener("click", () => {
+        if (!this.wordPageRemover || !this.wordPageRemover.pages.length) {
+          this.showToast("Chưa có tài liệu nào được tải lên!", "warning"); return;
+        }
+        this.wordPageRemover.togglePageDeletion(1, true);
+        this.wprRefreshPageGrid();
+        this.showToast("Đã đánh dấu xóa Trang 1 (trang bìa).", "info");
+      });
+    }
+
+    // Nút xóa trang cuối
+    if (this.btnWprDeleteLastPage) {
+      this.btnWprDeleteLastPage.addEventListener("click", () => {
+        if (!this.wordPageRemover || !this.wordPageRemover.pages.length) {
+          this.showToast("Chưa có tài liệu nào được tải lên!", "warning"); return;
+        }
+        const last = this.wordPageRemover.pages.length;
+        this.wordPageRemover.togglePageDeletion(last, true);
+        this.wprRefreshPageGrid();
+        this.showToast(`Đã đánh dấu xóa Trang ${last} (trang cuối).`, "info");
+      });
+    }
+
+    // Áp dụng dải trang
+    if (this.btnWprApplyRange) {
+      this.btnWprApplyRange.addEventListener("click", () => {
+        if (!this.wordPageRemover || !this.wordPageRemover.pages.length) {
+          this.showToast("Chưa có tài liệu nào được tải lên!", "warning"); return;
+        }
+        const rangeStr = this.wprRangeInput ? this.wprRangeInput.value.trim() : "";
+        if (!rangeStr) {
+          this.showToast("Vui lòng nhập số trang hoặc dải trang cần xóa (ví dụ: 2, 4-6).", "warning"); return;
+        }
+        const count = this.wordPageRemover.selectPageRange(rangeStr);
+        this.wprRefreshPageGrid();
+        this.showToast(`Đã chọn thêm ${count} trang trong dải "${rangeStr}".`, "success");
+      });
+    }
+
+    // Chọn tất cả
+    if (this.btnWprSelectAll) {
+      this.btnWprSelectAll.addEventListener("click", () => {
+        if (!this.wordPageRemover || !this.wordPageRemover.pages.length) return;
+        this.wordPageRemover.pages.forEach(p => this.wordPageRemover.togglePageDeletion(p.pageNumber, true));
+        this.wprRefreshPageGrid();
+        this.showToast("Đã chọn tất cả trang (chú ý: không thể xóa hết hoàn toàn).", "warning");
+      });
+    }
+
+    // Bỏ chọn tất cả
+    if (this.btnWprDeselectAll) {
+      this.btnWprDeselectAll.addEventListener("click", () => {
+        if (!this.wordPageRemover) return;
+        this.wordPageRemover.clearSelection();
+        this.wprRefreshPageGrid();
+        this.showToast("Đã bỏ chọn tất cả trang.", "info");
+      });
+    }
+
+    // Khôi phục ban đầu
+    if (this.btnWprResetAll) {
+      this.btnWprResetAll.addEventListener("click", () => {
+        if (!this.wordPageRemover) return;
+        this.wordPageRemover.clearSelection();
+        this.wprRefreshPageGrid();
+        this.showToast("Đã khôi phục - Bỏ chọn toàn bộ trang.", "info");
+      });
+    }
+
+    // Tải file Word đã xóa trang
+    if (this.btnWprDownloadDocx) {
+      this.btnWprDownloadDocx.addEventListener("click", async () => {
+        if (!this.wordPageRemover || !this.wordPageRemover.pages.length) {
+          this.showToast("Chưa có tài liệu nào được tải lên!", "warning"); return;
+        }
+        if (this.wordPageRemover.deletedPageNumbers.size === 0) {
+          this.showToast("Chưa chọn trang nào để xóa! Vui lòng chọn ít nhất 1 trang.", "warning"); return;
+        }
+        try {
+          this.showToast("Đang tạo tệp Word mới, vui lòng đợi...", "info");
+          const result = await this.wordPageRemover.processAndGenerateDocx();
+          const url = URL.createObjectURL(result.blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = result.fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          this.showToast(`✅ Đã tải "${result.fileName}" (Xóa ${result.deletedCount} trang, còn ${result.remainingCount} trang).`, "success");
+        } catch (err) {
+          this.showToast("Lỗi tạo tệp Word: " + err.message, "error");
+        }
+      });
+    }
+  }
+
+  /**
+   * Render lưới thẻ trang trực quan cho Word Page Remover
+   */
+  wprRenderPageGrid(pages) {
+    if (!this.wprPageGrid) return;
+    if (!pages || pages.length === 0) {
+      if (this.wprEmptyState) this.wprEmptyState.classList.remove("hidden");
+      this.wprPageGrid.classList.add("hidden");
+      return;
+    }
+    if (this.wprEmptyState) this.wprEmptyState.classList.add("hidden");
+    this.wprPageGrid.classList.remove("hidden");
+
+    this.wprPageGrid.innerHTML = "";
+    const frag = document.createDocumentFragment();
+
+    for (const page of pages) {
+      const isDeleted = this.wordPageRemover.deletedPageNumbers.has(page.pageNumber);
+      const card = document.createElement("div");
+      card.className = `wpr-page-card${page.isBlank ? " blank-page" : ""}${isDeleted ? " marked-delete" : ""}`;
+      card.dataset.page = page.pageNumber;
+
+      let badges = "";
+      if (page.isBlank) badges += `<span class="wpr-badge badge-blank">⚪ Trang trắng</span>`;
+      if (page.tableCount > 0) badges += `<span class="wpr-badge badge-table">📊 ${page.tableCount} bảng</span>`;
+      if (page.imageCount > 0) badges += `<span class="wpr-badge badge-image">🖼️ ${page.imageCount} ảnh</span>`;
+
+      card.innerHTML = `
+        <div class="wpr-card-header">
+          <div class="wpr-card-title">
+            <span class="wpr-page-num">Trang ${page.pageNumber}</span>
+            ${isDeleted ? '<span class="wpr-delete-label">🗑️ Sẽ xóa</span>' : ""}
+          </div>
+          <div class="wpr-card-badges">${badges}</div>
+        </div>
+        <div class="wpr-card-preview">${page.previewText || "(Không có văn bản)"}</div>
+        <div class="wpr-card-meta">${page.wordCount} từ • ${page.paraCount} đoạn</div>
+        <div class="wpr-card-actions">
+          <label class="wpr-checkbox-label">
+            <input type="checkbox" class="wpr-page-checkbox" data-page="${page.pageNumber}" ${isDeleted ? "checked" : ""}/>
+            <span>Chọn xóa</span>
+          </label>
+          <button type="button" class="btn-wpr-delete-one" data-page="${page.pageNumber}" title="Xóa ngay trang này">
+            🗑️ Xóa trang này
+          </button>
+        </div>
+      `;
+      frag.appendChild(card);
+    }
+
+    this.wprPageGrid.appendChild(frag);
+
+    // Gắn sự kiện trên các thẻ trang
+    this.wprPageGrid.querySelectorAll(".wpr-page-checkbox").forEach(cb => {
+      cb.addEventListener("change", (e) => {
+        const pg = parseInt(e.target.dataset.page, 10);
+        this.wordPageRemover.togglePageDeletion(pg, e.target.checked);
+        this.wprRefreshPageGrid();
+      });
+    });
+
+    this.wprPageGrid.querySelectorAll(".btn-wpr-delete-one").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const pg = parseInt(e.currentTarget.dataset.page, 10);
+        this.wordPageRemover.togglePageDeletion(pg, true);
+        this.wprRefreshPageGrid();
+        this.showToast(`Đã đánh dấu xóa Trang ${pg}.`, "info");
+      });
+    });
+
+    // Cập nhật stats summary
+    this.wprUpdateStatsSummary();
+  }
+
+  /**
+   * Refresh lại trạng thái các thẻ trang (selected/deselected)
+   */
+  wprRefreshPageGrid() {
+    if (!this.wordPageRemover || !this.wprPageGrid) return;
+    const cards = this.wprPageGrid.querySelectorAll(".wpr-page-card");
+    cards.forEach(card => {
+      const pg = parseInt(card.dataset.page, 10);
+      const isDeleted = this.wordPageRemover.deletedPageNumbers.has(pg);
+      card.classList.toggle("marked-delete", isDeleted);
+
+      const titleEl = card.querySelector(".wpr-card-title");
+      const existingLabel = card.querySelector(".wpr-delete-label");
+      if (isDeleted && !existingLabel && titleEl) {
+        const label = document.createElement("span");
+        label.className = "wpr-delete-label";
+        label.textContent = "🗑️ Sẽ xóa";
+        titleEl.appendChild(label);
+      } else if (!isDeleted && existingLabel) {
+        existingLabel.remove();
+      }
+
+      const cb = card.querySelector(".wpr-page-checkbox");
+      if (cb) cb.checked = isDeleted;
+    });
+    this.wprUpdateStatsSummary();
+  }
+
+  wprUpdateStatsSummary() {
+    if (!this.wordPageRemover || !this.wprStatsSummary) return;
+    const total = this.wordPageRemover.pages.length;
+    const selected = this.wordPageRemover.deletedPageNumbers.size;
+    const remaining = total - selected;
+    this.wprStatsSummary.textContent = `Tổng: ${total} trang • Đã chọn xóa: ${selected} trang • Còn lại: ${remaining} trang`;
+  }
+
+  wprResetState() {
+    if (this.wordPageRemover) {
+      this.wordPageRemover.zip = null;
+      this.wordPageRemover.pages = [];
+      this.wordPageRemover.deletedPageNumbers.clear();
+    }
+    if (this.wprDropzone) this.wprDropzone.classList.remove("hidden");
+    if (this.wprFileActive) this.wprFileActive.classList.add("hidden");
+    if (this.wprPageGrid) {
+      this.wprPageGrid.innerHTML = "";
+      this.wprPageGrid.classList.add("hidden");
+    }
+    if (this.wprEmptyState) this.wprEmptyState.classList.remove("hidden");
+    if (this.wprStatsSummary) this.wprStatsSummary.textContent = "Chưa có tệp Word nào được nạp";
+    if (this.wprBlankCount) this.wprBlankCount.classList.add("hidden");
+    if (this.wprFilePicker) this.wprFilePicker.value = "";
   }
 
   showToolView(toolId) {

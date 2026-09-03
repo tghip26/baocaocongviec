@@ -79,6 +79,26 @@ window.TOOLS_REGISTRY = [
     executeKey: "openPdfToImage"
   },
   {
+    id: "word-page-remover",
+    categoryId: "web-cms",
+    title: "Xóa Trang File Word (.docx)",
+    subtitle: "Xóa trang trắng thừa, xóa trang chọn, xuất .docx sạch",
+    description: "Phân tích cấu trúc phân trang tài liệu Word, phát hiện và xóa trang trắng thừa hoặc xóa các trang chỉ định, bảo toàn 100% định dạng.",
+    badge: "Xóa Trang Word .DOCX",
+    badgeColor: "blue",
+    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`,
+    inputType: "word-page-remover-interactive",
+    acceptWord: ".docx",
+    outputName: "Tai_lieu_da_xoa_trang.docx",
+    guide: [
+      "Bước 1: Kéo thả hoặc chọn tệp Word (.docx) cần xử lý.",
+      "Bước 2: Xem danh sách từng trang trực quan (tự động nhận diện trang trắng thừa).",
+      "Bước 3: Nhấp '⚡ Xóa sạch trang trắng thừa' hoặc đánh dấu các trang cần xóa.",
+      "Bước 4: Nhấn '💾 TẢI TỆP WORD (.DOCX)' để lưu tài liệu mới về máy tính."
+    ],
+    executeKey: "openWordPageRemover"
+  },
+  {
     id: "schema-lookup",
     categoryId: "schema",
     title: "Tra Cứu Database Schema VIMES",
