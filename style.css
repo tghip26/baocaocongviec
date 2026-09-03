@@ -12645,3 +12645,197 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   color: #94a3b8;
   line-height: 1.4;
 }
+
+/* ==========================================================================
+   DUTY CLOUD SYNC & MULTI-DEVICE SYNCHRONIZATION STYLES
+   ========================================================================== */
+.duty-cloud-sync-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.74rem;
+  color: #cbd5e1;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.duty-cloud-sync-status-pill:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.sync-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  transition: all 0.25s ease;
+  flex-shrink: 0;
+}
+
+.sync-status-dot.syncing {
+  background-color: #fbbf24;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+  animation: statusPulse 1s infinite alternate ease-in-out;
+}
+
+.sync-status-dot.offline {
+  background-color: #f87171;
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.6);
+}
+
+.sync-status-dot.synced {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+}
+
+.btn-duty-sync {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.2) 0%, rgba(37, 99, 235, 0.25) 100%) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  font-weight: 700 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-duty-sync:hover {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.btn-duty-sync.is-spinning .icon-sync-spin {
+  animation: spinSync 0.75s linear infinite;
+}
+
+.btn-duty-cloud-cfg {
+  background: rgba(30, 41, 59, 0.6) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.btn-duty-cloud-cfg:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+@keyframes spinSync {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes statusPulse {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Empty Month Banner */
+.duty-empty-month-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1.5px dashed rgba(56, 189, 248, 0.4);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.duty-empty-month-banner .empty-banner-icon {
+  font-size: 2rem;
+  background: rgba(56, 189, 248, 0.12);
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  flex-shrink: 0;
+}
+
+.duty-empty-month-banner .empty-banner-content {
+  flex: 1;
+}
+
+.duty-empty-month-banner .empty-banner-content h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.duty-empty-month-banner .empty-banner-content p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.duty-empty-month-banner .empty-banner-actions {
+  flex-shrink: 0;
+}
+
+/* Cloud Status Card in Modal */
+.cloud-status-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.status-indicator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #34d399;
+}
+
+.status-pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+}
+
+.status-pulse-dot.offline {
+  background: #f87171;
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+}
+
+.status-pulse-dot.syncing {
+  background: #fbbf24;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+}
+
+.cloud-latency-text {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+}
+
+.cloud-endpoint-display {
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+

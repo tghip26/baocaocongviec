@@ -122,16 +122,19 @@ const ToolDutyRoster = {
         }
       }
     } catch (e) {}
-    this.saveStaffList(this.defaultStaffList);
+    this.saveStaffList(this.defaultStaffList, false);
     this._staffListCache = [...this.defaultStaffList];
     return this._staffListCache;
   },
 
-  saveStaffList(list) {
+  saveStaffList(list, pushToCloud = true) {
     this._staffListCache = list;
     try {
       localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(list));
     } catch (e) {}
+    if (pushToCloud && this.cloudSync) {
+      this.cloudSync.pushStaffList(list);
+    }
   },
 
   clearAllStaff() {
@@ -152,16 +155,19 @@ const ToolDutyRoster = {
         }
       }
     } catch (e) {}
-    this.saveAccounts(this.defaultAccounts);
+    this.saveAccounts(this.defaultAccounts, false);
     this._accountsCache = [...this.defaultAccounts];
     return this._accountsCache;
   },
 
-  saveAccounts(accounts) {
+  saveAccounts(accounts, pushToCloud = true) {
     this._accountsCache = accounts;
     try {
       localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(accounts));
     } catch (e) {}
+    if (pushToCloud && this.cloudSync) {
+      this.cloudSync.pushAccounts(accounts);
+    }
   },
 
   getCurrentSession() {
@@ -207,6 +213,45 @@ const ToolDutyRoster = {
 
   _cacheSchedule: {},
 
+  // Tạo bảng lịch trống khi tháng chưa được phân công (tránh mỗi máy tự sinh một kiểu ngẫu nhiên)
+  createEmptySchedule(year, month) {
+    const y = parseInt(year, 10);
+    const m = parseInt(month, 10);
+    const totalDays = this.getDaysInMonth(y, m);
+    const schedule = [];
+    for (let d = 1; d <= totalDays; d++) {
+      const dayOfWeek = this.getDayOfWeek(y, m, d);
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+      schedule.push({
+        day: d,
+        dayOfWeek: dayOfWeek,
+        dayName: ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"][dayOfWeek],
+        isWeekend: isWeekend,
+        shifts: {
+          "shift_cntt": {
+            id: "",
+            name: "",
+            role: "Chưa phân công",
+            phone: "",
+            dept: "Phòng CNTT",
+            isOffDay: false,
+            isUnassigned: true
+          }
+        }
+      });
+    }
+    return schedule;
+  },
+
+  // Kiểm tra xem tháng này đã được xếp lịch hay chưa
+  isScheduleAssigned(schedule) {
+    if (!schedule || !Array.isArray(schedule) || schedule.length === 0) return false;
+    return schedule.some(d => {
+      const s = d.shifts && d.shifts["shift_cntt"];
+      return s && s.id && !s.isUnassigned;
+    });
+  },
+
   getSchedule(year, month) {
     const cacheKey = `${year}_${month}`;
     if (this._cacheSchedule[cacheKey]) return this._cacheSchedule[cacheKey];
@@ -220,17 +265,22 @@ const ToolDutyRoster = {
         }
       }
     } catch (e) {}
-    const generated = this.generateSchedule(year, month);
-    this.saveSchedule(year, month, generated);
-    return generated;
+
+    // Trả về bảng mẫu chưa phân công, KHÔNG tự động xếp ngẫu nhiên làm lệch giữa các máy
+    const empty = this.createEmptySchedule(year, month);
+    this._cacheSchedule[cacheKey] = empty;
+    return empty;
   },
 
-  saveSchedule(year, month, schedule) {
+  saveSchedule(year, month, schedule, pushToCloud = true) {
     const cacheKey = `${year}_${month}`;
     this._cacheSchedule[cacheKey] = schedule;
     try {
       localStorage.setItem(`DUTY_SCHEDULE_${year}_${month}`, JSON.stringify(schedule));
     } catch (e) {}
+    if (pushToCloud && this.cloudSync) {
+      this.cloudSync.pushSchedule(year, month, schedule);
+    }
   },
 
   clearSchedule(year, month) {
@@ -253,13 +303,377 @@ const ToolDutyRoster = {
             role: "Không phân công ca trực",
             phone: "",
             dept: "Phòng CNTT",
-            isOffDay: true
+            isOffDay: true,
+            isUnassigned: false
           }
         }
       });
     }
-    this.saveSchedule(y, m, schedule);
+    this.saveSchedule(y, m, schedule, true);
     return schedule;
+  },
+
+  // Module Đồng Bộ Đám Mây & Đa Thiết Bị (Cloud & Multi-Device Sync Engine)
+  cloudSync: {
+    broadcastChannel: null,
+    listeners: [],
+    pollingTimer: null,
+    isSyncing: false,
+    lastSyncTime: null,
+    lastSyncUser: "Hệ thống",
+    lastSyncStatus: "idle", // "synced", "offline", "syncing", "error"
+    defaultEndpoint: "https://bvdk-bacninh2-duty-default-rtdb.firebaseio.com/duty_roster",
+
+    getEndpoint() {
+      const custom = localStorage.getItem("DUTY_CLOUD_API_URL");
+      if (custom && custom.trim().startsWith("http")) {
+        return custom.trim().replace(/\/+$/, "");
+      }
+      return this.defaultEndpoint;
+    },
+
+    setEndpoint(url) {
+      if (!url || !url.trim()) {
+        localStorage.removeItem("DUTY_CLOUD_API_URL");
+      } else {
+        localStorage.setItem("DUTY_CLOUD_API_URL", url.trim().replace(/\/+$/, ""));
+      }
+    },
+
+    formatUrl(subpath = "") {
+      const endpoint = this.getEndpoint();
+      let cleanPath = subpath ? subpath.replace(/^\/+/, "") : "";
+      let url = cleanPath ? `${endpoint}/${cleanPath}` : endpoint;
+      if (!url.endsWith(".json") && (url.includes("firebaseio.com") || url.includes("firebasedatabase.app"))) {
+        url += ".json";
+      }
+      return url;
+    },
+
+    init(onUpdateCallback) {
+      if (onUpdateCallback && !this.listeners.includes(onUpdateCallback)) {
+        this.listeners.push(onUpdateCallback);
+      }
+
+      // 1. Kênh BroadcastChannel đồng bộ tức thì các tab/cửa sổ trên cùng máy
+      try {
+        if (typeof BroadcastChannel !== "undefined" && !this.broadcastChannel) {
+          this.broadcastChannel = new BroadcastChannel("duty_roster_channel");
+          this.broadcastChannel.onmessage = (event) => {
+            if (event.data && event.data.type === "ROSTER_UPDATED") {
+              this.notifyListeners({ type: "LOCAL_BROADCAST", payload: event.data });
+            }
+          };
+        }
+      } catch (e) {}
+
+      // 2. Lắng nghe storage event dự phòng
+      window.addEventListener("storage", (e) => {
+        if (e.key && (e.key.startsWith("DUTY_SCHEDULE_") || e.key === "DUTY_CNTT_STAFF_LIST" || e.key === "DUTY_CNTT_ACCOUNTS")) {
+          this.notifyListeners({ type: "STORAGE_EVENT", key: e.key });
+        }
+      });
+
+      // 3. Tự động đồng bộ khi có kết nối mạng trở lại
+      window.addEventListener("online", () => {
+        this.fetchCloudData(true);
+      });
+
+      // 4. Tự động kiểm tra đồng bộ khi người dùng quay lại tab trình duyệt
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          this.fetchCloudData(true);
+        }
+      });
+
+      // 5. Chu kỳ kiểm tra tự động nền mỗi 45 giây nếu đang mở ứng dụng
+      if (!this.pollingTimer) {
+        this.pollingTimer = setInterval(() => {
+          if (navigator.onLine && document.visibilityState === "visible") {
+            this.fetchCloudData(true);
+          }
+        }, 45000);
+      }
+    },
+
+    notifyListeners(eventData) {
+      this.listeners.forEach(cb => {
+        try { cb(eventData); } catch (e) { console.warn("[DutySync Callback]", e); }
+      });
+    },
+
+    broadcastLocalChange(action, details) {
+      if (this.broadcastChannel) {
+        try {
+          this.broadcastChannel.postMessage({ type: "ROSTER_UPDATED", action, details, timestamp: Date.now() });
+        } catch (e) {}
+      }
+    },
+
+    async fetchCloudData(silent = false) {
+      if (!navigator.onLine) {
+        this.lastSyncStatus = "offline";
+        this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "offline" });
+        return { success: false, offline: true, message: "Thiết bị đang ở chế độ Ngoại tuyến." };
+      }
+
+      this.isSyncing = true;
+      this.lastSyncStatus = "syncing";
+      this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "syncing" });
+
+      const url = this.formatUrl();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      try {
+        const resp = await fetch(url, {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) {
+          throw new Error(`Máy chủ đám mây phản hồi mã: ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        this.isSyncing = false;
+        this.lastSyncTime = new Date();
+        this.lastSyncStatus = "synced";
+
+        if (data && typeof data === "object") {
+          let hasChange = false;
+
+          // Cập nhật metadata
+          if (data.metadata && data.metadata.updaterName) {
+            this.lastSyncUser = data.metadata.updaterName;
+          }
+
+          // Đồng bộ Danh sách cán bộ
+          if (Array.isArray(data.staffList) && data.staffList.length > 0) {
+            ToolDutyRoster._staffListCache = data.staffList;
+            try { localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(data.staffList)); } catch (e) {}
+            hasChange = true;
+          }
+
+          // Đồng bộ Tài khoản
+          if (Array.isArray(data.accounts) && data.accounts.length > 0) {
+            ToolDutyRoster._accountsCache = data.accounts;
+            try { localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(data.accounts)); } catch (e) {}
+            hasChange = true;
+          }
+
+          // Đồng bộ Lịch trực các tháng
+          if (data.schedules && typeof data.schedules === "object") {
+            Object.entries(data.schedules).forEach(([monthKey, sched]) => {
+              if (Array.isArray(sched) && sched.length > 0) {
+                ToolDutyRoster._cacheSchedule[monthKey] = sched;
+                try { localStorage.setItem(`DUTY_SCHEDULE_${monthKey}`, JSON.stringify(sched)); } catch (e) {}
+                hasChange = true;
+              }
+            });
+          }
+
+          this.notifyListeners({ type: "CLOUD_FETCH_SUCCESS", data, hasChange });
+          return { success: true, data, hasChange };
+        } else {
+          this.notifyListeners({ type: "CLOUD_FETCH_SUCCESS", empty: true });
+          return { success: true, empty: true };
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        this.isSyncing = false;
+        this.lastSyncStatus = "error";
+        this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "error", error: err.message });
+        return { success: false, error: err.message || "Không thể kết nối máy chủ đám mây" };
+      }
+    },
+
+    async pushSchedule(year, month, schedule) {
+      this.broadcastLocalChange("SCHEDULE_SAVED", { year, month });
+      if (!navigator.onLine) return { success: false, offline: true };
+
+      const url = this.formatUrl(`schedules/${year}_${month}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      try {
+        const resp = await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(schedule),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          this.lastSyncTime = new Date();
+          this.lastSyncStatus = "synced";
+          this.updateMetadataTimestamp();
+          return { success: true };
+        }
+        return { success: false, status: resp.status };
+      } catch (err) {
+        clearTimeout(timeoutId);
+        return { success: false, error: err.message };
+      }
+    },
+
+    async pushStaffList(staffList) {
+      this.broadcastLocalChange("STAFF_LIST_SAVED", {});
+      if (!navigator.onLine) return { success: false, offline: true };
+
+      const url = this.formatUrl("staffList");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      try {
+        const resp = await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(staffList),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          this.updateMetadataTimestamp();
+          return { success: true };
+        }
+        return { success: false };
+      } catch (err) {
+        clearTimeout(timeoutId);
+        return { success: false, error: err.message };
+      }
+    },
+
+    async pushAccounts(accounts) {
+      this.broadcastLocalChange("ACCOUNTS_SAVED", {});
+      if (!navigator.onLine) return { success: false, offline: true };
+
+      const url = this.formatUrl("accounts");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+      try {
+        const resp = await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(accounts),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        if (resp.ok) {
+          this.updateMetadataTimestamp();
+          return { success: true };
+        }
+        return { success: false };
+      } catch (err) {
+        clearTimeout(timeoutId);
+        return { success: false, error: err.message };
+      }
+    },
+
+    async updateMetadataTimestamp() {
+      if (!navigator.onLine) return;
+      const url = this.formatUrl("metadata");
+      const user = ToolDutyRoster.getCurrentSession();
+      try {
+        await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lastUpdated: new Date().toISOString(),
+            updatedBy: user ? user.username : "admin",
+            updaterName: user ? user.fullname : "Trưởng Phòng CNTT",
+            appVersion: "3.2.0"
+          })
+        });
+      } catch (e) {}
+    },
+
+    async testConnection(targetUrl = null) {
+      const endpoint = targetUrl || this.getEndpoint();
+      let testUrl = endpoint.replace(/\/+$/, "");
+      if (!testUrl.endsWith(".json") && (testUrl.includes("firebaseio.com") || testUrl.includes("firebasedatabase.app"))) {
+        testUrl += "/metadata.json";
+      } else {
+        testUrl += "/metadata";
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const start = Date.now();
+      try {
+        const resp = await fetch(testUrl, {
+          method: "GET",
+          headers: { "Accept": "application/json" },
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        const duration = Date.now() - start;
+        return {
+          success: resp.ok,
+          status: resp.status,
+          latencyMs: duration,
+          url: testUrl
+        };
+      } catch (err) {
+        clearTimeout(timeoutId);
+        return {
+          success: false,
+          error: err.message || "Không phản hồi",
+          url: testUrl
+        };
+      }
+    },
+
+    exportBackupJson() {
+      const schedules = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("DUTY_SCHEDULE_")) {
+          const monthKey = key.replace("DUTY_SCHEDULE_", "");
+          try {
+            schedules[monthKey] = JSON.parse(localStorage.getItem(key));
+          } catch (e) {}
+        }
+      }
+      return JSON.stringify({
+        appName: "Lich_Truc_Phong_CNTT_BVDK_BacNinh_2",
+        exportDate: new Date().toISOString(),
+        version: "3.2.0",
+        staffList: ToolDutyRoster.getStaffList(),
+        accounts: ToolDutyRoster.getAccounts(),
+        schedules: schedules
+      }, null, 2);
+    },
+
+    importBackupJson(jsonString) {
+      try {
+        const parsed = JSON.parse(jsonString);
+        if (!parsed || typeof parsed !== "object") {
+          return { success: false, message: "Định dạng file không hợp lệ!" };
+        }
+        if (Array.isArray(parsed.staffList)) {
+          ToolDutyRoster.saveStaffList(parsed.staffList, true);
+        }
+        if (Array.isArray(parsed.accounts)) {
+          ToolDutyRoster.saveAccounts(parsed.accounts, true);
+        }
+        if (parsed.schedules && typeof parsed.schedules === "object") {
+          Object.entries(parsed.schedules).forEach(([monthKey, sched]) => {
+            if (Array.isArray(sched)) {
+              const parts = monthKey.split("_");
+              ToolDutyRoster.saveSchedule(parts[0], parts[1], sched, true);
+            }
+          });
+        }
+        this.broadcastLocalChange("BACKUP_RESTORED", {});
+        return { success: true, message: "Đã phục hồi dữ liệu sao lưu thành công!" };
+      } catch (err) {
+        return { success: false, message: "Lỗi phân tích cú pháp file JSON: " + err.message };
+      }
+    }
   },
 
   // Cập nhật ca trực cho 1 ngày cụ thể (Đổi người hoặc Đặt ngày nghỉ)

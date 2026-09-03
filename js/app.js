@@ -1628,9 +1628,11 @@ class AppController {
       this.dutyInputYear.value = String(now.getFullYear());
     }
     this.dutyMonthInitialized = true;
+    this.loadDutyScheduleForSelectedMonth();
     this.updateDutySessionUI();
     this.renderStaffList();
     this.renderDutyViews();
+    this.syncDutyRosterFromCloud(true); // Tải ngầm bản mới nhất từ đám mây
   }
 
   showBhytXmlView() {
@@ -3811,13 +3813,80 @@ ${this.currentW2hHtmlOutput}
     }
 
     if (this.dutySelectMonth) {
-      this.dutySelectMonth.addEventListener("change", () => this.runAutoSchedule());
+      this.dutySelectMonth.addEventListener("change", () => this.loadDutyScheduleForSelectedMonth());
     }
     if (this.dutySelectYear) {
-      this.dutySelectYear.addEventListener("change", () => this.runAutoSchedule());
+      this.dutySelectYear.addEventListener("change", () => this.loadDutyScheduleForSelectedMonth());
     }
     if (this.dutyInputYear && this.dutyInputYear !== this.dutySelectYear) {
-      this.dutyInputYear.addEventListener("input", () => this.runAutoSchedule());
+      this.dutyInputYear.addEventListener("input", () => this.loadDutyScheduleForSelectedMonth());
+    }
+
+    // Cloud Sync Elements & Listeners
+    this.dutyCloudSyncStatusPill = document.getElementById("dutyCloudSyncStatusPill");
+    this.syncStatusDot = document.getElementById("syncStatusDot");
+    this.syncStatusText = document.getElementById("syncStatusText");
+    this.btnDutySyncNow = document.getElementById("btnDutySyncNow");
+    this.btnOpenDutySyncConfigModal = document.getElementById("btnOpenDutySyncConfigModal");
+    this.modalDutySyncConfig = document.getElementById("modalDutySyncConfig");
+    this.btnCloseSyncConfigModal = document.getElementById("btnCloseSyncConfigModal");
+    this.btnDismissSyncConfigModal = document.getElementById("btnDismissSyncConfigModal");
+    this.txtCurrentCloudEndpoint = document.getElementById("txtCurrentCloudEndpoint");
+    this.cloudStatusBadge = document.getElementById("cloudStatusBadge");
+    this.cloudStatusBadgeText = document.getElementById("cloudStatusBadgeText");
+    this.cloudStatusPulseDot = document.getElementById("cloudStatusPulseDot");
+    this.cloudLatencyText = document.getElementById("cloudLatencyText");
+    this.txtLastSyncTimeDisplay = document.getElementById("txtLastSyncTimeDisplay");
+    this.txtLastSyncUserDisplay = document.getElementById("txtLastSyncUserDisplay");
+    this.inputCustomCloudUrl = document.getElementById("inputCustomCloudUrl");
+    this.btnTestCloudEndpoint = document.getElementById("btnTestCloudEndpoint");
+    this.btnSaveCustomCloudUrl = document.getElementById("btnSaveCustomCloudUrl");
+    this.btnResetDefaultCloudUrl = document.getElementById("btnResetDefaultCloudUrl");
+    this.btnExportDutyJsonBackup = document.getElementById("btnExportDutyJsonBackup");
+    this.inputDutyJsonBackupFile = document.getElementById("inputDutyJsonBackupFile");
+    this.dutyEmptyMonthBanner = document.getElementById("dutyEmptyMonthBanner");
+    this.txtEmptyMonthTitle = document.getElementById("txtEmptyMonthTitle");
+    this.btnQuickAutoSchedule = document.getElementById("btnQuickAutoSchedule");
+
+    if (this.btnDutySyncNow) {
+      this.btnDutySyncNow.addEventListener("click", () => this.syncDutyRosterFromCloud(false));
+    }
+    if (this.btnOpenDutySyncConfigModal) {
+      this.btnOpenDutySyncConfigModal.addEventListener("click", () => this.openDutySyncConfigModal());
+    }
+    if (this.btnCloseSyncConfigModal) {
+      this.btnCloseSyncConfigModal.addEventListener("click", () => this.hideModal(this.modalDutySyncConfig));
+    }
+    if (this.btnDismissSyncConfigModal) {
+      this.btnDismissSyncConfigModal.addEventListener("click", () => this.hideModal(this.modalDutySyncConfig));
+    }
+    if (this.btnTestCloudEndpoint) {
+      this.btnTestCloudEndpoint.addEventListener("click", () => this.testCloudConnection());
+    }
+    if (this.btnSaveCustomCloudUrl) {
+      this.btnSaveCustomCloudUrl.addEventListener("click", () => this.saveCustomCloudUrl());
+    }
+    if (this.btnResetDefaultCloudUrl) {
+      this.btnResetDefaultCloudUrl.addEventListener("click", () => this.resetDefaultCloudUrl());
+    }
+    if (this.btnExportDutyJsonBackup) {
+      this.btnExportDutyJsonBackup.addEventListener("click", () => this.exportDutyJsonBackup());
+    }
+    if (this.inputDutyJsonBackupFile) {
+      this.inputDutyJsonBackupFile.addEventListener("change", (e) => this.importDutyJsonBackup(e));
+    }
+    if (this.btnQuickAutoSchedule) {
+      this.btnQuickAutoSchedule.addEventListener("click", () => {
+        if (this.txtAutoScheduleTargetMonth) {
+          this.txtAutoScheduleTargetMonth.textContent = `Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()}`;
+        }
+        this.showModal(this.modalAutoScheduleOptions);
+      });
+    }
+
+    // Kích hoạt lắng nghe đồng bộ đám mây và đa tab
+    if (window.ToolDutyRoster && ToolDutyRoster.cloudSync) {
+      ToolDutyRoster.cloudSync.init((event) => this.handleCloudSyncEvent(event));
     }
 
     // Modal Xếp Lịch Tự Động
@@ -4371,6 +4440,14 @@ ${this.currentW2hHtmlOutput}
     this.switchDutyView(mode);
   }
 
+  loadDutyScheduleForSelectedMonth() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    this.dutySchedule = ToolDutyRoster.getSchedule(year, month);
+    this.renderDutyViews();
+  }
+
   runAutoSchedule(algorithm = "fair") {
     if (!window.ToolDutyRoster) return;
     this.dutyStaffList = ToolDutyRoster.getStaffList();
@@ -4382,9 +4459,208 @@ ${this.currentW2hHtmlOutput}
 
   renderDutyViews() {
     this.updatePersonalDutyStatsUI();
+    const isAssigned = ToolDutyRoster.isScheduleAssigned(this.dutySchedule);
+    if (this.dutyEmptyMonthBanner) {
+      this.dutyEmptyMonthBanner.classList.toggle("hidden", isAssigned);
+      if (!isAssigned && this.txtEmptyMonthTitle) {
+        this.txtEmptyMonthTitle.textContent = `Tháng ${this.getSelectedDutyMonth()}/${this.getSelectedDutyYear()} Chưa Phân Công Lịch Trực`;
+      }
+    }
     if (this.dutyViewMode === "calendar") this.renderDutyCalendarView();
     else if (this.dutyViewMode === "personal") this.renderDutyPersonalView();
     else if (this.dutyViewMode === "table") this.renderDutyTableView();
+  }
+
+  // Quản lý Đồng Bộ Đám Mây & Trạng Thái Máy Chủ
+  async syncDutyRosterFromCloud(silent = false) {
+    if (!window.ToolDutyRoster || !ToolDutyRoster.cloudSync) return;
+    
+    if (this.btnDutySyncNow) {
+      this.btnDutySyncNow.classList.add("is-spinning");
+    }
+    this.updateCloudSyncStatusUI("syncing");
+
+    const res = await ToolDutyRoster.cloudSync.fetchCloudData(silent);
+    
+    if (this.btnDutySyncNow) {
+      this.btnDutySyncNow.classList.remove("is-spinning");
+    }
+
+    if (res.success) {
+      this.dutyStaffList = ToolDutyRoster.getStaffList();
+      const month = this.getSelectedDutyMonth();
+      const year = this.getSelectedDutyYear();
+      this.dutySchedule = ToolDutyRoster.getSchedule(year, month);
+      this.renderStaffList();
+      this.renderDutyViews();
+      this.updateCloudSyncStatusUI("synced");
+      if (!silent) {
+        this.showToast("🚀 Đã đồng bộ lịch trực mới nhất từ máy chủ đám mây!", "success");
+      }
+    } else if (res.offline) {
+      this.updateCloudSyncStatusUI("offline");
+      if (!silent) {
+        this.showToast("⚠️ Thiết bị đang ngoại tuyến. Đang dùng dữ liệu lưu tạm trên máy.", "warning");
+      }
+    } else {
+      this.updateCloudSyncStatusUI("error", res.error);
+      if (!silent) {
+        this.showToast(`Lỗi kết nối máy chủ: ${res.error}`, "error");
+      }
+    }
+  }
+
+  handleCloudSyncEvent(event) {
+    if (!event) return;
+    if (event.type === "SYNC_STATUS_CHANGED") {
+      this.updateCloudSyncStatusUI(event.status, event.error);
+    } else if (event.type === "CLOUD_FETCH_SUCCESS" || event.type === "LOCAL_BROADCAST" || event.type === "STORAGE_EVENT") {
+      this.dutyStaffList = ToolDutyRoster.getStaffList();
+      const month = this.getSelectedDutyMonth();
+      const year = this.getSelectedDutyYear();
+      this.dutySchedule = ToolDutyRoster.getSchedule(year, month);
+      this.renderStaffList();
+      this.renderDutyViews();
+      this.updateCloudSyncStatusUI("synced");
+    }
+  }
+
+  updateCloudSyncStatusUI(status, errorMsg = "") {
+    if (!this.syncStatusDot || !this.syncStatusText) return;
+    this.syncStatusDot.className = "sync-status-dot";
+    
+    if (status === "synced") {
+      this.syncStatusDot.classList.add("synced");
+      const timeStr = ToolDutyRoster.cloudSync.lastSyncTime 
+        ? ToolDutyRoster.cloudSync.lastSyncTime.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) 
+        : "";
+      this.syncStatusText.textContent = timeStr ? `Đã đồng bộ (${timeStr})` : "Đã đồng bộ";
+      if (this.cloudStatusBadgeText) this.cloudStatusBadgeText.textContent = "Máy chủ đám mây sẵn sàng";
+      if (this.cloudStatusBadge) this.cloudStatusBadge.style.color = "#34d399";
+      if (this.cloudStatusPulseDot) this.cloudStatusPulseDot.className = "status-pulse-dot";
+    } else if (status === "syncing") {
+      this.syncStatusDot.classList.add("syncing");
+      this.syncStatusText.textContent = "Đang đồng bộ...";
+      if (this.cloudStatusBadgeText) this.cloudStatusBadgeText.textContent = "Đang truyền tải dữ liệu...";
+      if (this.cloudStatusBadge) this.cloudStatusBadge.style.color = "#fbbf24";
+      if (this.cloudStatusPulseDot) this.cloudStatusPulseDot.className = "status-pulse-dot syncing";
+    } else if (status === "offline") {
+      this.syncStatusDot.classList.add("offline");
+      this.syncStatusText.textContent = "Ngoại tuyến (Cục bộ)";
+      if (this.cloudStatusBadgeText) this.cloudStatusBadgeText.textContent = "Chế độ Ngoại tuyến (Offline)";
+      if (this.cloudStatusBadge) this.cloudStatusBadge.style.color = "#f87171";
+      if (this.cloudStatusPulseDot) this.cloudStatusPulseDot.className = "status-pulse-dot offline";
+    } else if (status === "error") {
+      this.syncStatusDot.classList.add("offline");
+      this.syncStatusText.textContent = "Chưa kết nối đám mây";
+      if (this.cloudStatusBadgeText) this.cloudStatusBadgeText.textContent = errorMsg ? `Lỗi: ${errorMsg}` : "Mất kết nối máy chủ";
+      if (this.cloudStatusBadge) this.cloudStatusBadge.style.color = "#f87171";
+      if (this.cloudStatusPulseDot) this.cloudStatusPulseDot.className = "status-pulse-dot offline";
+    }
+
+    if (this.txtLastSyncTimeDisplay) {
+      this.txtLastSyncTimeDisplay.textContent = ToolDutyRoster.cloudSync.lastSyncTime 
+        ? ToolDutyRoster.cloudSync.lastSyncTime.toLocaleString("vi-VN") 
+        : "Chưa đồng bộ";
+    }
+    if (this.txtLastSyncUserDisplay) {
+      this.txtLastSyncUserDisplay.textContent = ToolDutyRoster.cloudSync.lastSyncUser || "Hệ thống";
+    }
+  }
+
+  async openDutySyncConfigModal() {
+    if (!this.modalDutySyncConfig || !window.ToolDutyRoster) return;
+    const currentEndpoint = ToolDutyRoster.cloudSync.getEndpoint();
+    if (this.txtCurrentCloudEndpoint) {
+      this.txtCurrentCloudEndpoint.textContent = currentEndpoint;
+    }
+    if (this.inputCustomCloudUrl) {
+      const custom = localStorage.getItem("DUTY_CLOUD_API_URL") || "";
+      this.inputCustomCloudUrl.value = custom;
+    }
+    this.updateCloudSyncStatusUI(ToolDutyRoster.cloudSync.lastSyncStatus);
+    this.showModal(this.modalDutySyncConfig);
+    this.testCloudConnection(true);
+  }
+
+  async testCloudConnection(silent = false) {
+    if (!window.ToolDutyRoster) return;
+    if (this.cloudLatencyText) this.cloudLatencyText.textContent = "Đang đo...";
+    const targetUrl = this.inputCustomCloudUrl ? this.inputCustomCloudUrl.value.trim() : null;
+    const res = await ToolDutyRoster.cloudSync.testConnection(targetUrl);
+    if (res.success) {
+      if (this.cloudLatencyText) this.cloudLatencyText.textContent = `${res.latencyMs} ms`;
+      if (this.cloudStatusBadgeText) this.cloudStatusBadgeText.textContent = "Kết nối máy chủ thành công (200 OK)";
+      if (this.cloudStatusBadge) this.cloudStatusBadge.style.color = "#34d399";
+      if (!silent) this.showToast(`✅ Kết nối máy chủ thành công! Phản hồi: ${res.latencyMs}ms`, "success");
+    } else {
+      if (this.cloudLatencyText) this.cloudLatencyText.textContent = "Mất kết nối";
+      if (this.cloudStatusBadgeText) this.cloudStatusBadgeText.textContent = `Không phản hồi (${res.error || 'Timeout'})`;
+      if (this.cloudStatusBadge) this.cloudStatusBadge.style.color = "#f87171";
+      if (!silent) this.showToast(`❌ Không thể kết nối tới máy chủ: ${res.error || 'Timeout'}`, "error");
+    }
+  }
+
+  saveCustomCloudUrl() {
+    if (!this.inputCustomCloudUrl || !window.ToolDutyRoster) return;
+    const url = this.inputCustomCloudUrl.value.trim();
+    ToolDutyRoster.cloudSync.setEndpoint(url);
+    if (this.txtCurrentCloudEndpoint) {
+      this.txtCurrentCloudEndpoint.textContent = ToolDutyRoster.cloudSync.getEndpoint();
+    }
+    this.showToast("💾 Đã lưu cấu hình máy chủ đám mây mới thành công!", "success");
+    this.syncDutyRosterFromCloud(false);
+  }
+
+  resetDefaultCloudUrl() {
+    if (!window.ToolDutyRoster) return;
+    ToolDutyRoster.cloudSync.setEndpoint("");
+    if (this.inputCustomCloudUrl) this.inputCustomCloudUrl.value = "";
+    if (this.txtCurrentCloudEndpoint) {
+      this.txtCurrentCloudEndpoint.textContent = ToolDutyRoster.cloudSync.getEndpoint();
+    }
+    this.showToast("Đã khôi phục địa chỉ máy chủ đám mây mặc định.", "info");
+    this.syncDutyRosterFromCloud(false);
+  }
+
+  exportDutyJsonBackup() {
+    if (!window.ToolDutyRoster) return;
+    const jsonStr = ToolDutyRoster.cloudSync.exportBackupJson();
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `SAO_LUU_LICH_TRUC_CNTT_T${month}_${year}_${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.showToast("📤 Đã xuất file sao lưu lịch trực JSON thành công!", "success");
+  }
+
+  importDutyJsonBackup(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file || !window.ToolDutyRoster) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target.result;
+      const res = ToolDutyRoster.cloudSync.importBackupJson(content);
+      if (res.success) {
+        this.dutyStaffList = ToolDutyRoster.getStaffList();
+        const month = this.getSelectedDutyMonth();
+        const year = this.getSelectedDutyYear();
+        this.dutySchedule = ToolDutyRoster.getSchedule(year, month);
+        this.renderStaffList();
+        this.renderDutyViews();
+        this.showToast("📥 Đã phục hồi và đồng bộ lịch trực từ file JSON thành công!", "success");
+      } else {
+        this.showToast(res.message || "Lỗi đọc file JSON", "error");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   }
 
   updatePersonalDutyStatsUI() {
