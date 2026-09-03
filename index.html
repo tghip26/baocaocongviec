@@ -100,6 +100,13 @@
           <span class="nav-text">Xuất Ảnh PDF</span>
         </a>
 
+        <a href="#image-optimizer" class="nav-item" data-tool="image-optimizer" data-tooltip="Tối Ưu & Nén Ảnh WebP">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/><path d="M16 19h6"/><path d="M19 16v6"/></svg>
+          </span>
+          <span class="nav-text">Nén Ảnh WebP</span>
+        </a>
+
         <div class="nav-section-title">CSDL & BẢO HIỂM Y TẾ</div>
         <a href="#bhyt-xml" class="nav-item" data-tool="bhyt-xml" data-tooltip="Kiểm Tra XML BHYT (QĐ 130)">
           <span class="nav-icon">
@@ -120,6 +127,20 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           </span>
           <span class="nav-text">Tạo SQL Báo Cáo</span>
+        </a>
+
+        <a href="#diff-checker" class="nav-item" data-tool="diff-checker" data-tooltip="So Sánh Diff Văn Bản / SQL">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+          </span>
+          <span class="nav-text">So Sánh Diff</span>
+        </a>
+
+        <a href="#medical-qr" class="nav-item" data-tool="medical-qr" data-tooltip="Tạo Mã QR Y Tế & VietQR">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="10" y1="7" x2="10" y2="7"/><line x1="7" y1="10" x2="7" y2="10"/></svg>
+          </span>
+          <span class="nav-text">Mã QR Y Tế & VietQR</span>
         </a>
 
         <a href="#giam-dinh" class="nav-item" data-tool="giam-dinh" data-tooltip="Giám Định BHYT">
@@ -225,19 +246,36 @@
                 <div class="notif-header-title">
                   <span class="notif-bell-icon">🔔</span>
                   <strong>Thông Báo Hệ Thống</strong>
+                  <span class="notif-total-badge" id="notifTotalBadge">0</span>
                 </div>
                 <div class="notif-header-actions">
                   <button type="button" class="btn-notif-act" id="btnMarkAllNotifsRead" title="Đánh dấu tất cả đã đọc">✓ Đã đọc</button>
-                  <button type="button" class="btn-notif-act" id="btnClearAllNotifs" title="Xóa tất cả thông báo">🗑️ Xóa</button>
+                  <button type="button" class="btn-notif-act" id="btnClearAllNotifs" title="Xóa tất cả thông báo không ghim">🗑️ Xóa</button>
+                  <button type="button" class="btn-notif-act btn-notif-gear" id="btnOpenNotifSettings" title="Cài đặt thông báo">⚙️</button>
                 </div>
               </div>
 
-              <!-- Filter tabs inside notification drawer -->
+              <!-- Thanh tìm kiếm thông báo nhanh -->
+              <div class="notif-search-wrap">
+                <svg class="notif-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="notifSearchInput" class="notif-search-input" placeholder="Tìm thông báo, ca trực, BHYT..." autocomplete="off" />
+                <button type="button" class="btn-notif-search-clear hidden" id="btnClearNotifSearch" title="Xóa tìm kiếm">✕</button>
+              </div>
+
+              <!-- Bộ lọc trạng thái: Tất cả / Chưa đọc / Đã ghim -->
+              <div class="notif-status-filter-bar" id="notifStatusFilterBar">
+                <button type="button" class="notif-status-pill active" data-status="all">Tất cả</button>
+                <button type="button" class="notif-status-pill" data-status="unread">Chưa đọc (<span id="notifUnreadPillCount">0</span>)</button>
+                <button type="button" class="notif-status-pill" data-status="pinned">📌 Đã ghim</button>
+              </div>
+
+              <!-- Filter tabs theo danh mục nghiệp vụ -->
               <div class="notif-filter-tabs" id="notifFilterTabs">
                 <button type="button" class="notif-tab-item active" data-cat="all">Tất cả</button>
-                <button type="button" class="notif-tab-item" data-cat="duty">Lịch trực</button>
-                <button type="button" class="notif-tab-item" data-cat="bhyt">BHYT</button>
-                <button type="button" class="notif-tab-item" data-cat="system">Hệ thống</button>
+                <button type="button" class="notif-tab-item" data-cat="duty">📅 Lịch trực</button>
+                <button type="button" class="notif-tab-item" data-cat="bhyt">🏥 BHYT</button>
+                <button type="button" class="notif-tab-item" data-cat="vgca">🔐 VGCA</button>
+                <button type="button" class="notif-tab-item" data-cat="system">⚡ Hệ thống</button>
               </div>
 
               <!-- List of notifications -->
@@ -245,11 +283,17 @@
 
               <!-- Notification Footer -->
               <div class="notif-panel-footer">
-                <label class="notif-sound-toggle">
-                  <input type="checkbox" id="chkToggleNotifSound" checked />
-                  <span>🔊 Âm thanh</span>
-                </label>
-                <span class="notif-storage-hint">Lưu an toàn</span>
+                <div class="notif-footer-left">
+                  <label class="notif-sound-toggle">
+                    <input type="checkbox" id="chkToggleNotifSound" checked />
+                    <span>🔊 Âm thanh</span>
+                  </label>
+                  <button type="button" class="btn-test-chime" id="btnTestNotifSound" title="Nghe thử âm thanh thông báo Web Audio">▶ Thử</button>
+                </div>
+                <button type="button" class="btn-request-desktop-notif" id="btnRequestDesktopNotif" title="Bật thông báo nổi trên màn hình máy tính Windows / Mac">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <span id="txtDesktopNotifStatus">Bật Desktop Push</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1511,6 +1555,16 @@
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   <span>Xuất Excel</span>
                 </button>
+
+                <button type="button" class="btn-duty-action btn-duty-ics" id="btnExportDutyIcs" title="Xuất file Lịch điện tử (.ics) đồng bộ vào iPhone / Android / Google Calendar">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>Lịch Điện Tử (.ics)</span>
+                </button>
+
+                <button type="button" class="btn-duty-action btn-duty-print" id="btnDutyPrintA4" title="In Bảng Phân Công Lịch Trực khổ A4 chuẩn hành chính bệnh viện">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  <span>In A4</span>
+                </button>
               </div>
 
               <!-- Cụm đồng bộ & cài đặt -->
@@ -1801,6 +1855,301 @@
                 </thead>
                 <tbody id="xmlTableBody"></tbody>
               </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================================
+             VIEW: TỐI ƯU & NÉN ẢNH CHUẨN WEBP (BATCH IMAGE OPTIMIZER)
+             ========================================================================= -->
+        <section class="workspace-view hidden" id="imageOptimizerView">
+          <div class="workspace-top-bar">
+            <div class="workspace-top-left">
+              <button type="button" class="btn-back-to-hub" id="btnBackToHubFromImgOpt" title="Quay lại Hub">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Quay lại</span>
+              </button>
+              <div class="workspace-heading">
+                <h2 class="workspace-title">Tối Ưu & Nén Ảnh Chuẩn Web (WebP)</h2>
+                <span class="badge-accent indigo">Nén Hàng Loạt &bull; Google PageSpeed</span>
+              </div>
+            </div>
+            <div class="workspace-top-right">
+              <button type="button" class="btn-action primary" id="btnRunBatchOptimization" disabled>
+                <span>⚡ Bắt Đầu Nén</span>
+              </button>
+              <button type="button" class="btn-action success" id="btnDownloadAllOptimizedZip" disabled>
+                <span>📦 Tải Toàn Bộ (.ZIP)</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="workspace-body-card">
+            <!-- Controls & Options Bar -->
+            <div class="opt-controls-bar">
+              <div class="opt-control-item">
+                <label>Định Dạng Đầu Ra:</label>
+                <select id="selOptFormat" class="opt-select">
+                  <option value="image/webp" selected>WebP (Khuyên dùng - Nhẹ hơn 80%)</option>
+                  <option value="image/jpeg">JPEG (Tương thích cao)</option>
+                  <option value="image/png">PNG (Nén không mất chi tiết)</option>
+                </select>
+              </div>
+
+              <div class="opt-control-item">
+                <label>Kích Thước Khung Ảnh:</label>
+                <select id="selOptResizeMode" class="opt-select">
+                  <option value="article_1200" selected>Bài Viết Website (Tối đa 1200px)</option>
+                  <option value="banner_1920">Banner Trang Chủ (Tối đa 1920px)</option>
+                  <option value="thumb_600">Ảnh Đại Diện / Thẻ (Tối đa 600px)</option>
+                  <option value="original">Giữ Nguyên Kích Thước Gốc</option>
+                </select>
+              </div>
+
+              <div class="opt-control-item">
+                <label>Mức Nén Chất Lượng: <span id="txtOptQualityVal" style="color: #38bdf8; font-weight: 700;">82%</span></label>
+                <input type="range" id="rngOptQuality" min="0.5" max="0.95" step="0.05" value="0.82" style="accent-color: #38bdf8;" />
+              </div>
+            </div>
+
+            <!-- Dropzone Area -->
+            <div class="opt-dropzone-wrapper">
+              <div class="pdf-dropzone" id="imgOptDropzone" style="min-height: 130px; padding: 22px 20px;">
+                <input type="file" id="imgOptFileInput" multiple accept="image/png, image/jpeg, image/webp, image/gif, image/bmp" class="hidden" />
+                <div class="dropzone-icon">🖼️</div>
+                <div class="dropzone-text">
+                  <strong>Kéo thả hàng loạt ảnh vào đây</strong> hoặc <span class="dropzone-browse" id="btnBrowseImgOpt">chọn tệp từ máy tính</span>
+                </div>
+                <div class="dropzone-hint">Hỗ trợ JPG, PNG, WebP, GIF, BMP &bull; Nén hàng loạt trực tiếp trên máy &bull; Bảo mật tuyệt đối</div>
+              </div>
+            </div>
+
+            <!-- Stats & Batch Actions Bar -->
+            <div class="opt-stats-bar hidden" id="imgOptStatsBar">
+              <div class="opt-stat-text">
+                Đã chọn <strong id="imgOptTotalCount" style="color: #fff;">0</strong> ảnh &bull; Dung lượng gốc: <strong id="imgOptOrigTotalSize">0 MB</strong> &bull; Đã nén: <strong id="imgOptNewTotalSize" style="color: #34d399;">0 MB</strong> (<span id="imgOptSavedPercent" style="color: #38bdf8; font-weight: 700;">-0%</span>)
+              </div>
+              <button type="button" class="btn-clear-opt-files" id="btnClearImgOptFiles">🗑️ Xóa Danh Sách</button>
+            </div>
+
+            <!-- Image Grid List -->
+            <div class="opt-items-grid" id="imgOptItemsGrid"></div>
+          </div>
+        </section>
+
+        <!-- =========================================================================
+             VIEW: SO SÁNH ĐỐI CHIẾU VĂN BẢN & DỮ LIỆU (SMART DIFF CHECKER)
+             ========================================================================= -->
+        <section class="workspace-view hidden" id="diffCheckerView">
+          <div class="workspace-top-bar">
+            <div class="workspace-top-left">
+              <button type="button" class="btn-back-to-hub" id="btnBackToHubFromDiff" title="Quay lại Hub">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Quay lại</span>
+              </button>
+              <div class="workspace-heading">
+                <h2 class="workspace-title">So Sánh Đối Chiếu Văn Bản / SQL (Diff Checker)</h2>
+                <span class="badge-accent violet">Phát Hiện Khác Biệt &bull; Trực Quan Hóa LCS</span>
+              </div>
+            </div>
+            <div class="workspace-top-right">
+              <button type="button" class="btn-action secondary" id="btnSwapDiffTexts">
+                <span>⇄ Hoán Đổi Hai Cột</span>
+              </button>
+              <button type="button" class="btn-action primary" id="btnExecuteDiffCompare">
+                <span>🔍 So Sánh Ngay</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="workspace-body-card">
+            <!-- Toolbar & Settings -->
+            <div class="diff-toolbar">
+              <div class="diff-modes-toggle">
+                <button type="button" class="diff-mode-btn active" id="btnDiffModeSplit" data-mode="split">2 Cột Song Song (Split)</button>
+                <button type="button" class="diff-mode-btn" id="btnDiffModeUnified" data-mode="unified">1 Cột Hợp Nhất (Unified)</button>
+              </div>
+              <div class="diff-options-group">
+                <label class="notif-pref-check">
+                  <input type="checkbox" id="chkDiffIgnoreWhitespace" />
+                  <span>Bỏ qua khoảng trắng</span>
+                </label>
+                <label class="notif-pref-check">
+                  <input type="checkbox" id="chkDiffIgnoreCase" />
+                  <span>Không phân biệt hoa/thường</span>
+                </label>
+                <button type="button" class="btn-diff-sample" id="btnLoadDiffSampleSql">Mẫu SQL</button>
+                <button type="button" class="btn-diff-sample" id="btnLoadDiffSampleContract">Mẫu Văn Bản</button>
+              </div>
+            </div>
+
+            <!-- Dual Text Input Area -->
+            <div class="diff-input-split-container" id="diffInputContainer">
+              <div class="diff-input-pane">
+                <div class="diff-pane-header">
+                  <span class="diff-pane-title">📄 VĂN BẢN GỐC / BẢN CŨ</span>
+                  <button type="button" class="btn-clear-pane" id="btnClearDiffLeft">Xóa</button>
+                </div>
+                <textarea id="txtDiffOriginal" class="diff-textarea" placeholder="Dán nội dung bản gốc (văn bản, câu lệnh SQL, mã XML/JSON)..."></textarea>
+              </div>
+              <div class="diff-input-pane">
+                <div class="diff-pane-header">
+                  <span class="diff-pane-title">📄 VĂN BẢN MỚI / BẢN SỬA ĐỔI</span>
+                  <button type="button" class="btn-clear-pane" id="btnClearDiffRight">Xóa</button>
+                </div>
+                <textarea id="txtDiffModified" class="diff-textarea" placeholder="Dán nội dung mới cần đối chiếu xem có gì thay đổi..."></textarea>
+              </div>
+            </div>
+
+            <!-- Diff Stats Summary Bar -->
+            <div class="diff-stats-dashboard hidden" id="diffStatsDashboard">
+              <div class="diff-stat-item same">
+                <span class="diff-stat-val" id="diffStatSame">0</span>
+                <span class="diff-stat-lbl">Dòng Trùng Khớp</span>
+              </div>
+              <div class="diff-stat-item added">
+                <span class="diff-stat-val" id="diffStatAdded">+0</span>
+                <span class="diff-stat-lbl">Dòng Thêm Mới</span>
+              </div>
+              <div class="diff-stat-item removed">
+                <span class="diff-stat-val" id="diffStatRemoved">-0</span>
+                <span class="diff-stat-lbl">Dòng Đã Xóa</span>
+              </div>
+              <div class="diff-stat-item similarity">
+                <span class="diff-stat-val" id="diffStatSimilarity">100%</span>
+                <span class="diff-stat-lbl">Độ Tương Đồng</span>
+              </div>
+            </div>
+
+            <!-- Diff Visualizer Output -->
+            <div class="diff-viewer-wrapper hidden" id="diffViewerWrapper">
+              <div class="diff-viewer-header">
+                <span>KẾT QUẢ ĐỐI CHIẾU CHI TIẾT</span>
+                <button type="button" class="btn-copy-diff-summary" id="btnCopyDiffSummary">📋 Sao Chép Báo Cáo Diff</button>
+              </div>
+              <div class="diff-viewer-content" id="diffViewerContent"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =========================================================================
+             VIEW: TẠO MÃ QR Y TẾ & CHUYỂN KHOẢN VIỆN PHÍ (VIETQR)
+             ========================================================================= -->
+        <section class="workspace-view hidden" id="medicalQrView">
+          <div class="workspace-top-bar">
+            <div class="workspace-top-left">
+              <button type="button" class="btn-back-to-hub" id="btnBackToHubFromQr" title="Quay lại Hub">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Quay lại</span>
+              </button>
+              <div class="workspace-heading">
+                <h2 class="workspace-title">Tạo Mã QR Y Tế & Chuyển Khoản Viện Phí VietQR</h2>
+                <span class="badge-accent emerald">Chuẩn NAPAS 247 &bull; Y Tế Bệnh Viện</span>
+              </div>
+            </div>
+            <div class="workspace-top-right">
+              <button type="button" class="btn-action primary" id="btnDownloadQrImage">
+                <span>💾 Tải Ảnh QR (.PNG)</span>
+              </button>
+              <button type="button" class="btn-action secondary" id="btnPrintQrCode">
+                <span>🖨️ In Mã QR</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="workspace-body-card">
+            <div class="qr-layout-grid">
+              <!-- Left Form Controls -->
+              <div class="qr-form-pane">
+                <!-- QR Mode Tabs -->
+                <div class="qr-mode-tabs" id="qrModeTabs">
+                  <button type="button" class="qr-tab-btn active" data-mode="vietqr">💳 Viện Phí VietQR</button>
+                  <button type="button" class="qr-tab-btn" data-mode="patient">🏥 Bệnh Nhân / BHYT</button>
+                  <button type="button" class="qr-tab-btn" data-mode="url">🌐 Link Bài Viết</button>
+                  <button type="button" class="qr-tab-btn" data-mode="wifi">📶 Wi-Fi Phòng Họp</button>
+                </div>
+
+                <!-- Form: VietQR -->
+                <div class="qr-form-section" id="formVietQr">
+                  <div class="form-group-custom">
+                    <label>Ngân Hàng Thụ Hưởng:</label>
+                    <select id="selQrBank" class="opt-select" style="width: 100%;"></select>
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Số Tài Khoản Bệnh Viện / Đơn Vị:</label>
+                    <input type="text" id="inputQrAccountNo" class="opt-input" placeholder="Ví dụ: 1012345678" value="1012345678" />
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Số Tiền (VND - Tùy chọn):</label>
+                    <input type="number" id="inputQrAmount" class="opt-input" placeholder="Ví dụ: 250000" />
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Nội Dung Nộp Viện Phí / Chuyển Khoản:</label>
+                    <input type="text" id="inputQrMessage" class="opt-input" placeholder="Ví dụ: Tam ung vien phi BN Nguyen Van A" value="Vien phi BVDK Bac Ninh 2" />
+                  </div>
+                </div>
+
+                <!-- Form: Patient QR -->
+                <div class="qr-form-section hidden" id="formPatientQr">
+                  <div class="form-group-custom">
+                    <label>Mã Bệnh Nhân (PatientID):</label>
+                    <input type="text" id="inputPatientId" class="opt-input" placeholder="Ví dụ: 240901001" />
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Họ và Tên Bệnh Nhân:</label>
+                    <input type="text" id="inputPatientName" class="opt-input" placeholder="Ví dụ: NGUYỄN VĂN A" />
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Năm Sinh / Giới Tính:</label>
+                    <div class="flex-row gap-8">
+                      <input type="text" id="inputPatientYear" class="opt-input" placeholder="1985" style="width: 120px;" />
+                      <select id="selPatientGender" class="opt-select" style="flex: 1;">
+                        <option value="Nam">Nam</option>
+                        <option value="Nu">Nữ</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Khoa / Phòng Khám:</label>
+                    <input type="text" id="inputPatientDept" class="opt-input" placeholder="Ví dụ: Khoa Khám Bệnh" />
+                  </div>
+                </div>
+
+                <!-- Form: URL -->
+                <div class="qr-form-section hidden" id="formUrlQr">
+                  <div class="form-group-custom">
+                    <label>Địa Chỉ URL Website / Bài Viết:</label>
+                    <input type="url" id="inputQrUrl" class="opt-input" placeholder="https://..." value="https://baocaocongviec-zeta.vercel.app/" />
+                  </div>
+                </div>
+
+                <!-- Form: Wi-Fi -->
+                <div class="qr-form-section hidden" id="formWifiQr">
+                  <div class="form-group-custom">
+                    <label>Tên Mạng Wi-Fi (SSID):</label>
+                    <input type="text" id="inputWifiSsid" class="opt-input" placeholder="BVDK_BACNINH2" value="BVDK_BACNINH2" />
+                  </div>
+                  <div class="form-group-custom">
+                    <label>Mật Khẩu Wi-Fi:</label>
+                    <input type="text" id="inputWifiPass" class="opt-input" placeholder="Mật khẩu phòng họp..." />
+                  </div>
+                </div>
+
+                <button type="button" class="btn-action primary" id="btnGenerateQrCode" style="width: 100%; margin-top: 15px; justify-content: center;">
+                  <span>⚡ Tạo Mã QR Ngay</span>
+                </button>
+              </div>
+
+              <!-- Right Preview Pane -->
+              <div class="qr-preview-pane">
+                <div class="qr-card-box">
+                  <div class="qr-badge-header">BVĐK BẮC NINH SỐ 2</div>
+                  <div class="qr-canvas-holder">
+                    <canvas id="canvasQrDisplay" width="280" height="280"></canvas>
+                  </div>
+                  <div class="qr-meta-footer" id="qrMetaFooter">Quét bằng ứng dụng Ngân hàng (VietQR) hoặc Zalo</div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -2440,6 +2789,86 @@
     </div>
   </div>
 
+  <!-- MODAL: Cài Đặt Hệ Thống Thông Báo & Cảnh Báo Nghiệp Vụ -->
+  <div class="modal-overlay hidden" id="modalNotificationSettings">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <div class="flex-row gap-8 align-center">
+          <span style="font-size: 1.25rem;">⚙️</span>
+          <h3 class="modal-title">CÀI ĐẶT THÔNG BÁO HỆ THỐNG</h3>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseNotifSettingsModal">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Nhóm 1: Thông báo Desktop Push -->
+        <div class="notif-settings-group">
+          <div class="notif-settings-header">
+            <strong>🔔 Thông Báo Màn Hình (Desktop Push)</strong>
+            <label class="switch-toggle">
+              <input type="checkbox" id="chkModalDesktopPush" />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <p class="notif-settings-desc">Hiển thị thông báo nổi ở góc màn hình máy tính Windows / Mac khi có ca trực hôm nay hoặc kỳ nộp báo cáo BHYT (ngay cả khi thu nhỏ trình duyệt).</p>
+        </div>
+
+        <!-- Nhóm 2: Âm thanh Web Audio & Âm lượng -->
+        <div class="notif-settings-group">
+          <div class="notif-settings-header">
+            <strong>🔊 Âm Thanh Thông Báo (Web Audio Chime)</strong>
+            <label class="switch-toggle">
+              <input type="checkbox" id="chkModalSoundEnabled" checked />
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="notif-volume-wrap" id="wrapNotifVolume" style="margin-top: 10px;">
+            <div class="flex-between align-center" style="margin-bottom: 6px; font-size: 0.76rem; color: #94a3b8;">
+              <span>Mức âm lượng:</span>
+              <span id="txtVolumePercent" style="color: #38bdf8; font-weight: 700;">60%</span>
+            </div>
+            <div class="flex-row gap-12 align-center">
+              <input type="range" id="rngNotifVolume" min="0.1" max="1.0" step="0.05" value="0.6" style="flex: 1; accent-color: #38bdf8; cursor: pointer;" />
+              <button type="button" class="btn-test-chime" id="btnTestModalChime" style="padding: 4px 10px;">▶ Nghe thử</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nhóm 3: Các Cảnh Báo Tự Động Bệnh Viện -->
+        <div class="notif-settings-group">
+          <strong style="display: block; margin-bottom: 10px; font-size: 0.82rem; color: #f1f5f9;">📋 Loại Cảnh Báo Nghiệp Vụ Tự Động:</strong>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label class="notif-pref-check">
+              <input type="checkbox" id="prefAlertDutyToday" checked />
+              <span>📅 Nhắc ca trực hôm nay & số Hotline trực</span>
+            </label>
+            <label class="notif-pref-check">
+              <input type="checkbox" id="prefAlertDutyTomorrow" checked />
+              <span>⏰ Nhắc trước ca trực ngày mai để chuẩn bị bàn giao</span>
+            </label>
+            <label class="notif-pref-check">
+              <input type="checkbox" id="prefAlertBhytDeadlines" checked />
+              <span>🏥 Hạn chót nộp báo cáo Giám định BHYT đợt 1 (ngày 15) & đợt 2 (cuối tháng)</span>
+            </label>
+            <label class="notif-pref-check">
+              <input type="checkbox" id="prefAlertVgcaReview" checked />
+              <span>🔐 Rà soát Chữ ký số VGCA & Email công vụ định kỳ (ngày 1 & 15)</span>
+            </label>
+            <label class="notif-pref-check">
+              <input type="checkbox" id="prefAlertCloudSync" checked />
+              <span>☁️ Cảnh báo đồng bộ Firebase Realtime & khôi phục kết nối</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnDismissNotifSettings">Đóng</button>
+        <button type="button" class="btn-modal-confirm" id="btnSaveNotifSettings">💾 LƯU CÀI ĐẶT &rarr;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -2457,6 +2886,9 @@
   <script defer src="js/tool-vgca-doichieu.js?v=3.1.0"></script>
   <script defer src="js/tool-vgca-cks.js?v=3.1.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.1.0"></script>
+  <script defer src="js/tool-image-optimizer.js?v=3.1.0"></script>
+  <script defer src="js/tool-diff-checker.js?v=3.1.0"></script>
+  <script defer src="js/tool-medical-qr.js?v=3.1.0"></script>
   <script defer src="js/notification-manager.js?v=3.1.0"></script>
   <script defer src="js/app.js?v=3.1.0"></script>
 </body>

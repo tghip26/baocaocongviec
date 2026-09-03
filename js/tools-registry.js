@@ -79,6 +79,26 @@ window.TOOLS_REGISTRY = [
     executeKey: "openPdfToImage"
   },
   {
+    id: "image-optimizer",
+    categoryId: "web-cms",
+    title: "Tối Ưu & Nén Ảnh Chuẩn Web",
+    subtitle: "Nén hàng loạt, chuyển sang WebP siêu nhẹ <250KB, tải ZIP",
+    description: "Nén dung lượng ảnh không suy giảm độ nét, đổi định dạng sang WebP chuẩn Google PageSpeed, resize kích thước chuẩn cho bài viết CMS.",
+    badge: "Nén Ảnh WebP Siêu Tốc",
+    badgeColor: "indigo",
+    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/><path d="M16 19h6"/><path d="M19 16v6"/></svg>`,
+    inputType: "image-optimizer-interactive",
+    acceptFile: ".jpg, .jpeg, .png, .webp, .gif",
+    outputName: "Anh_Website_Toi_Uu.zip",
+    guide: [
+      "Bước 1: Kéo thả hoặc chọn nhiều tệp ảnh PNG/JPG/WebP.",
+      "Bước 2: Chọn chế độ kích thước (Chuẩn bài viết 1200px, Banner 1920px, Thumbnail 600px).",
+      "Bước 3: Nhấn '⚡ BẮT ĐẦU TỐI ƯU HÀNG LOẠT' để nén siêu tốc.",
+      "Bước 4: Nhấn '📦 Tải Toàn Bộ (.ZIP)' hoặc tải riêng từng ảnh."
+    ],
+    executeKey: "openImageOptimizer"
+  },
+  {
     id: "schema-lookup",
     categoryId: "schema",
     title: "Tra Cứu Database Schema VIMES",
@@ -115,6 +135,25 @@ window.TOOLS_REGISTRY = [
       "Bước 4: Nhấn '📋 Sao Chép SQL' hoặc '💾 Tải File .SQL'."
     ],
     executeKey: "openSqlBuilder"
+  },
+  {
+    id: "diff-checker",
+    categoryId: "schema",
+    title: "So Sánh Đối Chiếu Văn Bản / SQL",
+    subtitle: "Tìm chi tiết từng dòng, từ ngữ khác biệt giữa 2 phiên bản",
+    description: "So sánh 2 văn bản, hợp đồng, quyết định y tế hoặc câu lệnh SQL/XML/JSON với thuật toán LCS và trực quan hóa song song (Split / Unified).",
+    badge: "Smart Diff Checker",
+    badgeColor: "violet",
+    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
+    inputType: "diff-checker-interactive",
+    outputName: "Ket_qua_so_sanh_diff.txt",
+    guide: [
+      "Bước 1: Dán văn bản gốc hoặc tệp nguồn vào cột bên trái.",
+      "Bước 2: Dán văn bản mới hoặc tệp cần đối chiếu vào cột bên phải.",
+      "Bước 3: Nhấn '🔍 SO SÁNH NGAY' để phân tích chi tiết.",
+      "Bước 4: Chuyển đổi giữa chế độ '2 Cột Song Song' hoặc '1 Cột Hợp Nhất'."
+    ],
+    executeKey: "openDiffChecker"
   },
   {
     id: "duty-roster",
@@ -174,6 +213,25 @@ window.TOOLS_REGISTRY = [
       "Bước 4: Tải tệp kết quả về máy tính."
     ],
     executeKey: "runGiamDinh"
+  },
+  {
+    id: "medical-qr",
+    categoryId: "giamdinh",
+    title: "Tạo Mã QR Y Tế & Viện Phí VietQR",
+    subtitle: "QR Bệnh nhân, Thẻ BHYT, CCCD, Link bài viết & Viện phí",
+    description: "Tạo nhanh mã QR chuẩn thông tin bệnh nhân, liên kết cổng thông tin bài viết và mã thanh toán viện phí chuẩn VietQR (NAPAS 247).",
+    badge: "Chuẩn VietQR & Y Tế",
+    badgeColor: "emerald",
+    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="10" y1="7" x2="10" y2="7"/><line x1="7" y1="10" x2="7" y2="10"/><line x1="10" y1="17" x2="10" y2="17"/><line x1="17" y1="10" x2="17" y2="10"/></svg>`,
+    inputType: "medical-qr-interactive",
+    outputName: "Ma_QR_Y_Te.png",
+    guide: [
+      "Bước 1: Chọn loại mã QR (Viện phí VietQR, Bệnh nhân, Link website, Wi-Fi).",
+      "Bước 2: Điền thông tin tương ứng (Ngân hàng, Số tài khoản, Số tiền, Mã BN...).",
+      "Bước 3: Hệ thống sinh mã QR sắc nét tức thời.",
+      "Bước 4: Nhấn '💾 Tải Mã QR (.PNG)' hoặc '🖨️ In Mã QR'."
+    ],
+    executeKey: "openMedicalQr"
   },
   {
     id: "cntt",

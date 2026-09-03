@@ -1502,6 +1502,167 @@ const ToolDutyRoster = {
       window.XLSX.utils.book_append_sheet(wb, ws, `Lich_Truc_T${month}_${year}`);
       window.XLSX.writeFile(wb, filename);
     }
+  },
+
+  /**
+   * Xuất file định dạng iCalendar (.ics) chuẩn RFC 5545
+   * Cho phép cán bộ nhập vào ứng dụng Lịch điện thoại (iPhone/Android/Google Calendar)
+   */
+  exportIcsCalendar(year, month, targetStaffId = null) {
+    const schedule = this.getSchedule(year, month);
+    const events = [];
+    const pad = (n) => String(n).padStart(2, '0');
+
+    schedule.forEach(d => {
+      const shift = d.shifts["shift_cntt"];
+      if (!shift || !shift.name || shift.name === "Chưa phân công" || shift.name === "Nghỉ trực") return;
+      if (targetStaffId && shift.id !== targetStaffId) return;
+
+      const dateStr = `${year}${pad(month)}${pad(d.day)}`;
+      const nextDate = new Date(year, month - 1, d.day + 1);
+      const nextDateStr = `${nextDate.getFullYear()}${pad(nextDate.getMonth() + 1)}${pad(nextDate.getDate())}`;
+
+      events.push(`BEGIN:VEVENT
+UID:duty_${year}_${month}_${d.day}_${shift.id || 'staff'}@bvdkbacninh2.vn
+DTSTAMP:${dateStr}T000000Z
+DTSTART;VALUE=DATE:${dateStr}
+DTEND;VALUE=DATE:${nextDateStr}
+SUMMARY:🏥 Ca Trực CNTT BVĐK Bắc Ninh 2: ${shift.name}
+DESCRIPTION:Ca trực CNTT ngày ${d.day}/${month}/${year}\\nCán bộ: ${shift.name} (${shift.role || "P.CNTT"})\\nHotline: ${shift.phone || "0912.345.678"}\\nĐơn vị: BVĐK Bắc Ninh Số 2
+LOCATION:Phòng Công Nghệ Thông Tin - BVĐK Bắc Ninh Số 2
+BEGIN:VALARM
+TRIGGER:-PT2H
+ACTION:DISPLAY
+DESCRIPTION:Nhắc nhở ca trực CNTT BVĐK Bắc Ninh 2
+END:VALARM
+END:VEVENT`);
+    });
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//BVDK Bac Ninh 2//Lich Truc CNTT//VI
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Lịch Trực CNTT BVĐK Bắc Ninh 2 (T${month}/${year})
+X-WR-TIMEZONE:Asia/Ho_Chi_Minh
+${events.join("\n")}
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Lich_Truc_CNTT_T${month}_${year}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return events.length;
+  },
+
+  /**
+   * Mở chế độ In Bảng Phân Công Lịch Trực A4 chuẩn hành chính bệnh viện
+   */
+  printDutyRosterA4(year, month) {
+    const schedule = this.getSchedule(year, month);
+    const printWin = window.open("", "_blank", "width=1000,height=800");
+    if (!printWin) return;
+
+    let rowsHtml = "";
+    schedule.forEach((d, idx) => {
+      const shift = d.shifts["shift_cntt"];
+      const isOff = shift && (shift.isOffDay || shift.name === "Nghỉ trực");
+      const isWeekend = d.isWeekend;
+      const rowStyle = isWeekend ? 'background:#f8fafc;font-weight:600;' : '';
+      rowsHtml += `
+        <tr style="${rowStyle}">
+          <td style="border:1px solid #475569;padding:5px 8px;text-align:center;">${idx + 1}</td>
+          <td style="border:1px solid #475569;padding:5px 8px;text-align:center;">Ngày ${d.day}/${month}</td>
+          <td style="border:1px solid #475569;padding:5px 8px;text-align:center;">${d.dayName}</td>
+          <td style="border:1px solid #475569;padding:5px 8px;"><strong>${isOff ? "Nghỉ trực" : (shift ? shift.name : "Chưa phân công")}</strong></td>
+          <td style="border:1px solid #475569;padding:5px 8px;text-align:center;">${isOff ? "-" : (shift ? (shift.role || "P.CNTT") : "")}</td>
+          <td style="border:1px solid #475569;padding:5px 8px;text-align:center;">${isOff ? "" : (shift ? (shift.phone || "") : "")}</td>
+          <td style="border:1px solid #475569;padding:5px 8px;text-align:center;">${isOff ? "Nghỉ trực" : (isWeekend ? "Trực Cuối tuần" : "Trực Thường")}</td>
+        </tr>
+      `;
+    });
+
+    printWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>BẢNG PHÂN CÔNG LỊCH TRỰC PHÒNG CNTT - THÁNG ${month}/${year}</title>
+        <style>
+          @page { size: A4 portrait; margin: 15mm; }
+          body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.4; color: #000; margin: 0; padding: 20px; }
+          .header-table { width: 100%; margin-bottom: 20px; border-collapse: collapse; }
+          .header-table td { vertical-align: top; text-align: center; }
+          h2 { text-align: center; font-size: 15pt; margin: 15px 0 5px 0; text-transform: uppercase; }
+          h3 { text-align: center; font-size: 13pt; font-weight: normal; font-style: italic; margin: 0 0 20px 0; }
+          .roster-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 11pt; }
+          .roster-table th { border: 1px solid #000; padding: 7px 6px; background: #e2e8f0; text-align: center; font-weight: bold; }
+          .sig-table { width: 100%; border-collapse: collapse; margin-top: 30px; page-break-inside: avoid; }
+          .sig-table td { text-align: center; vertical-align: top; width: 50%; }
+        </style>
+      </head>
+      <body>
+        <table class="header-table">
+          <tr>
+            <td style="width: 45%;">
+              <strong>SỞ Y TẾ BẮC NINH</strong><br/>
+              <strong>BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2</strong><br/>
+              <em>PHÒNG CÔNG NGHỆ THÔNG TIN</em>
+            </td>
+            <td style="width: 55%;">
+              <strong>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</strong><br/>
+              <strong>Độc lập - Tự do - Hạnh phúc</strong><br/>
+              <span>---------------------</span>
+            </td>
+          </tr>
+        </table>
+
+        <h2>BẢNG PHÂN CÔNG LỊCH TRỰC PHÒNG CNTT</h2>
+        <h3>Tháng ${month} năm ${year} &bull; BVĐK Bắc Ninh Số 2</h3>
+
+        <table class="roster-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">STT</th>
+              <th style="width: 85px;">Ngày</th>
+              <th style="width: 75px;">Thứ</th>
+              <th>Cán Bộ Trực Ca</th>
+              <th style="width: 120px;">Chức Danh</th>
+              <th style="width: 110px;">Hotline Trực</th>
+              <th style="width: 110px;">Ghi Chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <table class="sig-table">
+          <tr>
+            <td>
+              <strong>NGƯỜI LẬP BẢNG</strong><br/>
+              <em>(Ký và ghi rõ họ tên)</em>
+              <div style="height: 75px;"></div>
+            </td>
+            <td>
+              <em>Bắc Ninh, ngày ..... tháng ..... năm ${year}</em><br/>
+              <strong>TRƯỞNG PHÒNG CNTT</strong><br/>
+              <em>(Ký, ghi rõ họ tên & đóng dấu)</em>
+              <div style="height: 75px;"></div>
+            </td>
+          </tr>
+        </table>
+        <script>
+          window.onload = function() { window.print(); };
+        </script>
+      </body>
+      </html>
+    `);
+    printWin.document.close();
   }
 };
 

@@ -71,6 +71,9 @@ class AppController {
     this.sqlBuilderView = document.getElementById("sqlBuilderView");
     this.dutyRosterView = document.getElementById("dutyRosterView");
     this.bhytXmlView = document.getElementById("bhytXmlView");
+    this.imageOptimizerView = document.getElementById("imageOptimizerView");
+    this.diffCheckerView = document.getElementById("diffCheckerView");
+    this.medicalQrView = document.getElementById("medicalQrView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
@@ -88,6 +91,31 @@ class AppController {
     this.notifFilterTabs = document.getElementById("notifFilterTabs");
     this.notificationListContainer = document.getElementById("notificationListContainer");
     this.chkToggleNotifSound = document.getElementById("chkToggleNotifSound");
+    this.notifTotalBadge = document.getElementById("notifTotalBadge");
+    this.btnOpenNotifSettings = document.getElementById("btnOpenNotifSettings");
+    this.notifSearchInput = document.getElementById("notifSearchInput");
+    this.btnClearNotifSearch = document.getElementById("btnClearNotifSearch");
+    this.notifStatusFilterBar = document.getElementById("notifStatusFilterBar");
+    this.notifUnreadPillCount = document.getElementById("notifUnreadPillCount");
+    this.btnTestNotifSound = document.getElementById("btnTestNotifSound");
+    this.btnRequestDesktopNotif = document.getElementById("btnRequestDesktopNotif");
+    this.txtDesktopNotifStatus = document.getElementById("txtDesktopNotifStatus");
+
+    // Modal Notification Settings Elements
+    this.modalNotificationSettings = document.getElementById("modalNotificationSettings");
+    this.btnCloseNotifSettingsModal = document.getElementById("btnCloseNotifSettingsModal");
+    this.btnDismissNotifSettings = document.getElementById("btnDismissNotifSettings");
+    this.btnSaveNotifSettings = document.getElementById("btnSaveNotifSettings");
+    this.chkModalDesktopPush = document.getElementById("chkModalDesktopPush");
+    this.chkModalSoundEnabled = document.getElementById("chkModalSoundEnabled");
+    this.rngNotifVolume = document.getElementById("rngNotifVolume");
+    this.txtVolumePercent = document.getElementById("txtVolumePercent");
+    this.btnTestModalChime = document.getElementById("btnTestModalChime");
+    this.prefAlertDutyToday = document.getElementById("prefAlertDutyToday");
+    this.prefAlertDutyTomorrow = document.getElementById("prefAlertDutyTomorrow");
+    this.prefAlertBhytDeadlines = document.getElementById("prefAlertBhytDeadlines");
+    this.prefAlertVgcaReview = document.getElementById("prefAlertVgcaReview");
+    this.prefAlertCloudSync = document.getElementById("prefAlertCloudSync");
 
     // PDF to Image Elements
     this.btnBackToHubFromPdf = document.getElementById("btnBackToHubFromPdf");
@@ -363,6 +391,80 @@ class AppController {
 
     // Toast Container
     this.toastContainer = document.getElementById("toastContainer");
+
+    // Image Optimizer Elements
+    this.imageOptimizer = window.ToolImageOptimizer ? new ToolImageOptimizer() : null;
+    this.btnBackToHubFromImgOpt = document.getElementById("btnBackToHubFromImgOpt");
+    this.btnRunBatchOptimization = document.getElementById("btnRunBatchOptimization");
+    this.btnDownloadAllOptimizedZip = document.getElementById("btnDownloadAllOptimizedZip");
+    this.selOptFormat = document.getElementById("selOptFormat");
+    this.selOptResizeMode = document.getElementById("selOptResizeMode");
+    this.rngOptQuality = document.getElementById("rngOptQuality");
+    this.txtOptQualityVal = document.getElementById("txtOptQualityVal");
+    this.imgOptDropzone = document.getElementById("imgOptDropzone");
+    this.imgOptFileInput = document.getElementById("imgOptFileInput");
+    this.btnBrowseImgOpt = document.getElementById("btnBrowseImgOpt");
+    this.imgOptStatsBar = document.getElementById("imgOptStatsBar");
+    this.imgOptTotalCount = document.getElementById("imgOptTotalCount");
+    this.imgOptOrigTotalSize = document.getElementById("imgOptOrigTotalSize");
+    this.imgOptNewTotalSize = document.getElementById("imgOptNewTotalSize");
+    this.imgOptSavedPercent = document.getElementById("imgOptSavedPercent");
+    this.btnClearImgOptFiles = document.getElementById("btnClearImgOptFiles");
+    this.imgOptItemsGrid = document.getElementById("imgOptItemsGrid");
+
+    // Diff Checker Elements
+    this.diffChecker = window.ToolDiffChecker ? new ToolDiffChecker() : null;
+    this.btnBackToHubFromDiff = document.getElementById("btnBackToHubFromDiff");
+    this.btnSwapDiffTexts = document.getElementById("btnSwapDiffTexts");
+    this.btnExecuteDiffCompare = document.getElementById("btnExecuteDiffCompare");
+    this.btnDiffModeSplit = document.getElementById("btnDiffModeSplit");
+    this.btnDiffModeUnified = document.getElementById("btnDiffModeUnified");
+    this.chkDiffIgnoreWhitespace = document.getElementById("chkDiffIgnoreWhitespace");
+    this.chkDiffIgnoreCase = document.getElementById("chkDiffIgnoreCase");
+    this.btnLoadDiffSampleSql = document.getElementById("btnLoadDiffSampleSql");
+    this.btnLoadDiffSampleContract = document.getElementById("btnLoadDiffSampleContract");
+    this.txtDiffOriginal = document.getElementById("txtDiffOriginal");
+    this.txtDiffModified = document.getElementById("txtDiffModified");
+    this.btnClearDiffLeft = document.getElementById("btnClearDiffLeft");
+    this.btnClearDiffRight = document.getElementById("btnClearDiffRight");
+    this.diffStatsDashboard = document.getElementById("diffStatsDashboard");
+    this.diffStatSame = document.getElementById("diffStatSame");
+    this.diffStatAdded = document.getElementById("diffStatAdded");
+    this.diffStatRemoved = document.getElementById("diffStatRemoved");
+    this.diffStatSimilarity = document.getElementById("diffStatSimilarity");
+    this.diffViewerWrapper = document.getElementById("diffViewerWrapper");
+    this.diffViewerContent = document.getElementById("diffViewerContent");
+    this.btnCopyDiffSummary = document.getElementById("btnCopyDiffSummary");
+
+    // Medical QR Elements
+    this.medicalQr = window.ToolMedicalQr ? new ToolMedicalQr() : null;
+    this.btnBackToHubFromQr = document.getElementById("btnBackToHubFromQr");
+    this.btnDownloadQrImage = document.getElementById("btnDownloadQrImage");
+    this.btnPrintQrCode = document.getElementById("btnPrintQrCode");
+    this.qrModeTabs = document.getElementById("qrModeTabs");
+    this.formVietQr = document.getElementById("formVietQr");
+    this.formPatientQr = document.getElementById("formPatientQr");
+    this.formUrlQr = document.getElementById("formUrlQr");
+    this.formWifiQr = document.getElementById("formWifiQr");
+    this.selQrBank = document.getElementById("selQrBank");
+    this.inputQrAccountNo = document.getElementById("inputQrAccountNo");
+    this.inputQrAmount = document.getElementById("inputQrAmount");
+    this.inputQrMessage = document.getElementById("inputQrMessage");
+    this.inputPatientId = document.getElementById("inputPatientId");
+    this.inputPatientName = document.getElementById("inputPatientName");
+    this.inputPatientYear = document.getElementById("inputPatientYear");
+    this.selPatientGender = document.getElementById("selPatientGender");
+    this.inputPatientDept = document.getElementById("inputPatientDept");
+    this.inputQrUrl = document.getElementById("inputQrUrl");
+    this.inputWifiSsid = document.getElementById("inputWifiSsid");
+    this.inputWifiPass = document.getElementById("inputWifiPass");
+    this.btnGenerateQrCode = document.getElementById("btnGenerateQrCode");
+    this.canvasQrDisplay = document.getElementById("canvasQrDisplay");
+    this.qrMetaFooter = document.getElementById("qrMetaFooter");
+
+    // Duty Roster Extra Buttons
+    this.btnExportDutyIcs = document.getElementById("btnExportDutyIcs");
+    this.btnDutyPrintA4 = document.getElementById("btnDutyPrintA4");
   }
 
   initEvents() {
@@ -374,6 +476,9 @@ class AppController {
     this.initSqlBuilderEvents();
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
+    this.initImageOptimizerEvents();
+    this.initDiffCheckerEvents();
+    this.initMedicalQrEvents();
 
     // Password Visibility Toggles
     this.setupPasswordToggle("btnToggleLoginPass", "inputDutyLoginPass");
@@ -1614,6 +1719,21 @@ class AppController {
     this.btnRunAction.disabled = !hasPrimary || this.isProcessing;
   }
 
+  hideAllViews() {
+    if (this.hubView) this.hubView.classList.add("hidden");
+    if (this.toolView) this.toolView.classList.add("hidden");
+    if (this.schemaView) this.schemaView.classList.add("hidden");
+    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
+    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
+    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
+    if (this.imageOptimizerView) this.imageOptimizerView.classList.add("hidden");
+    if (this.diffCheckerView) this.diffCheckerView.classList.add("hidden");
+    if (this.medicalQrView) this.medicalQrView.classList.add("hidden");
+    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+  }
+
   handleUrlHash() {
     const hash = window.location.hash.replace(/^#\/?/, "").trim();
     if (!hash || hash === "hub" || hash === "all") {
@@ -1630,6 +1750,12 @@ class AppController {
       this.showWordToHtmlView();
     } else if (hash === "pdf-to-image") {
       this.showPdfToImageView();
+    } else if (hash === "image-optimizer") {
+      this.showImageOptimizerView();
+    } else if (hash === "diff-checker") {
+      this.showDiffCheckerView();
+    } else if (hash === "medical-qr") {
+      this.showMedicalQrView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
@@ -1643,6 +1769,12 @@ class AppController {
           this.showSqlBuilderView();
         } else if (tool.id === "duty-roster") {
           this.showDutyRosterView();
+        } else if (tool.id === "image-optimizer") {
+          this.showImageOptimizerView();
+        } else if (tool.id === "diff-checker") {
+          this.showDiffCheckerView();
+        } else if (tool.id === "medical-qr") {
+          this.showMedicalQrView();
         } else {
           this.showToolView(tool.id);
         }
@@ -1654,15 +1786,8 @@ class AppController {
 
   showHubView() {
     this.currentToolId = null;
+    this.hideAllViews();
     this.hubView.classList.remove("hidden");
-    this.toolView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
-    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
-    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
-    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
-    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
     window.scrollTo(0, 0);
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1672,14 +1797,7 @@ class AppController {
 
   showSchemaView() {
     this.currentToolId = "schema-lookup";
-    this.hubView.classList.add("hidden");
-    this.toolView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
-    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
-    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
-    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
-    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+    this.hideAllViews();
     this.schemaView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1701,14 +1819,7 @@ class AppController {
 
   showSqlBuilderView() {
     this.currentToolId = "sql-builder";
-    this.hubView.classList.add("hidden");
-    this.toolView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
-    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
-    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
-    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+    this.hideAllViews();
     if (this.sqlBuilderView) this.sqlBuilderView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1721,13 +1832,7 @@ class AppController {
 
   showDutyRosterView() {
     this.currentToolId = "duty-roster";
-    this.hubView.classList.add("hidden");
-    this.toolView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
-    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
-    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
-    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
+    this.hideAllViews();
     if (this.dutyRosterView) this.dutyRosterView.classList.remove("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.remove("hidden");
 
@@ -1755,14 +1860,7 @@ class AppController {
 
   showBhytXmlView() {
     this.currentToolId = "bhyt-xml";
-    this.hubView.classList.add("hidden");
-    this.toolView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
-    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
-    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
-    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+    this.hideAllViews();
     if (this.bhytXmlView) this.bhytXmlView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1774,14 +1872,7 @@ class AppController {
 
   showWordToHtmlView() {
     this.currentToolId = "word-to-html";
-    this.hubView.classList.add("hidden");
-    this.toolView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
-    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
-    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
-    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+    this.hideAllViews();
     if (this.wordToHtmlView) this.wordToHtmlView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1793,14 +1884,7 @@ class AppController {
 
   showPdfToImageView() {
     this.currentToolId = "pdf-to-image";
-    this.hubView.classList.add("hidden");
-    this.toolView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
-    if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
-    if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
-    if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
-    if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
-    if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
+    this.hideAllViews();
     if (this.pdfToImageView) this.pdfToImageView.classList.remove("hidden");
 
     this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
@@ -1808,6 +1892,46 @@ class AppController {
     });
 
     window.scrollTo(0, 0);
+  }
+
+  showImageOptimizerView() {
+    this.currentToolId = "image-optimizer";
+    this.hideAllViews();
+    if (this.imageOptimizerView) this.imageOptimizerView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "image-optimizer");
+    });
+
+    window.scrollTo(0, 0);
+  }
+
+  showDiffCheckerView() {
+    this.currentToolId = "diff-checker";
+    this.hideAllViews();
+    if (this.diffCheckerView) this.diffCheckerView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "diff-checker");
+    });
+
+    window.scrollTo(0, 0);
+  }
+
+  showMedicalQrView() {
+    this.currentToolId = "medical-qr";
+    this.hideAllViews();
+    if (this.medicalQrView) this.medicalQrView.classList.remove("hidden");
+
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === "medical-qr");
+    });
+
+    window.scrollTo(0, 0);
+    // Tự sinh mã QR mặc định ban đầu nếu canvas rỗng
+    if (this.canvasQrDisplay && this.canvasQrDisplay.width === 0) {
+      this.generateMedicalQrCode();
+    }
   }
 
   showToolView(toolId) {
@@ -1835,13 +1959,24 @@ class AppController {
       this.showPdfToImageView();
       return;
     }
+    if (toolId === "image-optimizer") {
+      this.showImageOptimizerView();
+      return;
+    }
+    if (toolId === "diff-checker") {
+      this.showDiffCheckerView();
+      return;
+    }
+    if (toolId === "medical-qr") {
+      this.showMedicalQrView();
+      return;
+    }
 
     const tool = window.getToolById(toolId);
     if (!tool) return;
 
     this.currentToolId = toolId;
-    this.hubView.classList.add("hidden");
-    this.schemaView.classList.add("hidden");
+    this.hideAllViews();
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
@@ -4165,6 +4300,12 @@ ${this.currentW2hHtmlOutput}
     if (this.btnExportDutyExcel) {
       this.btnExportDutyExcel.addEventListener("click", () => this.exportDutyRosterExcel());
     }
+    if (this.btnExportDutyIcs) {
+      this.btnExportDutyIcs.addEventListener("click", () => this.exportDutyRosterIcs());
+    }
+    if (this.btnDutyPrintA4) {
+      this.btnDutyPrintA4.addEventListener("click", () => this.printDutyRosterA4());
+    }
 
     // View Mode Tabs
     if (this.btnTabDutyCalendar) this.btnTabDutyCalendar.addEventListener("click", () => this.switchDutyViewMode("calendar"));
@@ -5557,12 +5698,16 @@ ${this.currentW2hHtmlOutput}
   }
 
   // =========================================================================
-  // NOTIFICATION CENTER SYSTEM
+  // NOTIFICATION CENTER SYSTEM (ENTERPRISE HEALTHCARE WORKSTATION)
   // =========================================================================
   initNotificationEvents() {
     if (!this.notifManager) this.notifManager = new NotificationManager();
 
-    // Toggle dropdown
+    this.currentNotifCategory = "all";
+    this.currentNotifStatus = "all";
+    this.currentNotifSearch = "";
+
+    // Toggle dropdown panel
     if (this.btnToggleNotificationCenter) {
       this.btnToggleNotificationCenter.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -5571,6 +5716,7 @@ ${this.currentW2hHtmlOutput}
           this.notificationCenterPanel.classList.toggle("hidden", isOpen);
           if (!isOpen) {
             this.renderNotificationCenter();
+            if (this.notifSearchInput) this.notifSearchInput.focus();
           }
         }
       });
@@ -5588,26 +5734,65 @@ ${this.currentW2hHtmlOutput}
     // Mark all as read
     if (this.btnMarkAllNotifsRead) {
       this.btnMarkAllNotifsRead.addEventListener("click", () => {
-        const list = this.notifManager.getNotifications();
-        list.forEach(n => n.isRead = true);
-        this.notifManager.saveNotifications(list);
+        this.notifManager.markAllAsRead();
         this.updateNotificationBadge();
         this.renderNotificationCenter();
         this.showToast("Đã đánh dấu tất cả thông báo là đã đọc.", "info");
       });
     }
 
-    // Clear all notifications
+    // Clear all unpinned notifications
     if (this.btnClearAllNotifs) {
       this.btnClearAllNotifs.addEventListener("click", () => {
-        this.notifManager.saveNotifications([]);
+        const list = this.notifManager.getNotifications();
+        const unpinnedCount = list.filter(n => !n.pinned).length;
+        if (unpinnedCount === 0) {
+          this.showToast("Không có thông báo nào (các thông báo ghim được giữ lại).", "info");
+          return;
+        }
+        this.notifManager.clearAll();
         this.updateNotificationBadge();
         this.renderNotificationCenter();
-        this.showToast("Đã xóa toàn bộ lịch sử thông báo.", "info");
+        this.showToast(`Đã xóa ${unpinnedCount} thông báo (giữ nguyên thông báo đã ghim).`, "info");
       });
     }
 
-    // Filter tabs inside panel
+    // Real-time search inside notification drawer
+    if (this.notifSearchInput) {
+      this.notifSearchInput.addEventListener("input", (e) => {
+        this.currentNotifSearch = e.target.value.trim();
+        if (this.btnClearNotifSearch) {
+          this.btnClearNotifSearch.classList.toggle("hidden", !this.currentNotifSearch);
+        }
+        this.renderNotificationCenter();
+      });
+    }
+
+    if (this.btnClearNotifSearch) {
+      this.btnClearNotifSearch.addEventListener("click", () => {
+        if (this.notifSearchInput) {
+          this.notifSearchInput.value = "";
+          this.currentNotifSearch = "";
+          this.btnClearNotifSearch.classList.add("hidden");
+          this.renderNotificationCenter();
+          this.notifSearchInput.focus();
+        }
+      });
+    }
+
+    // Status filter bar (Tất cả / Chưa đọc / Đã ghim)
+    if (this.notifStatusFilterBar) {
+      this.notifStatusFilterBar.querySelectorAll(".notif-status-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          this.notifStatusFilterBar.querySelectorAll(".notif-status-pill").forEach(p => p.classList.remove("active"));
+          pill.classList.add("active");
+          this.currentNotifStatus = pill.dataset.status || "all";
+          this.renderNotificationCenter();
+        });
+      });
+    }
+
+    // Category filter tabs
     if (this.notifFilterTabs) {
       this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(tab => {
         tab.addEventListener("click", () => {
@@ -5619,11 +5804,126 @@ ${this.currentW2hHtmlOutput}
       });
     }
 
-    // Sound toggle
+    // Sound toggle in footer
     if (this.chkToggleNotifSound) {
       this.chkToggleNotifSound.checked = this.notifManager.getSoundEnabled();
       this.chkToggleNotifSound.addEventListener("change", (e) => {
         this.notifManager.setSoundEnabled(e.target.checked);
+      });
+    }
+
+    // Test chime button in footer
+    if (this.btnTestNotifSound) {
+      this.btnTestNotifSound.addEventListener("click", () => {
+        this.notifManager.playChime("success");
+      });
+    }
+
+    // Request Desktop Native Notifications
+    const updateDesktopBtnLabel = () => {
+      if (!this.txtDesktopNotifStatus) return;
+      if (this.notifManager.hasDesktopPermission()) {
+        this.txtDesktopNotifStatus.textContent = "✓ Đã bật Desktop Push";
+        if (this.btnRequestDesktopNotif) this.btnRequestDesktopNotif.classList.add("enabled");
+      } else {
+        this.txtDesktopNotifStatus.textContent = "🔔 Bật Desktop Push";
+        if (this.btnRequestDesktopNotif) this.btnRequestDesktopNotif.classList.remove("enabled");
+      }
+    };
+    updateDesktopBtnLabel();
+
+    if (this.btnRequestDesktopNotif) {
+      this.btnRequestDesktopNotif.addEventListener("click", async () => {
+        if (!this.notifManager.hasDesktopSupport()) {
+          this.showToast("Trình duyệt này không hỗ trợ Desktop Notification API.", "warning");
+          return;
+        }
+        const granted = await this.notifManager.requestDesktopPermission();
+        updateDesktopBtnLabel();
+        if (granted) {
+          this.showToast("🎉 Đã bật thông báo màn hình máy tính thành công!", "success");
+          this.notifManager.sendDesktopNotification("BVĐK Bắc Ninh Số 2 - Thông Báo", {
+            body: "Cổng nghiệp vụ CNTT đã kích hoạt nhận thông báo trên màn hình máy tính của bạn."
+          });
+        } else {
+          this.showToast("Bạn đã từ chối hoặc chặn quyền thông báo của trình duyệt.", "warning");
+        }
+      });
+    }
+
+    // =========================================================================
+    // MODAL: NOTIFICATION SETTINGS CONTROLLER
+    // =========================================================================
+    if (this.btnOpenNotifSettings) {
+      this.btnOpenNotifSettings.addEventListener("click", () => {
+        if (this.chkModalDesktopPush) {
+          this.chkModalDesktopPush.checked = this.notifManager.getDesktopEnabled() && this.notifManager.hasDesktopPermission();
+        }
+        if (this.chkModalSoundEnabled) {
+          this.chkModalSoundEnabled.checked = this.notifManager.getSoundEnabled();
+        }
+        if (this.rngNotifVolume) {
+          const vol = this.notifManager.getVolume();
+          this.rngNotifVolume.value = vol;
+          if (this.txtVolumePercent) this.txtVolumePercent.textContent = Math.round(vol * 100) + "%";
+        }
+        const prefs = this.notifManager.getAlertPrefs();
+        if (this.prefAlertDutyToday) this.prefAlertDutyToday.checked = prefs.alertDutyToday !== false;
+        if (this.prefAlertDutyTomorrow) this.prefAlertDutyTomorrow.checked = prefs.alertDutyTomorrow !== false;
+        if (this.prefAlertBhytDeadlines) this.prefAlertBhytDeadlines.checked = prefs.alertBhytDeadlines !== false;
+        if (this.prefAlertVgcaReview) this.prefAlertVgcaReview.checked = prefs.alertVgcaReview !== false;
+        if (this.prefAlertCloudSync) this.prefAlertCloudSync.checked = prefs.alertCloudSync !== false;
+
+        this.showModal(this.modalNotificationSettings);
+      });
+    }
+
+    if (this.btnCloseNotifSettingsModal) {
+      this.btnCloseNotifSettingsModal.addEventListener("click", () => this.hideModal(this.modalNotificationSettings));
+    }
+    if (this.btnDismissNotifSettings) {
+      this.btnDismissNotifSettings.addEventListener("click", () => this.hideModal(this.modalNotificationSettings));
+    }
+
+    if (this.rngNotifVolume) {
+      this.rngNotifVolume.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        if (this.txtVolumePercent) this.txtVolumePercent.textContent = Math.round(val * 100) + "%";
+        this.notifManager.setVolume(val);
+      });
+    }
+
+    if (this.btnTestModalChime) {
+      this.btnTestModalChime.addEventListener("click", () => {
+        this.notifManager.playChime("duty");
+      });
+    }
+
+    if (this.btnSaveNotifSettings) {
+      this.btnSaveNotifSettings.addEventListener("click", async () => {
+        if (this.chkModalDesktopPush && this.chkModalDesktopPush.checked) {
+          await this.notifManager.requestDesktopPermission();
+        } else {
+          this.notifManager.setDesktopEnabled(false);
+        }
+        if (this.chkModalSoundEnabled) {
+          this.notifManager.setSoundEnabled(this.chkModalSoundEnabled.checked);
+          if (this.chkToggleNotifSound) this.chkToggleNotifSound.checked = this.chkModalSoundEnabled.checked;
+        }
+        if (this.rngNotifVolume) {
+          this.notifManager.setVolume(this.rngNotifVolume.value);
+        }
+        this.notifManager.setAlertPrefs({
+          alertDutyToday: this.prefAlertDutyToday ? this.prefAlertDutyToday.checked : true,
+          alertDutyTomorrow: this.prefAlertDutyTomorrow ? this.prefAlertDutyTomorrow.checked : true,
+          alertBhytDeadlines: this.prefAlertBhytDeadlines ? this.prefAlertBhytDeadlines.checked : true,
+          alertVgcaReview: this.prefAlertVgcaReview ? this.prefAlertVgcaReview.checked : true,
+          alertCloudSync: this.prefAlertCloudSync ? this.prefAlertCloudSync.checked : true
+        });
+
+        updateDesktopBtnLabel();
+        this.hideModal(this.modalNotificationSettings);
+        this.showToast("💾 Đã lưu cấu hình thông báo & cảnh báo thông minh thành công!", "success");
       });
     }
 
@@ -5633,7 +5933,7 @@ ${this.currentW2hHtmlOutput}
       const staffList = (window.ToolDutyRoster) ? ToolDutyRoster.getStaffList() : [];
       this.notifManager.runAutomatedSmartAlerts(schedule, staffList);
       this.updateNotificationBadge();
-    }, 1500);
+    }, 1200);
 
     this.updateNotificationBadge();
   }
@@ -5641,25 +5941,38 @@ ${this.currentW2hHtmlOutput}
   updateNotificationBadge() {
     if (!this.notifManager) return;
     const unread = this.notifManager.getUnreadCount();
+    const all = this.notifManager.getNotifications().length;
+
     if (this.notificationBadgeCount) {
       this.notificationBadgeCount.textContent = unread;
       this.notificationBadgeCount.classList.toggle("hidden", unread === 0);
+    }
+    if (this.notifTotalBadge) {
+      this.notifTotalBadge.textContent = all;
+    }
+    if (this.notifUnreadPillCount) {
+      this.notifUnreadPillCount.textContent = unread;
     }
   }
 
   renderNotificationCenter() {
     if (!this.notificationListContainer || !this.notifManager) return;
-    const list = this.notifManager.getNotifications();
-    const category = this.currentNotifCategory || "all";
-    const filtered = (category === "all") ? list : list.filter(n => n.category === category);
 
+    const filtered = this.notifManager.getFilteredNotifications({
+      search: this.currentNotifSearch || "",
+      category: this.currentNotifCategory || "all",
+      status: this.currentNotifStatus || "all"
+    });
+
+    this.updateNotificationBadge();
     this.notificationListContainer.innerHTML = "";
 
     if (filtered.length === 0) {
       this.notificationListContainer.innerHTML = `
         <div class="notif-empty-state">
           <span class="empty-icon">🔕</span>
-          <p>Không có thông báo nào trong mục này</p>
+          <p>Không tìm thấy thông báo nào phù hợp</p>
+          <span style="font-size: 0.68rem; opacity: 0.7;">Thử đổi tab lọc hoặc từ khóa tìm kiếm</span>
         </div>
       `;
       return;
@@ -5667,47 +5980,121 @@ ${this.currentW2hHtmlOutput}
 
     filtered.forEach(notif => {
       const item = document.createElement("div");
-      item.className = `notif-item ${notif.isRead ? "read" : "unread"} notif-${notif.type || "info"}`;
-      
+      item.className = `notif-item ${notif.isRead ? "read" : "unread"} notif-${notif.type || "info"} ${notif.pinned ? "pinned" : ""}`;
+      item.dataset.notifId = notif.id;
+
+      // Icon container
       const iconWrap = document.createElement("div");
-      iconWrap.className = "notif-item-icon";
+      iconWrap.className = `notif-item-icon notif-icon-${notif.category || "system"}`;
       iconWrap.textContent = notif.icon || (notif.type === "success" ? "✅" : notif.type === "warning" ? "⚠️" : "🔔");
 
+      // Content Body
       const body = document.createElement("div");
       body.className = "notif-item-body";
 
+      const titleRow = document.createElement("div");
+      titleRow.className = "notif-item-title-row";
+
       const title = document.createElement("div");
       title.className = "notif-item-title";
-      title.innerHTML = `${notif.title} <span class="notif-item-time">${this.notifManager.formatTimeAgo(notif.timestamp)}</span>`;
+      title.innerHTML = `
+        ${notif.pinned ? '<span class="notif-pin-tag" title="Thông báo được ghim">📌</span>' : ''}
+        <span>${notif.title}</span>
+      `;
+
+      const time = document.createElement("span");
+      time.className = "notif-item-time";
+      time.textContent = this.notifManager.formatTimeAgo(notif.timestamp);
+
+      titleRow.appendChild(title);
+      titleRow.appendChild(time);
 
       const msg = document.createElement("div");
       msg.className = "notif-item-msg";
       msg.innerHTML = notif.message;
 
-      body.appendChild(title);
+      body.appendChild(titleRow);
       body.appendChild(msg);
+
+      // Bottom Row: Actions & Quick Links
+      const bottomRow = document.createElement("div");
+      bottomRow.className = "notif-item-footer-row";
 
       if (notif.actionText && notif.actionHash) {
         const actionBtn = document.createElement("a");
         actionBtn.href = notif.actionHash;
         actionBtn.className = "notif-item-action-link";
-        actionBtn.textContent = notif.actionText;
-        actionBtn.addEventListener("click", () => {
+        actionBtn.innerHTML = `${notif.actionText} &rarr;`;
+        actionBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
           notif.isRead = true;
-          this.notifManager.saveNotifications(list);
+          this.notifManager.markAsRead(notif.id);
           this.updateNotificationBadge();
           if (this.notificationCenterPanel) this.notificationCenterPanel.classList.add("hidden");
         });
-        body.appendChild(actionBtn);
+        bottomRow.appendChild(actionBtn);
+      } else {
+        bottomRow.appendChild(document.createElement("div"));
       }
+
+      // Action Tool Buttons (Pin, Toggle Read, Delete)
+      const toolActs = document.createElement("div");
+      toolActs.className = "notif-quick-actions";
+
+      // Pin Toggle Button
+      const btnPin = document.createElement("button");
+      btnPin.type = "button";
+      btnPin.className = `btn-notif-tool-act ${notif.pinned ? 'active' : ''}`;
+      btnPin.title = notif.pinned ? "Bỏ ghim thông báo" : "Ghim thông báo lên đầu";
+      btnPin.innerHTML = "📌";
+      btnPin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.notifManager.togglePin(notif.id);
+        this.renderNotificationCenter();
+      });
+
+      // Toggle Read Button
+      const btnRead = document.createElement("button");
+      btnRead.type = "button";
+      btnRead.className = "btn-notif-tool-act";
+      btnRead.title = notif.isRead ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc";
+      btnRead.innerHTML = notif.isRead ? "👁️" : "✓";
+      btnRead.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.notifManager.toggleRead(notif.id);
+        this.updateNotificationBadge();
+        this.renderNotificationCenter();
+      });
+
+      // Delete Button
+      const btnDelete = document.createElement("button");
+      btnDelete.type = "button";
+      btnDelete.className = "btn-notif-tool-act btn-delete";
+      btnDelete.title = "Xóa thông báo này";
+      btnDelete.innerHTML = "✕";
+      btnDelete.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.notifManager.deleteNotification(notif.id);
+        this.updateNotificationBadge();
+        item.style.opacity = "0";
+        item.style.transform = "translateX(20px)";
+        setTimeout(() => this.renderNotificationCenter(), 150);
+      });
+
+      toolActs.appendChild(btnPin);
+      toolActs.appendChild(btnRead);
+      toolActs.appendChild(btnDelete);
+      bottomRow.appendChild(toolActs);
+
+      body.appendChild(bottomRow);
 
       item.appendChild(iconWrap);
       item.appendChild(body);
 
       item.addEventListener("click", (e) => {
-        if (e.target.tagName !== "A") {
+        if (!e.target.closest(".btn-notif-tool-act") && !e.target.closest(".notif-item-action-link")) {
           notif.isRead = true;
-          this.notifManager.saveNotifications(list);
+          this.notifManager.markAsRead(notif.id);
           this.updateNotificationBadge();
           item.classList.remove("unread");
           item.classList.add("read");
@@ -6201,182 +6588,576 @@ ${this.currentW2hHtmlOutput}
   }
 
   // =========================================================================
-  // NOTIFICATION CENTER & SMART ALERTS CONTROLLER METHODS
+  // ULTRA TOOL 1: BATCH WEB IMAGE OPTIMIZER
   // =========================================================================
-  initNotificationEvents() {
-    if (!this.notifManager) return;
+  initImageOptimizerEvents() {
+    if (!this.imageOptimizer) return;
 
-    if (this.btnToggleNotificationCenter) {
-      this.btnToggleNotificationCenter.addEventListener("click", (e) => {
+    if (this.btnBackToHubFromImgOpt) {
+      this.btnBackToHubFromImgOpt.addEventListener("click", () => {
+        window.location.hash = "hub";
+      });
+    }
+
+    if (this.btnBrowseImgOpt && this.imgOptFileInput) {
+      this.btnBrowseImgOpt.addEventListener("click", (e) => {
         e.stopPropagation();
-        if (this.notificationCenterPanel) {
-          const isHidden = this.notificationCenterPanel.classList.toggle("hidden");
-          if (!isHidden) {
-            this.renderNotificationCenter();
-          }
+        this.imgOptFileInput.click();
+      });
+    }
+
+    if (this.imgOptDropzone && this.imgOptFileInput) {
+      this.imgOptDropzone.addEventListener("click", () => {
+        this.imgOptFileInput.click();
+      });
+
+      this.imgOptDropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        this.imgOptDropzone.classList.add("drag-over");
+      });
+
+      this.imgOptDropzone.addEventListener("dragleave", () => {
+        this.imgOptDropzone.classList.remove("drag-over");
+      });
+
+      this.imgOptDropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        this.imgOptDropzone.classList.remove("drag-over");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.handleImageOptimizerFiles(e.dataTransfer.files);
+        }
+      });
+
+      this.imgOptFileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handleImageOptimizerFiles(e.target.files);
         }
       });
     }
 
-    if (this.notificationCenterPanel) {
-      this.notificationCenterPanel.addEventListener("click", (e) => {
-        e.stopPropagation();
+    if (this.selOptFormat) {
+      this.selOptFormat.addEventListener("change", (e) => {
+        this.imageOptimizer.format = e.target.value;
       });
     }
 
-    document.addEventListener("click", () => {
-      if (this.notificationCenterPanel && !this.notificationCenterPanel.classList.contains("hidden")) {
-        this.notificationCenterPanel.classList.add("hidden");
-      }
-    });
-
-    if (this.btnMarkAllNotifsRead) {
-      this.btnMarkAllNotifsRead.addEventListener("click", () => {
-        this.notifManager.markAllAsRead();
-        this.renderNotificationCenter();
-        this.updateNotificationBadge();
-        this.showToast("Đã đánh dấu tất cả thông báo là đã đọc!", "success");
+    if (this.selOptResizeMode) {
+      this.selOptResizeMode.addEventListener("change", (e) => {
+        this.imageOptimizer.resizeMode = e.target.value;
       });
     }
 
-    if (this.btnClearAllNotifs) {
-      this.btnClearAllNotifs.addEventListener("click", () => {
-        this.notifManager.clearAll();
-        this.renderNotificationCenter();
-        this.updateNotificationBadge();
-        this.showToast("Đã xóa toàn bộ lịch sử thông báo.", "info");
+    if (this.rngOptQuality && this.txtOptQualityVal) {
+      this.rngOptQuality.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        this.imageOptimizer.quality = val;
+        this.txtOptQualityVal.textContent = Math.round(val * 100) + "%";
       });
     }
 
-    if (this.chkToggleNotifSound) {
-      this.chkToggleNotifSound.checked = this.notifManager.getSoundEnabled();
-      this.chkToggleNotifSound.addEventListener("change", (e) => {
-        this.notifManager.setSoundEnabled(e.target.checked);
-        if (e.target.checked) {
-          this.notifManager.playChime("success");
-          this.showToast("Đã bật âm thanh nhắc nhở thông báo.", "success");
-        } else {
-          this.showToast("Đã tắt âm thanh nhắc nhở thông báo.", "info");
-        }
+    if (this.btnRunBatchOptimization) {
+      this.btnRunBatchOptimization.addEventListener("click", () => {
+        this.runBatchImageOptimization();
       });
     }
 
-    // Category filter tabs
-    if (this.notifFilterTabs) {
-      this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(tab => {
-        tab.addEventListener("click", () => {
-          this.notifFilterTabs.querySelectorAll(".notif-tab-item").forEach(t => t.classList.remove("active"));
-          tab.classList.add("active");
-          this.currentNotifCategory = tab.dataset.cat;
-          this.renderNotificationCenter();
-        });
+    if (this.btnDownloadAllOptimizedZip) {
+      this.btnDownloadAllOptimizedZip.addEventListener("click", () => {
+        this.downloadAllOptimizedZip();
       });
     }
 
-    // Trigger initial automated smart alerts
-    const staffList = ToolDutyRoster ? ToolDutyRoster.getStaffList() : [];
-    const schedule = (this.dutySchedule && this.dutySchedule.length > 0) ? this.dutySchedule : (ToolDutyRoster ? ToolDutyRoster.generateSchedule(new Date().getFullYear(), new Date().getMonth() + 1, staffList) : []);
-    this.notifManager.runAutomatedSmartAlerts(schedule, staffList);
-
-    this.updateNotificationBadge();
-  }
-
-  updateNotificationBadge() {
-    if (!this.notificationBadgeCount || !this.notifManager) return;
-    const unread = this.notifManager.getUnreadCount();
-    if (unread > 0) {
-      this.notificationBadgeCount.textContent = unread > 99 ? "99+" : unread;
-      this.notificationBadgeCount.classList.remove("hidden");
-    } else {
-      this.notificationBadgeCount.classList.add("hidden");
+    if (this.btnClearImgOptFiles) {
+      this.btnClearImgOptFiles.addEventListener("click", () => {
+        this.imageOptimizer.clearFiles();
+        if (this.imgOptFileInput) this.imgOptFileInput.value = "";
+        this.updateImageOptimizerStats();
+        this.renderImageOptimizerItems();
+        this.showToast("Đã xóa toàn bộ danh sách ảnh.", "info");
+      });
     }
   }
 
-  renderNotificationCenter() {
-    if (!this.notificationListContainer || !this.notifManager) return;
-    this.notificationListContainer.innerHTML = "";
+  handleImageOptimizerFiles(fileList) {
+    const added = this.imageOptimizer.addFiles(fileList);
+    if (added.length === 0) {
+      this.showToast("Không tìm thấy tệp hình ảnh hợp lệ (PNG, JPG, WebP, GIF, BMP).", "warning");
+      return;
+    }
+    this.updateImageOptimizerStats();
+    this.renderImageOptimizerItems();
+    this.showToast(`Đã thêm ${added.length} ảnh vào danh sách nén tối ưu!`, "success");
+  }
 
-    const allNotifs = this.notifManager.getNotifications();
-    const cat = this.currentNotifCategory || "all";
-
-    const filtered = allNotifs.filter(n => {
-      if (cat === "all") return true;
-      if (cat === "duty") return n.category === "duty";
-      if (cat === "bhyt") return n.category === "bhyt";
-      if (cat === "system") return n.category === "system" || n.category === "network";
-      return true;
-    });
-
-    if (filtered.length === 0) {
-      this.notificationListContainer.innerHTML = `
-        <div class="notif-empty-state">
-          <div class="empty-icon">🔕</div>
-          <div>Không có thông báo nào trong mục này.</div>
-        </div>
-      `;
+  updateImageOptimizerStats() {
+    const list = this.imageOptimizer.filesList;
+    const total = list.length;
+    if (total === 0) {
+      if (this.imgOptStatsBar) this.imgOptStatsBar.classList.add("hidden");
+      if (this.btnRunBatchOptimization) this.btnRunBatchOptimization.disabled = true;
+      if (this.btnDownloadAllOptimizedZip) this.btnDownloadAllOptimizedZip.disabled = true;
       return;
     }
 
-    filtered.forEach(notif => {
-      const item = document.createElement("div");
-      item.className = `notif-item ${notif.isRead ? 'read' : 'unread'}`;
-      
-      const timeStr = this.notifManager.formatTimeAgo(notif.timestamp);
-      let actionHtml = "";
-      if (notif.actionText && notif.actionHash) {
-        actionHtml = `<a href="${notif.actionHash}" class="notif-item-action-btn">${notif.actionText} &rarr;</a>`;
+    if (this.imgOptStatsBar) this.imgOptStatsBar.classList.remove("hidden");
+    if (this.btnRunBatchOptimization) this.btnRunBatchOptimization.disabled = false;
+
+    let origBytes = 0;
+    let newBytes = 0;
+    let doneCount = 0;
+
+    list.forEach(item => {
+      origBytes += item.originalSize;
+      if (item.status === "done" && item.optimizedSize > 0) {
+        newBytes += item.optimizedSize;
+        doneCount++;
+      } else {
+        newBytes += item.originalSize;
       }
-
-      item.innerHTML = `
-        <div class="notif-item-icon">${notif.icon || "ℹ️"}</div>
-        <div class="notif-item-body">
-          <div class="notif-item-title">
-            <span>${notif.title}</span>
-            <div style="display:flex;align-items:center;">
-              <span class="notif-item-time">${timeStr}</span>
-              <button type="button" class="btn-notif-delete-single" title="Xóa thông báo này">&times;</button>
-            </div>
-          </div>
-          <div class="notif-item-msg">${notif.message}</div>
-          ${actionHtml}
-        </div>
-      `;
-
-      // Read on click
-      item.addEventListener("click", (e) => {
-        if (!e.target.classList.contains("btn-notif-delete-single")) {
-          this.notifManager.markAsRead(notif.id);
-          item.classList.remove("unread");
-          item.classList.add("read");
-          this.updateNotificationBadge();
-        }
-      });
-
-      // Delete single
-      const btnDel = item.querySelector(".btn-notif-delete-single");
-      if (btnDel) {
-        btnDel.addEventListener("click", (e) => {
-          e.stopPropagation();
-          this.notifManager.deleteNotification(notif.id);
-          this.renderNotificationCenter();
-          this.updateNotificationBadge();
-        });
-      }
-
-      // Link action
-      const btnAct = item.querySelector(".notif-item-action-btn");
-      if (btnAct) {
-        btnAct.addEventListener("click", () => {
-          this.notifManager.markAsRead(notif.id);
-          if (this.notificationCenterPanel) this.notificationCenterPanel.classList.add("hidden");
-          this.updateNotificationBadge();
-        });
-      }
-
-      this.notificationListContainer.appendChild(item);
     });
 
-    this.updateNotificationBadge();
+    if (this.imgOptTotalCount) this.imgOptTotalCount.textContent = total;
+    if (this.imgOptOrigTotalSize) this.imgOptOrigTotalSize.textContent = this.imageOptimizer.formatBytes(origBytes);
+    if (this.imgOptNewTotalSize) this.imgOptNewTotalSize.textContent = this.imageOptimizer.formatBytes(newBytes);
+
+    const savedPercent = origBytes > 0 && doneCount > 0 ? Math.round(((origBytes - newBytes) / origBytes) * 100) : 0;
+    if (this.imgOptSavedPercent) {
+      this.imgOptSavedPercent.textContent = `-${Math.max(0, savedPercent)}%`;
+    }
+
+    if (this.btnDownloadAllOptimizedZip) {
+      this.btnDownloadAllOptimizedZip.disabled = doneCount === 0;
+    }
+  }
+
+  renderImageOptimizerItems() {
+    if (!this.imgOptItemsGrid) return;
+    const list = this.imageOptimizer.filesList;
+    if (list.length === 0) {
+      this.imgOptItemsGrid.innerHTML = "";
+      return;
+    }
+
+    this.imgOptItemsGrid.innerHTML = list.map(item => {
+      const origFormatted = this.imageOptimizer.formatBytes(item.originalSize);
+      const newFormatted = item.optimizedSize ? this.imageOptimizer.formatBytes(item.optimizedSize) : "Chưa nén";
+      const savedPct = item.optimizedSize && item.originalSize > item.optimizedSize ? Math.round(((item.originalSize - item.optimizedSize) / item.originalSize) * 100) : 0;
+
+      let statusBadge = `<span class="opt-item-status-badge">Chờ nén</span>`;
+      let actionBtn = "";
+      if (item.status === "processing") {
+        statusBadge = `<span class="opt-item-status-badge" style="background:#0284c7;">Đang nén...</span>`;
+      } else if (item.status === "done") {
+        statusBadge = `<span class="opt-item-status-badge" style="background:#059669;">Hoàn thành</span>`;
+        if (item.optimizedBlob) {
+          const downloadUrl = URL.createObjectURL(item.optimizedBlob);
+          const ext = this.imageOptimizer.format === "image/webp" ? ".webp" : (this.imageOptimizer.format === "image/jpeg" ? ".jpg" : ".png");
+          const base = item.name.replace(/\.[^/.]+$/, "");
+          actionBtn = `<a href="${downloadUrl}" download="${base}_opt${ext}" class="btn-item-download">💾 Tải ảnh</a>`;
+        }
+      } else if (item.status === "error") {
+        statusBadge = `<span class="opt-item-status-badge" style="background:#e11d48;">Lỗi</span>`;
+      }
+
+      const tempThumb = URL.createObjectURL(item.file);
+
+      return `
+        <div class="opt-item-card" id="card_${item.id}">
+          <div class="opt-item-preview">
+            <img src="${tempThumb}" alt="${item.name}" />
+            ${statusBadge}
+          </div>
+          <div class="opt-item-info">
+            <div class="opt-item-name" title="${item.name}">${item.name}</div>
+            <div class="opt-item-sizes">
+              <span>Gốc: ${origFormatted}</span>
+              <span>Sau nén: <strong>${newFormatted}</strong></span>
+            </div>
+            ${savedPct > 0 ? `<div class="opt-item-savings">Tiết kiệm: -${savedPct}%</div>` : ""}
+          </div>
+          <div class="opt-item-actions">
+            ${actionBtn}
+            <button type="button" class="btn-item-remove" data-id="${item.id}" title="Xóa ảnh">✕</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Wire remove buttons
+    this.imgOptItemsGrid.querySelectorAll(".btn-item-remove").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const id = e.currentTarget.dataset.id;
+        this.imageOptimizer.removeFile(id);
+        this.updateImageOptimizerStats();
+        this.renderImageOptimizerItems();
+      });
+    });
+  }
+
+  async runBatchImageOptimization() {
+    if (!this.imageOptimizer || this.imageOptimizer.filesList.length === 0) return;
+    if (this.btnRunBatchOptimization) {
+      this.btnRunBatchOptimization.disabled = true;
+      this.btnRunBatchOptimization.innerHTML = `<span>⏳ Đang Nén...</span>`;
+    }
+
+    this.showToast("Bắt đầu tối ưu và nén hàng loạt hình ảnh...", "info");
+
+    await this.imageOptimizer.processAll((current, total, item) => {
+      this.updateImageOptimizerStats();
+      this.renderImageOptimizerItems();
+    });
+
+    if (this.btnRunBatchOptimization) {
+      this.btnRunBatchOptimization.disabled = false;
+      this.btnRunBatchOptimization.innerHTML = `<span>⚡ Bắt Đầu Nén</span>`;
+    }
+
+    this.updateImageOptimizerStats();
+    this.renderImageOptimizerItems();
+    if (this.notifManager) this.notifManager.playChime("success");
+    this.showToast("🎉 Đã tối ưu và nén toàn bộ ảnh thành công! Bạn có thể tải trọn gói file .ZIP.", "success", 6000);
+  }
+
+  async downloadAllOptimizedZip() {
+    if (!this.imageOptimizer) return;
+    try {
+      this.showToast("Đang đóng gói file .ZIP hình ảnh tối ưu...", "info");
+      const count = await this.imageOptimizer.exportAsZip();
+      this.showToast(`📦 Đã tải trọn gói ${count} ảnh tối ưu thành công!`, "success");
+    } catch (e) {
+      this.showToast(e.message || "Lỗi đóng gói file ZIP.", "error");
+    }
+  }
+
+  // =========================================================================
+  // ULTRA TOOL 2: SMART DIFF CHECKER
+  // =========================================================================
+  initDiffCheckerEvents() {
+    if (!this.diffChecker) return;
+
+    if (this.btnBackToHubFromDiff) {
+      this.btnBackToHubFromDiff.addEventListener("click", () => {
+        window.location.hash = "hub";
+      });
+    }
+
+    if (this.btnSwapDiffTexts) {
+      this.btnSwapDiffTexts.addEventListener("click", () => {
+        const temp = this.txtDiffOriginal.value;
+        this.txtDiffOriginal.value = this.txtDiffModified.value;
+        this.txtDiffModified.value = temp;
+        this.showToast("Đã hoán đổi vị trí nội dung giữa 2 cột.", "info");
+      });
+    }
+
+    if (this.btnClearDiffLeft) {
+      this.btnClearDiffLeft.addEventListener("click", () => {
+        this.txtDiffOriginal.value = "";
+      });
+    }
+
+    if (this.btnClearDiffRight) {
+      this.btnClearDiffRight.addEventListener("click", () => {
+        this.txtDiffModified.value = "";
+      });
+    }
+
+    if (this.btnDiffModeSplit && this.btnDiffModeUnified) {
+      this.btnDiffModeSplit.addEventListener("click", () => {
+        this.diffChecker.viewMode = "split";
+        this.btnDiffModeSplit.classList.add("active");
+        this.btnDiffModeUnified.classList.remove("active");
+        this.executeDiffComparison(false);
+      });
+
+      this.btnDiffModeUnified.addEventListener("click", () => {
+        this.diffChecker.viewMode = "unified";
+        this.btnDiffModeUnified.classList.add("active");
+        this.btnDiffModeSplit.classList.remove("active");
+        this.executeDiffComparison(false);
+      });
+    }
+
+    if (this.chkDiffIgnoreWhitespace) {
+      this.chkDiffIgnoreWhitespace.addEventListener("change", (e) => {
+        this.diffChecker.ignoreWhitespace = e.target.checked;
+        if (this.txtDiffOriginal.value || this.txtDiffModified.value) {
+          this.executeDiffComparison(false);
+        }
+      });
+    }
+
+    if (this.chkDiffIgnoreCase) {
+      this.chkDiffIgnoreCase.addEventListener("change", (e) => {
+        this.diffChecker.ignoreCase = e.target.checked;
+        if (this.txtDiffOriginal.value || this.txtDiffModified.value) {
+          this.executeDiffComparison(false);
+        }
+      });
+    }
+
+    if (this.btnLoadDiffSampleSql) {
+      this.btnLoadDiffSampleSql.addEventListener("click", () => {
+        this.txtDiffOriginal.value = `-- Truy vấn cũ lấy danh sách bệnh nhân BHYT
+SELECT p.patient_id, p.p_name, i.invoiceno, i.total_amount
+FROM hms_patient p
+JOIN hms_inward i ON p.patient_id = i.patient_id
+WHERE i.status = 'A' AND p.is_bhyt = 'Y'
+ORDER BY i.inward_date DESC;`;
+
+        this.txtDiffModified.value = `-- Truy vấn MỚI tối ưu lấy danh sách bệnh nhân BHYT
+SELECT /*+ INDEX(i IDX_INWARD_STATUS) */
+       p.patient_id, p.p_name, p.card_code, i.invoiceno, i.total_amount, i.bhyt_amount
+FROM hms_patient p
+INNER JOIN hms_inward i ON p.patient_id = i.patient_id
+WHERE i.status = 'A' 
+  AND p.is_bhyt = 'Y'
+  AND i.inward_date >= TRUNC(SYSDATE, 'MM')
+ORDER BY i.inward_date DESC;`;
+        this.executeDiffComparison(true);
+      });
+    }
+
+    if (this.btnLoadDiffSampleContract) {
+      this.btnLoadDiffSampleContract.addEventListener("click", () => {
+        this.txtDiffOriginal.value = `ĐIỀU 3: TRÁCH NHIỆM BÊN B
+1. Cung cấp trang thiết bị máy tính và hạ tầng mạng LAN theo phụ lục I.
+2. Thời gian bảo hành hệ thống là 12 tháng kể từ ngày ký biên bản nghiệm thu.
+3. Hỗ trợ kỹ thuật qua điện thoại từ 8h00 đến 17h00 các ngày làm việc trong tuần.`;
+
+        this.txtDiffModified.value = `ĐIỀU 3: TRÁCH NHIỆM BÊN B
+1. Cung cấp trang thiết bị máy tính và hạ tầng mạng LAN cáp quang theo phụ lục I.
+2. Thời gian bảo hành hệ thống là 24 tháng kể từ ngày ký biên bản nghiệm thu.
+3. Hỗ trợ kỹ thuật trực tiếp và trực hotline 24/7 đối với sự cố tê liệt hệ thống HIS.
+4. Định kỳ sao lưu dữ liệu máy chủ hàng tuần và bàn giao cho Bên A.`;
+        this.executeDiffComparison(true);
+      });
+    }
+
+    if (this.btnExecuteDiffCompare) {
+      this.btnExecuteDiffCompare.addEventListener("click", () => {
+        this.executeDiffComparison(true);
+      });
+    }
+
+    if (this.btnCopyDiffSummary) {
+      this.btnCopyDiffSummary.addEventListener("click", () => {
+        const textA = this.txtDiffOriginal.value;
+        const textB = this.txtDiffModified.value;
+        const result = this.diffChecker.computeDiff(textA, textB);
+        const report = `=== BÁO CÁO ĐỐI CHIẾU SO SÁNH DIFF ===\n` +
+          `- Tổng số dòng: ${result.stats.totalLines}\n` +
+          `- Dòng trùng khớp: ${result.stats.sameCount}\n` +
+          `- Dòng thêm mới (+): ${result.stats.addedCount}\n` +
+          `- Dòng đã xóa (-): ${result.stats.removedCount}\n` +
+          `- Độ tương đồng: ${result.stats.similarity}%\n\n` +
+          `BVĐK Bắc Ninh Số 2 - Hệ thống Báo Cáo Công Việc`;
+        navigator.clipboard.writeText(report);
+        this.showToast("📋 Đã sao chép báo cáo kết quả đối chiếu vào bộ nhớ tạm!", "success");
+      });
+    }
+  }
+
+  executeDiffComparison(showToastNotice = true) {
+    const textA = this.txtDiffOriginal ? this.txtDiffOriginal.value : "";
+    const textB = this.txtDiffModified ? this.txtDiffModified.value : "";
+
+    if (!textA && !textB) {
+      if (showToastNotice) this.showToast("Vui lòng dán nội dung vào ít nhất một ô để so sánh.", "warning");
+      return;
+    }
+
+    const result = this.diffChecker.computeDiff(textA, textB);
+
+    // Hiển thị dashboard thống kê
+    if (this.diffStatsDashboard) this.diffStatsDashboard.classList.remove("hidden");
+    if (this.diffStatSame) this.diffStatSame.textContent = result.stats.sameCount;
+    if (this.diffStatAdded) this.diffStatAdded.textContent = `+${result.stats.addedCount}`;
+    if (this.diffStatRemoved) this.diffStatRemoved.textContent = `-${result.stats.removedCount}`;
+    if (this.diffStatSimilarity) this.diffStatSimilarity.textContent = `${result.stats.similarity}%`;
+
+    // Hiển thị viewer chi tiết
+    if (this.diffViewerWrapper) this.diffViewerWrapper.classList.remove("hidden");
+    if (this.diffViewerContent) {
+      const htmlRes = this.diffChecker.renderDiffHtml(result, this.diffChecker.viewMode);
+      if (this.diffChecker.viewMode === "split") {
+        this.diffViewerContent.innerHTML = `
+          <div class="diff-viewer-pane">${htmlRes.leftHtml}</div>
+          <div class="diff-viewer-pane">${htmlRes.rightHtml}</div>
+        `;
+      } else {
+        this.diffViewerContent.innerHTML = `
+          <div class="diff-viewer-pane" style="width: 100%;">${htmlRes.unifiedHtml}</div>
+        `;
+      }
+    }
+
+    if (showToastNotice) {
+      if (this.notifManager) this.notifManager.playChime("info");
+      this.showToast(`Đã đối chiếu xong! Độ tương đồng: ${result.stats.similarity}% (+${result.stats.addedCount} thêm mới, -${result.stats.removedCount} đã xóa).`, "success");
+    }
+  }
+
+  // =========================================================================
+  // ULTRA TOOL 3: MEDICAL QR & VIETQR
+  // =========================================================================
+  initMedicalQrEvents() {
+    if (!this.medicalQr) return;
+
+    if (this.btnBackToHubFromQr) {
+      this.btnBackToHubFromQr.addEventListener("click", () => {
+        window.location.hash = "hub";
+      });
+    }
+
+    // Populate banks
+    if (this.selQrBank) {
+      const banks = this.medicalQr.getBanks();
+      this.selQrBank.innerHTML = banks.map(b => `<option value="${b.bin}">${b.shortName} (${b.bin}) - ${b.name}</option>`).join("");
+    }
+
+    // Tab mode switching
+    if (this.qrModeTabs) {
+      this.qrModeTabs.querySelectorAll(".qr-tab-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          this.qrModeTabs.querySelectorAll(".qr-tab-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const mode = btn.dataset.mode;
+          if (this.formVietQr) this.formVietQr.classList.toggle("hidden", mode !== "vietqr");
+          if (this.formPatientQr) this.formPatientQr.classList.toggle("hidden", mode !== "patient");
+          if (this.formUrlQr) this.formUrlQr.classList.toggle("hidden", mode !== "url");
+          if (this.formWifiQr) this.formWifiQr.classList.toggle("hidden", mode !== "wifi");
+          this.generateMedicalQrCode();
+        });
+      });
+    }
+
+    if (this.btnGenerateQrCode) {
+      this.btnGenerateQrCode.addEventListener("click", () => {
+        this.generateMedicalQrCode();
+      });
+    }
+
+    if (this.btnDownloadQrImage) {
+      this.btnDownloadQrImage.addEventListener("click", () => {
+        if (this.canvasQrDisplay) {
+          this.medicalQr.downloadQrCanvas(this.canvasQrDisplay, "Ma_QR_Y_Te_BVDKBN2.png");
+          this.showToast("💾 Đã tải ảnh mã QR độ nét cao về máy!", "success");
+        }
+      });
+    }
+
+    if (this.btnPrintQrCode) {
+      this.btnPrintQrCode.addEventListener("click", () => {
+        this.printMedicalQr();
+      });
+    }
+  }
+
+  async generateMedicalQrCode() {
+    if (!this.medicalQr || !this.canvasQrDisplay) return;
+
+    const activeTab = this.qrModeTabs ? this.qrModeTabs.querySelector(".qr-tab-btn.active") : null;
+    const mode = activeTab ? activeTab.dataset.mode : "vietqr";
+    let qrPayload = "";
+    let footerText = "";
+
+    if (mode === "vietqr") {
+      const bankBin = this.selQrBank ? this.selQrBank.value : "970436";
+      const accountNo = this.inputQrAccountNo ? this.inputQrAccountNo.value.trim() : "";
+      const amount = this.inputQrAmount ? parseInt(this.inputQrAmount.value, 10) : 0;
+      const message = this.inputQrMessage ? this.inputQrMessage.value.trim() : "";
+
+      if (!accountNo) {
+        this.showToast("Vui lòng nhập số tài khoản bệnh viện / đơn vị.", "warning");
+        return;
+      }
+
+      qrPayload = this.medicalQr.generateVietQrString({ bankBin, accountNo, amount, message });
+      footerText = `Chuyển khoản Viện Phí Napas 247 &bull; ${accountNo}`;
+    } else if (mode === "patient") {
+      const patientId = this.inputPatientId ? this.inputPatientId.value.trim() : "240901001";
+      const fullName = this.inputPatientName ? this.inputPatientName.value.trim() : "NGUYỄN VĂN A";
+      const birthYear = this.inputPatientYear ? this.inputPatientYear.value.trim() : "1985";
+      const gender = this.selPatientGender ? this.selPatientGender.value : "Nam";
+      const department = this.inputPatientDept ? this.inputPatientDept.value.trim() : "Khoa Khám Bệnh";
+
+      qrPayload = this.medicalQr.generatePatientQrString({ patientId, fullName, birthYear, gender, department });
+      footerText = `BN: ${fullName} &bull; Mã: ${patientId}`;
+    } else if (mode === "url") {
+      qrPayload = this.inputQrUrl ? this.inputQrUrl.value.trim() : window.location.href;
+      footerText = `Quét mã để truy cập liên kết cổng thông tin`;
+    } else if (mode === "wifi") {
+      const ssid = this.inputWifiSsid ? this.inputWifiSsid.value.trim() : "BVDK_BACNINH2";
+      const pass = this.inputWifiPass ? this.inputWifiPass.value.trim() : "";
+      qrPayload = `WIFI:T:WPA;S:${ssid};P:${pass};;`;
+      footerText = `Wi-Fi Bệnh viện: ${ssid}`;
+    }
+
+    if (this.qrMetaFooter) this.qrMetaFooter.innerHTML = footerText;
+
+    await this.medicalQr.renderQrToCanvas(this.canvasQrDisplay, qrPayload, 280);
+    this.showToast("⚡ Đã tạo mã QR thành công!", "success");
+  }
+
+  printMedicalQr() {
+    if (!this.canvasQrDisplay) return;
+    const dataUrl = this.canvasQrDisplay.toDataURL("image/png");
+    const footer = this.qrMetaFooter ? this.qrMetaFooter.textContent : "";
+
+    const pWin = window.open("", "_blank", "width=600,height=700");
+    if (!pWin) return;
+
+    pWin.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>MÃ QR - BVĐK BẮC NINH SỐ 2</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
+          .qr-box { border: 2px solid #0284c7; border-radius: 16px; padding: 30px; display: inline-block; }
+          h2 { margin: 0 0 8px 0; color: #0284c7; font-size: 20px; }
+          h3 { margin: 0 0 20px 0; color: #475569; font-size: 14px; font-weight: normal; }
+          img { width: 260px; height: 260px; }
+          .footer-note { margin-top: 20px; font-size: 13px; font-weight: bold; color: #1e293b; }
+        </style>
+      </head>
+      <body>
+        <div class="qr-box">
+          <h2>BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2</h2>
+          <h3>PHÒNG CÔNG NGHỆ THÔNG TIN</h3>
+          <img src="${dataUrl}" alt="QR" />
+          <div class="footer-note">${footer}</div>
+        </div>
+        <script>window.onload = function() { window.print(); };</script>
+      </body>
+      </html>
+    `);
+    pWin.document.close();
+  }
+
+  // =========================================================================
+  // DUTY ROSTER ENHANCEMENTS: ICALENDAR & PRINT A4
+  // =========================================================================
+  exportDutyRosterIcs() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const count = ToolDutyRoster.exportIcsCalendar(year, month);
+    if (count > 0) {
+      this.showToast(`📅 Đã xuất ${count} ca trực ra file Lịch điện tử (.ics)! Bạn có thể mở file này để đồng bộ vào Google Calendar / Apple Calendar.`, "success", 5000);
+    } else {
+      this.showToast("Chưa có ca trực nào trong tháng này để xuất lịch điện tử.", "warning");
+    }
+  }
+
+  printDutyRosterA4() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    ToolDutyRoster.printDutyRosterA4(year, month);
+    this.showToast("🖨️ Đã mở cửa sổ in Bảng Phân Công Lịch Trực khổ A4 chuẩn hành chính!", "info");
   }
 
   showModal(modalEl) {
@@ -6397,27 +7178,60 @@ ${this.currentW2hHtmlOutput}
     }, 180);
   }
 
-  showToast(message, type = "info", duration = 4000, actionText = null, actionHash = null) {
+  /**
+   * Rich Interactive Toast Notification System with Pause-on-Hover & Web Audio Chime
+   */
+  showToast(message, type = "info", duration = 4000, actionText = null, actionHash = null, customTitle = null) {
     if (this.notifManager) {
       this.notifManager.playChime(type);
     }
 
+    if (!this.toastContainer) {
+      this.toastContainer = document.getElementById("toastContainer");
+      if (!this.toastContainer) {
+        this.toastContainer = document.createElement("div");
+        this.toastContainer.id = "toastContainer";
+        this.toastContainer.className = "toast-container";
+        document.body.appendChild(this.toastContainer);
+      }
+    }
+
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    const icon = type === "success" ? "✓" : (type === "warning" ? "⚠️" : (type === "error" ? "✕" : "ℹ"));
-    
+
+    let icon = "ℹ️";
+    let defaultTitle = "THÔNG BÁO";
+    if (type === "success") {
+      icon = "✓";
+      defaultTitle = "THÀNH CÔNG";
+    } else if (type === "warning") {
+      icon = "⚠️";
+      defaultTitle = "CẢNH BÁO";
+    } else if (type === "error") {
+      icon = "✕";
+      defaultTitle = "LỖI HỆ THỐNG";
+    }
+
+    const toastTitle = customTitle || defaultTitle;
     let actionBtnHtml = "";
     if (actionText && actionHash) {
-      actionBtnHtml = `<button type="button" class="toast-action-btn" data-hash="${actionHash}">${actionText}</button>`;
+      actionBtnHtml = `<button type="button" class="toast-action-btn" data-hash="${actionHash}">${actionText} &rarr;</button>`;
     }
 
     toast.innerHTML = `
-      <span class="toast-icon">${icon}</span>
-      <span class="toast-message">${message}</span>
-      ${actionBtnHtml}
+      <div class="toast-icon-wrap">${icon}</div>
+      <div class="toast-content">
+        <div class="toast-header-row">
+          <span class="toast-title">${toastTitle}</span>
+          <button type="button" class="btn-toast-close" title="Đóng thông báo">&times;</button>
+        </div>
+        <div class="toast-message">${message}</div>
+        ${actionBtnHtml}
+      </div>
       <div class="toast-progress-bar" style="animation-duration: ${duration}ms;"></div>
     `;
 
+    // Action button navigation
     if (actionText && actionHash) {
       const btnAct = toast.querySelector(".toast-action-btn");
       if (btnAct) {
@@ -6428,13 +7242,50 @@ ${this.currentW2hHtmlOutput}
       }
     }
 
-    this.toastContainer.appendChild(toast);
+    // Dismiss logic with Pause on Hover
+    let remaining = duration;
+    let startTime = Date.now();
+    let timerId = null;
 
-    setTimeout(() => toast.classList.add("toast-show"), 10);
-    setTimeout(() => {
+    const dismissToast = () => {
+      clearTimeout(timerId);
       toast.classList.remove("toast-show");
-      setTimeout(() => toast.remove(), 300);
-    }, duration);
+      setTimeout(() => toast.remove(), 260);
+    };
+
+    const btnClose = toast.querySelector(".btn-toast-close");
+    if (btnClose) {
+      btnClose.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dismissToast();
+      });
+    }
+
+    const startTimer = () => {
+      startTime = Date.now();
+      timerId = setTimeout(dismissToast, remaining);
+    };
+
+    toast.addEventListener("mouseenter", () => {
+      clearTimeout(timerId);
+      remaining -= (Date.now() - startTime);
+      const pBar = toast.querySelector(".toast-progress-bar");
+      if (pBar) pBar.style.animationPlayState = "paused";
+    });
+
+    toast.addEventListener("mouseleave", () => {
+      if (remaining > 0) {
+        const pBar = toast.querySelector(".toast-progress-bar");
+        if (pBar) pBar.style.animationPlayState = "running";
+        startTimer();
+      } else {
+        dismissToast();
+      }
+    });
+
+    this.toastContainer.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("toast-show"));
+    startTimer();
   }
 
   initNetworkStatus() {
