@@ -2166,27 +2166,39 @@ class AppController {
       card.dataset.page = page.pageNumber;
 
       let badges = "";
-      if (page.isBlank) badges += `<span class="wpr-badge badge-blank">⚪ Trang trắng</span>`;
+      if (page.isBlank) badges += `<span class="wpr-badge badge-blank">Trang trắng</span>`;
       if (page.tableCount > 0) badges += `<span class="wpr-badge badge-table">📊 ${page.tableCount} bảng</span>`;
       if (page.imageCount > 0) badges += `<span class="wpr-badge badge-image">🖼️ ${page.imageCount} ảnh</span>`;
 
+      const previewLabel = page.isBlank
+        ? "— Trang không có nội dung —"
+        : (page.previewText || "(Không có văn bản)");
+
       card.innerHTML = `
-        <div class="wpr-card-header">
-          <div class="wpr-card-title">
+        <div class="wpr-card-num-area">
+          <div class="wpr-card-num-left">
+            <div class="wpr-page-icon">📄</div>
             <span class="wpr-page-num">Trang ${page.pageNumber}</span>
-            ${isDeleted ? '<span class="wpr-delete-label">🗑️ Sẽ xóa</span>' : ""}
+            ${isDeleted ? '<span class="wpr-delete-label">🗑 Xóa</span>' : ""}
           </div>
           <div class="wpr-card-badges">${badges}</div>
         </div>
-        <div class="wpr-card-preview">${page.previewText || "(Không có văn bản)"}</div>
-        <div class="wpr-card-meta">${page.wordCount} từ • ${page.paraCount} đoạn</div>
+        <div class="wpr-card-body">
+          <div class="wpr-card-preview">${previewLabel}</div>
+          <div class="wpr-card-meta">
+            <span>${page.wordCount} từ</span>
+            <span class="wpr-card-meta-dot"></span>
+            <span>${page.paraCount} đoạn</span>
+          </div>
+        </div>
         <div class="wpr-card-actions">
-          <label class="wpr-checkbox-label">
+          <label class="wpr-checkbox-label" title="${isDeleted ? "Bỏ chọn xóa trang này" : "Chọn xóa trang này"}">
             <input type="checkbox" class="wpr-page-checkbox" data-page="${page.pageNumber}" ${isDeleted ? "checked" : ""}/>
-            <span>Chọn xóa</span>
+            <span class="wpr-toggle-track"></span>
+            <span class="wpr-checkbox-text">${isDeleted ? "Sẽ xóa" : "Giữ lại"}</span>
           </label>
-          <button type="button" class="btn-wpr-delete-one" data-page="${page.pageNumber}" title="Xóa ngay trang này">
-            🗑️ Xóa trang này
+          <button type="button" class="btn-wpr-delete-one" data-page="${page.pageNumber}" title="Đánh dấu xóa trang này">
+            🗑 Xóa
           </button>
         </div>
       `;
@@ -2228,19 +2240,33 @@ class AppController {
       const isDeleted = this.wordPageRemover.deletedPageNumbers.has(pg);
       card.classList.toggle("marked-delete", isDeleted);
 
-      const titleEl = card.querySelector(".wpr-card-title");
+      // Sync num area
+      const numArea = card.querySelector(".wpr-card-num-area");
+      if (numArea) numArea.classList.toggle("marked", isDeleted);
+
+      // Delete badge label
+      const numLeft = card.querySelector(".wpr-card-num-left");
       const existingLabel = card.querySelector(".wpr-delete-label");
-      if (isDeleted && !existingLabel && titleEl) {
+      if (isDeleted && !existingLabel && numLeft) {
         const label = document.createElement("span");
         label.className = "wpr-delete-label";
-        label.textContent = "🗑️ Sẽ xóa";
-        titleEl.appendChild(label);
+        label.textContent = "🗑 Xóa";
+        numLeft.appendChild(label);
       } else if (!isDeleted && existingLabel) {
         existingLabel.remove();
       }
 
+      // Sync checkbox
       const cb = card.querySelector(".wpr-page-checkbox");
       if (cb) cb.checked = isDeleted;
+
+      // Sync toggle text
+      const txt = card.querySelector(".wpr-checkbox-text");
+      if (txt) txt.textContent = isDeleted ? "Sẽ xóa" : "Giữ lại";
+
+      // Sync label title
+      const lbl = card.querySelector(".wpr-checkbox-label");
+      if (lbl) lbl.title = isDeleted ? "Bỏ chọn xóa trang này" : "Chọn xóa trang này";
     });
     this.wprUpdateStatsSummary();
   }

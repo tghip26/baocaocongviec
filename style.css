@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    MASTER DESIGN SYSTEM & STYLESHEET
    Medical & IT Hub Portal - BVĐK Bắc Ninh Số 2
    Version 2.5 - Schema VIMES Explorer & Multi-tool Platform
@@ -14488,158 +14488,360 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
 }
 
-/* ============================================================
-   WORD PAGE REMOVER TOOL STYLES
-   Công cụ Xóa Trang File Word (.docx)
-   ============================================================ */
+/* ================================================================
+   WORD PAGE REMOVER — Premium UI Redesign
+   ================================================================ */
 .word-page-remover-view {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  contain: layout style;
-}
-.wpr-layout-grid {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 16px;
-  padding: 16px 20px 20px;
   flex: 1;
   min-height: 0;
+}
+
+/* ── Layout grid ─────────────────────────────────────── */
+.wpr-layout-grid {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 18px;
+  padding: 14px 18px 24px;
   align-items: start;
 }
-@media (max-width: 900px) { .wpr-layout-grid { grid-template-columns: 1fr; } }
-.wpr-sidebar-panel { display: flex; flex-direction: column; gap: 12px; }
-.wpr-file-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.wpr-file-tag {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px;
-  background: rgba(100,116,139,.18); border: 1px solid rgba(100,116,139,.3);
-  border-radius: 10px; font-size: .74rem; color: #94a3b8; font-weight: 500;
+@media (max-width: 860px) {
+  .wpr-layout-grid { grid-template-columns: 1fr; }
 }
-.wpr-file-tag.tag-blue { background: rgba(59,130,246,.15); border-color: rgba(59,130,246,.35); color: #60a5fa; }
-.wpr-file-tag.tag-amber { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.35); color: #fbbf24; }
+
+/* ── Left sidebar ─────────────────────────────────────── */
+.wpr-sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+}
+
+/* File tags */
+.wpr-file-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.wpr-file-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px;
+  background: rgba(100,116,139,.14);
+  border: 1px solid rgba(100,116,139,.28);
+  border-radius: 20px;
+  font-size: .72rem; color: #94a3b8; font-weight: 600;
+}
+.wpr-file-tag.tag-blue  { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.32); color: #60a5fa; }
+.wpr-file-tag.tag-amber { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.32); color: #fbbf24; }
+
+/* CTA — amber primary */
 .btn-wpr-action-amber {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; padding: 11px 16px;
-  background: linear-gradient(135deg, rgba(245,158,11,.18), rgba(217,119,6,.22));
-  border: 1px solid rgba(245,158,11,.45); border-radius: 8px;
-  color: #fbbf24; font-size: .82rem; font-weight: 700; cursor: pointer;
-  transition: all .18s ease; letter-spacing: .02em;
+  width: 100%; padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(245,158,11,.2) 0%, rgba(217,119,6,.25) 100%);
+  border: 1px solid rgba(245,158,11,.5);
+  border-radius: 10px;
+  color: #fbbf24; font-size: .82rem; font-weight: 700;
+  cursor: pointer; transition: all .18s ease; letter-spacing: .02em;
+  box-shadow: 0 2px 12px rgba(245,158,11,.1);
 }
 .btn-wpr-action-amber:hover {
-  background: linear-gradient(135deg, rgba(245,158,11,.28), rgba(217,119,6,.32));
-  border-color: rgba(245,158,11,.7); color: #fde68a;
-  transform: translateY(-1px); box-shadow: 0 4px 14px rgba(245,158,11,.25);
+  background: linear-gradient(135deg, rgba(245,158,11,.3) 0%, rgba(217,119,6,.35) 100%);
+  border-color: rgba(245,158,11,.75); color: #fde68a;
+  transform: translateY(-1px); box-shadow: 0 5px 18px rgba(245,158,11,.22);
 }
-.wpr-btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Grid of secondary buttons */
+.wpr-btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
 .btn-wpr-tool-secondary {
-  display: flex; align-items: center; justify-content: center;
-  padding: 8px 10px;
-  background: rgba(71,85,105,.18); border: 1px solid rgba(71,85,105,.35);
-  border-radius: 7px; color: #94a3b8; font-size: .77rem; font-weight: 600;
-  cursor: pointer; transition: all .16s; text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px 8px;
+  background: rgba(51,65,85,.4);
+  border: 1px solid rgba(71,85,105,.32);
+  border-radius: 8px;
+  color: #94a3b8; font-size: .75rem; font-weight: 600;
+  cursor: pointer; transition: all .15s; text-align: center;
+  line-height: 1.3;
 }
 .btn-wpr-tool-secondary:hover {
-  background: rgba(99,102,241,.15); border-color: rgba(99,102,241,.4);
-  color: #a5b4fc; transform: translateY(-1px);
+  background: rgba(99,102,241,.14); border-color: rgba(99,102,241,.42); color: #a5b4fc;
 }
+
+/* Range input row */
 .wpr-range-box { display: flex; flex-direction: column; gap: 6px; }
-.wpr-range-input-row { display: flex; gap: 8px; }
+.wpr-range-input-row { display: flex; gap: 7px; }
 .wpr-range-input-row .w2h-text-input { flex: 1; min-width: 0; }
 .btn-wpr-apply-range {
-  padding: 7px 14px;
-  background: linear-gradient(135deg, rgba(59,130,246,.2), rgba(37,99,235,.25));
-  border: 1px solid rgba(59,130,246,.4); border-radius: 7px;
-  color: #60a5fa; font-size: .8rem; font-weight: 600; cursor: pointer;
-  white-space: nowrap; transition: all .16s;
+  padding: 7px 13px;
+  background: rgba(59,130,246,.18);
+  border: 1px solid rgba(59,130,246,.38);
+  border-radius: 7px;
+  color: #60a5fa; font-size: .78rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap; transition: all .15s;
 }
-.btn-wpr-apply-range:hover { background: rgba(59,130,246,.35); color: #bfdbfe; }
+.btn-wpr-apply-range:hover { background: rgba(59,130,246,.3); color: #bfdbfe; }
+
+/* Download primary */
 .btn-wpr-download-primary {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; padding: 12px 18px;
-  background: linear-gradient(135deg, #1d4ed8, #2563eb);
-  border: none; border-radius: 9px; color: #fff;
-  font-size: .83rem; font-weight: 700; cursor: pointer;
-  transition: all .2s ease; letter-spacing: .02em;
-  box-shadow: 0 4px 16px rgba(37,99,235,.35);
+  width: 100%; padding: 13px 18px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  border: none; border-radius: 10px; color: #fff;
+  font-size: .82rem; font-weight: 700;
+  cursor: pointer; transition: all .2s ease; letter-spacing: .02em;
+  box-shadow: 0 4px 18px rgba(37,99,235,.38);
 }
 .btn-wpr-download-primary:hover {
-  background: linear-gradient(135deg, #1e40af, #1d4ed8);
-  transform: translateY(-2px); box-shadow: 0 6px 22px rgba(37,99,235,.5);
+  background: linear-gradient(135deg, #1e3fa8 0%, #1d4ed8 100%);
+  transform: translateY(-2px); box-shadow: 0 7px 24px rgba(37,99,235,.52);
 }
+
+/* Reset button */
 .btn-wpr-reset-btn {
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  width: 100%; padding: 9px 16px; margin-top: 8px;
-  background: rgba(71,85,105,.12); border: 1px solid rgba(71,85,105,.3);
-  border-radius: 7px; color: #64748b; font-size: .8rem; font-weight: 500; cursor: pointer;
-  transition: all .16s;
+  width: 100%; padding: 9px 16px; margin-top: 6px;
+  background: transparent;
+  border: 1px dashed rgba(71,85,105,.35);
+  border-radius: 8px;
+  color: #64748b; font-size: .78rem; font-weight: 500;
+  cursor: pointer; transition: all .15s;
 }
-.btn-wpr-reset-btn:hover { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); color: #f87171; }
-.wpr-main-panel { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.btn-wpr-reset-btn:hover {
+  background: rgba(239,68,68,.08);
+  border-color: rgba(239,68,68,.32); border-style: solid;
+  color: #f87171;
+}
+
+/* ── Right main panel ─────────────────────────────────── */
+.wpr-main-panel { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Page grid ─────────────────────────────────────────── */
 .wpr-page-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 14px; padding-bottom: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+  padding-bottom: 28px;
 }
+
+/* ── Page card — kiểu tờ giấy thực tế ─────────────────── */
 .wpr-page-card {
-  background: rgba(30,41,59,.55);
-  border: 1.5px solid rgba(71,85,105,.3);
-  border-radius: 12px; padding: 14px;
-  display: flex; flex-direction: column; gap: 8px;
-  transition: all .2s ease; position: relative; overflow: hidden;
-  will-change: transform, border-color;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15,23,42,.7);
+  border: 1px solid rgba(51,65,85,.55);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: default;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  will-change: transform;
 }
-.wpr-page-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, transparent, rgba(59,130,246,.4), transparent);
-  opacity: 0; transition: opacity .2s;
+.wpr-page-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.3);
+  border-color: rgba(99,102,241,.45);
 }
-.wpr-page-card:hover { border-color: rgba(99,102,241,.4); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
-.wpr-page-card:hover::before { opacity: 1; }
-.wpr-page-card.blank-page { background: rgba(71,85,105,.18); border-color: rgba(100,116,139,.25); border-style: dashed; }
-.wpr-page-card.marked-delete { background: rgba(127,29,29,.22); border-color: rgba(239,68,68,.5); border-style: solid; }
-.wpr-page-card.marked-delete::before { background: linear-gradient(90deg, transparent, rgba(239,68,68,.6), transparent); opacity: 1; }
-.wpr-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
-.wpr-card-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.wpr-page-num { font-size: .85rem; font-weight: 700; color: #e2e8f0; }
+
+/* Top accent line */
+.wpr-page-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,.5) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.wpr-page-card:hover::after { opacity: 1; }
+
+/* Blank page variant */
+.wpr-page-card.blank-page {
+  background: rgba(15,23,42,.4);
+  border-color: rgba(51,65,85,.35);
+  border-style: dashed;
+}
+
+/* Marked for deletion */
+.wpr-page-card.marked-delete {
+  background: rgba(69,10,10,.45);
+  border: 1.5px solid rgba(239,68,68,.52);
+  border-style: solid;
+}
+.wpr-page-card.marked-delete::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(239,68,68,.65) 50%, transparent 100%);
+  opacity: 1;
+}
+.wpr-page-card.marked-delete .wpr-card-num-area {
+  background: rgba(127,29,29,.4);
+  border-bottom-color: rgba(239,68,68,.3);
+}
+
+/* ── Page header with page number ─────────────────────── */
+.wpr-card-num-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 7px;
+  background: rgba(15,23,42,.6);
+  border-bottom: 1px solid rgba(51,65,85,.4);
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.wpr-card-num-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* Page icon */
+.wpr-page-icon {
+  width: 22px; height: 26px;
+  background: linear-gradient(145deg, #1e40af, #1d4ed8);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem; color: rgba(255,255,255,.7);
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(37,99,235,.3);
+  flex-shrink: 0;
+  position: relative;
+}
+.wpr-page-icon::before {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  border-width: 5px 5px 0 0;
+  border-style: solid;
+  border-color: rgba(255,255,255,.2) transparent transparent transparent;
+}
+.wpr-page-card.blank-page .wpr-page-icon {
+  background: rgba(71,85,105,.45); box-shadow: none;
+}
+.wpr-page-card.marked-delete .wpr-page-icon {
+  background: linear-gradient(145deg, #7f1d1d, #991b1b);
+  box-shadow: 0 2px 6px rgba(239,68,68,.3);
+}
+
+.wpr-page-num {
+  font-size: .82rem; font-weight: 700; color: #e2e8f0; line-height: 1;
+}
+.wpr-page-card.blank-page .wpr-page-num { color: #64748b; }
+.wpr-page-card.marked-delete .wpr-page-num { color: #fca5a5; }
+
+/* Delete badge */
 .wpr-delete-label {
-  display: inline-flex; align-items: center; padding: 2px 7px;
-  background: rgba(239,68,68,.2); border: 1px solid rgba(239,68,68,.4);
-  border-radius: 8px; font-size: .7rem; font-weight: 600; color: #f87171;
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px;
+  background: rgba(239,68,68,.18);
+  border: 1px solid rgba(239,68,68,.38);
+  border-radius: 20px;
+  font-size: .67rem; font-weight: 700; color: #f87171;
+  animation: wprBadgePop .2s ease;
 }
-.wpr-card-badges { display: flex; flex-wrap: wrap; gap: 4px; }
-.wpr-badge { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 8px; font-size: .68rem; font-weight: 600; }
-.wpr-badge.badge-blank { background: rgba(100,116,139,.2); color: #94a3b8; border: 1px solid rgba(100,116,139,.3); }
-.wpr-badge.badge-table { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
-.wpr-badge.badge-image { background: rgba(168,85,247,.15); color: #c084fc; border: 1px solid rgba(168,85,247,.3); }
+@keyframes wprBadgePop {
+  from { transform: scale(.7); opacity: 0; }
+  to   { transform: scale(1);  opacity: 1; }
+}
+
+/* Badges */
+.wpr-card-badges {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+.wpr-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 7px; border-radius: 20px;
+  font-size: .66rem; font-weight: 600;
+}
+.wpr-badge.badge-blank { background: rgba(71,85,105,.22); color: #64748b; border: 1px solid rgba(71,85,105,.32); }
+.wpr-badge.badge-table { background: rgba(16,185,129,.12); color: #34d399; border: 1px solid rgba(16,185,129,.28); }
+.wpr-badge.badge-image { background: rgba(168,85,247,.12); color: #c084fc; border: 1px solid rgba(168,85,247,.28); }
+
+/* ── Card body / preview ──────────────────────────────── */
+.wpr-card-body {
+  padding: 10px 12px 8px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
 .wpr-card-preview {
-  font-size: .75rem; color: #94a3b8; line-height: 1.45;
-  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
-  overflow: hidden; flex: 1;
-  font-family: 'Times New Roman', Times, serif; min-height: 60px;
+  font-size: .73rem; color: #94a3b8; line-height: 1.52;
+  display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-family: 'Times New Roman', Times, serif;
+  min-height: 68px; flex: 1;
 }
-.wpr-page-card.blank-page .wpr-card-preview { color: #475569; font-style: italic; }
-.wpr-card-meta { font-size: .71rem; color: #475569; font-weight: 500; }
+.wpr-page-card.blank-page .wpr-card-preview {
+  color: #334155; font-style: italic;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; min-height: 68px;
+}
+.wpr-card-meta {
+  font-size: .69rem; color: #475569; font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+.wpr-card-meta-dot {
+  width: 3px; height: 3px;
+  background: rgba(71,85,105,.7); border-radius: 50%; flex-shrink: 0;
+}
+
+/* ── Action row ─────────────────────────────────────────── */
 .wpr-card-actions {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding-top: 6px; border-top: 1px solid rgba(71,85,105,.2);
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: rgba(15,23,42,.5);
+  border-top: 1px solid rgba(51,65,85,.4);
 }
+.wpr-page-card.marked-delete .wpr-card-actions {
+  border-top-color: rgba(239,68,68,.2);
+  background: rgba(69,10,10,.3);
+}
+
+/* Toggle switch */
 .wpr-checkbox-label {
-  display: flex; align-items: center; gap: 5px; cursor: pointer;
-  font-size: .74rem; color: #94a3b8; user-select: none;
+  display: flex; align-items: center; gap: 7px;
+  cursor: pointer; user-select: none; flex: 1;
 }
-.wpr-checkbox-label input[type="checkbox"] { width: 14px; height: 14px; accent-color: #ef4444; cursor: pointer; }
+.wpr-toggle-track {
+  position: relative;
+  width: 32px; height: 17px;
+  background: rgba(71,85,105,.38);
+  border: 1px solid rgba(71,85,105,.48);
+  border-radius: 20px;
+  transition: all .18s;
+  flex-shrink: 0;
+}
+.wpr-toggle-track::after {
+  content: '';
+  position: absolute; top: 2px; left: 2px;
+  width: 11px; height: 11px;
+  background: #64748b; border-radius: 50%;
+  transition: transform .18s, background .18s;
+}
+.wpr-page-checkbox { position: absolute; opacity: 0; width: 0; height: 0; }
+.wpr-page-checkbox:checked + .wpr-toggle-track {
+  background: rgba(239,68,68,.25); border-color: rgba(239,68,68,.55);
+}
+.wpr-page-checkbox:checked + .wpr-toggle-track::after {
+  background: #ef4444; transform: translateX(14px);
+}
+.wpr-checkbox-text {
+  font-size: .72rem; color: #64748b; font-weight: 500; transition: color .15s;
+}
+.wpr-page-checkbox:checked ~ .wpr-checkbox-text { color: #f87171; }
+
+/* Delete one button */
 .btn-wpr-delete-one {
-  padding: 4px 9px;
-  background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3);
-  border-radius: 6px; color: #f87171; font-size: .72rem; font-weight: 600;
-  cursor: pointer; transition: all .15s; white-space: nowrap;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(239,68,68,.28);
+  border-radius: 6px;
+  color: #64748b; font-size: .7rem; font-weight: 600;
+  cursor: pointer; transition: all .14s; white-space: nowrap; flex-shrink: 0;
 }
-.btn-wpr-delete-one:hover { background: rgba(239,68,68,.22); border-color: rgba(239,68,68,.55); color: #fca5a5; }
+.btn-wpr-delete-one:hover {
+  background: rgba(239,68,68,.15);
+  border-color: rgba(239,68,68,.55); color: #f87171;
+}
+.wpr-page-card.marked-delete .btn-wpr-delete-one {
+  border-color: rgba(239,68,68,.42); color: #f87171;
+}
+
+/* ── Utility ─────────────────────────────────────────── */
 .w-full { width: 100%; }
-
-
-
-
-
