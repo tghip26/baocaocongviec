@@ -550,12 +550,25 @@
                   <h3>1. Tệp Word (.docx)</h3>
                 </div>
                 <div class="w2h-card-body">
-                  <div class="w2h-dropzone" id="w2hDropzone">
+                  <div class="w2h-dropzone w2h-dropzone-word" id="w2hDropzone">
                     <input type="file" id="w2hFilePicker" accept=".docx" class="hidden-input" />
-                    <div class="dropzone-icon">📝</div>
-                    <div class="dropzone-text">
-                      <span class="dropzone-main-txt">Kéo & thả file Word vào đây</span>
-                      <span class="dropzone-sub-txt">hoặc <strong class="highlight-link">nhấn để duyệt file</strong></span>
+                    <div class="dropzone-visual-circle">
+                      <div class="dropzone-icon-glow"></div>
+                      <div class="dropzone-svg-icon">
+                        <svg viewBox="0 0 48 48" width="38" height="38" fill="none">
+                          <path d="M10 6C10 4.89543 10.8954 4 12 4H30L40 14V42C40 43.1046 39.1046 44 38 44H12C10.8954 44 10 43.1046 10 42V6Z" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+                          <path d="M30 4V14H40" stroke="#60a5fa" stroke-width="2"/>
+                          <path d="M16 23L19.5 35L24 25L28.5 35L32 23" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <span class="dropzone-floating-badge">.DOCX</span>
+                    </div>
+                    <div class="dropzone-content-wrap">
+                      <div class="dropzone-title">Kéo & thả file Word vào đây</div>
+                      <div class="dropzone-sub">
+                        hoặc <span class="dropzone-browse-btn"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Duyệt file từ máy tính</span>
+                      </div>
+                      <div class="dropzone-hint">Hỗ trợ Microsoft Word (.docx) &bull; Tối đa 50MB</div>
                     </div>
                   </div>
 
@@ -850,12 +863,26 @@
                   <h3>1. Tệp PDF</h3>
                 </div>
                 <div class="w2h-card-body">
-                  <div class="w2h-dropzone" id="pdfDropzone">
+                  <div class="w2h-dropzone w2h-dropzone-pdf" id="pdfDropzone">
                     <input type="file" id="pdfFilePicker" accept=".pdf,application/pdf" class="hidden-input" />
-                    <div class="dropzone-icon">📑</div>
-                    <div class="dropzone-text">
-                      <span class="dropzone-main-txt">Kéo & thả file PDF vào đây</span>
-                      <span class="dropzone-sub-txt">hoặc <strong class="highlight-link">nhấn để duyệt file</strong></span>
+                    <div class="dropzone-visual-circle">
+                      <div class="dropzone-icon-glow"></div>
+                      <div class="dropzone-svg-icon">
+                        <svg viewBox="0 0 48 48" width="38" height="38" fill="none">
+                          <path d="M10 6C10 4.89543 10.8954 4 12 4H30L40 14V42C40 43.1046 39.1046 44 38 44H12C10.8954 44 10 43.1046 10 42V6Z" fill="#7f1d1d" stroke="#ef4444" stroke-width="2"/>
+                          <path d="M30 4V14H40" stroke="#f87171" stroke-width="2"/>
+                          <path d="M18 24H22C23.1046 24 24 24.8954 24 26C24 27.1046 23.1046 28 22 28H18V34M18 28H22" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                          <path d="M28 24V34M28 24H31C32.6569 24 34 25.3431 34 27V31C34 32.6569 32.6569 34 31 34H28" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                      <span class="dropzone-floating-badge pdf">.PDF</span>
+                    </div>
+                    <div class="dropzone-content-wrap">
+                      <div class="dropzone-title">Kéo & thả file PDF vào đây</div>
+                      <div class="dropzone-sub">
+                        hoặc <span class="dropzone-browse-btn pdf"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Duyệt file từ máy tính</span>
+                      </div>
+                      <div class="dropzone-hint">Hỗ trợ tài liệu PDF đa trang &bull; Xem trước & xuất ảnh HD</div>
                     </div>
                   </div>
 
