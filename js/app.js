@@ -461,6 +461,7 @@ class AppController {
     this.btnGenerateQrCode = document.getElementById("btnGenerateQrCode");
     this.canvasQrDisplay = document.getElementById("canvasQrDisplay");
     this.qrMetaFooter = document.getElementById("qrMetaFooter");
+    this.qrPlaceholder = document.getElementById("qrPlaceholder");
 
     // Duty Roster Extra Buttons
     this.btnExportDutyIcs = document.getElementById("btnExportDutyIcs");
@@ -1928,10 +1929,6 @@ class AppController {
     });
 
     window.scrollTo(0, 0);
-    // Tự sinh mã QR mặc định ban đầu nếu canvas rỗng
-    if (this.canvasQrDisplay && this.canvasQrDisplay.width === 0) {
-      this.generateMedicalQrCode();
-    }
   }
 
   showToolView(toolId) {
@@ -7028,14 +7025,13 @@ ORDER BY i.inward_date DESC;`;
           if (this.formPatientQr) this.formPatientQr.classList.toggle("hidden", mode !== "patient");
           if (this.formUrlQr) this.formUrlQr.classList.toggle("hidden", mode !== "url");
           if (this.formWifiQr) this.formWifiQr.classList.toggle("hidden", mode !== "wifi");
-          this.generateMedicalQrCode();
         });
       });
     }
 
     if (this.btnGenerateQrCode) {
       this.btnGenerateQrCode.addEventListener("click", () => {
-        this.generateMedicalQrCode();
+        this.generateMedicalQrCode(true);
       });
     }
 
@@ -7055,7 +7051,7 @@ ORDER BY i.inward_date DESC;`;
     }
   }
 
-  async generateMedicalQrCode() {
+  async generateMedicalQrCode(showToastNotice = true) {
     if (!this.medicalQr || !this.canvasQrDisplay) return;
 
     const activeTab = this.qrModeTabs ? this.qrModeTabs.querySelector(".qr-tab-btn.active") : null;
@@ -7077,11 +7073,16 @@ ORDER BY i.inward_date DESC;`;
       qrPayload = this.medicalQr.generateVietQrString({ bankBin, accountNo, amount, message });
       footerText = `Chuyển khoản Viện Phí Napas 247 &bull; ${accountNo}`;
     } else if (mode === "patient") {
-      const patientId = this.inputPatientId ? this.inputPatientId.value.trim() : "240901001";
-      const fullName = this.inputPatientName ? this.inputPatientName.value.trim() : "NGUYỄN VĂN A";
-      const birthYear = this.inputPatientYear ? this.inputPatientYear.value.trim() : "1985";
+      const patientId = this.inputPatientId ? this.inputPatientId.value.trim() : "";
+      const fullName = this.inputPatientName ? this.inputPatientName.value.trim() : "";
+      const birthYear = this.inputPatientYear ? this.inputPatientYear.value.trim() : "";
       const gender = this.selPatientGender ? this.selPatientGender.value : "Nam";
-      const department = this.inputPatientDept ? this.inputPatientDept.value.trim() : "Khoa Khám Bệnh";
+      const department = this.inputPatientDept ? this.inputPatientDept.value.trim() : "";
+
+      if (!patientId || !fullName) {
+        this.showToast("Vui lòng nhập tối thiểu Mã bệnh nhân và Họ tên bệnh nhân.", "warning");
+        return;
+      }
 
       qrPayload = this.medicalQr.generatePatientQrString({ patientId, fullName, birthYear, gender, department });
       footerText = `BN: ${fullName} &bull; Mã: ${patientId}`;
@@ -7089,16 +7090,27 @@ ORDER BY i.inward_date DESC;`;
       qrPayload = this.inputQrUrl ? this.inputQrUrl.value.trim() : window.location.href;
       footerText = `Quét mã để truy cập liên kết cổng thông tin`;
     } else if (mode === "wifi") {
-      const ssid = this.inputWifiSsid ? this.inputWifiSsid.value.trim() : "BVDK_BACNINH2";
+      const ssid = this.inputWifiSsid ? this.inputWifiSsid.value.trim() : "";
       const pass = this.inputWifiPass ? this.inputWifiPass.value.trim() : "";
+      if (!ssid) {
+        this.showToast("Vui lòng nhập tên mạng Wi-Fi (SSID).", "warning");
+        return;
+      }
       qrPayload = `WIFI:T:WPA;S:${ssid};P:${pass};;`;
       footerText = `Wi-Fi Bệnh viện: ${ssid}`;
     }
 
     if (this.qrMetaFooter) this.qrMetaFooter.innerHTML = footerText;
 
+    if (this.qrPlaceholder) this.qrPlaceholder.classList.add("hidden");
+    if (this.canvasQrDisplay) this.canvasQrDisplay.classList.remove("hidden");
+    if (this.btnDownloadQrImage) this.btnDownloadQrImage.disabled = false;
+    if (this.btnPrintQrCode) this.btnPrintQrCode.disabled = false;
+
     await this.medicalQr.renderQrToCanvas(this.canvasQrDisplay, qrPayload, 280);
-    this.showToast("⚡ Đã tạo mã QR thành công!", "success");
+    if (showToastNotice) {
+      this.showToast("⚡ Đã tạo mã QR thành công!", "success");
+    }
   }
 
   printMedicalQr() {

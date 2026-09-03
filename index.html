@@ -2048,10 +2048,10 @@
               </div>
             </div>
             <div class="workspace-top-right">
-              <button type="button" class="btn-action primary" id="btnDownloadQrImage">
+              <button type="button" class="btn-action primary" id="btnDownloadQrImage" disabled>
                 <span>💾 Tải Ảnh QR (.PNG)</span>
               </button>
-              <button type="button" class="btn-action secondary" id="btnPrintQrCode">
+              <button type="button" class="btn-action secondary" id="btnPrintQrCode" disabled>
                 <span>🖨️ In Mã QR</span>
               </button>
             </div>
@@ -2144,10 +2144,15 @@
               <div class="qr-preview-pane">
                 <div class="qr-card-box">
                   <div class="qr-badge-header">BVĐK BẮC NINH SỐ 2</div>
-                  <div class="qr-canvas-holder">
-                    <canvas id="canvasQrDisplay" width="280" height="280"></canvas>
+                  <div class="qr-canvas-holder" id="qrCanvasHolder">
+                    <div class="qr-placeholder" id="qrPlaceholder">
+                      <div class="qr-placeholder-icon">📱</div>
+                      <div class="qr-placeholder-text">Chưa tạo mã QR</div>
+                      <div class="qr-placeholder-sub">Nhập thông tin bên trái và nhấn<br/><strong>"⚡ Tạo Mã QR Ngay"</strong></div>
+                    </div>
+                    <canvas id="canvasQrDisplay" width="280" height="280" class="hidden"></canvas>
                   </div>
-                  <div class="qr-meta-footer" id="qrMetaFooter">Quét bằng ứng dụng Ngân hàng (VietQR) hoặc Zalo</div>
+                  <div class="qr-meta-footer" id="qrMetaFooter">Mã QR sẽ hiển thị tại đây sau khi tạo</div>
                 </div>
               </div>
             </div>
