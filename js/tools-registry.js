@@ -79,26 +79,6 @@ window.TOOLS_REGISTRY = [
     executeKey: "openPdfToImage"
   },
   {
-    id: "image-optimizer",
-    categoryId: "web-cms",
-    title: "Tối Ưu & Nén Ảnh Chuẩn Web",
-    subtitle: "Nén hàng loạt, chuyển sang WebP siêu nhẹ <250KB, tải ZIP",
-    description: "Nén dung lượng ảnh không suy giảm độ nét, đổi định dạng sang WebP chuẩn Google PageSpeed, resize kích thước chuẩn cho bài viết CMS.",
-    badge: "Nén Ảnh WebP Siêu Tốc",
-    badgeColor: "indigo",
-    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/><path d="M16 19h6"/><path d="M19 16v6"/></svg>`,
-    inputType: "image-optimizer-interactive",
-    acceptFile: ".jpg, .jpeg, .png, .webp, .gif",
-    outputName: "Anh_Website_Toi_Uu.zip",
-    guide: [
-      "Bước 1: Kéo thả hoặc chọn nhiều tệp ảnh PNG/JPG/WebP.",
-      "Bước 2: Chọn chế độ kích thước (Chuẩn bài viết 1200px, Banner 1920px, Thumbnail 600px).",
-      "Bước 3: Nhấn '⚡ BẮT ĐẦU TỐI ƯU HÀNG LOẠT' để nén siêu tốc.",
-      "Bước 4: Nhấn '📦 Tải Toàn Bộ (.ZIP)' hoặc tải riêng từng ảnh."
-    ],
-    executeKey: "openImageOptimizer"
-  },
-  {
     id: "schema-lookup",
     categoryId: "schema",
     title: "Tra Cứu Database Schema VIMES",

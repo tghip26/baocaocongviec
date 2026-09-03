@@ -71,7 +71,6 @@ class AppController {
     this.sqlBuilderView = document.getElementById("sqlBuilderView");
     this.dutyRosterView = document.getElementById("dutyRosterView");
     this.bhytXmlView = document.getElementById("bhytXmlView");
-    this.imageOptimizerView = document.getElementById("imageOptimizerView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
@@ -390,26 +389,6 @@ class AppController {
     // Toast Container
     this.toastContainer = document.getElementById("toastContainer");
 
-    // Image Optimizer Elements
-    this.imageOptimizer = window.ToolImageOptimizer ? new ToolImageOptimizer() : null;
-    this.btnBackToHubFromImgOpt = document.getElementById("btnBackToHubFromImgOpt");
-    this.btnRunBatchOptimization = document.getElementById("btnRunBatchOptimization");
-    this.btnDownloadAllOptimizedZip = document.getElementById("btnDownloadAllOptimizedZip");
-    this.selOptFormat = document.getElementById("selOptFormat");
-    this.selOptResizeMode = document.getElementById("selOptResizeMode");
-    this.rngOptQuality = document.getElementById("rngOptQuality");
-    this.txtOptQualityVal = document.getElementById("txtOptQualityVal");
-    this.imgOptDropzone = document.getElementById("imgOptDropzone");
-    this.imgOptFileInput = document.getElementById("imgOptFileInput");
-    this.btnBrowseImgOpt = document.getElementById("btnBrowseImgOpt");
-    this.imgOptStatsBar = document.getElementById("imgOptStatsBar");
-    this.imgOptTotalCount = document.getElementById("imgOptTotalCount");
-    this.imgOptOrigTotalSize = document.getElementById("imgOptOrigTotalSize");
-    this.imgOptNewTotalSize = document.getElementById("imgOptNewTotalSize");
-    this.imgOptSavedPercent = document.getElementById("imgOptSavedPercent");
-    this.btnClearImgOptFiles = document.getElementById("btnClearImgOptFiles");
-    this.imgOptItemsGrid = document.getElementById("imgOptItemsGrid");
-
     // Duty Roster Extra Buttons
     this.btnExportDutyIcs = document.getElementById("btnExportDutyIcs");
     this.btnDutyPrintA4 = document.getElementById("btnDutyPrintA4");
@@ -424,7 +403,6 @@ class AppController {
     this.initSqlBuilderEvents();
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
-    this.initImageOptimizerEvents();
 
     // Password Visibility Toggles
     this.setupPasswordToggle("btnToggleLoginPass", "inputDutyLoginPass");
@@ -1674,7 +1652,6 @@ class AppController {
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
-    if (this.imageOptimizerView) this.imageOptimizerView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
   }
 
@@ -1694,8 +1671,6 @@ class AppController {
       this.showWordToHtmlView();
     } else if (hash === "pdf-to-image") {
       this.showPdfToImageView();
-    } else if (hash === "image-optimizer") {
-      this.showImageOptimizerView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
@@ -1709,8 +1684,6 @@ class AppController {
           this.showSqlBuilderView();
         } else if (tool.id === "duty-roster") {
           this.showDutyRosterView();
-        } else if (tool.id === "image-optimizer") {
-          this.showImageOptimizerView();
         } else {
           this.showToolView(tool.id);
         }
@@ -1830,18 +1803,29 @@ class AppController {
     window.scrollTo(0, 0);
   }
 
-  showImageOptimizerView() {
-    this.currentToolId = "image-optimizer";
-    this.hideAllViews();
-    if (this.imageOptimizerView) this.imageOptimizerView.classList.remove("hidden");
-
-    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
-      item.classList.toggle("active", item.dataset.tool === "image-optimizer");
-    });
-
-    window.scrollTo(0, 0);
-    if (toolId === "image-optimizer") {
-      this.showImageOptimizerView();
+  showToolView(toolId) {
+    if (toolId === "schema-lookup") {
+      this.showSchemaView();
+      return;
+    }
+    if (toolId === "sql-builder") {
+      this.showSqlBuilderView();
+      return;
+    }
+    if (toolId === "duty-roster") {
+      this.showDutyRosterView();
+      return;
+    }
+    if (toolId === "bhyt-xml") {
+      this.showBhytXmlView();
+      return;
+    }
+    if (toolId === "word-to-html") {
+      this.showWordToHtmlView();
+      return;
+    }
+    if (toolId === "pdf-to-image") {
+      this.showPdfToImageView();
       return;
     }
 
@@ -6458,249 +6442,6 @@ ${this.currentW2hHtmlOutput}
     if (this.xmlAutoFixBanner) this.xmlAutoFixBanner.classList.add("hidden");
     if (this.xmlTableBody) this.xmlTableBody.innerHTML = "";
     this.showToast("Đã làm mới khung tải tệp XML.", "info");
-  }
-
-  // =========================================================================
-  // ULTRA TOOL 1: BATCH WEB IMAGE OPTIMIZER
-  // =========================================================================
-  initImageOptimizerEvents() {
-    if (!this.imageOptimizer) return;
-
-    if (this.btnBackToHubFromImgOpt) {
-      this.btnBackToHubFromImgOpt.addEventListener("click", () => {
-        window.location.hash = "hub";
-      });
-    }
-
-    if (this.btnBrowseImgOpt && this.imgOptFileInput) {
-      this.btnBrowseImgOpt.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.imgOptFileInput.click();
-      });
-    }
-
-    if (this.imgOptDropzone && this.imgOptFileInput) {
-      this.imgOptDropzone.addEventListener("click", () => {
-        this.imgOptFileInput.click();
-      });
-
-      this.imgOptDropzone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        this.imgOptDropzone.classList.add("drag-over");
-      });
-
-      this.imgOptDropzone.addEventListener("dragleave", () => {
-        this.imgOptDropzone.classList.remove("drag-over");
-      });
-
-      this.imgOptDropzone.addEventListener("drop", (e) => {
-        e.preventDefault();
-        this.imgOptDropzone.classList.remove("drag-over");
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          this.handleImageOptimizerFiles(e.dataTransfer.files);
-        }
-      });
-
-      this.imgOptFileInput.addEventListener("change", (e) => {
-        if (e.target.files && e.target.files.length > 0) {
-          this.handleImageOptimizerFiles(e.target.files);
-        }
-      });
-    }
-
-    if (this.selOptFormat) {
-      this.selOptFormat.addEventListener("change", (e) => {
-        this.imageOptimizer.format = e.target.value;
-      });
-    }
-
-    if (this.selOptResizeMode) {
-      this.selOptResizeMode.addEventListener("change", (e) => {
-        this.imageOptimizer.resizeMode = e.target.value;
-      });
-    }
-
-    if (this.rngOptQuality && this.txtOptQualityVal) {
-      this.rngOptQuality.addEventListener("input", (e) => {
-        const val = parseFloat(e.target.value);
-        this.imageOptimizer.quality = val;
-        this.txtOptQualityVal.textContent = Math.round(val * 100) + "%";
-      });
-    }
-
-    if (this.btnRunBatchOptimization) {
-      this.btnRunBatchOptimization.addEventListener("click", () => {
-        this.runBatchImageOptimization();
-      });
-    }
-
-    if (this.btnDownloadAllOptimizedZip) {
-      this.btnDownloadAllOptimizedZip.addEventListener("click", () => {
-        this.downloadAllOptimizedZip();
-      });
-    }
-
-    if (this.btnClearImgOptFiles) {
-      this.btnClearImgOptFiles.addEventListener("click", () => {
-        this.imageOptimizer.clearFiles();
-        if (this.imgOptFileInput) this.imgOptFileInput.value = "";
-        this.updateImageOptimizerStats();
-        this.renderImageOptimizerItems();
-        this.showToast("Đã xóa toàn bộ danh sách ảnh.", "info");
-      });
-    }
-  }
-
-  handleImageOptimizerFiles(fileList) {
-    const added = this.imageOptimizer.addFiles(fileList);
-    if (added.length === 0) {
-      this.showToast("Không tìm thấy tệp hình ảnh hợp lệ (PNG, JPG, WebP, GIF, BMP).", "warning");
-      return;
-    }
-    this.updateImageOptimizerStats();
-    this.renderImageOptimizerItems();
-    this.showToast(`Đã thêm ${added.length} ảnh vào danh sách nén tối ưu!`, "success");
-  }
-
-  updateImageOptimizerStats() {
-    const list = this.imageOptimizer.filesList;
-    const total = list.length;
-    if (total === 0) {
-      if (this.imgOptStatsBar) this.imgOptStatsBar.classList.add("hidden");
-      if (this.btnRunBatchOptimization) this.btnRunBatchOptimization.disabled = true;
-      if (this.btnDownloadAllOptimizedZip) this.btnDownloadAllOptimizedZip.disabled = true;
-      return;
-    }
-
-    if (this.imgOptStatsBar) this.imgOptStatsBar.classList.remove("hidden");
-    if (this.btnRunBatchOptimization) this.btnRunBatchOptimization.disabled = false;
-
-    let origBytes = 0;
-    let newBytes = 0;
-    let doneCount = 0;
-
-    list.forEach(item => {
-      origBytes += item.originalSize;
-      if (item.status === "done" && item.optimizedSize > 0) {
-        newBytes += item.optimizedSize;
-        doneCount++;
-      } else {
-        newBytes += item.originalSize;
-      }
-    });
-
-    if (this.imgOptTotalCount) this.imgOptTotalCount.textContent = total;
-    if (this.imgOptOrigTotalSize) this.imgOptOrigTotalSize.textContent = this.imageOptimizer.formatBytes(origBytes);
-    if (this.imgOptNewTotalSize) this.imgOptNewTotalSize.textContent = this.imageOptimizer.formatBytes(newBytes);
-
-    const savedPercent = origBytes > 0 && doneCount > 0 ? Math.round(((origBytes - newBytes) / origBytes) * 100) : 0;
-    if (this.imgOptSavedPercent) {
-      this.imgOptSavedPercent.textContent = `-${Math.max(0, savedPercent)}%`;
-    }
-
-    if (this.btnDownloadAllOptimizedZip) {
-      this.btnDownloadAllOptimizedZip.disabled = doneCount === 0;
-    }
-  }
-
-  renderImageOptimizerItems() {
-    if (!this.imgOptItemsGrid) return;
-    const list = this.imageOptimizer.filesList;
-    if (list.length === 0) {
-      this.imgOptItemsGrid.innerHTML = "";
-      return;
-    }
-
-    this.imgOptItemsGrid.innerHTML = list.map(item => {
-      const origFormatted = this.imageOptimizer.formatBytes(item.originalSize);
-      const newFormatted = item.optimizedSize ? this.imageOptimizer.formatBytes(item.optimizedSize) : "Chưa nén";
-      const savedPct = item.optimizedSize && item.originalSize > item.optimizedSize ? Math.round(((item.originalSize - item.optimizedSize) / item.originalSize) * 100) : 0;
-
-      let statusBadge = `<span class="opt-item-status-badge">Chờ nén</span>`;
-      let actionBtn = "";
-      if (item.status === "processing") {
-        statusBadge = `<span class="opt-item-status-badge" style="background:#0284c7;">Đang nén...</span>`;
-      } else if (item.status === "done") {
-        statusBadge = `<span class="opt-item-status-badge" style="background:#059669;">Hoàn thành</span>`;
-        if (item.optimizedBlob) {
-          const downloadUrl = URL.createObjectURL(item.optimizedBlob);
-          const ext = this.imageOptimizer.format === "image/webp" ? ".webp" : (this.imageOptimizer.format === "image/jpeg" ? ".jpg" : ".png");
-          const base = item.name.replace(/\.[^/.]+$/, "");
-          actionBtn = `<a href="${downloadUrl}" download="${base}_opt${ext}" class="btn-item-download">💾 Tải ảnh</a>`;
-        }
-      } else if (item.status === "error") {
-        statusBadge = `<span class="opt-item-status-badge" style="background:#e11d48;">Lỗi</span>`;
-      }
-
-      const tempThumb = URL.createObjectURL(item.file);
-
-      return `
-        <div class="opt-item-card" id="card_${item.id}">
-          <div class="opt-item-preview">
-            <img src="${tempThumb}" alt="${item.name}" />
-            ${statusBadge}
-          </div>
-          <div class="opt-item-info">
-            <div class="opt-item-name" title="${item.name}">${item.name}</div>
-            <div class="opt-item-sizes">
-              <span>Gốc: ${origFormatted}</span>
-              <span>Sau nén: <strong>${newFormatted}</strong></span>
-            </div>
-            ${savedPct > 0 ? `<div class="opt-item-savings">Tiết kiệm: -${savedPct}%</div>` : ""}
-          </div>
-          <div class="opt-item-actions">
-            ${actionBtn}
-            <button type="button" class="btn-item-remove" data-id="${item.id}" title="Xóa ảnh">✕</button>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    // Wire remove buttons
-    this.imgOptItemsGrid.querySelectorAll(".btn-item-remove").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        const id = e.currentTarget.dataset.id;
-        this.imageOptimizer.removeFile(id);
-        this.updateImageOptimizerStats();
-        this.renderImageOptimizerItems();
-      });
-    });
-  }
-
-  async runBatchImageOptimization() {
-    if (!this.imageOptimizer || this.imageOptimizer.filesList.length === 0) return;
-    if (this.btnRunBatchOptimization) {
-      this.btnRunBatchOptimization.disabled = true;
-      this.btnRunBatchOptimization.innerHTML = `<span>⏳ Đang Nén...</span>`;
-    }
-
-    this.showToast("Bắt đầu tối ưu và nén hàng loạt hình ảnh...", "info");
-
-    await this.imageOptimizer.processAll((current, total, item) => {
-      this.updateImageOptimizerStats();
-      this.renderImageOptimizerItems();
-    });
-
-    if (this.btnRunBatchOptimization) {
-      this.btnRunBatchOptimization.disabled = false;
-      this.btnRunBatchOptimization.innerHTML = `<span>⚡ Bắt Đầu Nén</span>`;
-    }
-
-    this.updateImageOptimizerStats();
-    this.renderImageOptimizerItems();
-    if (this.notifManager) this.notifManager.playChime("success");
-    this.showToast("🎉 Đã tối ưu và nén toàn bộ ảnh thành công! Bạn có thể tải trọn gói file .ZIP.", "success", 6000);
-  }
-
-  async downloadAllOptimizedZip() {
-    if (!this.imageOptimizer) return;
-    try {
-      this.showToast("Đang đóng gói file .ZIP hình ảnh tối ưu...", "info");
-      const count = await this.imageOptimizer.exportAsZip();
-      this.showToast(`📦 Đã tải trọn gói ${count} ảnh tối ưu thành công!`, "success");
-    } catch (e) {
-      this.showToast(e.message || "Lỗi đóng gói file ZIP.", "error");
-    }
   }
 
   // =========================================================================

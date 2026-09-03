@@ -100,13 +100,6 @@
           <span class="nav-text">Xuất Ảnh PDF</span>
         </a>
 
-        <a href="#image-optimizer" class="nav-item" data-tool="image-optimizer" data-tooltip="Tối Ưu & Nén Ảnh WebP">
-          <span class="nav-icon">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/><path d="M16 19h6"/><path d="M19 16v6"/></svg>
-          </span>
-          <span class="nav-text">Nén Ảnh WebP</span>
-        </a>
-
         <div class="nav-section-title">CSDL & BẢO HIỂM Y TẾ</div>
         <a href="#bhyt-xml" class="nav-item" data-tool="bhyt-xml" data-tooltip="Kiểm Tra XML BHYT (QĐ 130)">
           <span class="nav-icon">
@@ -1845,84 +1838,6 @@
           </div>
         </section>
 
-        <!-- =========================================================================
-             VIEW: TỐI ƯU & NÉN ẢNH CHUẨN WEBP (BATCH IMAGE OPTIMIZER)
-             ========================================================================= -->
-        <section class="workspace-view hidden" id="imageOptimizerView">
-          <div class="workspace-top-bar">
-            <div class="workspace-top-left">
-              <button type="button" class="btn-back-to-hub" id="btnBackToHubFromImgOpt" title="Quay lại Hub">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
-                <span>Quay lại</span>
-              </button>
-              <div class="workspace-heading">
-                <h2 class="workspace-title">Tối Ưu & Nén Ảnh Chuẩn Web (WebP)</h2>
-                <span class="badge-accent indigo">Nén Hàng Loạt &bull; Google PageSpeed</span>
-              </div>
-            </div>
-            <div class="workspace-top-right">
-              <button type="button" class="btn-action primary" id="btnRunBatchOptimization" disabled>
-                <span>⚡ Bắt Đầu Nén</span>
-              </button>
-              <button type="button" class="btn-action success" id="btnDownloadAllOptimizedZip" disabled>
-                <span>📦 Tải Toàn Bộ (.ZIP)</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="workspace-body-card">
-            <!-- Controls & Options Bar -->
-            <div class="opt-controls-bar">
-              <div class="opt-control-item">
-                <label>Định Dạng Đầu Ra:</label>
-                <select id="selOptFormat" class="opt-select">
-                  <option value="image/webp" selected>WebP (Khuyên dùng - Nhẹ hơn 80%)</option>
-                  <option value="image/jpeg">JPEG (Tương thích cao)</option>
-                  <option value="image/png">PNG (Nén không mất chi tiết)</option>
-                </select>
-              </div>
-
-              <div class="opt-control-item">
-                <label>Kích Thước Khung Ảnh:</label>
-                <select id="selOptResizeMode" class="opt-select">
-                  <option value="article_1200" selected>Bài Viết Website (Tối đa 1200px)</option>
-                  <option value="banner_1920">Banner Trang Chủ (Tối đa 1920px)</option>
-                  <option value="thumb_600">Ảnh Đại Diện / Thẻ (Tối đa 600px)</option>
-                  <option value="original">Giữ Nguyên Kích Thước Gốc</option>
-                </select>
-              </div>
-
-              <div class="opt-control-item">
-                <label>Mức Nén Chất Lượng: <span id="txtOptQualityVal" style="color: #38bdf8; font-weight: 700;">82%</span></label>
-                <input type="range" id="rngOptQuality" min="0.5" max="0.95" step="0.05" value="0.82" style="accent-color: #38bdf8;" />
-              </div>
-            </div>
-
-            <!-- Dropzone Area -->
-            <div class="opt-dropzone-wrapper">
-              <div class="pdf-dropzone" id="imgOptDropzone" style="min-height: 130px; padding: 22px 20px;">
-                <input type="file" id="imgOptFileInput" multiple accept="image/png, image/jpeg, image/webp, image/gif, image/bmp" class="hidden" />
-                <div class="dropzone-icon">🖼️</div>
-                <div class="dropzone-text">
-                  <strong>Kéo thả hàng loạt ảnh vào đây</strong> hoặc <span class="dropzone-browse" id="btnBrowseImgOpt">chọn tệp từ máy tính</span>
-                </div>
-                <div class="dropzone-hint">Hỗ trợ JPG, PNG, WebP, GIF, BMP &bull; Nén hàng loạt trực tiếp trên máy &bull; Bảo mật tuyệt đối</div>
-              </div>
-            </div>
-
-            <!-- Stats & Batch Actions Bar -->
-            <div class="opt-stats-bar hidden" id="imgOptStatsBar">
-              <div class="opt-stat-text">
-                Đã chọn <strong id="imgOptTotalCount" style="color: #fff;">0</strong> ảnh &bull; Dung lượng gốc: <strong id="imgOptOrigTotalSize">0 MB</strong> &bull; Đã nén: <strong id="imgOptNewTotalSize" style="color: #34d399;">0 MB</strong> (<span id="imgOptSavedPercent" style="color: #38bdf8; font-weight: 700;">-0%</span>)
-              </div>
-              <button type="button" class="btn-clear-opt-files" id="btnClearImgOptFiles">🗑️ Xóa Danh Sách</button>
-            </div>
-
-            <!-- Image Grid List -->
-            <div class="opt-items-grid" id="imgOptItemsGrid"></div>
-          </div>
-        </section>
-
       </main>
     </div>
   </div>
@@ -2655,7 +2570,6 @@
   <script defer src="js/tool-vgca-doichieu.js?v=3.1.0"></script>
   <script defer src="js/tool-vgca-cks.js?v=3.1.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.1.0"></script>
-  <script defer src="js/tool-image-optimizer.js?v=3.1.0"></script>
   <script defer src="js/notification-manager.js?v=3.1.0"></script>
   <script defer src="js/app.js?v=3.1.0"></script>
 </body>
