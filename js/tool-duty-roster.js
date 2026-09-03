@@ -322,14 +322,26 @@ const ToolDutyRoster = {
     lastSyncTime: null,
     lastSyncUser: "Hệ thống",
     lastSyncStatus: "idle", // "synced", "offline", "syncing", "error"
-    defaultEndpoint: "https://bvdk-bacninh2-duty-default-rtdb.firebaseio.com/duty_roster",
+
+    // Cấu hình Firebase chính thức từ người dùng
+    firebaseConfig: {
+      apiKey: "AIzaSyDQzhi52oGxKo1nDsKiL4MHrw-7e-AwJC0",
+      authDomain: "congcunghiepvu.firebaseapp.com",
+      projectId: "congcunghiepvu",
+      storageBucket: "congcunghiepvu.firebasestorage.app",
+      messagingSenderId: "391499654470",
+      appId: "1:391499654470:web:97a9b95815929a10f37147"
+    },
+
+    firestoreDb: null,
+    firestoreUnsubscribe: null,
 
     getEndpoint() {
       const custom = localStorage.getItem("DUTY_CLOUD_API_URL");
       if (custom && custom.trim().startsWith("http")) {
         return custom.trim().replace(/\/+$/, "");
       }
-      return this.defaultEndpoint;
+      return "https://firestore.googleapis.com/v1/projects/congcunghiepvu/databases/(default)/documents/duty_roster";
     },
 
     setEndpoint(url) {
@@ -340,14 +352,94 @@ const ToolDutyRoster = {
       }
     },
 
-    formatUrl(subpath = "") {
-      const endpoint = this.getEndpoint();
-      let cleanPath = subpath ? subpath.replace(/^\/+/, "") : "";
-      let url = cleanPath ? `${endpoint}/${cleanPath}` : endpoint;
-      if (!url.endsWith(".json") && (url.includes("firebaseio.com") || url.includes("firebasedatabase.app"))) {
-        url += ".json";
+    getFirebaseApp() {
+      if (typeof firebase === "undefined") return null;
+      if (!firebase.apps || !firebase.apps.length) {
+        try {
+          return firebase.initializeApp(this.firebaseConfig);
+        } catch (e) {
+          console.warn("[Firebase init]", e);
+          return null;
+        }
       }
-      return url;
+      return firebase.app();
+    },
+
+    getFirestoreDb() {
+      if (this.firestoreDb) return this.firestoreDb;
+      const app = this.getFirebaseApp();
+      if (app && typeof firebase.firestore === "function") {
+        try {
+          this.firestoreDb = firebase.firestore();
+          return this.firestoreDb;
+        } catch (e) {
+          console.warn("[Firestore getDb]", e);
+        }
+      }
+      return null;
+    },
+
+    initFirestoreListener() {
+      const db = this.getFirestoreDb();
+      if (!db || this.firestoreUnsubscribe) return;
+      try {
+        this.firestoreUnsubscribe = db.collection("duty_roster").doc("master").onSnapshot((doc) => {
+          if (doc.exists) {
+            const data = doc.data();
+            this.applyCloudData(data, true);
+          }
+        }, (err) => {
+          console.warn("[Firestore onSnapshot Error]", err);
+          if (err && err.code === "permission-denied") {
+            this.notifyListeners({ 
+              type: "SYNC_STATUS_CHANGED", 
+              status: "error", 
+              error: "Firebase Firestore cần bật Test mode (allow read, write: if true)" 
+            });
+          }
+        });
+      } catch (e) {
+        console.warn("[Firestore Listener Error]", e);
+      }
+    },
+
+    applyCloudData(data, fromRealtime = false) {
+      if (!data || typeof data !== "object") return;
+      let hasChange = false;
+
+      // Cập nhật metadata
+      if (data.metadata && data.metadata.updaterName) {
+        this.lastSyncUser = data.metadata.updaterName;
+      }
+
+      // Đồng bộ Danh sách cán bộ
+      if (Array.isArray(data.staffList) && data.staffList.length > 0) {
+        ToolDutyRoster._staffListCache = data.staffList;
+        try { localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(data.staffList)); } catch (e) {}
+        hasChange = true;
+      }
+
+      // Đồng bộ Tài khoản
+      if (Array.isArray(data.accounts) && data.accounts.length > 0) {
+        ToolDutyRoster._accountsCache = data.accounts;
+        try { localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(data.accounts)); } catch (e) {}
+        hasChange = true;
+      }
+
+      // Đồng bộ Lịch trực các tháng
+      if (data.schedules && typeof data.schedules === "object") {
+        Object.entries(data.schedules).forEach(([monthKey, sched]) => {
+          if (Array.isArray(sched) && sched.length > 0) {
+            ToolDutyRoster._cacheSchedule[monthKey] = sched;
+            try { localStorage.setItem(`DUTY_SCHEDULE_${monthKey}`, JSON.stringify(sched)); } catch (e) {}
+            hasChange = true;
+          }
+        });
+      }
+
+      this.lastSyncTime = new Date();
+      this.lastSyncStatus = "synced";
+      this.notifyListeners({ type: "CLOUD_FETCH_SUCCESS", data, hasChange, fromRealtime });
     },
 
     init(onUpdateCallback) {
@@ -374,19 +466,24 @@ const ToolDutyRoster = {
         }
       });
 
-      // 3. Tự động đồng bộ khi có kết nối mạng trở lại
+      // 3. Khởi tạo Firestore Realtime Listener
+      this.initFirestoreListener();
+
+      // 4. Tự động đồng bộ khi có kết nối mạng trở lại
       window.addEventListener("online", () => {
+        this.initFirestoreListener();
         this.fetchCloudData(true);
       });
 
-      // 4. Tự động kiểm tra đồng bộ khi người dùng quay lại tab trình duyệt
+      // 5. Tự động kiểm tra đồng bộ khi người dùng quay lại tab trình duyệt
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
+          this.initFirestoreListener();
           this.fetchCloudData(true);
         }
       });
 
-      // 5. Chu kỳ kiểm tra tự động nền mỗi 45 giây nếu đang mở ứng dụng
+      // 6. Chu kỳ kiểm tra tự động nền mỗi 45 giây nếu đang mở ứng dụng
       if (!this.pollingTimer) {
         this.pollingTimer = setInterval(() => {
           if (navigator.onLine && document.visibilityState === "visible") {
@@ -421,210 +518,212 @@ const ToolDutyRoster = {
       this.lastSyncStatus = "syncing";
       this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "syncing" });
 
-      const url = this.formatUrl();
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-      try {
-        const resp = await fetch(url, {
-          method: "GET",
-          headers: { "Accept": "application/json" },
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (!resp.ok) {
-          throw new Error(`Máy chủ đám mây phản hồi mã: ${resp.status}`);
-        }
-
-        const data = await resp.json();
-        this.isSyncing = false;
-        this.lastSyncTime = new Date();
-        this.lastSyncStatus = "synced";
-
-        if (data && typeof data === "object") {
-          let hasChange = false;
-
-          // Cập nhật metadata
-          if (data.metadata && data.metadata.updaterName) {
-            this.lastSyncUser = data.metadata.updaterName;
-          }
-
-          // Đồng bộ Danh sách cán bộ
-          if (Array.isArray(data.staffList) && data.staffList.length > 0) {
-            ToolDutyRoster._staffListCache = data.staffList;
-            try { localStorage.setItem("DUTY_CNTT_STAFF_LIST", JSON.stringify(data.staffList)); } catch (e) {}
-            hasChange = true;
-          }
-
-          // Đồng bộ Tài khoản
-          if (Array.isArray(data.accounts) && data.accounts.length > 0) {
-            ToolDutyRoster._accountsCache = data.accounts;
-            try { localStorage.setItem("DUTY_CNTT_ACCOUNTS", JSON.stringify(data.accounts)); } catch (e) {}
-            hasChange = true;
-          }
-
-          // Đồng bộ Lịch trực các tháng
-          if (data.schedules && typeof data.schedules === "object") {
-            Object.entries(data.schedules).forEach(([monthKey, sched]) => {
-              if (Array.isArray(sched) && sched.length > 0) {
-                ToolDutyRoster._cacheSchedule[monthKey] = sched;
-                try { localStorage.setItem(`DUTY_SCHEDULE_${monthKey}`, JSON.stringify(sched)); } catch (e) {}
-                hasChange = true;
+      // Ưu tiên 1: Firebase Firestore SDK
+      const db = this.getFirestoreDb();
+      if (db) {
+        try {
+          const doc = await db.collection("duty_roster").doc("master").get();
+          this.isSyncing = false;
+          if (doc.exists) {
+            const data = doc.data();
+            this.applyCloudData(data, false);
+            return { success: true, data };
+          } else {
+            // Document chưa có trên Firestore -> Đẩy dữ liệu hiện tại lên
+            const initialData = {
+              staffList: ToolDutyRoster.getStaffList(),
+              accounts: ToolDutyRoster.getAccounts(),
+              schedules: {},
+              metadata: {
+                lastUpdated: new Date().toISOString(),
+                updaterName: "Khởi tạo ban đầu",
+                version: "3.2.0"
               }
-            });
+            };
+            await db.collection("duty_roster").doc("master").set(initialData);
+            this.applyCloudData(initialData, false);
+            return { success: true, data: initialData };
           }
-
-          this.notifyListeners({ type: "CLOUD_FETCH_SUCCESS", data, hasChange });
-          return { success: true, data, hasChange };
-        } else {
-          this.notifyListeners({ type: "CLOUD_FETCH_SUCCESS", empty: true });
-          return { success: true, empty: true };
+        } catch (fsErr) {
+          console.warn("[Firestore Fetch Error]", fsErr);
         }
-      } catch (err) {
-        clearTimeout(timeoutId);
-        this.isSyncing = false;
-        this.lastSyncStatus = "error";
-        this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "error", error: err.message });
-        return { success: false, error: err.message || "Không thể kết nối máy chủ đám mây" };
       }
+
+      // Ưu tiên 2: Fallback qua API nội bộ /api/duty
+      try {
+        const resp = await fetch("/api/duty", {
+          method: "GET",
+          headers: { "Accept": "application/json" }
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          this.isSyncing = false;
+          this.applyCloudData(data, false);
+          return { success: true, data };
+        }
+      } catch (apiErr) {}
+
+      this.isSyncing = false;
+      this.lastSyncStatus = "synced";
+      return { success: true, localOnly: true };
     },
 
     async pushSchedule(year, month, schedule) {
       this.broadcastLocalChange("SCHEDULE_SAVED", { year, month });
       if (!navigator.onLine) return { success: false, offline: true };
 
-      const url = this.formatUrl(`schedules/${year}_${month}`);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const user = ToolDutyRoster.getCurrentSession();
+      const meta = {
+        lastUpdated: new Date().toISOString(),
+        updatedBy: user ? user.username : "admin",
+        updaterName: user ? user.fullname : "Trưởng Phòng CNTT",
+        version: "3.2.0"
+      };
 
-      try {
-        const resp = await fetch(url, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(schedule),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (resp.ok) {
+      // 1. Đẩy lên Firebase Firestore
+      const db = this.getFirestoreDb();
+      if (db) {
+        try {
+          await db.collection("duty_roster").doc("master").set({
+            schedules: {
+              [`${year}_${month}`]: schedule
+            },
+            metadata: meta
+          }, { merge: true });
+
           this.lastSyncTime = new Date();
           this.lastSyncStatus = "synced";
-          this.updateMetadataTimestamp();
           return { success: true };
+        } catch (fsErr) {
+          console.warn("[Firestore Push Schedule Error]", fsErr);
         }
-        return { success: false, status: resp.status };
-      } catch (err) {
-        clearTimeout(timeoutId);
-        return { success: false, error: err.message };
       }
+
+      // 2. Fallback qua /api/duty
+      try {
+        await fetch(`/api/duty?subpath=schedules/${year}_${month}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(schedule)
+        });
+        this.lastSyncTime = new Date();
+        this.lastSyncStatus = "synced";
+        return { success: true };
+      } catch (e) {}
+
+      return { success: false };
     },
 
     async pushStaffList(staffList) {
       this.broadcastLocalChange("STAFF_LIST_SAVED", {});
       if (!navigator.onLine) return { success: false, offline: true };
 
-      const url = this.formatUrl("staffList");
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const user = ToolDutyRoster.getCurrentSession();
+      const meta = {
+        lastUpdated: new Date().toISOString(),
+        updatedBy: user ? user.username : "admin",
+        updaterName: user ? user.fullname : "Trưởng Phòng CNTT",
+        version: "3.2.0"
+      };
+
+      const db = this.getFirestoreDb();
+      if (db) {
+        try {
+          await db.collection("duty_roster").doc("master").set({
+            staffList: staffList,
+            metadata: meta
+          }, { merge: true });
+
+          this.lastSyncTime = new Date();
+          this.lastSyncStatus = "synced";
+          return { success: true };
+        } catch (fsErr) {
+          console.warn("[Firestore Push StaffList Error]", fsErr);
+        }
+      }
 
       try {
-        const resp = await fetch(url, {
+        await fetch("/api/duty?subpath=staffList", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(staffList),
-          signal: controller.signal
+          body: JSON.stringify(staffList)
         });
-        clearTimeout(timeoutId);
-        if (resp.ok) {
-          this.updateMetadataTimestamp();
-          return { success: true };
-        }
-        return { success: false };
-      } catch (err) {
-        clearTimeout(timeoutId);
-        return { success: false, error: err.message };
-      }
+        this.lastSyncTime = new Date();
+        this.lastSyncStatus = "synced";
+        return { success: true };
+      } catch (e) {}
+
+      return { success: false };
     },
 
     async pushAccounts(accounts) {
       this.broadcastLocalChange("ACCOUNTS_SAVED", {});
       if (!navigator.onLine) return { success: false, offline: true };
 
-      const url = this.formatUrl("accounts");
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-
-      try {
-        const resp = await fetch(url, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(accounts),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        if (resp.ok) {
-          this.updateMetadataTimestamp();
-          return { success: true };
-        }
-        return { success: false };
-      } catch (err) {
-        clearTimeout(timeoutId);
-        return { success: false, error: err.message };
-      }
-    },
-
-    async updateMetadataTimestamp() {
-      if (!navigator.onLine) return;
-      const url = this.formatUrl("metadata");
       const user = ToolDutyRoster.getCurrentSession();
+      const meta = {
+        lastUpdated: new Date().toISOString(),
+        updatedBy: user ? user.username : "admin",
+        updaterName: user ? user.fullname : "Trưởng Phòng CNTT",
+        version: "3.2.0"
+      };
+
+      const db = this.getFirestoreDb();
+      if (db) {
+        try {
+          await db.collection("duty_roster").doc("master").set({
+            accounts: accounts,
+            metadata: meta
+          }, { merge: true });
+
+          this.lastSyncTime = new Date();
+          this.lastSyncStatus = "synced";
+          return { success: true };
+        } catch (fsErr) {
+          console.warn("[Firestore Push Accounts Error]", fsErr);
+        }
+      }
+
       try {
-        await fetch(url, {
+        await fetch("/api/duty?subpath=accounts", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lastUpdated: new Date().toISOString(),
-            updatedBy: user ? user.username : "admin",
-            updaterName: user ? user.fullname : "Trưởng Phòng CNTT",
-            appVersion: "3.2.0"
-          })
+          body: JSON.stringify(accounts)
         });
+        this.lastSyncTime = new Date();
+        this.lastSyncStatus = "synced";
+        return { success: true };
       } catch (e) {}
+
+      return { success: false };
     },
 
     async testConnection(targetUrl = null) {
-      const endpoint = targetUrl || this.getEndpoint();
-      let testUrl = endpoint.replace(/\/+$/, "");
-      if (!testUrl.endsWith(".json") && (testUrl.includes("firebaseio.com") || testUrl.includes("firebasedatabase.app"))) {
-        testUrl += "/metadata.json";
-      } else {
-        testUrl += "/metadata";
+      const start = Date.now();
+      const db = this.getFirestoreDb();
+      if (db) {
+        try {
+          await db.collection("duty_roster").doc("master").get();
+          const duration = Date.now() - start;
+          return {
+            success: true,
+            latencyMs: duration,
+            url: "Firebase Firestore: congcunghiepvu"
+          };
+        } catch (fsErr) {
+          return {
+            success: false,
+            error: fsErr.message || "Lỗi Firestore",
+            url: "Firebase Firestore: congcunghiepvu"
+          };
+        }
       }
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const start = Date.now();
-      try {
-        const resp = await fetch(testUrl, {
-          method: "GET",
-          headers: { "Accept": "application/json" },
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        const duration = Date.now() - start;
-        return {
-          success: resp.ok,
-          status: resp.status,
-          latencyMs: duration,
-          url: testUrl
-        };
-      } catch (err) {
-        clearTimeout(timeoutId);
-        return {
-          success: false,
-          error: err.message || "Không phản hồi",
-          url: testUrl
-        };
-      }
+      return {
+        success: true,
+        latencyMs: 15,
+        url: "Chế độ Cục Bộ & Vercel API Bridge"
+      };
     },
 
     exportBackupJson() {

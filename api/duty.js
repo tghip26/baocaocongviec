@@ -3,11 +3,16 @@
  * Vercel Serverless Function - Đồng bộ dữ liệu Lịch Trực Phòng CNTT
  */
 
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDQzhi52oGxKo1nDsKiL4MHrw-7e-AwJC0",
+  projectId: "congcunghiepvu"
+};
+
 let inMemoryData = {
   metadata: {
     lastUpdated: new Date().toISOString(),
     updatedBy: "system",
-    updaterName: "Vercel API Bridge",
+    updaterName: "Firebase Bridge (congcunghiepvu)",
     version: "3.2.0"
   },
   staffList: [],

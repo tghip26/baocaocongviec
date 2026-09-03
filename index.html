@@ -29,6 +29,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <!-- Firebase SDK (v10.13.2 Compat for Instant Multi-Device Realtime Sync) -->
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js"></script>
   <!-- PDF.js CDN for Client-side PDF Rendering -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script defer>
@@ -2242,9 +2246,12 @@
             </span>
             <span class="cloud-latency-text" id="cloudLatencyText">-- ms</span>
           </div>
-          <div class="cloud-endpoint-display">
-            <small style="color: #94a3b8; display: block; margin-bottom: 2px;">Địa chỉ Máy Chủ Đám Mây (Endpoint):</small>
-            <code id="txtCurrentCloudEndpoint" style="color: #38bdf8; word-break: break-all; font-size: 0.76rem;">...</code>
+          <div class="cloud-endpoint-display" style="margin-top: 6px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+              <small style="color: #94a3b8;">🔥 Dự án Firebase:</small>
+              <span style="background: rgba(249, 115, 22, 0.15); color: #fb923c; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">congcunghiepvu</span>
+            </div>
+            <code id="txtCurrentCloudEndpoint" style="color: #38bdf8; word-break: break-all; font-size: 0.75rem;">Firestore DB: duty_roster/master</code>
           </div>
           <div class="cloud-meta-row flex-between" style="margin-top: 8px; font-size: 0.74rem; color: #94a3b8;">
             <span>Lần đồng bộ gần nhất: <strong id="txtLastSyncTimeDisplay" style="color: #cbd5e1;">Chưa đồng bộ</strong></span>
