@@ -1357,20 +1357,27 @@
              VIEW: QUẢN LÝ & XẾP LỊCH TRỰC PHÒNG CNTT TỰ ĐỘNG
              ============================================================ -->
         <section class="workspace-view hidden" id="dutyRosterView">
+          <!-- Header Bar: Không bao giờ bị vỡ dòng -->
           <div class="workspace-top-bar duty-top-bar">
-            <div class="workspace-top-left">
+            <!-- Left: Quay lại + Tiêu đề + Trạng thái Cloud -->
+            <div class="duty-header-brand">
               <button type="button" class="btn-back" id="btnBackToHubFromDuty" title="Quay về danh mục">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 <span>Quay lại</span>
               </button>
-              <div class="workspace-heading">
-                <h1 class="workspace-title">Lịch Trực Phòng CNTT</h1>
+              <div class="duty-title-wrapper">
+                <h1 class="duty-view-title">Lịch Trực Phòng CNTT</h1>
+                <!-- Cloud Live Sync Status Pill ngay cạnh tiêu đề -->
+                <div class="duty-cloud-sync-status-pill" id="dutyCloudSyncStatusPill" title="Trạng thái kết nối máy chủ đám mây Firebase">
+                  <span class="sync-status-dot" id="syncStatusDot"></span>
+                  <span class="sync-status-text" id="syncStatusText">Đang kết nối...</span>
+                </div>
               </div>
             </div>
 
-            <!-- Top Actions & Month Picker -->
-            <div class="workspace-top-actions duty-actions-cluster">
-              <!-- Month / Year Selector (Ultra sleek combined pill) -->
+            <!-- Right: Chọn tháng/năm + Cụm nút hành động -->
+            <div class="duty-header-actions-group">
+              <!-- Bộ chọn Tháng & Năm -->
               <div class="duty-time-picker-compact" title="Chọn Tháng và Năm để xem hoặc xếp lịch">
                 <span class="picker-cal-icon">📅</span>
                 <select id="dutySelectMonth" class="duty-select-month-sm" title="Chọn Tháng">
@@ -1399,39 +1406,36 @@
                 </select>
               </div>
 
-              <!-- Action Buttons (Always visible & interactive) -->
-              <button type="button" class="btn-duty-action btn-duty-auto" id="btnRunAutoSchedule" title="Tự động xếp lịch trực (Công bằng hoặc Tuần tự)">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                <span>⚡ Xếp Lịch Tự Động</span>
-              </button>
+              <!-- Cụm thao tác chính -->
+              <div class="duty-btn-cluster primary-cluster">
+                <button type="button" class="btn-duty-action btn-duty-auto" id="btnRunAutoSchedule" title="Tự động xếp lịch trực (Công bằng hoặc Tuần tự)">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Xếp Lịch Tự Động</span>
+                </button>
 
-              <button type="button" class="btn-duty-action btn-duty-clear" id="btnClearDutySchedule" title="Xóa toàn bộ ca trực của tháng này để xếp lại từ đầu">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                <span>🗑️ Xóa Lịch Tháng</span>
-              </button>
-
-              <button type="button" class="btn-duty-action btn-duty-excel" id="btnExportDutyExcel" title="Xuất file Excel bảng chấm công chuẩn Phòng CNTT">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span>📥 Xuất Excel</span>
-              </button>
-
-              <!-- Cloud Live Sync Status Pill -->
-              <div class="duty-cloud-sync-status-pill" id="dutyCloudSyncStatusPill" title="Trạng thái đồng bộ máy chủ đám mây giữa các máy tính">
-                <span class="sync-status-dot" id="syncStatusDot"></span>
-                <span class="sync-status-text" id="syncStatusText">Đang kết nối...</span>
+                <button type="button" class="btn-duty-action btn-duty-excel" id="btnExportDutyExcel" title="Xuất file Excel bảng chấm công chuẩn Phòng CNTT">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Xuất Excel</span>
+                </button>
               </div>
 
-              <!-- Button Đồng Bộ Ngay -->
-              <button type="button" class="btn-duty-action btn-duty-sync" id="btnDutySyncNow" title="Kéo dữ liệu lịch trực mới nhất từ máy chủ đám mây">
-                <svg class="icon-sync-spin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
-                <span>🔄 Đồng Bộ</span>
-              </button>
+              <!-- Cụm đồng bộ & cài đặt -->
+              <div class="duty-btn-cluster secondary-cluster">
+                <button type="button" class="btn-duty-action btn-duty-sync" id="btnDutySyncNow" title="Kéo dữ liệu lịch trực mới nhất từ máy chủ đám mây">
+                  <svg class="icon-sync-spin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/></svg>
+                  <span>Đồng Bộ</span>
+                </button>
 
-              <!-- Button Cấu Hình Máy Chủ & Sao Lưu File -->
-              <button type="button" class="btn-duty-action btn-duty-cloud-cfg" id="btnOpenDutySyncConfigModal" title="Cấu hình máy chủ đám mây & Xuất/Nhập file sao lưu JSON">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-                <span>☁️ Đám Mây & Sao Lưu</span>
-              </button>
+                <button type="button" class="btn-duty-action btn-duty-cloud-cfg" id="btnOpenDutySyncConfigModal" title="Cấu hình máy chủ đám mây & Xuất/Nhập file sao lưu JSON">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                  <span>Đám Mây</span>
+                </button>
+
+                <button type="button" class="btn-duty-action btn-duty-clear" id="btnClearDutySchedule" title="Xóa toàn bộ ca trực của tháng này để xếp lại từ đầu">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  <span>Xóa Lịch</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1445,38 +1449,42 @@
             <button type="button" class="btn-duty-login-now" id="btnDutyLoginNow">Đăng Nhập Ngay</button>
           </div>
 
-          <!-- Single Unified Control Bar: Tabs + Quick Panel Buttons + Filter + Legend -->
+          <!-- Thanh Điều Hướng & Bộ Lọc Gọn Gàng (Unbreakable Control Bar) -->
           <div class="duty-control-bar">
-            <!-- View Tabs -->
-            <div class="duty-mode-tabs">
-              <button type="button" class="duty-tab-btn active" data-view="calendar" id="btnTabDutyCalendar">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span>Lưới Lịch Tháng</span>
-              </button>
-              <button type="button" class="duty-tab-btn" data-view="personal" id="btnTabDutyPersonal">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                <span>Lịch Của Tôi</span>
-              </button>
-              <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                <span>Bảng Chấm Công</span>
-              </button>
+            <!-- Left: View Tabs + Quick Modals -->
+            <div class="duty-control-left">
+              <div class="duty-mode-tabs">
+                <button type="button" class="duty-tab-btn active" data-view="calendar" id="btnTabDutyCalendar">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>Lưới Lịch Tháng</span>
+                </button>
+                <button type="button" class="duty-tab-btn" data-view="personal" id="btnTabDutyPersonal">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  <span>Lịch Của Tôi</span>
+                </button>
+                <button type="button" class="duty-tab-btn" data-view="table" id="btnTabDutyTable">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <span>Bảng Chấm Công</span>
+                </button>
+              </div>
+
+              <div class="duty-sub-divider"></div>
+
+              <!-- 2 Quick Action Buttons: Thống Kê & Danh Sách Cán Bộ -->
+              <div class="duty-quick-panels-btns">
+                <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStatsModal" title="Xem tổng hợp ca trực, ca sắp tới & thống kê chi tiết">
+                  <span class="btn-panel-icon">📊</span>
+                  <span>Thống Kê Ca Trực</span>
+                </button>
+                <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStaffModal" title="Xem & quản lý danh sách cán bộ P.CNTT">
+                  <span class="btn-panel-icon">👥</span>
+                  <span>Cán Bộ (<strong id="staffCountBtnBadge" style="color: #38bdf8;">0</strong>)</span>
+                </button>
+              </div>
             </div>
 
-            <!-- 2 Quick Action Buttons: Thống Kê & Danh Sách Cán Bộ (Tiết kiệm không gian) -->
-            <div class="duty-quick-panels-btns">
-              <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStatsModal" title="Xem tổng hợp ca trực, ca sắp tới & thống kê chi tiết">
-                <span class="btn-panel-icon">📊</span>
-                <span>Thống Kê Ca Trực</span>
-              </button>
-              <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStaffModal" title="Xem & quản lý danh sách cán bộ P.CNTT">
-                <span class="btn-panel-icon">👥</span>
-                <span>Cán Bộ (<strong id="staffCountBtnBadge" style="color: #38bdf8;">0</strong>)</span>
-              </button>
-            </div>
-
-            <!-- Filter Staff Dropdown & Legend -->
-            <div class="duty-filter-right-cluster">
+            <!-- Right: Filter Staff Dropdown & Legend -->
+            <div class="duty-control-right">
               <div class="duty-staff-filter-pill">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <select id="selectFilterSpecificStaff" class="duty-filter-select-sm">
