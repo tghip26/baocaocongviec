@@ -72,8 +72,6 @@ class AppController {
     this.dutyRosterView = document.getElementById("dutyRosterView");
     this.bhytXmlView = document.getElementById("bhytXmlView");
     this.imageOptimizerView = document.getElementById("imageOptimizerView");
-    this.diffCheckerView = document.getElementById("diffCheckerView");
-    this.medicalQrView = document.getElementById("medicalQrView");
     this.categoryFilter = document.getElementById("categoryFilter");
     this.toolCardsContainer = document.getElementById("toolCardsContainer");
     this.globalSearchInput = document.getElementById("globalSearchInput");
@@ -412,57 +410,6 @@ class AppController {
     this.btnClearImgOptFiles = document.getElementById("btnClearImgOptFiles");
     this.imgOptItemsGrid = document.getElementById("imgOptItemsGrid");
 
-    // Diff Checker Elements
-    this.diffChecker = window.ToolDiffChecker ? new ToolDiffChecker() : null;
-    this.btnBackToHubFromDiff = document.getElementById("btnBackToHubFromDiff");
-    this.btnSwapDiffTexts = document.getElementById("btnSwapDiffTexts");
-    this.btnExecuteDiffCompare = document.getElementById("btnExecuteDiffCompare");
-    this.btnDiffModeSplit = document.getElementById("btnDiffModeSplit");
-    this.btnDiffModeUnified = document.getElementById("btnDiffModeUnified");
-    this.chkDiffIgnoreWhitespace = document.getElementById("chkDiffIgnoreWhitespace");
-    this.chkDiffIgnoreCase = document.getElementById("chkDiffIgnoreCase");
-    this.btnLoadDiffSampleSql = document.getElementById("btnLoadDiffSampleSql");
-    this.btnLoadDiffSampleContract = document.getElementById("btnLoadDiffSampleContract");
-    this.txtDiffOriginal = document.getElementById("txtDiffOriginal");
-    this.txtDiffModified = document.getElementById("txtDiffModified");
-    this.btnClearDiffLeft = document.getElementById("btnClearDiffLeft");
-    this.btnClearDiffRight = document.getElementById("btnClearDiffRight");
-    this.diffStatsDashboard = document.getElementById("diffStatsDashboard");
-    this.diffStatSame = document.getElementById("diffStatSame");
-    this.diffStatAdded = document.getElementById("diffStatAdded");
-    this.diffStatRemoved = document.getElementById("diffStatRemoved");
-    this.diffStatSimilarity = document.getElementById("diffStatSimilarity");
-    this.diffViewerWrapper = document.getElementById("diffViewerWrapper");
-    this.diffViewerContent = document.getElementById("diffViewerContent");
-    this.btnCopyDiffSummary = document.getElementById("btnCopyDiffSummary");
-
-    // Medical QR Elements
-    this.medicalQr = window.ToolMedicalQr ? new ToolMedicalQr() : null;
-    this.btnBackToHubFromQr = document.getElementById("btnBackToHubFromQr");
-    this.btnDownloadQrImage = document.getElementById("btnDownloadQrImage");
-    this.btnPrintQrCode = document.getElementById("btnPrintQrCode");
-    this.qrModeTabs = document.getElementById("qrModeTabs");
-    this.formVietQr = document.getElementById("formVietQr");
-    this.formPatientQr = document.getElementById("formPatientQr");
-    this.formUrlQr = document.getElementById("formUrlQr");
-    this.formWifiQr = document.getElementById("formWifiQr");
-    this.selQrBank = document.getElementById("selQrBank");
-    this.inputQrAccountNo = document.getElementById("inputQrAccountNo");
-    this.inputQrAmount = document.getElementById("inputQrAmount");
-    this.inputQrMessage = document.getElementById("inputQrMessage");
-    this.inputPatientId = document.getElementById("inputPatientId");
-    this.inputPatientName = document.getElementById("inputPatientName");
-    this.inputPatientYear = document.getElementById("inputPatientYear");
-    this.selPatientGender = document.getElementById("selPatientGender");
-    this.inputPatientDept = document.getElementById("inputPatientDept");
-    this.inputQrUrl = document.getElementById("inputQrUrl");
-    this.inputWifiSsid = document.getElementById("inputWifiSsid");
-    this.inputWifiPass = document.getElementById("inputWifiPass");
-    this.btnGenerateQrCode = document.getElementById("btnGenerateQrCode");
-    this.canvasQrDisplay = document.getElementById("canvasQrDisplay");
-    this.qrMetaFooter = document.getElementById("qrMetaFooter");
-    this.qrPlaceholder = document.getElementById("qrPlaceholder");
-
     // Duty Roster Extra Buttons
     this.btnExportDutyIcs = document.getElementById("btnExportDutyIcs");
     this.btnDutyPrintA4 = document.getElementById("btnDutyPrintA4");
@@ -478,8 +425,6 @@ class AppController {
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
     this.initImageOptimizerEvents();
-    this.initDiffCheckerEvents();
-    this.initMedicalQrEvents();
 
     // Password Visibility Toggles
     this.setupPasswordToggle("btnToggleLoginPass", "inputDutyLoginPass");
@@ -1730,8 +1675,6 @@ class AppController {
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.imageOptimizerView) this.imageOptimizerView.classList.add("hidden");
-    if (this.diffCheckerView) this.diffCheckerView.classList.add("hidden");
-    if (this.medicalQrView) this.medicalQrView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
   }
 
@@ -1753,10 +1696,6 @@ class AppController {
       this.showPdfToImageView();
     } else if (hash === "image-optimizer") {
       this.showImageOptimizerView();
-    } else if (hash === "diff-checker") {
-      this.showDiffCheckerView();
-    } else if (hash === "medical-qr") {
-      this.showMedicalQrView();
     } else {
       const tool = window.getToolById(hash);
       if (tool) {
@@ -1772,10 +1711,6 @@ class AppController {
           this.showDutyRosterView();
         } else if (tool.id === "image-optimizer") {
           this.showImageOptimizerView();
-        } else if (tool.id === "diff-checker") {
-          this.showDiffCheckerView();
-        } else if (tool.id === "medical-qr") {
-          this.showMedicalQrView();
         } else {
           this.showToolView(tool.id);
         }
@@ -1905,67 +1840,8 @@ class AppController {
     });
 
     window.scrollTo(0, 0);
-  }
-
-  showDiffCheckerView() {
-    this.currentToolId = "diff-checker";
-    this.hideAllViews();
-    if (this.diffCheckerView) this.diffCheckerView.classList.remove("hidden");
-
-    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
-      item.classList.toggle("active", item.dataset.tool === "diff-checker");
-    });
-
-    window.scrollTo(0, 0);
-  }
-
-  showMedicalQrView() {
-    this.currentToolId = "medical-qr";
-    this.hideAllViews();
-    if (this.medicalQrView) this.medicalQrView.classList.remove("hidden");
-
-    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
-      item.classList.toggle("active", item.dataset.tool === "medical-qr");
-    });
-
-    window.scrollTo(0, 0);
-  }
-
-  showToolView(toolId) {
-    if (toolId === "schema-lookup") {
-      this.showSchemaView();
-      return;
-    }
-    if (toolId === "sql-builder") {
-      this.showSqlBuilderView();
-      return;
-    }
-    if (toolId === "duty-roster") {
-      this.showDutyRosterView();
-      return;
-    }
-    if (toolId === "bhyt-xml") {
-      this.showBhytXmlView();
-      return;
-    }
-    if (toolId === "word-to-html") {
-      this.showWordToHtmlView();
-      return;
-    }
-    if (toolId === "pdf-to-image") {
-      this.showPdfToImageView();
-      return;
-    }
     if (toolId === "image-optimizer") {
       this.showImageOptimizerView();
-      return;
-    }
-    if (toolId === "diff-checker") {
-      this.showDiffCheckerView();
-      return;
-    }
-    if (toolId === "medical-qr") {
-      this.showMedicalQrView();
       return;
     }
 
@@ -6825,328 +6701,6 @@ ${this.currentW2hHtmlOutput}
     } catch (e) {
       this.showToast(e.message || "Lỗi đóng gói file ZIP.", "error");
     }
-  }
-
-  // =========================================================================
-  // ULTRA TOOL 2: SMART DIFF CHECKER
-  // =========================================================================
-  initDiffCheckerEvents() {
-    if (!this.diffChecker) return;
-
-    if (this.btnBackToHubFromDiff) {
-      this.btnBackToHubFromDiff.addEventListener("click", () => {
-        window.location.hash = "hub";
-      });
-    }
-
-    if (this.btnSwapDiffTexts) {
-      this.btnSwapDiffTexts.addEventListener("click", () => {
-        const temp = this.txtDiffOriginal.value;
-        this.txtDiffOriginal.value = this.txtDiffModified.value;
-        this.txtDiffModified.value = temp;
-        this.showToast("Đã hoán đổi vị trí nội dung giữa 2 cột.", "info");
-      });
-    }
-
-    if (this.btnClearDiffLeft) {
-      this.btnClearDiffLeft.addEventListener("click", () => {
-        this.txtDiffOriginal.value = "";
-      });
-    }
-
-    if (this.btnClearDiffRight) {
-      this.btnClearDiffRight.addEventListener("click", () => {
-        this.txtDiffModified.value = "";
-      });
-    }
-
-    if (this.btnDiffModeSplit && this.btnDiffModeUnified) {
-      this.btnDiffModeSplit.addEventListener("click", () => {
-        this.diffChecker.viewMode = "split";
-        this.btnDiffModeSplit.classList.add("active");
-        this.btnDiffModeUnified.classList.remove("active");
-        this.executeDiffComparison(false);
-      });
-
-      this.btnDiffModeUnified.addEventListener("click", () => {
-        this.diffChecker.viewMode = "unified";
-        this.btnDiffModeUnified.classList.add("active");
-        this.btnDiffModeSplit.classList.remove("active");
-        this.executeDiffComparison(false);
-      });
-    }
-
-    if (this.chkDiffIgnoreWhitespace) {
-      this.chkDiffIgnoreWhitespace.addEventListener("change", (e) => {
-        this.diffChecker.ignoreWhitespace = e.target.checked;
-        if (this.txtDiffOriginal.value || this.txtDiffModified.value) {
-          this.executeDiffComparison(false);
-        }
-      });
-    }
-
-    if (this.chkDiffIgnoreCase) {
-      this.chkDiffIgnoreCase.addEventListener("change", (e) => {
-        this.diffChecker.ignoreCase = e.target.checked;
-        if (this.txtDiffOriginal.value || this.txtDiffModified.value) {
-          this.executeDiffComparison(false);
-        }
-      });
-    }
-
-    if (this.btnLoadDiffSampleSql) {
-      this.btnLoadDiffSampleSql.addEventListener("click", () => {
-        this.txtDiffOriginal.value = `-- Truy vấn cũ lấy danh sách bệnh nhân BHYT
-SELECT p.patient_id, p.p_name, i.invoiceno, i.total_amount
-FROM hms_patient p
-JOIN hms_inward i ON p.patient_id = i.patient_id
-WHERE i.status = 'A' AND p.is_bhyt = 'Y'
-ORDER BY i.inward_date DESC;`;
-
-        this.txtDiffModified.value = `-- Truy vấn MỚI tối ưu lấy danh sách bệnh nhân BHYT
-SELECT /*+ INDEX(i IDX_INWARD_STATUS) */
-       p.patient_id, p.p_name, p.card_code, i.invoiceno, i.total_amount, i.bhyt_amount
-FROM hms_patient p
-INNER JOIN hms_inward i ON p.patient_id = i.patient_id
-WHERE i.status = 'A' 
-  AND p.is_bhyt = 'Y'
-  AND i.inward_date >= TRUNC(SYSDATE, 'MM')
-ORDER BY i.inward_date DESC;`;
-        this.executeDiffComparison(true);
-      });
-    }
-
-    if (this.btnLoadDiffSampleContract) {
-      this.btnLoadDiffSampleContract.addEventListener("click", () => {
-        this.txtDiffOriginal.value = `ĐIỀU 3: TRÁCH NHIỆM BÊN B
-1. Cung cấp trang thiết bị máy tính và hạ tầng mạng LAN theo phụ lục I.
-2. Thời gian bảo hành hệ thống là 12 tháng kể từ ngày ký biên bản nghiệm thu.
-3. Hỗ trợ kỹ thuật qua điện thoại từ 8h00 đến 17h00 các ngày làm việc trong tuần.`;
-
-        this.txtDiffModified.value = `ĐIỀU 3: TRÁCH NHIỆM BÊN B
-1. Cung cấp trang thiết bị máy tính và hạ tầng mạng LAN cáp quang theo phụ lục I.
-2. Thời gian bảo hành hệ thống là 24 tháng kể từ ngày ký biên bản nghiệm thu.
-3. Hỗ trợ kỹ thuật trực tiếp và trực hotline 24/7 đối với sự cố tê liệt hệ thống HIS.
-4. Định kỳ sao lưu dữ liệu máy chủ hàng tuần và bàn giao cho Bên A.`;
-        this.executeDiffComparison(true);
-      });
-    }
-
-    if (this.btnExecuteDiffCompare) {
-      this.btnExecuteDiffCompare.addEventListener("click", () => {
-        this.executeDiffComparison(true);
-      });
-    }
-
-    if (this.btnCopyDiffSummary) {
-      this.btnCopyDiffSummary.addEventListener("click", () => {
-        const textA = this.txtDiffOriginal.value;
-        const textB = this.txtDiffModified.value;
-        const result = this.diffChecker.computeDiff(textA, textB);
-        const report = `=== BÁO CÁO ĐỐI CHIẾU SO SÁNH DIFF ===\n` +
-          `- Tổng số dòng: ${result.stats.totalLines}\n` +
-          `- Dòng trùng khớp: ${result.stats.sameCount}\n` +
-          `- Dòng thêm mới (+): ${result.stats.addedCount}\n` +
-          `- Dòng đã xóa (-): ${result.stats.removedCount}\n` +
-          `- Độ tương đồng: ${result.stats.similarity}%\n\n` +
-          `BVĐK Bắc Ninh Số 2 - Hệ thống Báo Cáo Công Việc`;
-        navigator.clipboard.writeText(report);
-        this.showToast("📋 Đã sao chép báo cáo kết quả đối chiếu vào bộ nhớ tạm!", "success");
-      });
-    }
-  }
-
-  executeDiffComparison(showToastNotice = true) {
-    const textA = this.txtDiffOriginal ? this.txtDiffOriginal.value : "";
-    const textB = this.txtDiffModified ? this.txtDiffModified.value : "";
-
-    if (!textA && !textB) {
-      if (showToastNotice) this.showToast("Vui lòng dán nội dung vào ít nhất một ô để so sánh.", "warning");
-      return;
-    }
-
-    const result = this.diffChecker.computeDiff(textA, textB);
-
-    // Hiển thị dashboard thống kê
-    if (this.diffStatsDashboard) this.diffStatsDashboard.classList.remove("hidden");
-    if (this.diffStatSame) this.diffStatSame.textContent = result.stats.sameCount;
-    if (this.diffStatAdded) this.diffStatAdded.textContent = `+${result.stats.addedCount}`;
-    if (this.diffStatRemoved) this.diffStatRemoved.textContent = `-${result.stats.removedCount}`;
-    if (this.diffStatSimilarity) this.diffStatSimilarity.textContent = `${result.stats.similarity}%`;
-
-    // Hiển thị viewer chi tiết
-    if (this.diffViewerWrapper) this.diffViewerWrapper.classList.remove("hidden");
-    if (this.diffViewerContent) {
-      const htmlRes = this.diffChecker.renderDiffHtml(result, this.diffChecker.viewMode);
-      if (this.diffChecker.viewMode === "split") {
-        this.diffViewerContent.innerHTML = `
-          <div class="diff-viewer-pane">${htmlRes.leftHtml}</div>
-          <div class="diff-viewer-pane">${htmlRes.rightHtml}</div>
-        `;
-      } else {
-        this.diffViewerContent.innerHTML = `
-          <div class="diff-viewer-pane" style="width: 100%;">${htmlRes.unifiedHtml}</div>
-        `;
-      }
-    }
-
-    if (showToastNotice) {
-      if (this.notifManager) this.notifManager.playChime("info");
-      this.showToast(`Đã đối chiếu xong! Độ tương đồng: ${result.stats.similarity}% (+${result.stats.addedCount} thêm mới, -${result.stats.removedCount} đã xóa).`, "success");
-    }
-  }
-
-  // =========================================================================
-  // ULTRA TOOL 3: MEDICAL QR & VIETQR
-  // =========================================================================
-  initMedicalQrEvents() {
-    if (!this.medicalQr) return;
-
-    if (this.btnBackToHubFromQr) {
-      this.btnBackToHubFromQr.addEventListener("click", () => {
-        window.location.hash = "hub";
-      });
-    }
-
-    // Populate banks
-    if (this.selQrBank) {
-      const banks = this.medicalQr.getBanks();
-      this.selQrBank.innerHTML = banks.map(b => `<option value="${b.bin}">${b.shortName} (${b.bin}) - ${b.name}</option>`).join("");
-    }
-
-    // Tab mode switching
-    if (this.qrModeTabs) {
-      this.qrModeTabs.querySelectorAll(".qr-tab-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          this.qrModeTabs.querySelectorAll(".qr-tab-btn").forEach(b => b.classList.remove("active"));
-          btn.classList.add("active");
-          const mode = btn.dataset.mode;
-          if (this.formVietQr) this.formVietQr.classList.toggle("hidden", mode !== "vietqr");
-          if (this.formPatientQr) this.formPatientQr.classList.toggle("hidden", mode !== "patient");
-          if (this.formUrlQr) this.formUrlQr.classList.toggle("hidden", mode !== "url");
-          if (this.formWifiQr) this.formWifiQr.classList.toggle("hidden", mode !== "wifi");
-        });
-      });
-    }
-
-    if (this.btnGenerateQrCode) {
-      this.btnGenerateQrCode.addEventListener("click", () => {
-        this.generateMedicalQrCode(true);
-      });
-    }
-
-    if (this.btnDownloadQrImage) {
-      this.btnDownloadQrImage.addEventListener("click", () => {
-        if (this.canvasQrDisplay) {
-          this.medicalQr.downloadQrCanvas(this.canvasQrDisplay, "Ma_QR_Y_Te_BVDKBN2.png");
-          this.showToast("💾 Đã tải ảnh mã QR độ nét cao về máy!", "success");
-        }
-      });
-    }
-
-    if (this.btnPrintQrCode) {
-      this.btnPrintQrCode.addEventListener("click", () => {
-        this.printMedicalQr();
-      });
-    }
-  }
-
-  async generateMedicalQrCode(showToastNotice = true) {
-    if (!this.medicalQr || !this.canvasQrDisplay) return;
-
-    const activeTab = this.qrModeTabs ? this.qrModeTabs.querySelector(".qr-tab-btn.active") : null;
-    const mode = activeTab ? activeTab.dataset.mode : "vietqr";
-    let qrPayload = "";
-    let footerText = "";
-
-    if (mode === "vietqr") {
-      const bankBin = this.selQrBank ? this.selQrBank.value : "970436";
-      const accountNo = this.inputQrAccountNo ? this.inputQrAccountNo.value.trim() : "";
-      const amount = this.inputQrAmount ? parseInt(this.inputQrAmount.value, 10) : 0;
-      const message = this.inputQrMessage ? this.inputQrMessage.value.trim() : "";
-
-      if (!accountNo) {
-        this.showToast("Vui lòng nhập số tài khoản bệnh viện / đơn vị.", "warning");
-        return;
-      }
-
-      qrPayload = this.medicalQr.generateVietQrString({ bankBin, accountNo, amount, message });
-      footerText = `Chuyển khoản Viện Phí Napas 247 &bull; ${accountNo}`;
-    } else if (mode === "patient") {
-      const patientId = this.inputPatientId ? this.inputPatientId.value.trim() : "";
-      const fullName = this.inputPatientName ? this.inputPatientName.value.trim() : "";
-      const birthYear = this.inputPatientYear ? this.inputPatientYear.value.trim() : "";
-      const gender = this.selPatientGender ? this.selPatientGender.value : "Nam";
-      const department = this.inputPatientDept ? this.inputPatientDept.value.trim() : "";
-
-      if (!patientId || !fullName) {
-        this.showToast("Vui lòng nhập tối thiểu Mã bệnh nhân và Họ tên bệnh nhân.", "warning");
-        return;
-      }
-
-      qrPayload = this.medicalQr.generatePatientQrString({ patientId, fullName, birthYear, gender, department });
-      footerText = `BN: ${fullName} &bull; Mã: ${patientId}`;
-    } else if (mode === "url") {
-      qrPayload = this.inputQrUrl ? this.inputQrUrl.value.trim() : window.location.href;
-      footerText = `Quét mã để truy cập liên kết cổng thông tin`;
-    } else if (mode === "wifi") {
-      const ssid = this.inputWifiSsid ? this.inputWifiSsid.value.trim() : "";
-      const pass = this.inputWifiPass ? this.inputWifiPass.value.trim() : "";
-      if (!ssid) {
-        this.showToast("Vui lòng nhập tên mạng Wi-Fi (SSID).", "warning");
-        return;
-      }
-      qrPayload = `WIFI:T:WPA;S:${ssid};P:${pass};;`;
-      footerText = `Wi-Fi Bệnh viện: ${ssid}`;
-    }
-
-    if (this.qrMetaFooter) this.qrMetaFooter.innerHTML = footerText;
-
-    if (this.qrPlaceholder) this.qrPlaceholder.classList.add("hidden");
-    if (this.canvasQrDisplay) this.canvasQrDisplay.classList.remove("hidden");
-    if (this.btnDownloadQrImage) this.btnDownloadQrImage.disabled = false;
-    if (this.btnPrintQrCode) this.btnPrintQrCode.disabled = false;
-
-    await this.medicalQr.renderQrToCanvas(this.canvasQrDisplay, qrPayload, 280);
-    if (showToastNotice) {
-      this.showToast("⚡ Đã tạo mã QR thành công!", "success");
-    }
-  }
-
-  printMedicalQr() {
-    if (!this.canvasQrDisplay) return;
-    const dataUrl = this.canvasQrDisplay.toDataURL("image/png");
-    const footer = this.qrMetaFooter ? this.qrMetaFooter.textContent : "";
-
-    const pWin = window.open("", "_blank", "width=600,height=700");
-    if (!pWin) return;
-
-    pWin.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>MÃ QR - BVĐK BẮC NINH SỐ 2</title>
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 40px; margin: 0; }
-          .qr-box { border: 2px solid #0284c7; border-radius: 16px; padding: 30px; display: inline-block; }
-          h2 { margin: 0 0 8px 0; color: #0284c7; font-size: 20px; }
-          h3 { margin: 0 0 20px 0; color: #475569; font-size: 14px; font-weight: normal; }
-          img { width: 260px; height: 260px; }
-          .footer-note { margin-top: 20px; font-size: 13px; font-weight: bold; color: #1e293b; }
-        </style>
-      </head>
-      <body>
-        <div class="qr-box">
-          <h2>BỆNH VIỆN ĐA KHOA BẮC NINH SỐ 2</h2>
-          <h3>PHÒNG CÔNG NGHỆ THÔNG TIN</h3>
-          <img src="${dataUrl}" alt="QR" />
-          <div class="footer-note">${footer}</div>
-        </div>
-        <script>window.onload = function() { window.print(); };</script>
-      </body>
-      </html>
-    `);
-    pWin.document.close();
   }
 
   // =========================================================================

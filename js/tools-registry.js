@@ -137,25 +137,6 @@ window.TOOLS_REGISTRY = [
     executeKey: "openSqlBuilder"
   },
   {
-    id: "diff-checker",
-    categoryId: "schema",
-    title: "So Sánh Đối Chiếu Văn Bản / SQL",
-    subtitle: "Tìm chi tiết từng dòng, từ ngữ khác biệt giữa 2 phiên bản",
-    description: "So sánh 2 văn bản, hợp đồng, quyết định y tế hoặc câu lệnh SQL/XML/JSON với thuật toán LCS và trực quan hóa song song (Split / Unified).",
-    badge: "Smart Diff Checker",
-    badgeColor: "violet",
-    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>`,
-    inputType: "diff-checker-interactive",
-    outputName: "Ket_qua_so_sanh_diff.txt",
-    guide: [
-      "Bước 1: Dán văn bản gốc hoặc tệp nguồn vào cột bên trái.",
-      "Bước 2: Dán văn bản mới hoặc tệp cần đối chiếu vào cột bên phải.",
-      "Bước 3: Nhấn '🔍 SO SÁNH NGAY' để phân tích chi tiết.",
-      "Bước 4: Chuyển đổi giữa chế độ '2 Cột Song Song' hoặc '1 Cột Hợp Nhất'."
-    ],
-    executeKey: "openDiffChecker"
-  },
-  {
     id: "duty-roster",
     categoryId: "duty",
     title: "Lịch Trực & Chấm Công P.CNTT",
@@ -213,25 +194,6 @@ window.TOOLS_REGISTRY = [
       "Bước 4: Tải tệp kết quả về máy tính."
     ],
     executeKey: "runGiamDinh"
-  },
-  {
-    id: "medical-qr",
-    categoryId: "giamdinh",
-    title: "Tạo Mã QR Y Tế & Viện Phí VietQR",
-    subtitle: "QR Bệnh nhân, Thẻ BHYT, CCCD, Link bài viết & Viện phí",
-    description: "Tạo nhanh mã QR chuẩn thông tin bệnh nhân, liên kết cổng thông tin bài viết và mã thanh toán viện phí chuẩn VietQR (NAPAS 247).",
-    badge: "Chuẩn VietQR & Y Tế",
-    badgeColor: "emerald",
-    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="10" y1="7" x2="10" y2="7"/><line x1="7" y1="10" x2="7" y2="10"/><line x1="10" y1="17" x2="10" y2="17"/><line x1="17" y1="10" x2="17" y2="10"/></svg>`,
-    inputType: "medical-qr-interactive",
-    outputName: "Ma_QR_Y_Te.png",
-    guide: [
-      "Bước 1: Chọn loại mã QR (Viện phí VietQR, Bệnh nhân, Link website, Wi-Fi).",
-      "Bước 2: Điền thông tin tương ứng (Ngân hàng, Số tài khoản, Số tiền, Mã BN...).",
-      "Bước 3: Hệ thống sinh mã QR sắc nét tức thời.",
-      "Bước 4: Nhấn '💾 Tải Mã QR (.PNG)' hoặc '🖨️ In Mã QR'."
-    ],
-    executeKey: "openMedicalQr"
   },
   {
     id: "cntt",
