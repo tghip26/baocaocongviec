@@ -216,7 +216,7 @@
           <div class="notification-center-wrap">
             <button type="button" class="btn-notif-center-toggle" id="btnToggleNotificationCenter" title="Trung tâm thông báo">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-              <span class="notif-badge-pill" id="notificationBadgeCount">2</span>
+              <span class="notif-badge-pill hidden" id="notificationBadgeCount"></span>
             </button>
 
             <!-- Notification Center Dropdown Panel -->
@@ -224,21 +224,14 @@
               <div class="notif-panel-header">
                 <div class="notif-header-title">
                   <span class="notif-bell-icon">🔔</span>
-                  <strong>Thông Báo Hệ Thống</strong>
+                  <strong>Thông Báo</strong>
                   <span class="notif-total-badge" id="notifTotalBadge">0</span>
                 </div>
                 <div class="notif-header-actions">
-                  <button type="button" class="btn-notif-act" id="btnMarkAllNotifsRead" title="Đánh dấu tất cả đã đọc">✓ Đã đọc</button>
-                  <button type="button" class="btn-notif-act" id="btnClearAllNotifs" title="Xóa tất cả thông báo không ghim">🗑️ Xóa</button>
+                  <button type="button" class="btn-notif-act" id="btnMarkAllNotifsRead" title="Đánh dấu tất cả đã đọc">✓ Đọc tất</button>
+                  <button type="button" class="btn-notif-act" id="btnClearAllNotifs" title="Xóa thông báo không ghim">🗑️</button>
                   <button type="button" class="btn-notif-act btn-notif-gear" id="btnOpenNotifSettings" title="Cài đặt thông báo">⚙️</button>
                 </div>
-              </div>
-
-              <!-- Thanh tìm kiếm thông báo nhanh -->
-              <div class="notif-search-wrap">
-                <svg class="notif-search-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="notifSearchInput" class="notif-search-input" placeholder="Tìm thông báo, ca trực, BHYT..." autocomplete="off" />
-                <button type="button" class="btn-notif-search-clear hidden" id="btnClearNotifSearch" title="Xóa tìm kiếm">✕</button>
               </div>
 
               <!-- Bộ lọc trạng thái: Tất cả / Chưa đọc / Đã ghim -->
@@ -246,15 +239,6 @@
                 <button type="button" class="notif-status-pill active" data-status="all">Tất cả</button>
                 <button type="button" class="notif-status-pill" data-status="unread">Chưa đọc (<span id="notifUnreadPillCount">0</span>)</button>
                 <button type="button" class="notif-status-pill" data-status="pinned">📌 Đã ghim</button>
-              </div>
-
-              <!-- Filter tabs theo danh mục nghiệp vụ -->
-              <div class="notif-filter-tabs" id="notifFilterTabs">
-                <button type="button" class="notif-tab-item active" data-cat="all">Tất cả</button>
-                <button type="button" class="notif-tab-item" data-cat="duty">📅 Lịch trực</button>
-                <button type="button" class="notif-tab-item" data-cat="bhyt">🏥 BHYT</button>
-                <button type="button" class="notif-tab-item" data-cat="vgca">🔐 VGCA</button>
-                <button type="button" class="notif-tab-item" data-cat="system">⚡ Hệ thống</button>
               </div>
 
               <!-- List of notifications -->
@@ -267,11 +251,11 @@
                     <input type="checkbox" id="chkToggleNotifSound" checked />
                     <span>🔊 Âm thanh</span>
                   </label>
-                  <button type="button" class="btn-test-chime" id="btnTestNotifSound" title="Nghe thử âm thanh thông báo Web Audio">▶ Thử</button>
+                  <button type="button" class="btn-test-chime" id="btnTestNotifSound" title="Nghe thử âm thanh">▶ Thử</button>
                 </div>
-                <button type="button" class="btn-request-desktop-notif" id="btnRequestDesktopNotif" title="Bật thông báo nổi trên màn hình máy tính Windows / Mac">
+                <button type="button" class="btn-request-desktop-notif" id="btnRequestDesktopNotif" title="Bật thông báo màn hình Desktop">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                  <span id="txtDesktopNotifStatus">Bật Desktop Push</span>
+                  <span id="txtDesktopNotifStatus">Desktop Push</span>
                 </button>
               </div>
             </div>

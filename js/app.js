@@ -5797,12 +5797,17 @@ ${this.currentW2hHtmlOutput}
 
   updateNotificationBadge() {
     if (!this.notifManager) return;
-    const unread = this.notifManager.getUnreadCount();
-    const all = this.notifManager.getNotifications().length;
+    const list = this.notifManager.getNotifications();
+    const unread = list.filter(n => !n.isRead).length;
+    const all = list.length;
 
     if (this.notificationBadgeCount) {
-      this.notificationBadgeCount.textContent = unread;
-      this.notificationBadgeCount.classList.toggle("hidden", unread === 0);
+      if (unread > 0) {
+        this.notificationBadgeCount.textContent = unread > 99 ? "99+" : unread;
+        this.notificationBadgeCount.classList.remove("hidden");
+      } else {
+        this.notificationBadgeCount.classList.add("hidden");
+      }
     }
     if (this.notifTotalBadge) {
       this.notifTotalBadge.textContent = all;
@@ -5815,150 +5820,158 @@ ${this.currentW2hHtmlOutput}
   renderNotificationCenter() {
     if (!this.notificationListContainer || !this.notifManager) return;
 
-    const filtered = this.notifManager.getFilteredNotifications({
-      search: this.currentNotifSearch || "",
-      category: this.currentNotifCategory || "all",
-      status: this.currentNotifStatus || "all"
-    });
+    // Batch badge update + render trong 1 animation frame để tránh layout thrash
+    requestAnimationFrame(() => {
+      const filtered = this.notifManager.getFilteredNotifications({
+        search: "",
+        category: "all",
+        status: this.currentNotifStatus || "all"
+      });
 
-    this.updateNotificationBadge();
-    this.notificationListContainer.innerHTML = "";
+      this.updateNotificationBadge();
 
-    if (filtered.length === 0) {
-      this.notificationListContainer.innerHTML = `
-        <div class="notif-empty-state">
-          <span class="empty-icon">🔕</span>
-          <p>Không tìm thấy thông báo nào phù hợp</p>
-          <span style="font-size: 0.68rem; opacity: 0.7;">Thử đổi tab lọc hoặc từ khóa tìm kiếm</span>
-        </div>
-      `;
-      return;
-    }
-
-    filtered.forEach(notif => {
-      const item = document.createElement("div");
-      item.className = `notif-item ${notif.isRead ? "read" : "unread"} notif-${notif.type || "info"} ${notif.pinned ? "pinned" : ""}`;
-      item.dataset.notifId = notif.id;
-
-      // Icon container
-      const iconWrap = document.createElement("div");
-      iconWrap.className = `notif-item-icon notif-icon-${notif.category || "system"}`;
-      iconWrap.textContent = notif.icon || (notif.type === "success" ? "✅" : notif.type === "warning" ? "⚠️" : "🔔");
-
-      // Content Body
-      const body = document.createElement("div");
-      body.className = "notif-item-body";
-
-      const titleRow = document.createElement("div");
-      titleRow.className = "notif-item-title-row";
-
-      const title = document.createElement("div");
-      title.className = "notif-item-title";
-      title.innerHTML = `
-        ${notif.pinned ? '<span class="notif-pin-tag" title="Thông báo được ghim">📌</span>' : ''}
-        <span>${notif.title}</span>
-      `;
-
-      const time = document.createElement("span");
-      time.className = "notif-item-time";
-      time.textContent = this.notifManager.formatTimeAgo(notif.timestamp);
-
-      titleRow.appendChild(title);
-      titleRow.appendChild(time);
-
-      const msg = document.createElement("div");
-      msg.className = "notif-item-msg";
-      msg.innerHTML = notif.message;
-
-      body.appendChild(titleRow);
-      body.appendChild(msg);
-
-      // Bottom Row: Actions & Quick Links
-      const bottomRow = document.createElement("div");
-      bottomRow.className = "notif-item-footer-row";
-
-      if (notif.actionText && notif.actionHash) {
-        const actionBtn = document.createElement("a");
-        actionBtn.href = notif.actionHash;
-        actionBtn.className = "notif-item-action-link";
-        actionBtn.innerHTML = `${notif.actionText} &rarr;`;
-        actionBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          notif.isRead = true;
-          this.notifManager.markAsRead(notif.id);
-          this.updateNotificationBadge();
-          if (this.notificationCenterPanel) this.notificationCenterPanel.classList.add("hidden");
-        });
-        bottomRow.appendChild(actionBtn);
-      } else {
-        bottomRow.appendChild(document.createElement("div"));
+      if (filtered.length === 0) {
+        this.notificationListContainer.innerHTML = `
+          <div class="notif-empty-state">
+            <span class="empty-icon">🔕</span>
+            <p>Không có thông báo nào</p>
+          </div>
+        `;
+        return;
       }
 
-      // Action Tool Buttons (Pin, Toggle Read, Delete)
-      const toolActs = document.createElement("div");
-      toolActs.className = "notif-quick-actions";
+      // Dùng DocumentFragment để chỉ có 1 lần DOM reflow
+      const fragment = document.createDocumentFragment();
 
-      // Pin Toggle Button
-      const btnPin = document.createElement("button");
-      btnPin.type = "button";
-      btnPin.className = `btn-notif-tool-act ${notif.pinned ? 'active' : ''}`;
-      btnPin.title = notif.pinned ? "Bỏ ghim thông báo" : "Ghim thông báo lên đầu";
-      btnPin.innerHTML = "📌";
-      btnPin.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.notifManager.togglePin(notif.id);
-        this.renderNotificationCenter();
-      });
+      filtered.forEach(notif => {
+        const item = document.createElement("div");
+        item.className = `notif-item ${notif.isRead ? "read" : "unread"} ${notif.pinned ? "pinned" : ""}`;
+        item.dataset.notifId = notif.id;
 
-      // Toggle Read Button
-      const btnRead = document.createElement("button");
-      btnRead.type = "button";
-      btnRead.className = "btn-notif-tool-act";
-      btnRead.title = notif.isRead ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc";
-      btnRead.innerHTML = notif.isRead ? "👁️" : "✓";
-      btnRead.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.notifManager.toggleRead(notif.id);
-        this.updateNotificationBadge();
-        this.renderNotificationCenter();
-      });
+        // Icon
+        const iconWrap = document.createElement("div");
+        iconWrap.className = "notif-item-icon";
+        iconWrap.textContent = notif.icon || (notif.type === "success" ? "✅" : notif.type === "warning" ? "⚠️" : "🔔");
 
-      // Delete Button
-      const btnDelete = document.createElement("button");
-      btnDelete.type = "button";
-      btnDelete.className = "btn-notif-tool-act btn-delete";
-      btnDelete.title = "Xóa thông báo này";
-      btnDelete.innerHTML = "✕";
-      btnDelete.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.notifManager.deleteNotification(notif.id);
-        this.updateNotificationBadge();
-        item.style.opacity = "0";
-        item.style.transform = "translateX(20px)";
-        setTimeout(() => this.renderNotificationCenter(), 150);
-      });
+        // Body
+        const body = document.createElement("div");
+        body.className = "notif-item-body";
 
-      toolActs.appendChild(btnPin);
-      toolActs.appendChild(btnRead);
-      toolActs.appendChild(btnDelete);
-      bottomRow.appendChild(toolActs);
+        // Title row
+        const titleRow = document.createElement("div");
+        titleRow.className = "notif-item-title-row";
 
-      body.appendChild(bottomRow);
+        const title = document.createElement("div");
+        title.className = "notif-item-title";
+        title.title = notif.title;
+        title.textContent = (notif.pinned ? "📌 " : "") + notif.title;
 
-      item.appendChild(iconWrap);
-      item.appendChild(body);
+        const time = document.createElement("span");
+        time.className = "notif-item-time";
+        time.textContent = this.notifManager.formatTimeAgo(notif.timestamp);
 
-      item.addEventListener("click", (e) => {
-        if (!e.target.closest(".btn-notif-tool-act") && !e.target.closest(".notif-item-action-link")) {
-          notif.isRead = true;
-          this.notifManager.markAsRead(notif.id);
-          this.updateNotificationBadge();
-          item.classList.remove("unread");
-          item.classList.add("read");
+        titleRow.appendChild(title);
+        titleRow.appendChild(time);
+
+        // Message (strip HTML tags for security, limit to 2 lines via CSS)
+        const msg = document.createElement("div");
+        msg.className = "notif-item-msg";
+        msg.innerHTML = notif.message;
+
+        body.appendChild(titleRow);
+        body.appendChild(msg);
+
+        // Footer row
+        const footerRow = document.createElement("div");
+        footerRow.className = "notif-item-footer-row";
+
+        if (notif.actionText && notif.actionHash) {
+          const actionBtn = document.createElement("a");
+          actionBtn.href = notif.actionHash;
+          actionBtn.className = "notif-item-action-link";
+          actionBtn.textContent = notif.actionText + " →";
+          actionBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.notifManager.markAsRead(notif.id);
+            this.updateNotificationBadge();
+            if (this.notificationCenterPanel) this.notificationCenterPanel.classList.add("hidden");
+          });
+          footerRow.appendChild(actionBtn);
+        } else {
+          footerRow.appendChild(document.createElement("span"));
         }
+
+        // Quick action buttons (hiện khi hover qua CSS)
+        const toolActs = document.createElement("div");
+        toolActs.className = "notif-quick-actions";
+
+        const btnPin = document.createElement("button");
+        btnPin.type = "button";
+        btnPin.className = `btn-notif-tool-act${notif.pinned ? " active" : ""}`;
+        btnPin.title = notif.pinned ? "Bỏ ghim" : "Ghim lên đầu";
+        btnPin.textContent = "📌";
+        btnPin.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.notifManager.togglePin(notif.id);
+          this.renderNotificationCenter();
+        });
+
+        const btnRead = document.createElement("button");
+        btnRead.type = "button";
+        btnRead.className = "btn-notif-tool-act";
+        btnRead.title = notif.isRead ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc";
+        btnRead.textContent = notif.isRead ? "👁" : "✓";
+        btnRead.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.notifManager.toggleRead(notif.id);
+          this.updateNotificationBadge();
+          this.renderNotificationCenter();
+        });
+
+        const btnDelete = document.createElement("button");
+        btnDelete.type = "button";
+        btnDelete.className = "btn-notif-tool-act btn-delete";
+        btnDelete.title = "Xóa thông báo";
+        btnDelete.textContent = "✕";
+        btnDelete.addEventListener("click", (e) => {
+          e.stopPropagation();
+          // Smooth delete animation
+          item.style.transition = "opacity 0.15s ease, transform 0.15s ease";
+          item.style.opacity = "0";
+          item.style.transform = "translateX(16px)";
+          setTimeout(() => {
+            this.notifManager.deleteNotification(notif.id);
+            this.renderNotificationCenter();
+          }, 150);
+        });
+
+        toolActs.appendChild(btnPin);
+        toolActs.appendChild(btnRead);
+        toolActs.appendChild(btnDelete);
+        footerRow.appendChild(toolActs);
+
+        body.appendChild(footerRow);
+        item.appendChild(iconWrap);
+        item.appendChild(body);
+
+        // Click item để mark as read
+        item.addEventListener("click", (e) => {
+          if (!e.target.closest(".btn-notif-tool-act") && !e.target.closest(".notif-item-action-link")) {
+            if (!notif.isRead) {
+              this.notifManager.markAsRead(notif.id);
+              this.updateNotificationBadge();
+              item.classList.remove("unread");
+              item.classList.add("read");
+            }
+          }
+        });
+
+        fragment.appendChild(item);
       });
 
-      this.notificationListContainer.appendChild(item);
+      // Single DOM write
+      this.notificationListContainer.textContent = "";
+      this.notificationListContainer.appendChild(fragment);
     });
   }
 
