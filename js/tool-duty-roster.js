@@ -327,6 +327,7 @@ const ToolDutyRoster = {
     firebaseConfig: {
       apiKey: "AIzaSyDQzhi52oGxKo1nDsKiL4MHrw-7e-AwJC0",
       authDomain: "congcunghiepvu.firebaseapp.com",
+      databaseURL: "https://congcunghiepvu-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "congcunghiepvu",
       storageBucket: "congcunghiepvu.firebasestorage.app",
       messagingSenderId: "391499654470",
@@ -335,13 +336,14 @@ const ToolDutyRoster = {
 
     firestoreDb: null,
     firestoreUnsubscribe: null,
+    defaultEndpoint: "https://congcunghiepvu-default-rtdb.asia-southeast1.firebasedatabase.app/duty_roster",
 
     getEndpoint() {
       const custom = localStorage.getItem("DUTY_CLOUD_API_URL");
       if (custom && custom.trim().startsWith("http")) {
         return custom.trim().replace(/\/+$/, "");
       }
-      return "https://firestore.googleapis.com/v1/projects/congcunghiepvu/databases/(default)/documents/duty_roster";
+      return this.defaultEndpoint;
     },
 
     setEndpoint(url) {
@@ -350,6 +352,16 @@ const ToolDutyRoster = {
       } else {
         localStorage.setItem("DUTY_CLOUD_API_URL", url.trim().replace(/\/+$/, ""));
       }
+    },
+
+    formatUrl(subpath = "") {
+      const endpoint = this.getEndpoint();
+      let cleanPath = subpath ? subpath.replace(/^\/+/, "") : "";
+      let url = cleanPath ? `${endpoint}/${cleanPath}` : endpoint;
+      if (!url.endsWith(".json")) {
+        url += ".json";
+      }
+      return url;
     },
 
     getFirebaseApp() {
@@ -768,31 +780,32 @@ const ToolDutyRoster = {
     },
 
     async testConnection(targetUrl = null) {
-      const start = Date.now();
-      const db = this.getFirestoreDb();
-      if (db) {
-        try {
-          await db.collection("duty_roster").doc("master").get();
-          const duration = Date.now() - start;
-          return {
-            success: true,
-            latencyMs: duration,
-            url: "Firebase Firestore: congcunghiepvu"
-          };
-        } catch (fsErr) {
-          return {
-            success: false,
-            error: fsErr.message || "Lỗi Firestore",
-            url: "Firebase Firestore: congcunghiepvu"
-          };
-        }
+      const endpoint = targetUrl || this.getEndpoint();
+      let testUrl = endpoint.replace(/\/+$/, "");
+      if (!testUrl.endsWith(".json")) {
+        testUrl += "/metadata.json";
       }
 
-      return {
-        success: true,
-        latencyMs: 15,
-        url: "Chế độ Cục Bộ & Vercel API Bridge"
-      };
+      const start = Date.now();
+      try {
+        const resp = await fetch(testUrl, {
+          method: "GET",
+          headers: { "Accept": "application/json" }
+        });
+        const duration = Date.now() - start;
+        return {
+          success: resp.ok,
+          status: resp.status,
+          latencyMs: duration,
+          url: "Firebase Realtime DB (Singapore - asia-southeast1)"
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err.message || "Không phản hồi",
+          url: testUrl
+        };
+      }
     },
 
     exportBackupJson() {
