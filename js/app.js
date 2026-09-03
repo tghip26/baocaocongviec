@@ -4761,6 +4761,11 @@ ${this.currentW2hHtmlOutput}
       html += `<div class="calendar-day-cell blank" style="opacity: 0.15;"></div>`;
     }
 
+    const now = new Date();
+    const curRealDay = now.getDate();
+    const curRealMonth = now.getMonth() + 1;
+    const curRealYear = now.getFullYear();
+
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
       const isOff = assigned && (assigned.isOffDay || assigned.name === "Nghỉ trực");
@@ -4771,11 +4776,15 @@ ${this.currentW2hHtmlOutput}
       
       const isMyDay = (isAssigned && targetStaffId && assigned.id === targetStaffId);
       const isDimmed = (isFilteringSpecific && !isMyDay && !isOff);
+      const isToday = (dayObj.day === curRealDay && month === curRealMonth && year === curRealYear);
 
       html += `
-        <div class="calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""}">
+        <div class="calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""} ${isToday ? "is-today today-cell" : ""}">
           <div class="cal-day-header">
-            <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
+            <div class="cal-date-wrap">
+              <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
+              ${isToday ? `<span class="cal-today-pill"><span class="today-pulse-dot"></span>Hôm nay</span>` : ''}
+            </div>
             <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
           </div>
           <div class="cal-shift-list">
@@ -4918,13 +4927,19 @@ ${this.currentW2hHtmlOutput}
     const year = parseInt(this.dutyInputYear ? this.dutyInputYear.value : "2026", 10);
     const wrap = document.createElement("div");
     wrap.className = "duty-table-wrap";
+    const now = new Date();
+    const curRealDay = now.getDate();
+    const curRealMonth = now.getMonth() + 1;
+    const curRealYear = now.getFullYear();
+
     let tbodyHtml = "";
     this.dutySchedule.forEach(dayObj => {
       const assigned = dayObj.shifts["shift_cntt"];
-      tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""}">
-        <td><strong>Ngày ${dayObj.day}/${month}</strong></td>
+      const isToday = (dayObj.day === curRealDay && month === curRealMonth && year === curRealYear);
+      tbodyHtml += `<tr class="${dayObj.isWeekend ? "weekend-row" : ""} ${isToday ? "today-table-row" : ""}">
+        <td><strong>Ngày ${dayObj.day}/${month}</strong> ${isToday ? '<span class="cal-today-pill" style="margin-left: 6px;">Hôm nay</span>' : ''}</td>
         <td>${dayObj.dayName}</td>
-        <td><strong style="color:#93c5fd;">${assigned ? assigned.name : "-"}</strong></td>
+        <td><strong style="color:${isToday ? '#38bdf8' : '#93c5fd'};">${assigned ? assigned.name : "-"}</strong></td>
         <td>${assigned ? (assigned.phone || "-") : "-"}</td>
         <td>${dayObj.isWeekend ? '<span class="tool-badge badge-amber" style="font-size:0.65rem;">Cuối tuần</span>' : '<span style="color:#94a3b8;font-size:0.75rem;">Ngày thường</span>'}</td>
       </tr>`;
