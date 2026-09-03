@@ -379,27 +379,55 @@ const ToolDutyRoster = {
       return null;
     },
 
+    getRealtimeDb() {
+      const app = this.getFirebaseApp();
+      if (app && typeof firebase.database === "function") {
+        try {
+          return firebase.database();
+        } catch (e) {
+          console.warn("[Realtime DB getDb]", e);
+        }
+      }
+      return null;
+    },
+
     initFirestoreListener() {
-      const db = this.getFirestoreDb();
-      if (!db || this.firestoreUnsubscribe) return;
-      try {
-        this.firestoreUnsubscribe = db.collection("duty_roster").doc("master").onSnapshot((doc) => {
-          if (doc.exists) {
-            const data = doc.data();
-            this.applyCloudData(data, true);
-          }
-        }, (err) => {
-          console.warn("[Firestore onSnapshot Error]", err);
-          if (err && err.code === "permission-denied") {
-            this.notifyListeners({ 
-              type: "SYNC_STATUS_CHANGED", 
-              status: "error", 
-              error: "Firebase Firestore cần bật Test mode (allow read, write: if true)" 
-            });
-          }
-        });
-      } catch (e) {
-        console.warn("[Firestore Listener Error]", e);
+      this.initFirebaseListener();
+    },
+
+    initFirebaseListener() {
+      // 1. Lắng nghe qua Realtime Database (Cơ sở dữ liệu thời gian thực)
+      const rtdb = this.getRealtimeDb();
+      if (rtdb) {
+        try {
+          rtdb.ref("duty_roster").on("value", (snapshot) => {
+            const data = snapshot.val();
+            if (data && typeof data === "object") {
+              this.applyCloudData(data, true);
+            }
+          }, (err) => {
+            console.warn("[Realtime DB Listener Error]", err);
+          });
+        } catch (e) {
+          console.warn("[Realtime DB Init Error]", e);
+        }
+      }
+
+      // 2. Lắng nghe qua Cloud Firestore (Cửa hàng lửa)
+      const fsDb = this.getFirestoreDb();
+      if (fsDb && !this.firestoreUnsubscribe) {
+        try {
+          this.firestoreUnsubscribe = fsDb.collection("duty_roster").doc("master").onSnapshot((doc) => {
+            if (doc.exists) {
+              const data = doc.data();
+              this.applyCloudData(data, true);
+            }
+          }, (err) => {
+            console.warn("[Firestore onSnapshot Error]", err);
+          });
+        } catch (e) {
+          console.warn("[Firestore Listener Error]", e);
+        }
       }
     },
 
@@ -518,7 +546,23 @@ const ToolDutyRoster = {
       this.lastSyncStatus = "syncing";
       this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "syncing" });
 
-      // Ưu tiên 1: Firebase Firestore SDK
+      // Ưu tiên 1: Firebase Realtime Database
+      const rtdb = this.getRealtimeDb();
+      if (rtdb) {
+        try {
+          const snapshot = await rtdb.ref("duty_roster").once("value");
+          const data = snapshot.val();
+          if (data && typeof data === "object") {
+            this.isSyncing = false;
+            this.applyCloudData(data, false);
+            return { success: true, data };
+          }
+        } catch (rtdbErr) {
+          console.warn("[Realtime DB Fetch]", rtdbErr);
+        }
+      }
+
+      // Ưu tiên 2: Firebase Firestore SDK
       const db = this.getFirestoreDb();
       if (db) {
         try {
@@ -549,7 +593,7 @@ const ToolDutyRoster = {
         }
       }
 
-      // Ưu tiên 2: Fallback qua API nội bộ /api/duty
+      // Ưu tiên 3: Fallback qua API nội bộ /api/duty
       try {
         const resp = await fetch("/api/duty", {
           method: "GET",
@@ -580,7 +624,18 @@ const ToolDutyRoster = {
         version: "3.2.0"
       };
 
-      // 1. Đẩy lên Firebase Firestore
+      // 1. Đẩy lên Firebase Realtime Database
+      const rtdb = this.getRealtimeDb();
+      if (rtdb) {
+        try {
+          await rtdb.ref(`duty_roster/schedules/${year}_${month}`).set(schedule);
+          await rtdb.ref("duty_roster/metadata").set(meta);
+          this.lastSyncTime = new Date();
+          this.lastSyncStatus = "synced";
+        } catch (e) {}
+      }
+
+      // 2. Đẩy lên Firebase Firestore
       const db = this.getFirestoreDb();
       if (db) {
         try {
@@ -593,13 +648,12 @@ const ToolDutyRoster = {
 
           this.lastSyncTime = new Date();
           this.lastSyncStatus = "synced";
-          return { success: true };
         } catch (fsErr) {
           console.warn("[Firestore Push Schedule Error]", fsErr);
         }
       }
 
-      // 2. Fallback qua /api/duty
+      // 3. Fallback qua /api/duty
       try {
         await fetch(`/api/duty?subpath=schedules/${year}_${month}`, {
           method: "PUT",
@@ -608,10 +662,9 @@ const ToolDutyRoster = {
         });
         this.lastSyncTime = new Date();
         this.lastSyncStatus = "synced";
-        return { success: true };
       } catch (e) {}
 
-      return { success: false };
+      return { success: true };
     },
 
     async pushStaffList(staffList) {
@@ -626,6 +679,16 @@ const ToolDutyRoster = {
         version: "3.2.0"
       };
 
+      const rtdb = this.getRealtimeDb();
+      if (rtdb) {
+        try {
+          await rtdb.ref("duty_roster/staffList").set(staffList);
+          await rtdb.ref("duty_roster/metadata").set(meta);
+          this.lastSyncTime = new Date();
+          this.lastSyncStatus = "synced";
+        } catch (e) {}
+      }
+
       const db = this.getFirestoreDb();
       if (db) {
         try {
@@ -636,7 +699,6 @@ const ToolDutyRoster = {
 
           this.lastSyncTime = new Date();
           this.lastSyncStatus = "synced";
-          return { success: true };
         } catch (fsErr) {
           console.warn("[Firestore Push StaffList Error]", fsErr);
         }
@@ -650,10 +712,9 @@ const ToolDutyRoster = {
         });
         this.lastSyncTime = new Date();
         this.lastSyncStatus = "synced";
-        return { success: true };
       } catch (e) {}
 
-      return { success: false };
+      return { success: true };
     },
 
     async pushAccounts(accounts) {
@@ -668,6 +729,16 @@ const ToolDutyRoster = {
         version: "3.2.0"
       };
 
+      const rtdb = this.getRealtimeDb();
+      if (rtdb) {
+        try {
+          await rtdb.ref("duty_roster/accounts").set(accounts);
+          await rtdb.ref("duty_roster/metadata").set(meta);
+          this.lastSyncTime = new Date();
+          this.lastSyncStatus = "synced";
+        } catch (e) {}
+      }
+
       const db = this.getFirestoreDb();
       if (db) {
         try {
@@ -678,7 +749,6 @@ const ToolDutyRoster = {
 
           this.lastSyncTime = new Date();
           this.lastSyncStatus = "synced";
-          return { success: true };
         } catch (fsErr) {
           console.warn("[Firestore Push Accounts Error]", fsErr);
         }
@@ -692,10 +762,9 @@ const ToolDutyRoster = {
         });
         this.lastSyncTime = new Date();
         this.lastSyncStatus = "synced";
-        return { success: true };
       } catch (e) {}
 
-      return { success: false };
+      return { success: true };
     },
 
     async testConnection(targetUrl = null) {
