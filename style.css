@@ -15417,24 +15417,43 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   background: var(--bg-workspace);
 }
 
-.cntt-top-bar {
-  padding: 8px 20px;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+/* ==========================================================================
+   THANH CÔNG CỤ 1 HÀNG DUY NHẤT (SINGLE-ROW UNIFIED TOOLBAR)
+   ========================================================================== */
+.cntt-single-row-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
-  gap: 12px;
-  min-height: 48px;
+  min-height: 46px;
+  z-index: 10;
+}
+
+.cntt-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cntt-brand-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .cntt-main-title {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 800;
   color: #f8fafc;
   letter-spacing: -0.01em;
+  margin: 0;
+  white-space: nowrap;
 }
 
 .cntt-cloud-badge {
@@ -15446,9 +15465,10 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.35);
   color: #34d399;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .cntt-pulse-dot {
@@ -15460,23 +15480,72 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   animation: pulseNeonDot 2s infinite ease-in-out;
 }
 
-.cntt-top-actions {
+/* Center Inline Tab Switcher */
+.cntt-toolbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.cntt-tabs-nav-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 3px 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.cntt-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.cntt-nav-tab:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cntt-nav-tab.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+/* Right Actions & User Session Chip */
+.cntt-toolbar-right {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .btn-cntt-action {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
+  gap: 5px;
+  padding: 4px 10px;
   border-radius: 6px;
-  font-size: 0.77rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid transparent;
   text-decoration: none;
   white-space: nowrap;
@@ -15487,22 +15556,11 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   background: linear-gradient(135deg, #0284c7, #2563eb);
   color: #ffffff;
   border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
 }
 .btn-cntt-action.btn-cntt-sync:hover {
   background: linear-gradient(135deg, #0369a1, #1d4ed8);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.5);
-  transform: translateY(-1px);
-}
-
-.btn-cntt-action.btn-cntt-add {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #ffffff;
-  border-color: rgba(52, 211, 153, 0.4);
-}
-.btn-cntt-action.btn-cntt-add:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
   transform: translateY(-1px);
 }
 
@@ -15527,43 +15585,62 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   color: #ffffff;
 }
 
-/* Tabs Switcher */
-.cntt-tabs-nav {
-  display: flex;
-  gap: 5px;
-  padding: 5px 20px;
-  background: rgba(15, 23, 42, 0.55);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
-  overflow-x: auto;
-}
-
-.cntt-nav-tab {
+/* Chip Tài Khoản Cán Bộ Lịch Trực trên Toolbar */
+.cntt-user-session-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 7px;
-  font-size: 0.79rem;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #e9d5ff;
+  font-size: 0.72rem;
   font-weight: 600;
-  color: #94a3b8;
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
   white-space: nowrap;
 }
 
-.cntt-nav-tab:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.04);
+.cntt-user-session-chip .cntt-user-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #f3e8ff;
 }
 
-.cntt-nav-tab.active {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.18);
+.btn-cntt-switch-user {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+.btn-cntt-switch-user:hover {
+  background: rgba(168, 85, 247, 0.6);
+  color: #ffffff;
+}
+
+/* Responsive Toolbar Wrap */
+@media (max-width: 1100px) {
+  .cntt-single-row-toolbar {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+  }
+  .cntt-toolbar-center {
+    order: 3;
+    width: 100%;
+    margin-top: 4px;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
 }
 
 /* Main View Body */
@@ -15879,43 +15956,102 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
 }
 
-.cntt-form-header {
+/* Thanh Điều Khiển Form Mỏng (Toolbar Strip) */
+.cntt-form-toolbar-strip {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 14px;
-  gap: 10px;
+  gap: 12px;
+  padding: 7px 12px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 9px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
-.cntt-form-heading {
-  font-size: 0.98rem;
-  color: #f8fafc;
-  font-weight: 700;
-  margin: 0 0 2px 0;
-}
-
-.cntt-form-subheading {
-  font-size: 0.74rem;
-  color: #94a3b8;
-  margin: 0;
-}
-
-.cntt-form-actions-cluster {
+.cntt-form-strip-left,
+.cntt-form-strip-right {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
+.cntt-strip-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cntt-strip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.cntt-sheet-select {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-size: 0.77rem;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.cntt-sheet-select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+/* Chỉ báo dò tìm dòng trống B7:AK100 */
+.cntt-next-row-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 7px;
+  font-size: 0.74rem;
+  color: #cbd5e1;
+}
+
+.cntt-next-row-indicator .indicator-label {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.cntt-next-row-indicator .indicator-coord {
+  color: #34d399;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  letter-spacing: 0.4px;
+  font-size: 0.8rem;
+}
+
+.cntt-next-row-indicator .indicator-badge-sheet {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 .cntt-form-live-summary {
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
-  padding: 4px 10px;
+  padding: 3px 9px;
   color: #94a3b8;
   display: flex;
   align-items: center;
@@ -15926,6 +16062,54 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .cntt-form-live-summary .summary-active {
   color: #38bdf8;
   font-weight: 600;
+}
+
+/* User Account Source Tag & Auth Sync Pill */
+.cntt-user-source-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.cntt-auth-sync-pill {
+  font-size: 0.67rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  font-weight: 600;
+}
+
+/* User Activity Log Styles */
+.cntt-user-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.cntt-user-log-table th {
+  background: rgba(15, 23, 42, 0.7);
+  color: #94a3b8;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cntt-user-log-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+}
+
+.cntt-user-log-table tr:hover td {
+  background: rgba(168, 85, 247, 0.08);
 }
 
 .cntt-section-header-row {

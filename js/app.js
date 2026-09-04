@@ -5379,6 +5379,7 @@ p {
     if (this.dutyTableContainer) this.dutyTableContainer.classList.add("hidden");
 
     this.updateDutySessionUI();
+    if (typeof this.updateCnttUserSessionUI === "function") this.updateCnttUserSessionUI();
     this.populateStaffFilterDropdown();
     this.renderStaffList();
     this.renderDutyViews();
@@ -5411,6 +5412,7 @@ p {
       }
 
       this.updateDutySessionUI();
+      if (typeof this.updateCnttUserSessionUI === "function") this.updateCnttUserSessionUI();
       this.populateStaffFilterDropdown();
       this.hideModal(this.modalDutyLogin);
       this.showToast(`Chào mừng: ${authRes.user.fullname}! Đang hiển thị lịch trực của bạn.`, "success");
@@ -7760,6 +7762,8 @@ p {
     // Mặc định mở Tab Điền Ca đầu tiên theo yêu cầu
     this.switchCnttTab("form");
     this.populateCnttStaffDropdowns();
+    this.updateCnttUserSessionUI();
+    this.updateNextEmptyRowUI();
 
     if (!this.cnttRecords || this.cnttRecords.length === 0) {
       this.fetchGoogleSheetDataForCntt(true);
@@ -7814,15 +7818,121 @@ p {
     }
   }
 
+  /**
+   * Cập nhật trạng thái người dùng đăng nhập từ Lịch Trực CNTT vào Form và Toolbar
+   */
+  updateCnttUserSessionUI() {
+    const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+      ? window.ToolDutyRoster.getCurrentSession()
+      : null;
+
+    if (session && session.username) {
+      const displayName = session.fullname || session.username;
+      if (this.cnttSessionUserDisplay) {
+        this.cnttSessionUserDisplay.textContent = displayName;
+        this.cnttSessionUserDisplay.title = `Tài khoản: ${session.username} (${session.role || 'Cán bộ'})`;
+      }
+      if (this.cnttUserSourceTagText) {
+        this.cnttUserSourceTagText.textContent = `TK: ${displayName}`;
+      }
+      if (this.cnttAuthSyncPill) {
+        this.cnttAuthSyncPill.textContent = `✓ Đã khớp TK: ${displayName}`;
+      }
+
+      // Tự động chọn Cán bộ thực hiện trong form khớp với người dùng đang đăng nhập
+      if (this.selectFormExecStaff && displayName) {
+        const cleanName = displayName.trim().toLowerCase();
+        let matched = false;
+        for (let opt of this.selectFormExecStaff.options) {
+          const optLower = opt.value.trim().toLowerCase();
+          if (optLower === cleanName || cleanName.includes(optLower) || optLower.includes(cleanName)) {
+            this.selectFormExecStaff.value = opt.value;
+            matched = true;
+            break;
+          }
+        }
+      }
+    } else {
+      if (this.cnttSessionUserDisplay) {
+        this.cnttSessionUserDisplay.textContent = "Chưa đăng nhập";
+        this.cnttSessionUserDisplay.title = "Bấm để đăng nhập tài khoản Lịch Trực";
+      }
+      if (this.cnttUserSourceTagText) {
+        this.cnttUserSourceTagText.textContent = "Bấm để đăng nhập TK";
+      }
+      if (this.cnttAuthSyncPill) {
+        this.cnttAuthSyncPill.textContent = "⚠️ Chưa đăng nhập";
+      }
+    }
+  }
+
+  /**
+   * Xử lý khi người dùng đổi Sheet cần điền (Tháng 1 - Tháng 12)
+   */
+  handleTargetSheetChange(targetSheet) {
+    if (!targetSheet) return;
+    this.cnttSelectedSheet = targetSheet;
+
+    if (this.cnttTargetSheetBadge) {
+      this.cnttTargetSheetBadge.textContent = targetSheet;
+    }
+
+    // Cập nhật iframe Google Sheet
+    if (this.cnttGoogleSheetIframe && window.ToolCnttReport) {
+      const cfg = ToolCnttReport.getConfig();
+      this.cnttGoogleSheetIframe.src = `https://docs.google.com/spreadsheets/d/${cfg.sheetId}/edit?usp=sharing&sheet=${encodeURIComponent(targetSheet)}&rm=minimal`;
+    }
+
+    this.showToast(`📂 Đang tải dữ liệu và dò tìm dòng trống cho [${targetSheet}]...`, "info", 3000);
+    this.fetchGoogleSheetDataForCntt(false, targetSheet);
+  }
+
+  /**
+   * Cập nhật hiển thị dòng trống B7:AK100 tiếp theo
+   */
+  updateNextEmptyRowUI() {
+    if (!this.cnttTargetRowDisplay) return;
+
+    if (this.cnttNextEmptyRow) {
+      this.cnttTargetRowDisplay.textContent = this.cnttNextEmptyRow.rangeStr || `B${this.cnttNextEmptyRow.row}:AK${this.cnttNextEmptyRow.row}`;
+      if (this.cnttNextEmptyRow.isFull) {
+        this.cnttTargetRowDisplay.style.color = "#f87171";
+        this.cnttTargetRowDisplay.title = `Bảng B7:AK100 đã đầy, sẽ ghi tiếp vào dòng ${this.cnttNextEmptyRow.row}`;
+      } else {
+        this.cnttTargetRowDisplay.style.color = "#34d399";
+        this.cnttTargetRowDisplay.title = `Dòng trống đầu tiên phát hiện tự động: Hàng ${this.cnttNextEmptyRow.row}`;
+      }
+    } else {
+      this.cnttTargetRowDisplay.textContent = "B51:AK51";
+    }
+
+    if (this.cnttTargetSheetBadge) {
+      this.cnttTargetSheetBadge.textContent = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+    }
+  }
+
   initCnttWorkReportEvents() {
     this.cnttWorkReportView = document.getElementById("cnttWorkReportView");
     this.btnBackToHubFromCntt = document.getElementById("btnBackToHubFromCntt");
     this.btnFetchGoogleSheet = document.getElementById("btnFetchGoogleSheet");
-    this.btnCnttGoToForm = document.getElementById("btnCnttGoToForm");
     this.btnExportCnttExcel = document.getElementById("btnExportCnttExcel");
     this.btnOpenSheetConfigModal = document.getElementById("btnOpenSheetConfigModal");
     this.cnttSyncStatusBadge = document.getElementById("cnttSyncStatusBadge");
     this.cnttSyncStatusText = document.getElementById("cnttSyncStatusText");
+
+    // Single-row Toolbar Components
+    this.cnttUserSessionChip = document.getElementById("cnttUserSessionChip");
+    this.cnttSessionUserDisplay = document.getElementById("cnttSessionUserDisplay");
+    this.btnCnttOpenLoginModal = document.getElementById("btnCnttOpenLoginModal");
+
+    // Form Toolbar Strip Components
+    this.selectTargetSheetForEntry = document.getElementById("selectTargetSheetForEntry");
+    this.cnttNextRowIndicator = document.getElementById("cnttNextRowIndicator");
+    this.cnttTargetRowDisplay = document.getElementById("cnttTargetRowDisplay");
+    this.cnttTargetSheetBadge = document.getElementById("cnttTargetSheetBadge");
+    this.cnttUserSourceTag = document.getElementById("cnttUserSourceTag");
+    this.cnttUserSourceTagText = document.getElementById("cnttUserSourceTagText");
+    this.cnttAuthSyncPill = document.getElementById("cnttAuthSyncPill");
 
     // Tabs
     this.btnTabCnttAnalytics = document.getElementById("btnTabCnttAnalytics");
@@ -7834,7 +7944,7 @@ p {
     this.cnttFormPane = document.getElementById("cnttFormPane");
     this.cnttEmbeddedPane = document.getElementById("cnttEmbeddedPane");
 
-    // Form
+    // Form Inputs
     this.formCnttRepairEntry = document.getElementById("formCnttRepairEntry");
     this.inputFormDept = document.getElementById("inputFormDept");
     this.inputFormSoHoSo = document.getElementById("inputFormSoHoSo");
@@ -7855,9 +7965,15 @@ p {
     this.inputCnttSearch = document.getElementById("inputCnttSearch");
     this.selectCnttFilterDept = document.getElementById("selectCnttFilterDept");
     this.selectCnttFilterStaff = document.getElementById("selectCnttFilterStaff");
+    this.selectCnttFilterUser = document.getElementById("selectCnttFilterUser");
     this.selectCnttFilterType = document.getElementById("selectCnttFilterType");
     this.tbodyCnttRecords = document.getElementById("tbodyCnttRecords");
     this.cnttTableCountBadge = document.getElementById("cnttTableCountBadge");
+
+    // User Activity Log Elements
+    this.userActivityLogContainer = document.getElementById("userActivityLogContainer");
+    this.badgeTotalLoggedUsers = document.getElementById("badgeTotalLoggedUsers");
+    this.btnClearUserActivityLog = document.getElementById("btnClearUserActivityLog");
 
     // Embedded Sheet
     this.btnReloadSheetIframe = document.getElementById("btnReloadSheetIframe");
@@ -7872,6 +7988,10 @@ p {
     this.btnResetDefaultCnttSheet = document.getElementById("btnResetDefaultCnttSheet");
     this.btnSaveCnttSheetConfig = document.getElementById("btnSaveCnttSheetConfig");
     this.txtCnttSheetConnectionStatus = document.getElementById("txtCnttSheetConnectionStatus");
+
+    // Trạng thái ban đầu
+    this.cnttSelectedSheet = (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+    this.cnttNextEmptyRow = { row: 51, rangeStr: "B51:AK51", isFull: false };
 
     // 1. Populate Dropdown Khoa/Phòng (47 khoa chuẩn)
     if (window.ToolCnttReport) {
@@ -7961,16 +8081,33 @@ p {
       });
     }
 
+    // Sheet Selection Event
+    if (this.selectTargetSheetForEntry) {
+      this.selectTargetSheetForEntry.addEventListener("change", (e) => this.handleTargetSheetChange(e.target.value));
+    }
+
+    // Login / Session Modal Quick Open
+    if (this.btnCnttOpenLoginModal) {
+      this.btnCnttOpenLoginModal.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.openDutyLoginModal();
+      });
+    }
+    if (this.cnttUserSessionChip) {
+      this.cnttUserSessionChip.addEventListener("click", () => this.openDutyLoginModal());
+    }
+    if (this.cnttUserSourceTag) {
+      this.cnttUserSourceTag.addEventListener("click", () => this.openDutyLoginModal());
+    }
+
+    // Tabs
     if (this.btnTabCnttAnalytics) this.btnTabCnttAnalytics.addEventListener("click", () => this.switchCnttTab("analytics"));
     if (this.btnTabCnttTable) this.btnTabCnttTable.addEventListener("click", () => this.switchCnttTab("table"));
     if (this.btnTabCnttForm) this.btnTabCnttForm.addEventListener("click", () => this.switchCnttTab("form"));
     if (this.btnTabCnttEmbedded) this.btnTabCnttEmbedded.addEventListener("click", () => this.switchCnttTab("embedded"));
 
     if (this.btnFetchGoogleSheet) {
-      this.btnFetchGoogleSheet.addEventListener("click", () => this.fetchGoogleSheetDataForCntt(false));
-    }
-    if (this.btnCnttGoToForm) {
-      this.btnCnttGoToForm.addEventListener("click", () => this.switchCnttTab("form"));
+      this.btnFetchGoogleSheet.addEventListener("click", () => this.fetchGoogleSheetDataForCntt(false, this.cnttSelectedSheet));
     }
     if (this.btnExportCnttExcel) {
       this.btnExportCnttExcel.addEventListener("click", () => this.exportCnttReportExcel());
@@ -8000,8 +8137,25 @@ p {
     if (this.selectCnttFilterStaff) {
       this.selectCnttFilterStaff.addEventListener("change", () => this.renderCnttTable());
     }
+    if (this.selectCnttFilterUser) {
+      this.selectCnttFilterUser.addEventListener("change", () => this.renderCnttTable());
+    }
     if (this.selectCnttFilterType) {
       this.selectCnttFilterType.addEventListener("change", () => this.renderCnttTable());
+    }
+
+    // User Activity Log Clear Event
+    if (this.btnClearUserActivityLog) {
+      this.btnClearUserActivityLog.addEventListener("click", () => {
+        if (confirm("Bạn có chắc chắn muốn xóa lịch sử nhật ký người dùng cục bộ không?")) {
+          if (window.ToolCnttReport && typeof window.ToolCnttReport.clearUserActivityLogs === "function") {
+            window.ToolCnttReport.clearUserActivityLogs();
+          }
+          this.renderUserActivityLogUI();
+          this.populateCnttUserFilterDropdown();
+          this.showToast("🗑️ Đã xóa sạch nhật ký người dùng!", "info");
+        }
+      });
     }
 
     // Iframe Reload
@@ -8029,6 +8183,9 @@ p {
     if (this.btnSaveCnttSheetConfig) {
       this.btnSaveCnttSheetConfig.addEventListener("click", () => this.saveCnttSheetConfig());
     }
+
+    // Cập nhật session ban đầu
+    this.updateCnttUserSessionUI();
   }
 
   /**
@@ -8058,16 +8215,29 @@ p {
   }
 
   /**
-   * Tải dữ liệu từ Google Sheets
+   * Tải dữ liệu từ Google Sheets theo Sheet được chọn (Tháng 1 -> Tháng 12)
    */
-  async fetchGoogleSheetDataForCntt(isSilent = false) {
+  async fetchGoogleSheetDataForCntt(isSilent = false, targetSheet = null) {
     if (!window.ToolCnttReport) return;
     this.setButtonLoading(this.btnFetchGoogleSheet, true, "Đang đồng bộ...");
     this.showTopProgress(35);
 
+    const sheetToFetch = targetSheet || this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+    this.cnttSelectedSheet = sheetToFetch;
+
+    if (this.selectTargetSheetForEntry && this.selectTargetSheetForEntry.value !== sheetToFetch) {
+      this.selectTargetSheetForEntry.value = sheetToFetch;
+    }
+
     try {
-      const records = await ToolCnttReport.fetchGoogleSheetData();
-      const localRows = ToolCnttReport.getLocalRows();
+      const records = await ToolCnttReport.fetchGoogleSheetData(null, sheetToFetch);
+      const allLocalRows = ToolCnttReport.getLocalRows();
+      // Lọc các ca cục bộ thuộc sheet này hoặc chưa phân sheet
+      const localRows = allLocalRows.filter(r => !r.targetSheet || r.targetSheet === sheetToFetch);
+
+      // Cập nhật vị trí dòng trống tiếp theo được tính toán từ B7:AK100
+      this.cnttNextEmptyRow = records._nextEmptyRow || ToolCnttReport.computeNextEmptyRow(records._rawRows, 7, 100);
+      this.updateNextEmptyRowUI();
 
       // Hợp nhất dữ liệu: các ca tạo cục bộ ưu tiên đứng đầu
       this.cnttRecords = [...localRows, ...records];
@@ -8075,6 +8245,8 @@ p {
 
       this.renderCnttAnalytics();
       this.renderCnttTable();
+      this.renderUserActivityLogUI();
+      this.populateCnttUserFilterDropdown();
 
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -8086,17 +8258,18 @@ p {
       this.populateCnttStaffDropdowns();
 
       if (!isSilent) {
-        this.showToast(`⚡ Đã đồng bộ thành công ${records.length} ca công tác từ Google Trang Tính!`, "success");
+        this.showToast(`⚡ Đã đồng bộ thành công ${records.length} ca công tác từ Sheet [${sheetToFetch}]! Dòng trống tiếp theo: ${this.cnttNextEmptyRow.rangeStr}`, "success");
       }
     } catch (err) {
       console.error("fetchGoogleSheetData error:", err);
-      this.showToast(`Lỗi đồng bộ Google Sheet: ${err.message}. Đang sử dụng dữ liệu cục bộ.`, "warning");
+      this.showToast(`Lỗi đồng bộ Google Sheet [${sheetToFetch}]: ${err.message}. Đang sử dụng dữ liệu cục bộ.`, "warning");
       const localRows = ToolCnttReport.getLocalRows();
       if (localRows.length > 0) {
         this.cnttRecords = localRows;
         this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
         this.renderCnttAnalytics();
         this.renderCnttTable();
+        this.renderUserActivityLogUI();
       }
     } finally {
       this.setButtonLoading(this.btnFetchGoogleSheet, false);
@@ -8122,7 +8295,7 @@ p {
     const kpiCompSub = document.getElementById("kpiCompletionSub");
 
     if (kpiTotal) kpiTotal.textContent = a.totalCases;
-    if (kpiTotalSub) kpiTotalSub.textContent = `Tổng cộng ${a.totalSwItems + a.totalHwItems} lượt xử lý`;
+    if (kpiTotalSub) kpiTotalSub.textContent = `Tổng cộng ${a.totalSwItems + a.totalHwItems} lượt xử lý (${this.cnttSelectedSheet || 'T9'})`;
     if (kpiSw) kpiSw.textContent = a.casesWithSw;
     if (kpiSwSub) kpiSwSub.textContent = `${a.swRate}% ca • ${a.totalSwItems} lượt xử lý`;
     if (kpiHw) kpiHw.textContent = a.casesWithHw;
@@ -8230,10 +8403,147 @@ p {
         }).join("");
       }
     }
+
+    // 5. Render Nhật Ký Người Dùng Theo Tài Khoản
+    this.renderUserActivityLogUI();
   }
 
   /**
-   * Hiển thị bảng danh sách ca công tác có tìm kiếm và bộ lọc
+   * Hiển thị bảng Nhật ký hoạt động & thống kê theo tài khoản Lịch Trực
+   */
+  renderUserActivityLogUI() {
+    if (!this.userActivityLogContainer || !window.ToolCnttReport) return;
+    const logs = ToolCnttReport.getUserActivityLogs ? ToolCnttReport.getUserActivityLogs() : [];
+    const stats = ToolCnttReport.computeUserActivityStats ? ToolCnttReport.computeUserActivityStats(logs) : [];
+
+    if (this.badgeTotalLoggedUsers) {
+      this.badgeTotalLoggedUsers.textContent = `${stats.length} tài khoản`;
+    }
+
+    if (logs.length === 0 && stats.length === 0) {
+      this.userActivityLogContainer.innerHTML = `
+        <div style="color:#94a3b8; font-size:0.82rem; text-align:center; padding:28px 16px;">
+          <div style="font-size: 1.5rem; margin-bottom: 6px;">📝</div>
+          Chưa có nhật ký ghi nhận từ các tài khoản. Hãy đăng nhập tài khoản Lịch Trực và thực hiện lưu ca để tự động ghi nhật ký!
+        </div>
+      `;
+      return;
+    }
+
+    // Bảng 1: Thống kê số ca theo từng tài khoản
+    const statsTableHtml = `
+      <div style="margin-bottom: 16px;">
+        <h5 style="color:#f8fafc; font-size:0.83rem; font-weight:700; margin:0 0 8px 0; display:flex; align-items:center; gap:6px;">
+          <span>👥 Tổng Hợp Số Ca Đã Nhập Theo Tài Khoản Cán Bộ</span>
+        </h5>
+        <div style="overflow-x: auto;">
+          <table class="cntt-user-log-table">
+            <thead>
+              <tr>
+                <th>Tài Khoản</th>
+                <th>Cán Bộ Thực Hiện</th>
+                <th>Vai Trò</th>
+                <th style="text-align:center;">Tổng Số Ca</th>
+                <th style="text-align:center;">Lượt PM</th>
+                <th style="text-align:center;">Linh Kiện PC</th>
+                <th>Sheet Đã Điền</th>
+                <th>Lần Nhập Gần Nhất</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${stats.map(u => `
+                <tr>
+                  <td><strong style="color:#c084fc;">${u.username}</strong></td>
+                  <td><strong style="color:#f8fafc;">${u.fullname}</strong></td>
+                  <td><span class="tool-badge badge-blue" style="font-size:0.68rem;">${u.role}</span></td>
+                  <td style="text-align:center; font-weight:700; color:#38bdf8;">${u.totalEntries}</td>
+                  <td style="text-align:center; color:#7dd3fc;">${u.swCount}</td>
+                  <td style="text-align:center; color:#6ee7b7;">${u.hwCount}</td>
+                  <td style="font-size:0.75rem; color:#94a3b8;">${u.recentSheets || '-'}</td>
+                  <td style="font-size:0.75rem; color:#cbd5e1;">${u.lastActive}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    // Bảng 2: Nhật ký 10 lượt nhập ca gần nhất
+    const recentLogs = logs.slice(0, 10);
+    const logsTableHtml = `
+      <div>
+        <h5 style="color:#f8fafc; font-size:0.83rem; font-weight:700; margin:0 0 8px 0; display:flex; align-items:center; gap:6px;">
+          <span>⏱️ 10 Lượt Nhập Ca Gần Nhất Của Người Dùng</span>
+        </h5>
+        <div style="overflow-x: auto;">
+          <table class="cntt-user-log-table">
+            <thead>
+              <tr>
+                <th>Thời Gian</th>
+                <th>Tài Khoản</th>
+                <th>Khoa / Phòng</th>
+                <th>Hồ Sơ / Phiếu</th>
+                <th>Nội Dung</th>
+                <th>Sheet & Dòng</th>
+                <th>Tình Trạng</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recentLogs.map(l => `
+                <tr>
+                  <td style="font-size:0.74rem; color:#94a3b8; white-space:nowrap;">${l.timeDisplay || l.timestamp}</td>
+                  <td><span style="color:#c084fc; font-weight:600;">👤 ${l.username}</span> (${l.fullname})</td>
+                  <td><strong style="color:#f8fafc;">${l.dept}</strong></td>
+                  <td style="font-size:0.74rem; color:#38bdf8;">${l.soHoSo ? `HS: ${l.soHoSo}` : ''} ${l.soPhieu ? `P: ${l.soPhieu}` : ''}</td>
+                  <td style="font-size:0.74rem; color:#cbd5e1;">PM: ${l.swCount} mục • PC: ${l.hwCount} linh kiện</td>
+                  <td><span class="tool-badge badge-emerald" style="font-size:0.7rem;">${l.sheetName} (B${l.rowTarget})</span></td>
+                  <td><span class="tool-badge badge-emerald" style="font-size:0.68rem;">${l.status}</span></td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    this.userActivityLogContainer.innerHTML = statsTableHtml + logsTableHtml;
+  }
+
+  /**
+   * Cập nhật danh sách tài khoản vào dropdown bộ lọc trong Tab Danh Sách
+   */
+  populateCnttUserFilterDropdown() {
+    if (!this.selectCnttFilterUser) return;
+    const curFilter = this.selectCnttFilterUser.value;
+    const userSet = new Set();
+
+    if (Array.isArray(this.cnttRecords)) {
+      this.cnttRecords.forEach(r => {
+        if (r.userAccount) userSet.add(r.userAccount);
+        if (r.execStaff) userSet.add(r.execStaff);
+      });
+    }
+
+    if (window.ToolCnttReport && typeof window.ToolCnttReport.getUserActivityLogs === "function") {
+      ToolCnttReport.getUserActivityLogs().forEach(l => {
+        if (l.username) userSet.add(l.username);
+      });
+    }
+
+    const userList = Array.from(userSet).filter(Boolean);
+    this.selectCnttFilterUser.innerHTML = `
+      <option value="all">-- Tất Cả Người Nhập (TK) --</option>
+      ${userList.map(u => `<option value="${u}">Tài khoản / Cán bộ: ${u}</option>`).join("")}
+    `;
+
+    if (curFilter && userSet.has(curFilter)) {
+      this.selectCnttFilterUser.value = curFilter;
+    }
+  }
+
+  /**
+   * Hiển thị bảng danh sách ca công tác có tìm kiếm và bộ lọc (bổ sung cột người nhập theo tài khoản)
    */
   renderCnttTable() {
     if (!this.tbodyCnttRecords) return;
@@ -8242,6 +8552,7 @@ p {
     const searchKeyword = (this.inputCnttSearch ? this.inputCnttSearch.value : "").trim().toLowerCase();
     const filterDept = this.selectCnttFilterDept ? this.selectCnttFilterDept.value : "all";
     const filterStaff = this.selectCnttFilterStaff ? this.selectCnttFilterStaff.value : "all";
+    const filterUser = this.selectCnttFilterUser ? this.selectCnttFilterUser.value : "all";
     const filterType = this.selectCnttFilterType ? this.selectCnttFilterType.value : "all";
 
     const filtered = records.filter(r => {
@@ -8254,10 +8565,19 @@ p {
         const isMatch = execLower.includes(staffLower) || staffLower.includes(execLower) || execLower.includes(lastName);
         if (!isMatch) return false;
       }
+      if (filterUser !== "all") {
+        const uLower = filterUser.toLowerCase();
+        const rUser = (r.userAccount || "").toLowerCase();
+        const rFull = (r.userFullname || "").toLowerCase();
+        const rExec = (r.execStaff || "").toLowerCase();
+        if (rUser !== uLower && !rFull.includes(uLower) && !rExec.includes(uLower)) {
+          return false;
+        }
+      }
       if (filterType === "sw" && r.softwareCount === 0) return false;
       if (filterType === "hw" && r.hardwareCount === 0) return false;
       if (searchKeyword) {
-        const str = `${r.stt} ${r.dept} ${r.soHoSo} ${r.soPhieu} ${r.reqStaff} ${r.execStaff} ${r.note} ${r.softwareIssues.map(s => s.label).join(' ')} ${r.hardwareIssues.map(h => h.label).join(' ')}`.toLowerCase();
+        const str = `${r.stt} ${r.dept} ${r.soHoSo} ${r.soPhieu} ${r.reqStaff} ${r.execStaff} ${r.userAccount || ''} ${r.userFullname || ''} ${r.note} ${r.softwareIssues.map(s => s.label).join(' ')} ${r.hardwareIssues.map(h => h.label).join(' ')}`.toLowerCase();
         if (!str.includes(searchKeyword)) return false;
       }
       return true;
@@ -8270,7 +8590,7 @@ p {
     if (filtered.length === 0) {
       this.tbodyCnttRecords.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align:center; padding: 30px; color: #94a3b8;">
+          <td colspan="9" style="text-align:center; padding: 30px; color: #94a3b8;">
             ℹ️ Không tìm thấy ca công tác nào phù hợp với bộ lọc hiện tại.
           </td>
         </tr>
@@ -8305,6 +8625,12 @@ p {
               👤 ${r.execStaff}
             </span>
           </td>
+          <td>
+            <div style="font-size:0.74rem; color:#e2e8f0; font-weight:600;">
+              ${r.userAccount ? `<span style="color:#c084fc;">👤 ${r.userAccount}</span>` : `<span style="color:#94a3b8;">${r.execStaff || 'Hệ thống'}</span>`}
+            </div>
+            ${r.targetRow ? `<div style="font-size:0.68rem; color:#34d399;">Ô B${r.targetRow} (${r.targetSheet || 'T9'})</div>` : ''}
+          </td>
           <td style="text-align:center;">${statusBadge}</td>
         </tr>
       `;
@@ -8312,7 +8638,7 @@ p {
   }
 
   /**
-   * Xử lý lưu ca công tác từ Form
+   * Xử lý lưu ca công tác từ Form (lưu tài khoản người nhập, sheet và tính toán dòng trống B7:AK100)
    */
   handleCnttFormSubmit(e) {
     e.preventDefault();
@@ -8365,6 +8691,15 @@ p {
       return;
     }
 
+    // Lấy thông tin tài khoản đăng nhập từ Lịch Trực CNTT
+    const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+      ? window.ToolDutyRoster.getCurrentSession()
+      : null;
+
+    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 51;
+    const targetRange = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.rangeStr : `B${targetRow}:AK${targetRow}`;
+
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
     const newRecord = {
       id: `local_${Date.now()}`,
@@ -8379,10 +8714,30 @@ p {
       reqStaff: reqStaff,
       execStaff: execStaff,
       note: note,
-      status: status
+      status: status,
+      targetSheet: targetSheet,
+      targetRow: targetRow,
+      targetRange: targetRange,
+      userAccount: session ? session.username : "guest",
+      userFullname: session ? (session.fullname || session.username) : execStaff,
+      userRole: session ? (session.role || "staff") : "staff",
+      createdAt: new Date().toISOString()
     };
 
+    // 1. Lưu cục bộ
     ToolCnttReport.saveLocalRow(newRecord);
+
+    // 2. Ghi nhật ký người dùng trên các tài khoản
+    if (ToolCnttReport.logUserActivity) {
+      ToolCnttReport.logUserActivity(newRecord, session);
+    }
+
+    // 3. Tự động nhảy dòng trống tiếp theo xuống dòng dưới nó
+    if (this.cnttNextEmptyRow) {
+      this.cnttNextEmptyRow.row = targetRow + 1;
+      this.cnttNextEmptyRow.rangeStr = `B${this.cnttNextEmptyRow.row}:AK${this.cnttNextEmptyRow.row}`;
+      this.updateNextEmptyRowUI();
+    }
 
     if (!this.cnttRecords) this.cnttRecords = [];
     this.cnttRecords.unshift(newRecord);
@@ -8390,6 +8745,8 @@ p {
 
     this.renderCnttAnalytics();
     this.renderCnttTable();
+    this.renderUserActivityLogUI();
+    this.populateCnttUserFilterDropdown();
 
     const tsv = ToolCnttReport.buildTsvRow({
       dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
@@ -8397,12 +8754,12 @@ p {
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(tsv).then(() => {
-        this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}]! Dòng dữ liệu đã được tự động COPY. Bạn có thể mở Google Sheet và bấm Ctrl+V để dán trực tiếp.`, "success", 7000);
+        this.showToast(`🎉 Đã lưu ca [${dept}]! Dữ liệu đã COPY. Vui lòng mở Google Sheet [${targetSheet}], chọn ô B${targetRow} và bấm Ctrl+V để dán.`, "success", 7500);
       }).catch(() => {
-        this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}]!`, "success");
+        this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}] vào Sheet [${targetSheet}] (Dòng B${targetRow})!`, "success");
       });
     } else {
-      this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}] thành công!`, "success");
+      this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}] vào Sheet [${targetSheet}] (Dòng B${targetRow}) thành công!`, "success");
     }
 
     this.resetCnttForm();
@@ -8410,7 +8767,7 @@ p {
   }
 
   /**
-   * Sao chép dòng dữ liệu định dạng TSV của Form để dán Ctrl+V vào Google Sheet
+   * Sao chép dòng dữ liệu định dạng TSV của Form để dán Ctrl+V vào đúng dòng trống của Sheet
    */
   copyFormTsvRow() {
     if (!window.ToolCnttReport) return;
@@ -8438,6 +8795,9 @@ p {
       hwObj[hwTextInput.dataset.key] = hwTextInput.value.trim();
     }
 
+    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 51;
+
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
     const tsv = ToolCnttReport.buildTsvRow({
       dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
@@ -8445,7 +8805,7 @@ p {
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(tsv).then(() => {
-        this.showToast("📋 Đã sao chép hàng dữ liệu định dạng chuẩn Google Sheet! Hãy mở trang tính và nhấn Ctrl+V vào ô đầu dòng.", "success", 6000);
+        this.showToast(`📋 Đã copy dữ liệu chuẩn Google Sheet! Vui lòng chọn ô B${targetRow} trên sheet [${targetSheet}] và nhấn Ctrl+V để dán.`, "success", 7000);
       }).catch(() => {
         this.showToast("Không thể truy cập bộ nhớ đệm.", "warning");
       });

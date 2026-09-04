@@ -149,11 +149,11 @@
           <span class="nav-text">Lịch Trực CNTT</span>
         </a>
 
-        <a href="#cntt" class="nav-item" data-tool="cntt" data-tooltip="Báo Cáo Công Tác CNTT (Google Sheet)">
+        <a href="#cntt" class="nav-item" data-tool="cntt" data-tooltip="BC Sửa CNTT (Google Sheet)">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </span>
-          <span class="nav-text">Báo Cáo Công Tác CNTT</span>
+          <span class="nav-text">BC Sửa CNTT</span>
         </a>
 
         <a href="#cntt-file" class="nav-item" data-tool="cntt-file" data-tooltip="Báo Cáo Công Việc P.CNTT (File Excel)">
@@ -1901,31 +1901,46 @@
              TÍCH HỢP GOOGLE TRANG TÍNH & BỘ THỐNG KÊ ĐI KÈM
              ============================================================ -->
         <section class="workspace-view hidden" id="cnttWorkReportView">
-          <div class="workspace-top-bar cntt-top-bar">
-            <div class="workspace-top-left">
+          <!-- THANH CÔNG CỤ DUY NHẤT 1 HÀNG (SINGLE-ROW UNIFIED TOOLBAR) -->
+          <div class="cntt-single-row-toolbar">
+            <!-- Cụm trái: Nút Quay lại + Tiêu đề ngắn gọn + Cloud Status -->
+            <div class="cntt-toolbar-left">
               <button type="button" class="btn-back" id="btnBackToHubFromCntt" title="Quay về danh mục">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 <span>Quay lại</span>
               </button>
-              <div class="workspace-heading">
-                <div class="flex-row gap-8 align-center">
-                  <h1 class="workspace-title cntt-main-title">Sửa Chữa CNTT</h1>
-                  <span class="cntt-cloud-badge" id="cnttSyncStatusBadge" title="Nguồn: Google Trang Tính Phòng CNTT">
-                    <span class="cntt-pulse-dot"></span>
-                    <span id="cnttSyncStatusText">Google Sheet</span>
-                  </span>
-                </div>
+              <div class="cntt-brand-cluster">
+                <h1 class="workspace-title cntt-main-title">BC Sửa CNTT</h1>
+                <span class="cntt-cloud-badge" id="cnttSyncStatusBadge" title="Nguồn: Google Trang Tính Phòng CNTT">
+                  <span class="cntt-pulse-dot"></span>
+                  <span id="cnttSyncStatusText">Google Sheet</span>
+                </span>
               </div>
             </div>
 
-            <div class="workspace-top-actions cntt-top-actions">
+            <!-- Cụm giữa: 4 Tabs trực quan trên cùng 1 hàng -->
+            <div class="cntt-toolbar-center">
+              <div class="cntt-tabs-nav-inline">
+                <button type="button" class="cntt-nav-tab active" id="btnTabCnttForm" title="Điền ca sửa chữa mới">
+                  <span>📝 Điền Ca</span>
+                </button>
+                <button type="button" class="cntt-nav-tab" id="btnTabCnttEmbedded" title="Tương tác trực tiếp trên Google Trang Tính">
+                  <span>🗂️ Google Sheet</span>
+                </button>
+                <button type="button" class="cntt-nav-tab" id="btnTabCnttAnalytics" title="Báo cáo thống kê & năng suất">
+                  <span>📊 Thống Kê</span>
+                </button>
+                <button type="button" class="cntt-nav-tab" id="btnTabCnttTable" title="Danh sách các ca công tác">
+                  <span>📋 Danh Sách (<span id="cnttTableCountBadge">0</span>)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Cụm phải: Đồng Bộ + Xuất Excel + Cấu Hình + Tài khoản Lịch Trực -->
+            <div class="cntt-toolbar-right">
               <button type="button" class="btn-cntt-action btn-cntt-sync" id="btnFetchGoogleSheet" title="Tải dữ liệu mới nhất từ Google Sheet">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>Đồng Bộ Sheet</span>
-              </button>
-              <button type="button" class="btn-cntt-action btn-cntt-add" id="btnCnttGoToForm" title="Điền ca sửa chữa mới">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>+ Điền Ca</span>
+                <span>Đồng Bộ</span>
               </button>
               <button type="button" class="btn-cntt-action btn-cntt-excel" id="btnExportCnttExcel" title="Xuất Báo Cáo Thống Kê ra file Excel">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -1933,45 +1948,64 @@
               </button>
               <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span>Cấu Hình</span>
               </button>
+              <!-- Nút / Badge Tài Khoản Người Dùng từ Lịch Trực -->
+              <div class="cntt-user-session-chip" id="cnttUserSessionChip" title="Tài khoản cán bộ từ Lịch Trực CNTT">
+                <span class="cntt-user-avatar">👤</span>
+                <span class="cntt-user-name" id="cnttSessionUserDisplay">Đang tải...</span>
+                <button type="button" class="btn-cntt-switch-user" id="btnCnttOpenLoginModal" title="Đăng nhập hoặc đổi tài khoản cán bộ">&plusmn;</button>
+              </div>
             </div>
-          </div>
-
-          <!-- Tab Navigation Switcher (Gọn gàng & ngắn gọn) -->
-          <div class="cntt-tabs-nav">
-            <button type="button" class="cntt-nav-tab active" id="btnTabCnttForm">
-              <span>📝 Điền Ca</span>
-            </button>
-            <button type="button" class="cntt-nav-tab" id="btnTabCnttEmbedded">
-              <span>🗂️ Google Sheet</span>
-            </button>
-            <button type="button" class="cntt-nav-tab" id="btnTabCnttAnalytics">
-              <span>📊 Thống Kê</span>
-            </button>
-            <button type="button" class="cntt-nav-tab" id="btnTabCnttTable">
-              <span>📋 Danh Sách (<span id="cnttTableCountBadge">0</span>)</span>
-            </button>
           </div>
 
           <!-- Main View Body -->
           <div class="cntt-view-body">
-            <!-- TAB 1: ĐIỀN CA CÔNG TÁC TRỰC TIẾP (FORM - HIỂN THỊ ĐẦU TIÊN) -->
+            <!-- TAB 1: ĐIỀN CA CÔNG TÁC TRỰC TIẾP (FORM GỌN GÀNG TẬP TRUNG NỘI DUNG CHÍNH) -->
             <div class="cntt-tab-pane" id="cnttFormPane">
               <div class="cntt-form-container">
-                <div class="cntt-form-header">
-                  <div class="cntt-form-header-title">
-                    <h2 class="cntt-form-heading">📝 Điền Ca Tiếp Nhận</h2>
-                    <p class="cntt-form-subheading">Hỗ trợ điền số lượng 1, 2, 3... cho từng lỗi phần mềm và linh kiện.</p>
+                <!-- THANH ĐIỀU KHIỂN FORM MỎNG: CHỌN SHEET & VỊ TRÍ DÒ DÒNG TRỐNG B7:AK100 -->
+                <div class="cntt-form-toolbar-strip">
+                  <div class="cntt-form-strip-left">
+                    <!-- Chọn Sheet cần điền -->
+                    <div class="cntt-strip-group">
+                      <label for="selectTargetSheetForEntry" class="cntt-strip-label">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span>Sheet điền:</span>
+                      </label>
+                      <select id="selectTargetSheetForEntry" class="cntt-sheet-select" title="Chọn tháng/sheet cần điền ca">
+                        <option value="Tháng 9">Tháng 9 (Hiện tại)</option>
+                        <option value="Tháng 10">Tháng 10</option>
+                        <option value="Tháng 8">Tháng 8</option>
+                        <option value="Tháng 7">Tháng 7</option>
+                        <option value="Tháng 6">Tháng 6</option>
+                        <option value="Tháng 5">Tháng 5</option>
+                        <option value="Tháng 4">Tháng 4</option>
+                        <option value="Tháng 3">Tháng 3</option>
+                        <option value="Tháng 2">Tháng 2</option>
+                        <option value="Tháng 1">Tháng 1</option>
+                        <option value="Tháng 11">Tháng 11</option>
+                        <option value="Tháng 12">Tháng 12</option>
+                        <option value="Sheet1">Sheet1</option>
+                      </select>
+                    </div>
+
+                    <!-- Tự động dò dòng trống B7:AK100 -->
+                    <div class="cntt-next-row-indicator" id="cnttNextRowIndicator" title="Vị trí dòng trống tự động phát hiện trong khoảng B7:AK100 của Sheet">
+                      <span class="indicator-icon">📍</span>
+                      <span class="indicator-label">Dòng điền trống:</span>
+                      <strong class="indicator-coord" id="cnttTargetRowDisplay">B51:AK51</strong>
+                      <span class="indicator-badge-sheet" id="cnttTargetSheetBadge">Tháng 9</span>
+                    </div>
                   </div>
-                  <div class="cntt-form-actions-cluster">
+
+                  <div class="cntt-form-strip-right">
                     <div class="cntt-form-live-summary" id="cnttFormLiveSummary">
                       <span class="summary-empty">Chưa chọn sự cố nào</span>
                     </div>
-                    <button type="button" class="btn-cntt-action btn-cntt-copy" id="btnCopyFormTsvRow" title="Sao chép hàng dữ liệu định dạng chuẩn Google Sheet để dán Ctrl+V">
+                    <button type="button" class="btn-cntt-action btn-cntt-copy" id="btnCopyFormTsvRow" title="Sao chép hàng dữ liệu định dạng chuẩn Google Sheet để dán Ctrl+V vào đúng dòng trống">
                       <span>📋 Copy Dòng (Ctrl+V)</span>
                     </button>
-                    <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenGoogleSheetExternal">
+                    <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenGoogleSheetExternal" title="Mở trực tiếp Google Trang Tính trên tab mới">
                       <span>↗ Mở Sheet</span>
                     </a>
                   </div>
@@ -1980,7 +2014,13 @@
                 <form id="formCnttRepairEntry" class="cntt-entry-form">
                   <!-- Section 1: Thông tin Hành Chính -->
                   <div class="cntt-form-section">
-                    <h4 class="cntt-section-title">1. Thông Tin Tiếp Nhận & Hành Chính</h4>
+                    <div class="cntt-section-header-row">
+                      <h4 class="cntt-section-title" style="margin-bottom: 0;">1. Thông Tin Tiếp Nhận & Hành Chính</h4>
+                      <div class="cntt-user-source-tag" id="cnttUserSourceTag" title="Tài khoản đăng nhập từ Lịch Trực CNTT">
+                        <span class="pulse-dot-sm"></span>
+                        <span id="cnttUserSourceTagText">Lấy từ TK Lịch Trực</span>
+                      </div>
+                    </div>
                     <div class="cntt-form-grid-3">
                       <div class="form-group">
                         <label class="form-label required">Khoa / Phòng / Trung Tâm:</label>
@@ -1998,13 +2038,18 @@
                       </div>
                     </div>
 
-                    <div class="cntt-form-grid-3" style="margin-top: 12px;">
+                    <div class="cntt-form-grid-3" style="margin-top: 10px;">
                       <div class="form-group">
                         <label class="form-label">Cán Bộ Yêu Cầu (Khoa/Phòng):</label>
                         <input type="text" id="inputFormReqStaff" class="w2h-text-input" placeholder="Ví dụ: Bs Hùng, ĐD Nga..." />
                       </div>
                       <div class="form-group">
-                        <label class="form-label required">Cán Bộ P.CNTT Thực Hiện (Lấy từ Lịch Trực):</label>
+                        <div class="flex-between align-center" style="margin-bottom: 3px;">
+                          <label class="form-label required" style="margin-bottom: 0;">Cán Bộ P.CNTT Thực Hiện:</label>
+                          <span class="cntt-auth-sync-pill" id="cnttAuthSyncPill" title="Tự động đồng bộ theo tài khoản đăng nhập Lịch Trực">
+                            ✓ Đồng bộ TK
+                          </span>
+                        </div>
                         <select id="selectFormExecStaff" class="w2h-text-input" style="width: 100%;">
                           <option value="Chu Thị Dương">Chu Thị Dương (Phần mềm)</option>
                           <option value="Trương Hoàng Hiệp">Trương Hoàng Hiệp (Phần cứng & mềm)</option>
@@ -2206,6 +2251,27 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Hàng 3: Nhật Ký Người Nhập & Thống Kê Theo Tài Khoản Lịch Trực -->
+              <div class="cntt-charts-grid" style="margin-top: 16px;">
+                <div class="cntt-chart-card cntt-user-log-card" style="grid-column: 1 / -1;">
+                  <div class="cntt-card-header flex-between">
+                    <div>
+                      <h3 class="cntt-card-title">📜 Nhật Ký Hoạt Động & Thống Kê Nhập Ca Theo Tài Khoản</h3>
+                      <p class="cntt-card-subtitle">Theo dõi lịch sử thao tác, số lượng ca và thời gian nhập ca của từng tài khoản cán bộ Lịch Trực</p>
+                    </div>
+                    <div class="flex-row gap-8 align-center">
+                      <span class="tool-badge badge-purple" id="badgeTotalLoggedUsers">0 tài khoản</span>
+                      <button type="button" class="btn-cntt-action" id="btnClearUserActivityLog" style="font-size: 0.72rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3);" title="Xóa lịch sử nhật ký người dùng cục bộ">
+                        <span>Xóa nhật ký</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="cntt-card-body" id="userActivityLogContainer">
+                    <!-- Rendered by JS: Bảng tổng hợp tài khoản + lượt nhập gần nhất -->
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- TAB 4: DANH SÁCH CA CÔNG TÁC (TABLE VIEW) -->
@@ -2214,14 +2280,17 @@
               <div class="cntt-table-toolbar">
                 <div class="cntt-search-box">
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <input type="text" id="inputCnttSearch" placeholder="Tìm theo Khoa, số hồ sơ, số phiếu, cán bộ, nội dung..." />
+                  <input type="text" id="inputCnttSearch" placeholder="Tìm theo Khoa, số hồ sơ, số phiếu, cán bộ, người nhập, nội dung..." />
                 </div>
-                <div class="flex-row gap-8 align-center">
+                <div class="flex-row gap-8 align-center flex-wrap">
                   <select id="selectCnttFilterDept" class="w2h-text-input" style="font-size: 0.8rem; padding: 6px 10px;">
                     <option value="all">-- Tất Cả Khoa / Phòng --</option>
                   </select>
                   <select id="selectCnttFilterStaff" class="w2h-text-input" style="font-size: 0.8rem; padding: 6px 10px;">
                     <option value="all">-- Tất Cả Cán Bộ P.CNTT --</option>
+                  </select>
+                  <select id="selectCnttFilterUser" class="w2h-text-input" style="font-size: 0.8rem; padding: 6px 10px;" title="Lọc theo tài khoản đăng nhập đã nhập ca">
+                    <option value="all">-- Tất Cả Tài Khoản Nhập --</option>
                   </select>
                   <select id="selectCnttFilterType" class="w2h-text-input" style="font-size: 0.8rem; padding: 6px 10px;">
                     <option value="all">-- Tất Cả Loại Sự Cố --</option>
@@ -2238,12 +2307,13 @@
                     <tr>
                       <th style="width: 50px; text-align: center;">STT</th>
                       <th style="width: 130px;">Khoa / Phòng</th>
-                      <th style="width: 140px;">Số Hồ Sơ / Phiếu</th>
+                      <th style="width: 130px;">Số Hồ Sơ / Phiếu</th>
                       <th>Chi Tiết Phần Mềm</th>
                       <th>Chi Tiết Phần Cứng</th>
-                      <th style="width: 130px;">Cán Bộ Y/Cầu</th>
-                      <th style="width: 120px;">P.CNTT Thực Hiện</th>
-                      <th style="width: 100px; text-align: center;">Tình Trạng</th>
+                      <th style="width: 120px;">Cán Bộ Y/Cầu</th>
+                      <th style="width: 130px;">P.CNTT Thực Hiện</th>
+                      <th style="width: 110px;">Người Nhập (TK)</th>
+                      <th style="width: 95px; text-align: center;">Tình Trạng</th>
                     </tr>
                   </thead>
                   <tbody id="tbodyCnttRecords">

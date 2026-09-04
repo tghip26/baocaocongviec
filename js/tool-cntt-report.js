@@ -109,12 +109,62 @@
     },
 
     /**
-     * Tải dữ liệu trực tiếp từ Google Sheets qua Google Visualization API (GViz)
-     * Hoạt động 100% từ Client-side không cần API Key khi Sheet mở quyền chia sẻ
+     * Danh sách các sheet (Tháng 1 - Tháng 12 & Sheet1) trong Google Sheet P.CNTT
      */
-    async fetchGoogleSheetData(sheetId = null) {
+    AVAILABLE_SHEETS: [
+      "Tháng 9", "Tháng 8", "Tháng 7", "Tháng 6", "Tháng 5", "Tháng 4",
+      "Tháng 3", "Tháng 2", "Tháng 1", "Tháng 10", "Tháng 11", "Tháng 12", "Sheet1"
+    ],
+
+    /**
+     * Tính toán dò tìm hàng trống tiếp theo trong khoảng từ startRow (mặc định 7) đến maxRow (100)
+     * Trả về số hàng, chuỗi tọa độ (ví dụ: B51:AK51) và cờ đầy dữ liệu
+     */
+    computeNextEmptyRow(rows, startRow = 7, maxRow = 100) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return {
+          row: startRow,
+          rangeStr: `B${startRow}:AK${startRow}`,
+          isFull: false
+        };
+      }
+      for (let excelRow = startRow; excelRow <= maxRow; excelRow++) {
+        const gvizIdx = excelRow - 7;
+        const r = rows[gvizIdx];
+        if (!r) {
+          return {
+            row: excelRow,
+            rangeStr: `B${excelRow}:AK${excelRow}`,
+            isFull: false
+          };
+        }
+        const cells = (r.c || []).map(cell => (cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : (cell.f || "")) : ""));
+        // Quét các cột từ B (cột 1) đến AK (cột 36)
+        const hasContent = cells.slice(1, 37).some(v => v !== "" && v !== "0");
+        if (!hasContent) {
+          return {
+            row: excelRow,
+            rangeStr: `B${excelRow}:AK${excelRow}`,
+            isFull: false
+          };
+        }
+      }
+      return {
+        row: maxRow + 1,
+        rangeStr: `B${maxRow + 1}:AK${maxRow + 1}`,
+        isFull: true
+      };
+    },
+
+    /**
+     * Tải dữ liệu trực tiếp từ Google Sheets qua Google Visualization API (GViz)
+     * Hỗ trợ chỉ định Sheet cụ thể (ví dụ: Tháng 9, Tháng 8...)
+     */
+    async fetchGoogleSheetData(sheetId = null, sheetName = null) {
       const id = sheetId || this.getConfig().sheetId;
-      const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json`;
+      const targetSheet = sheetName || this.getConfig().sheetName || "Tháng 9";
+      const sheetParam = targetSheet ? `&sheet=${encodeURIComponent(targetSheet)}` : "";
+      const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json${sheetParam}`;
 
       try {
         const resp = await fetch(gvizUrl);
@@ -133,30 +183,34 @@
           throw new Error(data.errors ? data.errors[0].message : "Google Sheet không trả về bảng dữ liệu");
         }
 
-        return this.parseGvizTable(data.table);
+        const records = this.parseGvizTable(data.table, targetSheet);
+        records._rawRows = data.table.rows || [];
+        records._nextEmptyRow = this.computeNextEmptyRow(records._rawRows, 7, 100);
+        records._targetSheet = targetSheet;
+        return records;
       } catch (gvizErr) {
         console.warn("GViz API failed, fallback to CSV export", gvizErr);
         // Fallback sang CSV endpoint
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`;
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${targetSheet ? `&sheet=${encodeURIComponent(targetSheet)}` : ''}`;
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error(`Không thể kết nối Google Sheet: ${resp.statusText}`);
         const csvText = await resp.text();
-        return this.parseCsvText(csvText);
+        const records = this.parseCsvText(csvText);
+        records._targetSheet = targetSheet;
+        return records;
       }
     },
 
     /**
      * Phân tích đối tượng bảng GViz thành mảng các ca công tác chuẩn
      */
-    parseGvizTable(table) {
+    parseGvizTable(table, currentSheet = "") {
       const records = [];
       const rows = table.rows || [];
 
       rows.forEach((r, rowIdx) => {
         const cells = (r.c || []).map(cell => (cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : (cell.f || "")) : ""));
-        
-        // Bỏ qua các dòng header ban đầu
-        if (rowIdx < 5) return;
+        const excelRowNumber = rowIdx + 7;
 
         const stt = cells[0] || "";
         const dept = cells[1] || "";
@@ -217,11 +271,11 @@
           }
         });
 
-        // Chỉ tính là 1 ca nếu có Khoa phòng, hoặc có hồ sơ/phiếu, hoặc có lỗi, hoặc có cán bộ
         if (dept || soHoSo || soPhieu || swIssues.length > 0 || hwIssues.length > 0 || execStaff || reqStaff) {
           records.push({
             id: `row_${rowIdx + 1}`,
-            rowNumber: rowIdx + 1,
+            rowNumber: excelRowNumber,
+            sheetName: currentSheet || "Tháng 9",
             stt: stt || String(records.length + 1),
             dept: dept || "Khác",
             soHoSo: soHoSo,
@@ -575,6 +629,101 @@
      */
     clearLocalRows() {
       localStorage.removeItem(STORAGE_KEY_LOCAL_ROWS);
+    },
+
+    /**
+     * Khóa lưu trữ nhật ký thao tác của người dùng trên các tài khoản
+     */
+    STORAGE_KEY_USER_LOG: "CNTT_REPORT_USER_ACTIVITY_LOG",
+
+    /**
+     * Ghi nhận một sự kiện nhập ca vào nhật ký tài khoản người dùng
+     */
+    logUserActivity(record, session) {
+      try {
+        const logs = this.getUserActivityLogs();
+        const username = session ? (session.username || "guest") : (record.execStaff || "guest");
+        const fullname = session ? (session.fullname || session.username) : (record.execStaff || "Cán bộ P.CNTT");
+        const role = session ? (session.role || "staff") : "staff";
+
+        const logEntry = {
+          id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          timestamp: new Date().toISOString(),
+          timeDisplay: new Date().toLocaleString("vi-VN"),
+          username: username,
+          fullname: fullname,
+          role: role,
+          dept: record.dept || "",
+          soHoSo: record.soHoSo || "",
+          soPhieu: record.soPhieu || "",
+          swCount: record.softwareCount || 0,
+          hwCount: record.hardwareCount || 0,
+          sheetName: record.targetSheet || "Tháng 9",
+          rowTarget: record.targetRow || 51,
+          status: record.status || "Đã xử lý",
+          action: "Tạo & Điền ca sửa chữa"
+        };
+
+        logs.unshift(logEntry);
+        // Giữ tối đa 200 lượt nhật ký gần nhất
+        if (logs.length > 200) logs.length = 200;
+        localStorage.setItem(this.STORAGE_KEY_USER_LOG, JSON.stringify(logs));
+        return logEntry;
+      } catch (e) {
+        console.error("Error logging user activity", e);
+        return null;
+      }
+    },
+
+    /**
+     * Lấy danh sách toàn bộ nhật ký người dùng
+     */
+    getUserActivityLogs() {
+      try {
+        const raw = localStorage.getItem(this.STORAGE_KEY_USER_LOG);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        return [];
+      }
+    },
+
+    /**
+     * Xóa toàn bộ nhật ký người dùng
+     */
+    clearUserActivityLogs() {
+      localStorage.removeItem(this.STORAGE_KEY_USER_LOG);
+    },
+
+    /**
+     * Thống kê hoạt động của người dùng trên các tài khoản
+     */
+    computeUserActivityStats(logs = []) {
+      const userMap = {};
+
+      logs.forEach(item => {
+        const u = item.username || "Chưa rõ";
+        if (!userMap[u]) {
+          userMap[u] = {
+            username: u,
+            fullname: item.fullname || u,
+            role: item.role || "staff",
+            totalEntries: 0,
+            swCount: 0,
+            hwCount: 0,
+            lastActive: item.timeDisplay || item.timestamp,
+            recentSheets: new Set()
+          };
+        }
+        userMap[u].totalEntries++;
+        userMap[u].swCount += item.swCount || 0;
+        userMap[u].hwCount += item.hwCount || 0;
+        if (item.sheetName) userMap[u].recentSheets.add(item.sheetName);
+      });
+
+      return Object.values(userMap).map(u => ({
+        ...u,
+        recentSheets: Array.from(u.recentSheets).join(", ")
+      })).sort((a, b) => b.totalEntries - a.totalEntries);
     },
 
     /**
