@@ -7845,6 +7845,11 @@ p {
     this.inputFormNote = document.getElementById("inputFormNote");
     this.btnCopyFormTsvRow = document.getElementById("btnCopyFormTsvRow");
     this.btnResetCnttForm = document.getElementById("btnResetCnttForm");
+    this.inputFilterSwCards = document.getElementById("inputFilterSwCards");
+    this.btnClearSwFilter = document.getElementById("btnClearSwFilter");
+    this.badgeSelectedSwCount = document.getElementById("badgeSelectedSwCount");
+    this.badgeSelectedHwCount = document.getElementById("badgeSelectedHwCount");
+    this.cnttFormLiveSummary = document.getElementById("cnttFormLiveSummary");
 
     // Table & Filters
     this.inputCnttSearch = document.getElementById("inputCnttSearch");
@@ -7883,27 +7888,70 @@ p {
         `;
       }
 
-      // 2. Render Checkbox danh mục Phần Mềm (21 mục)
+      // Populate Cán bộ thực hiện từ danh sách Lịch trực CNTT
+      if (this.selectFormExecStaff) {
+        const staffList = ToolCnttReport.getDutyStaffList();
+        this.selectFormExecStaff.innerHTML = `
+          ${staffList.map(s => `<option value="${s.name}">${s.name} (${s.role || 'Cán bộ CNTT'})</option>`).join("")}
+          <option value="P.CNTT">Cả Phòng CNTT</option>
+        `;
+      }
+
+      // 2. Render Stepper Cards danh mục Phần Mềm (21 mục) - Hỗ trợ nhập 1, 2, 3, 4...
       const swContainer = document.getElementById("containerSoftwareCheckboxes");
       if (swContainer) {
         swContainer.innerHTML = ToolCnttReport.SOFTWARE_CATEGORIES.map(cat => `
-          <label class="cntt-checkbox-card" title="${cat.label}">
-            <input type="checkbox" name="sw_issue" value="${cat.key}" data-label="${cat.label}" />
-            <span>${cat.label}</span>
-          </label>
-        `).join("");
-      }
-
-      // 3. Render Inputs danh mục Phần Cứng (10 mục)
-      const hwContainer = document.getElementById("containerHardwareInputs");
-      if (hwContainer) {
-        hwContainer.innerHTML = ToolCnttReport.HARDWARE_CATEGORIES.map(cat => `
-          <div class="cntt-hw-card">
-            <label>${cat.label} (${cat.unit || 'mô tả'}):</label>
-            <input type="${cat.isText ? 'text' : 'number'}" name="hw_issue" min="0" data-key="${cat.key}" data-label="${cat.label}" placeholder="${cat.isText ? 'Nội dung...' : '0'}" />
+          <div class="cntt-card-stepper sw-stepper" data-key="${cat.key}" data-label="${cat.label}" title="${cat.label}">
+            <div class="stepper-body" data-action="toggle-step">
+              <div class="stepper-check">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span class="stepper-name">${cat.label}</span>
+            </div>
+            <div class="stepper-counter">
+              <button type="button" class="btn-step-count btn-step-dec" data-action="step-dec" title="Giảm số lượng">&minus;</button>
+              <input type="number" class="step-count-input" name="sw_issue" value="0" min="0" max="999" data-key="${cat.key}" data-label="${cat.label}" />
+              <button type="button" class="btn-step-count btn-step-inc" data-action="step-inc" title="Tăng số lượng">+</button>
+            </div>
           </div>
         `).join("");
       }
+
+      // 3. Render Stepper Cards danh mục Phần Cứng (10 mục)
+      const hwContainer = document.getElementById("containerHardwareInputs");
+      if (hwContainer) {
+        hwContainer.innerHTML = ToolCnttReport.HARDWARE_CATEGORIES.map(cat => {
+          if (cat.isText) {
+            return `
+              <div class="cntt-card-stepper hw-stepper hw-text-card" data-key="${cat.key}" data-label="${cat.label}">
+                <div class="stepper-body">
+                  <span class="stepper-name" style="font-weight:600; color:#34d399;">${cat.label}:</span>
+                </div>
+                <input type="text" class="step-text-input" name="hw_issue_text" data-key="${cat.key}" data-label="${cat.label}" placeholder="Nhập chi tiết sửa chữa..." />
+              </div>
+            `;
+          }
+          return `
+            <div class="cntt-card-stepper hw-stepper" data-key="${cat.key}" data-label="${cat.label}" title="${cat.label}">
+              <div class="stepper-body" data-action="toggle-step">
+                <div class="stepper-check">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <span class="stepper-name">${cat.label}</span>
+                ${cat.unit ? `<span class="stepper-hw-unit">${cat.unit}</span>` : ''}
+              </div>
+              <div class="stepper-counter">
+                <button type="button" class="btn-step-count btn-step-dec" data-action="step-dec" title="Giảm">&minus;</button>
+                <input type="number" class="step-count-input" name="hw_issue" value="0" min="0" max="999" data-key="${cat.key}" data-label="${cat.label}" />
+                <button type="button" class="btn-step-count btn-step-inc" data-action="step-inc" title="Tăng">+</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      this.bindCnttStepperEvents();
+      this.updateCnttFormSummary();
     }
 
     // Event Bindings
@@ -8281,11 +8329,14 @@ p {
     const swIssues = [];
     const swObj = {};
     let swCount = 0;
-    const swBoxes = document.querySelectorAll('input[name="sw_issue"]:checked');
-    swBoxes.forEach(b => {
-      swIssues.push({ key: b.value, label: b.dataset.label, count: 1 });
-      swObj[b.value] = 1;
-      swCount += 1;
+    const swInputs = document.querySelectorAll('input[name="sw_issue"]');
+    swInputs.forEach(inp => {
+      const val = parseInt(inp.value, 10) || 0;
+      if (val > 0) {
+        swIssues.push({ key: inp.dataset.key, label: inp.dataset.label, count: val, value: String(val) });
+        swObj[inp.dataset.key] = val;
+        swCount += val;
+      }
     });
 
     const hwIssues = [];
@@ -8293,15 +8344,21 @@ p {
     let hwCount = 0;
     const hwInputs = document.querySelectorAll('input[name="hw_issue"]');
     hwInputs.forEach(inp => {
-      const val = inp.value.trim();
-      if (val && val !== "0") {
-        const num = parseInt(val, 10);
-        const count = isNaN(num) ? 1 : num;
-        hwIssues.push({ key: inp.dataset.key, label: inp.dataset.label, value: val, count: count });
-        hwObj[inp.dataset.key] = val;
-        hwCount += count;
+      const val = parseInt(inp.value, 10) || 0;
+      if (val > 0) {
+        hwIssues.push({ key: inp.dataset.key, label: inp.dataset.label, count: val, value: String(val) });
+        hwObj[inp.dataset.key] = String(val);
+        hwCount += val;
       }
     });
+
+    const hwTextInput = document.querySelector('input[name="hw_issue_text"]');
+    if (hwTextInput && hwTextInput.value.trim()) {
+      const val = hwTextInput.value.trim();
+      hwIssues.push({ key: hwTextInput.dataset.key, label: hwTextInput.dataset.label, count: 1, value: val });
+      hwObj[hwTextInput.dataset.key] = val;
+      hwCount += 1;
+    }
 
     if (!dept) {
       this.showToast("Vui lòng chọn Khoa / Phòng!", "warning");
@@ -8366,13 +8423,20 @@ p {
     const note = this.inputFormNote ? this.inputFormNote.value.trim() : "";
 
     const swObj = {};
-    document.querySelectorAll('input[name="sw_issue"]:checked').forEach(b => { swObj[b.value] = 1; });
+    document.querySelectorAll('input[name="sw_issue"]').forEach(inp => {
+      const val = parseInt(inp.value, 10) || 0;
+      if (val > 0) swObj[inp.dataset.key] = val;
+    });
 
     const hwObj = {};
     document.querySelectorAll('input[name="hw_issue"]').forEach(inp => {
-      const val = inp.value.trim();
-      if (val && val !== "0") hwObj[inp.dataset.key] = val;
+      const val = parseInt(inp.value, 10) || 0;
+      if (val > 0) hwObj[inp.dataset.key] = String(val);
     });
+    const hwTextInput = document.querySelector('input[name="hw_issue_text"]');
+    if (hwTextInput && hwTextInput.value.trim()) {
+      hwObj[hwTextInput.dataset.key] = hwTextInput.value.trim();
+    }
 
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
     const tsv = ToolCnttReport.buildTsvRow({
@@ -8395,8 +8459,227 @@ p {
    */
   resetCnttForm() {
     if (this.formCnttRepairEntry) this.formCnttRepairEntry.reset();
-    document.querySelectorAll('input[name="sw_issue"]').forEach(b => { b.checked = false; });
-    document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = ""; });
+    document.querySelectorAll('.cntt-card-stepper').forEach(c => c.classList.remove('is-selected'));
+    document.querySelectorAll('input[name="sw_issue"]').forEach(inp => { inp.value = "0"; });
+    document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = "0"; });
+    const hwTxt = document.querySelector('input[name="hw_issue_text"]');
+    if (hwTxt) hwTxt.value = "";
+    if (this.inputFilterSwCards) {
+      this.inputFilterSwCards.value = "";
+      this.filterSoftwareCards("");
+    }
+    this.updateCnttFormSummary();
+  }
+
+  /**
+   * Lắng nghe sự kiện tương tác Stepper Cards (Tăng / Giảm / Chọn 1 / Gõ số lượng)
+   */
+  bindCnttStepperEvents() {
+    const swContainer = document.getElementById("containerSoftwareCheckboxes");
+    const hwContainer = document.getElementById("containerHardwareInputs");
+
+    const handleStepperClick = (e) => {
+      const btnInc = e.target.closest('[data-action="step-inc"]');
+      const btnDec = e.target.closest('[data-action="step-dec"]');
+      const toggleBody = e.target.closest('[data-action="toggle-step"]');
+
+      if (btnInc) {
+        e.preventDefault();
+        e.stopPropagation();
+        const card = btnInc.closest('.cntt-card-stepper');
+        const input = card ? card.querySelector('.step-count-input') : null;
+        if (input) {
+          let val = parseInt(input.value, 10) || 0;
+          val++;
+          input.value = val;
+          this.updateCnttFormSummary();
+        }
+        return;
+      }
+
+      if (btnDec) {
+        e.preventDefault();
+        e.stopPropagation();
+        const card = btnDec.closest('.cntt-card-stepper');
+        const input = card ? card.querySelector('.step-count-input') : null;
+        if (input) {
+          let val = parseInt(input.value, 10) || 0;
+          val = Math.max(0, val - 1);
+          input.value = val;
+          this.updateCnttFormSummary();
+        }
+        return;
+      }
+
+      if (toggleBody) {
+        const card = toggleBody.closest('.cntt-card-stepper');
+        const input = card ? card.querySelector('.step-count-input') : null;
+        if (input) {
+          let val = parseInt(input.value, 10) || 0;
+          input.value = val > 0 ? 0 : 1;
+          this.updateCnttFormSummary();
+        }
+      }
+    };
+
+    if (swContainer) {
+      swContainer.addEventListener("click", handleStepperClick);
+      swContainer.addEventListener("input", (e) => {
+        if (e.target.classList.contains("step-count-input")) {
+          let val = parseInt(e.target.value, 10);
+          if (isNaN(val) || val < 0) e.target.value = 0;
+          this.updateCnttFormSummary();
+        }
+      });
+    }
+
+    if (hwContainer) {
+      hwContainer.addEventListener("click", handleStepperClick);
+      hwContainer.addEventListener("input", (e) => {
+        if (e.target.classList.contains("step-count-input") || e.target.classList.contains("step-text-input")) {
+          if (e.target.classList.contains("step-count-input")) {
+            let val = parseInt(e.target.value, 10);
+            if (isNaN(val) || val < 0) e.target.value = 0;
+          }
+          this.updateCnttFormSummary();
+        }
+      });
+    }
+
+    if (this.inputFilterSwCards) {
+      this.inputFilterSwCards.addEventListener("input", (e) => {
+        this.filterSoftwareCards(e.target.value);
+      });
+    }
+
+    if (this.btnClearSwFilter) {
+      this.btnClearSwFilter.addEventListener("click", () => {
+        if (this.inputFilterSwCards) {
+          this.inputFilterSwCards.value = "";
+          this.inputFilterSwCards.focus();
+        }
+        this.filterSoftwareCards("");
+      });
+    }
+  }
+
+  /**
+   * Lọc tức thì danh sách thẻ lỗi phần mềm theo từ khóa
+   */
+  filterSoftwareCards(query = "") {
+    const q = (query || "").trim().toLowerCase();
+    const cards = document.querySelectorAll('.cntt-card-stepper.sw-stepper');
+    cards.forEach(card => {
+      if (!q) {
+        card.style.display = "";
+        return;
+      }
+      const label = (card.dataset.label || "").toLowerCase();
+      const key = (card.dataset.key || "").toLowerCase();
+      if (label.includes(q) || key.includes(q)) {
+        card.style.display = "";
+      } else {
+        card.style.display = "none";
+      }
+    });
+
+    if (this.btnClearSwFilter) {
+      this.btnClearSwFilter.classList.toggle('hidden', !q);
+    }
+  }
+
+  /**
+   * Cập nhật trạng thái hiển thị, huy hiệu và chip tóm tắt thời gian thực cho Form
+   */
+  updateCnttFormSummary() {
+    let swDistinct = 0;
+    let swTotal = 0;
+    const selectedSwNames = [];
+
+    document.querySelectorAll('input[name="sw_issue"]').forEach(inp => {
+      const val = parseInt(inp.value, 10) || 0;
+      const card = inp.closest('.cntt-card-stepper');
+      if (card) {
+        if (val > 0) {
+          card.classList.add('is-selected');
+        } else {
+          card.classList.remove('is-selected');
+        }
+      }
+      if (val > 0) {
+        swDistinct++;
+        swTotal += val;
+        selectedSwNames.push(`${inp.dataset.label} (${val})`);
+      }
+    });
+
+    let hwDistinct = 0;
+    let hwTotal = 0;
+    const selectedHwNames = [];
+
+    document.querySelectorAll('input[name="hw_issue"]').forEach(inp => {
+      const val = parseInt(inp.value, 10) || 0;
+      const card = inp.closest('.cntt-card-stepper');
+      if (card) {
+        if (val > 0) {
+          card.classList.add('is-selected');
+        } else {
+          card.classList.remove('is-selected');
+        }
+      }
+      if (val > 0) {
+        hwDistinct++;
+        hwTotal += val;
+        selectedHwNames.push(`${inp.dataset.label} (${val})`);
+      }
+    });
+
+    const hwTxt = document.querySelector('input[name="hw_issue_text"]');
+    if (hwTxt) {
+      const card = hwTxt.closest('.cntt-card-stepper');
+      if (hwTxt.value.trim()) {
+        hwDistinct++;
+        hwTotal++;
+        selectedHwNames.push(`Khác: ${hwTxt.value.trim()}`);
+        if (card) card.classList.add('is-selected');
+      } else {
+        if (card) card.classList.remove('is-selected');
+      }
+    }
+
+    if (this.badgeSelectedSwCount) {
+      this.badgeSelectedSwCount.textContent = swDistinct > 0 
+        ? `${swDistinct} mục (${swTotal} lượt)` 
+        : `0 mục đã chọn`;
+      this.badgeSelectedSwCount.classList.toggle('has-selected', swDistinct > 0);
+    }
+
+    if (this.badgeSelectedHwCount) {
+      this.badgeSelectedHwCount.textContent = hwDistinct > 0 
+        ? `${hwDistinct} mục (${hwTotal} lượt)` 
+        : `0 mục đã chọn`;
+      this.badgeSelectedHwCount.classList.toggle('has-selected', hwDistinct > 0);
+    }
+
+    if (this.cnttFormLiveSummary) {
+      const totalItems = swTotal + hwTotal;
+      if (totalItems === 0) {
+        this.cnttFormLiveSummary.innerHTML = `<span class="summary-empty">Chưa chọn sự cố Phần Mềm hoặc Phần Cứng nào</span>`;
+      } else {
+        const chips = [];
+        if (swTotal > 0) {
+          chips.push(`<span class="summary-chip chip-sw" title="${selectedSwNames.join(', ')}">💻 PM: <strong>${swTotal}</strong> lượt (${swDistinct} loại)</span>`);
+        }
+        if (hwTotal > 0) {
+          chips.push(`<span class="summary-chip chip-hw" title="${selectedHwNames.join(', ')}">🔧 PC/LK: <strong>${hwTotal}</strong> lượt (${hwDistinct} loại)</span>`);
+        }
+        this.cnttFormLiveSummary.innerHTML = `
+          <div class="summary-active-chips">
+            ${chips.join("")}
+          </div>
+        `;
+      }
+    }
   }
 
   /**
