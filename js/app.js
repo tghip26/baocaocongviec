@@ -431,9 +431,24 @@ class AppController {
     // Toast Container
     this.toastContainer = document.getElementById("toastContainer");
 
-    // Duty Roster Extra Buttons
-    this.btnExportDutyIcs = document.getElementById("btnExportDutyIcs");
+    // Duty Roster Extra Buttons & Calendar Sync Modal Elements
+    this.btnDutyCalendarSync = document.getElementById("btnDutyCalendarSync");
     this.btnDutyPrintA4 = document.getElementById("btnDutyPrintA4");
+
+    this.modalDutyCalendarSync = document.getElementById("modalDutyCalendarSync");
+    this.btnCloseCalendarSyncModal = document.getElementById("btnCloseCalendarSyncModal");
+    this.btnDismissCalendarSyncModal = document.getElementById("btnDismissCalendarSyncModal");
+    this.selectCalendarSyncStaff = document.getElementById("selectCalendarSyncStaff");
+    this.txtCalendarSyncMonthYear = document.getElementById("txtCalendarSyncMonthYear");
+    this.txtCalendarSyncShiftCount = document.getElementById("txtCalendarSyncShiftCount");
+    this.calendarSyncShiftsList = document.getElementById("calendarSyncShiftsList");
+    this.chkRemind1Day = document.getElementById("chkRemind1Day");
+    this.chkRemind2Hours = document.getElementById("chkRemind2Hours");
+    this.chkRemindMorning = document.getElementById("chkRemindMorning");
+    this.btnSyncToGoogleCalendar = document.getElementById("btnSyncToGoogleCalendar");
+    this.btnSyncToAppleCalendar = document.getElementById("btnSyncToAppleCalendar");
+    this.btnSyncToAndroidCalendar = document.getElementById("btnSyncToAndroidCalendar");
+    this.btnSyncDownloadIcsFile = document.getElementById("btnSyncDownloadIcsFile");
   }
 
   initEvents() {
@@ -1203,10 +1218,15 @@ class AppController {
             this.showToast("Tệp Word này không có ảnh đính kèm nào để tải!", "warning");
             return;
           }
+          this.setButtonLoading(this.btnDownloadW2hImagesZip, true, "Đang đóng gói ZIP ảnh...");
+          this.showTopProgress(30);
           const zipName = await this.w2hConverter.exportAllExtractedImagesAsZip(this.currentW2hFileName || "Word_Images");
           this.showToast(`Đã đóng gói và tải về ${this.w2hConverter.extractedImagesList.length} ảnh (${zipName}) thành công!`, "success");
         } catch (err) {
           this.showToast("Lỗi tải ảnh: " + err.message, "error");
+        } finally {
+          this.setButtonLoading(this.btnDownloadW2hImagesZip, false);
+          this.hideTopProgress();
         }
       });
     }
@@ -1762,12 +1782,45 @@ class AppController {
   updateRunButtonState() {
     const tool = window.getToolById(this.currentToolId);
     if (!tool) {
-      this.btnRunAction.disabled = true;
+      if (this.btnRunAction) {
+        this.btnRunAction.disabled = true;
+        this.btnRunAction.classList.remove("is-loading");
+      }
       return;
     }
 
     const hasPrimary = this.selectedFiles.primary.length > 0;
-    this.btnRunAction.disabled = !hasPrimary || this.isProcessing;
+
+    if (this.isProcessing) {
+      if (this.btnRunAction) {
+        this.btnRunAction.disabled = true;
+        this.btnRunAction.classList.add("is-loading");
+      }
+      if (this.btnRunActionText) {
+        this.btnRunActionText.innerHTML = `
+          <span class="btn-loading-content">
+            <span class="spinner-ring spinner-ring-sm spinner-cyan"></span>
+            <span>Đang xử lý dữ liệu...</span>
+          </span>
+        `;
+      }
+    } else {
+      if (this.btnRunAction) {
+        this.btnRunAction.classList.remove("is-loading");
+        this.btnRunAction.disabled = !hasPrimary;
+      }
+      if (this.btnRunActionText) {
+        if (tool.inputType === "single-excel") {
+          this.btnRunActionText.textContent = "⚡ Xử lý Báo cáo Ngay";
+        } else if (tool.inputType === "word-and-sso") {
+          this.btnRunActionText.textContent = "🚀 Bắt đầu Xử lý & Đối chiếu";
+        } else if (tool.inputType === "word-only") {
+          this.btnRunActionText.textContent = "🚀 Bắt đầu Tổng hợp Email";
+        } else {
+          this.btnRunActionText.textContent = "Bắt đầu Xử lý";
+        }
+      }
+    }
   }
 
   hideAllViews() {
@@ -1826,6 +1879,7 @@ class AppController {
   }
 
   showHubView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = null;
     this.hideAllViews();
     this.hubView.classList.remove("hidden");
@@ -1837,6 +1891,7 @@ class AppController {
   }
 
   showSchemaView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "schema-lookup";
     this.hideAllViews();
     this.schemaView.classList.remove("hidden");
@@ -1859,6 +1914,7 @@ class AppController {
   }
 
   showSqlBuilderView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "sql-builder";
     this.hideAllViews();
     if (this.sqlBuilderView) this.sqlBuilderView.classList.remove("hidden");
@@ -1872,6 +1928,7 @@ class AppController {
   }
 
   showDutyRosterView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "duty-roster";
     this.hideAllViews();
     if (this.dutyRosterView) this.dutyRosterView.classList.remove("hidden");
@@ -1900,6 +1957,7 @@ class AppController {
   }
 
   showBhytXmlView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "bhyt-xml";
     this.hideAllViews();
     if (this.bhytXmlView) this.bhytXmlView.classList.remove("hidden");
@@ -1912,6 +1970,7 @@ class AppController {
   }
 
   showWordToHtmlView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "word-to-html";
     this.hideAllViews();
     if (this.wordToHtmlView) this.wordToHtmlView.classList.remove("hidden");
@@ -1924,6 +1983,7 @@ class AppController {
   }
 
   showPdfToImageView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "pdf-to-image";
     this.hideAllViews();
     if (this.pdfToImageView) this.pdfToImageView.classList.remove("hidden");
@@ -1936,6 +1996,7 @@ class AppController {
   }
 
   showWordPageRemoverView() {
+    this.triggerViewTransitionProgress();
     this.currentToolId = "word-page-remover";
     this.hideAllViews();
     if (this.wordPageRemoverView) this.wordPageRemoverView.classList.remove("hidden");
@@ -1968,6 +2029,7 @@ class AppController {
         this.wordPageRemover = new window.WordPageRemover();
       }
       try {
+        this.showTopProgress(25);
         this.showToast("Đang phân tích cấu trúc trang của tài liệu Word...", "info");
         const result = await this.wordPageRemover.loadDocx(file, file.name);
         if (this.wprFilePicker) this.wprFilePicker.value = "";
@@ -1991,6 +2053,8 @@ class AppController {
         this.showToast(`Đã phân tích xong: ${result.totalPages} trang, ${result.blankPagesCount} trang trắng thừa.`, "success");
       } catch (err) {
         this.showToast("Lỗi đọc file Word: " + err.message, "error");
+      } finally {
+        this.hideTopProgress();
       }
     };
 
@@ -2034,13 +2098,17 @@ class AppController {
         if (!this.wordPageRemover || !this.wordPageRemover.pages.length) {
           this.showToast("Chưa có tài liệu nào được tải lên!", "warning"); return;
         }
-        const count = this.wordPageRemover.selectBlankPagesForDeletion();
-        if (count === 0) {
-          this.showToast("Không phát hiện trang trắng thừa nào trong tài liệu này.", "info");
-        } else {
-          this.wprRefreshPageGrid();
-          this.showToast(`Đã chọn xóa ${count} trang trắng. Nhấn "Tải file Word" để tải về.`, "success");
-        }
+        this.setButtonLoading(this.btnWprDeleteBlankPages, true, "Đang quét trang trắng...", "amber");
+        setTimeout(() => {
+          const count = this.wordPageRemover.selectBlankPagesForDeletion();
+          this.setButtonLoading(this.btnWprDeleteBlankPages, false);
+          if (count === 0) {
+            this.showToast("Không phát hiện trang trắng thừa nào trong tài liệu này.", "info");
+          } else {
+            this.wprRefreshPageGrid();
+            this.showToast(`Đã chọn xóa ${count} trang trắng. Nhấn "Tải file Word" để tải về.`, "success");
+          }
+        }, 150);
       });
     }
 
@@ -2124,6 +2192,8 @@ class AppController {
         if (this.wordPageRemover.deletedPageNumbers.size === 0) {
           this.showToast("Chưa chọn trang nào để xóa! Vui lòng chọn ít nhất 1 trang.", "warning"); return;
         }
+        this.setButtonLoading(this.btnWprDownloadDocx, true, "Đang đóng gói file Word...");
+        this.showTopProgress(30);
         try {
           this.showToast("Đang tạo tệp Word mới, vui lòng đợi...", "info");
           const result = await this.wordPageRemover.processAndGenerateDocx();
@@ -2138,6 +2208,9 @@ class AppController {
           this.showToast(`✅ Đã tải "${result.fileName}" (Xóa ${result.deletedCount} trang, còn ${result.remainingCount} trang).`, "success");
         } catch (err) {
           this.showToast("Lỗi tạo tệp Word: " + err.message, "error");
+        } finally {
+          this.setButtonLoading(this.btnWprDownloadDocx, false);
+          this.hideTopProgress();
         }
       });
     }
@@ -2330,6 +2403,7 @@ class AppController {
     const tool = window.getToolById(toolId);
     if (!tool) return;
 
+    this.triggerViewTransitionProgress();
     this.currentToolId = toolId;
     this.hideAllViews();
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
@@ -3091,6 +3165,20 @@ class AppController {
     const options = this.getW2hCurrentOptions();
     this.w2hConverter.setOptions(options);
 
+    this.showTopProgress(30);
+    if (this.w2hArticleSheet) {
+      this.w2hArticleSheet.innerHTML = `
+        <div style="min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px;">
+          <span class="spinner-ring spinner-ring-lg spinner-cyan"></span>
+          <span style="color: #94a3b8; font-weight: 600; font-size: 0.92rem;">Đang phân tích định dạng Word và trích xuất hình ảnh...</span>
+        </div>
+      `;
+      this.w2hArticleSheet.classList.remove("hidden");
+    }
+    if (this.w2hEmptyState) {
+      this.w2hEmptyState.classList.add("hidden");
+    }
+
     try {
       const result = await this.w2hConverter.convertDocxToHtml(this.currentW2hFileBuffer, this.currentW2hFileName);
       this.currentW2hHtmlOutput = result.html;
@@ -3100,9 +3188,6 @@ class AppController {
       if (this.w2hArticleSheet) {
         this.w2hArticleSheet.innerHTML = result.html;
         this.w2hArticleSheet.classList.remove("hidden");
-      }
-      if (this.w2hEmptyState) {
-        this.w2hEmptyState.classList.add("hidden");
       }
 
       // Update Raw HTML Code Textarea
@@ -3115,6 +3200,8 @@ class AppController {
     } catch (err) {
       console.error("Lỗi chuyển đổi Word to HTML:", err);
       this.showToast(`Lỗi xử lý file: ${err.message}`, "error");
+    } finally {
+      this.hideTopProgress();
     }
   }
 
@@ -3335,10 +3422,20 @@ ${this.currentW2hHtmlOutput}
   }
 
   updateProgress(val) {
-    this.progressBarContainer.classList.remove("hidden");
+    if (this.progressBarContainer) {
+      this.progressBarContainer.classList.remove("hidden");
+    }
     const clamped = Math.min(Math.max(val, 0), 100);
-    this.progressBar.style.width = `${clamped}%`;
-    this.progressLabel.textContent = `${clamped}%`;
+    if (this.progressBar) {
+      this.progressBar.style.width = `${clamped}%`;
+    }
+    if (this.progressLabel) {
+      this.progressLabel.textContent = `${clamped}%`;
+    }
+    const spinner = document.getElementById("standardProgressSpinner");
+    if (spinner) {
+      spinner.style.display = clamped >= 100 ? "none" : "inline-block";
+    }
   }
 
   async executeCurrentTool() {
@@ -3355,6 +3452,7 @@ ${this.currentW2hHtmlOutput}
     this.logConsole.innerHTML = "";
     this.qualityMetricsSection.classList.add("hidden");
     this.updateProgress(0);
+    this.showTopProgress(25);
 
     try {
       if (tool.id === "giam-dinh") {
@@ -3375,6 +3473,7 @@ ${this.currentW2hHtmlOutput}
     } finally {
       this.isProcessing = false;
       this.updateRunButtonState();
+      this.hideTopProgress();
     }
   }
 
@@ -4322,6 +4421,9 @@ p {
       return;
     }
 
+    this.setButtonLoading(this.btnPdfSaveToFolderDirect, true, "Đang lưu vào thư mục...");
+    this.showTopProgress(25);
+
     try {
       const dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
       if (!dirHandle) return;
@@ -4348,6 +4450,9 @@ p {
       console.error(err);
       this.showToast("Lỗi lưu thư mục: " + err.message, "error");
       if (this.pdfProgressBarContainer) this.pdfProgressBarContainer.classList.add("hidden");
+    } finally {
+      this.setButtonLoading(this.btnPdfSaveToFolderDirect, false);
+      this.hideTopProgress();
     }
   }
 
@@ -4361,6 +4466,9 @@ p {
       this.showToast("Vui lòng chọn ít nhất một trang để ghép ảnh!", "warning");
       return;
     }
+
+    this.setButtonLoading(this.btnPdfMergeLongImage, true, "Đang ghép ảnh dài...");
+    this.showTopProgress(25);
 
     try {
       if (this.pdfProgressBarContainer) {
@@ -4383,6 +4491,9 @@ p {
     } catch (err) {
       this.showToast("Lỗi ghép ảnh: " + err.message, "error");
       if (this.pdfProgressBarContainer) this.pdfProgressBarContainer.classList.add("hidden");
+    } finally {
+      this.setButtonLoading(this.btnPdfMergeLongImage, false);
+      this.hideTopProgress();
     }
   }
 
@@ -4449,6 +4560,9 @@ p {
       return;
     }
 
+    this.setButtonLoading(this.btnPdfDownloadZip, true, "Đang đóng gói ZIP...");
+    this.showTopProgress(25);
+
     try {
       if (this.pdfProgressBarContainer) {
         this.pdfProgressBarContainer.classList.remove("hidden");
@@ -4470,6 +4584,9 @@ p {
     } catch (err) {
       this.showToast("Lỗi xuất file ZIP: " + err.message, "error");
       if (this.pdfProgressBarContainer) this.pdfProgressBarContainer.classList.add("hidden");
+    } finally {
+      this.setButtonLoading(this.btnPdfDownloadZip, false);
+      this.hideTopProgress();
     }
   }
 
@@ -5015,8 +5132,29 @@ p {
     if (this.btnExportDutyExcel) {
       this.btnExportDutyExcel.addEventListener("click", () => this.exportDutyRosterExcel());
     }
-    if (this.btnExportDutyIcs) {
-      this.btnExportDutyIcs.addEventListener("click", () => this.exportDutyRosterIcs());
+    if (this.btnDutyCalendarSync) {
+      this.btnDutyCalendarSync.addEventListener("click", () => this.openDutyCalendarSyncModal());
+    }
+    if (this.btnCloseCalendarSyncModal) {
+      this.btnCloseCalendarSyncModal.addEventListener("click", () => this.hideModal(this.modalDutyCalendarSync));
+    }
+    if (this.btnDismissCalendarSyncModal) {
+      this.btnDismissCalendarSyncModal.addEventListener("click", () => this.hideModal(this.modalDutyCalendarSync));
+    }
+    if (this.selectCalendarSyncStaff) {
+      this.selectCalendarSyncStaff.addEventListener("change", () => this.refreshCalendarSyncModalShifts());
+    }
+    if (this.btnSyncToGoogleCalendar) {
+      this.btnSyncToGoogleCalendar.addEventListener("click", () => this.handleSyncToGoogleCalendar());
+    }
+    if (this.btnSyncToAppleCalendar) {
+      this.btnSyncToAppleCalendar.addEventListener("click", () => this.handleSyncToAppleCalendar());
+    }
+    if (this.btnSyncToAndroidCalendar) {
+      this.btnSyncToAndroidCalendar.addEventListener("click", () => this.handleSyncToAndroidCalendar());
+    }
+    if (this.btnSyncDownloadIcsFile) {
+      this.btnSyncDownloadIcsFile.addEventListener("click", () => this.handleSyncDownloadIcsWithAlarms());
     }
     if (this.btnDutyPrintA4) {
       this.btnDutyPrintA4.addEventListener("click", () => this.printDutyRosterA4());
@@ -5997,12 +6135,20 @@ p {
       const isMyDay = (isAssigned && targetStaffId && assigned.id === targetStaffId);
       const isDimmed = (isFilteringSpecific && !isMyDay && !isOff);
       const isToday = (dayObj.day === curRealDay && month === curRealMonth && year === curRealYear);
+      const googleUrl = (isAssigned && !isOff && window.ToolDutyRoster) ? ToolDutyRoster.generateGoogleCalendarUrl(dayObj, assigned, year, month) : "#";
 
       html += `
         <div class="calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""} ${isToday ? "is-today today-cell" : ""}">
           <div class="cal-day-header">
             <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
-            <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
+            <div class="flex-row gap-4 align-center">
+              ${isAssigned && !isOff ? `
+                <a href="${googleUrl}" target="_blank" rel="noopener" class="btn-cal-header-alarm" title="Thêm ca trực ngày ${dayObj.day}/${month} vào Google Calendar có chuông báo" onclick="event.stopPropagation()">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </a>
+              ` : ''}
+              <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
+            </div>
           </div>
           <div class="cal-shift-list">
             <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" draggable="${isAssigned ? 'true' : 'false'}" title="${isAdmin ? 'Kéo thả sang ngày khác để đổi ca, hoặc nhấp để điều chỉnh chi tiết' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
@@ -6116,6 +6262,9 @@ p {
         const assigned = dayObj.shifts["shift_cntt"];
         const card = document.createElement("div");
         card.className = `personal-shift-card ${dayObj.isWeekend ? "weekend" : ""}`;
+        const hasValidShift = assigned && assigned.name && assigned.name !== "Chưa phân công" && assigned.name !== "Nghỉ trực";
+        const googleUrl = hasValidShift && window.ToolDutyRoster ? ToolDutyRoster.generateGoogleCalendarUrl(dayObj, assigned, year, month) : "#";
+
         card.innerHTML = `
           <div class="p-shift-left">
             <div class="p-shift-date-badge">
@@ -6127,7 +6276,14 @@ p {
               <span style="font-size:0.75rem;color:#94a3b8;">${assigned ? assigned.role : "Phòng CNTT"} ${assigned && assigned.phone ? `&bull; 📞 ${assigned.phone}` : ""}</span>
             </div>
           </div>
-          <span class="tool-badge badge-${dayObj.isWeekend ? 'amber' : 'blue'}">${dayObj.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+          <div class="flex-row gap-8 align-center" style="margin-left: auto;">
+            ${hasValidShift ? `
+              <a href="${googleUrl}" target="_blank" rel="noopener" class="btn-sync-single-shift" title="Thêm ca trực ngày này vào Google Calendar / Lịch điện thoại có chuông báo">
+                <span>📅 Báo Thức</span>
+              </a>
+            ` : ''}
+            <span class="tool-badge badge-${dayObj.isWeekend ? 'amber' : 'blue'}">${dayObj.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+          </div>
         `;
         listWrap.appendChild(card);
       });
@@ -6148,10 +6304,18 @@ p {
             <h3 style="color:#fff;font-size:1.05rem;margin-bottom:4px;">⭐ Lịch Trực Của: ${staff.name}</h3>
             <p style="color:#38bdf8;font-size:0.8rem;">Vị trí: <strong>${staff.role}</strong> &bull; Hotline: <strong>${staff.phone || "0912.345.678"}</strong> &bull; Tháng ${month}/${year} (${personalShifts.length} Ca Trực)</p>
           </div>
-          <span class="personal-status-pill">Phòng CNTT</span>
+          <button type="button" class="btn-duty-action btn-duty-calendar-sync" id="btnSyncFromPersonalHeader" style="margin: 0;">
+            <span>📅 Đồng Bộ Lịch Máy</span>
+          </button>
         </div>
       `;
       this.dutyPersonalScheduleContainer.appendChild(headerCard);
+
+      const btnSyncHeader = headerCard.querySelector("#btnSyncFromPersonalHeader");
+      if (btnSyncHeader) {
+        btnSyncHeader.addEventListener("click", () => this.openDutyCalendarSyncModal());
+      }
+
       if (personalShifts.length === 0) {
         const emptyBox = document.createElement("div");
         emptyBox.className = "terminal-box";
@@ -6164,6 +6328,8 @@ p {
       personalShifts.forEach(shift => {
         const card = document.createElement("div");
         card.className = `personal-shift-card ${shift.isWeekend ? "weekend" : ""}`;
+        const googleUrl = window.ToolDutyRoster ? ToolDutyRoster.generateGoogleCalendarUrl(shift, staff, year, month) : "#";
+
         card.innerHTML = `
           <div class="p-shift-left">
             <div class="p-shift-date-badge">
@@ -6175,7 +6341,12 @@ p {
               <span style="font-size:0.75rem;color:#94a3b8;">Phụ trách: Hệ thống HIS VIMES, Máy Chủ, Cổng BHYT, Ký số & Mạng LAN Khoa/Phòng</span>
             </div>
           </div>
-          <span class="tool-badge badge-${shift.isWeekend ? 'amber' : 'blue'}">${shift.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+          <div class="flex-row gap-8 align-center" style="margin-left: auto;">
+            <a href="${googleUrl}" target="_blank" rel="noopener" class="btn-sync-single-shift" title="Thêm ca trực ngày này vào Google Calendar / Lịch điện thoại có chuông báo">
+              <span>📅 Báo Thức</span>
+            </a>
+            <span class="tool-badge badge-${shift.isWeekend ? 'amber' : 'blue'}">${shift.isWeekend ? 'Cuối tuần' : 'Ngày thường'}</span>
+          </div>
         `;
         listWrap.appendChild(card);
       });
@@ -7093,6 +7264,9 @@ p {
       return;
     }
 
+    this.setButtonLoading(this.btnXmlAutoFix, true, "Đang tự động sửa lỗi...");
+    this.showTopProgress(30);
+
     try {
       const { fixedCount, fixLogs, updatedResult } = ToolBhytXml.autoFixEncounters(this.xmlValidationResult);
       this.xmlValidationResult = updatedResult;
@@ -7139,6 +7313,9 @@ p {
     } catch (err) {
       console.error(err);
       this.showToast(`Lỗi khi tự động sửa lỗi: ${err.message}`, "error");
+    } finally {
+      this.setButtonLoading(this.btnXmlAutoFix, false);
+      this.hideTopProgress();
     }
   }
 
@@ -7148,6 +7325,9 @@ p {
       return;
     }
 
+    this.setButtonLoading(this.btnXmlDownloadCleanZip, true, "Đang đóng gói ZIP XML...");
+    this.showTopProgress(35);
+
     try {
       this.showToast("Đang đóng gói tệp ZIP chứa toàn bộ file XML đã chuẩn hóa...", "info");
       const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
@@ -7156,6 +7336,9 @@ p {
     } catch (err) {
       console.error(err);
       this.showToast(`Lỗi khi tạo gói ZIP: ${err.message}`, "error");
+    } finally {
+      this.setButtonLoading(this.btnXmlDownloadCleanZip, false);
+      this.hideTopProgress();
     }
   }
 
@@ -7296,9 +7479,19 @@ p {
       return;
     }
 
-    const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
-    ToolBhytXml.exportErrorReportExcel(this.xmlValidationResult, orgCfg);
-    this.showToast("Đang xuất file Excel Báo Cáo Lỗi BHYT chi tiết...", "info");
+    this.setButtonLoading(this.btnExportXmlErrorReport, true, "Đang xuất Excel...");
+    this.showTopProgress(30);
+
+    try {
+      const orgCfg = ToolVgcaDoiChieu ? ToolVgcaDoiChieu.getOrgConfig() : {};
+      ToolBhytXml.exportErrorReportExcel(this.xmlValidationResult, orgCfg);
+      this.showToast("Đang xuất file Excel Báo Cáo Lỗi BHYT chi tiết...", "info");
+    } finally {
+      setTimeout(() => {
+        this.setButtonLoading(this.btnExportXmlErrorReport, false);
+        this.hideTopProgress();
+      }, 700);
+    }
   }
 
   resetBhytXmlState() {
@@ -7316,18 +7509,205 @@ p {
   }
 
   // =========================================================================
-  // DUTY ROSTER ENHANCEMENTS: ICALENDAR & PRINT A4
+  // DUTY ROSTER ENHANCEMENTS: GOOGLE & MOBILE CALENDAR SYNC WITH ALARMS
   // =========================================================================
-  exportDutyRosterIcs() {
+
+  /**
+   * Mở modal Tích Hợp Lịch Google & Điện Thoại Có Chuông Báo
+   */
+  openDutyCalendarSyncModal() {
     if (!window.ToolDutyRoster) return;
     const month = this.getSelectedDutyMonth();
     const year = this.getSelectedDutyYear();
-    const count = ToolDutyRoster.exportIcsCalendar(year, month);
-    if (count > 0) {
-      this.showToast(`📅 Đã xuất ${count} ca trực ra file Lịch điện tử (.ics)! Bạn có thể mở file này để đồng bộ vào Google Calendar / Apple Calendar.`, "success", 5000);
-    } else {
-      this.showToast("Chưa có ca trực nào trong tháng này để xuất lịch điện tử.", "warning");
+
+    if (this.txtCalendarSyncMonthYear) {
+      this.txtCalendarSyncMonthYear.textContent = `Tháng ${String(month).padStart(2, '0')}/${year}`;
     }
+
+    // Populate dropdown cán bộ
+    if (this.selectCalendarSyncStaff) {
+      this.selectCalendarSyncStaff.innerHTML = `
+        <option value="all">-- Toàn Thể Cán Bộ Phòng CNTT (Tất cả ca trong tháng) --</option>
+      `;
+      const staffList = ToolDutyRoster.getStaffList ? ToolDutyRoster.getStaffList() : (this.dutyStaffList || []);
+      staffList.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `👤 ${s.name} (${s.role || "P.CNTT"})`;
+        if (this.currentFilterStaffId && this.currentFilterStaffId === s.id) {
+          opt.selected = true;
+        }
+        this.selectCalendarSyncStaff.appendChild(opt);
+      });
+    }
+
+    this.refreshCalendarSyncModalShifts();
+    this.showModal(this.modalDutyCalendarSync);
+  }
+
+  /**
+   * Đọc danh sách ca trực theo cán bộ đã chọn và hiển thị danh sách trong modal
+   */
+  refreshCalendarSyncModalShifts() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const staffId = this.selectCalendarSyncStaff ? this.selectCalendarSyncStaff.value : "all";
+
+    const shifts = ToolDutyRoster.getStaffShiftsInMonth(staffId, year, month);
+
+    if (this.txtCalendarSyncShiftCount) {
+      this.txtCalendarSyncShiftCount.textContent = `${shifts.length} ca trực`;
+    }
+
+    if (this.calendarSyncShiftsList) {
+      if (shifts.length === 0) {
+        this.calendarSyncShiftsList.innerHTML = `
+          <div style="text-align:center; padding: 18px; color: #94a3b8; font-size: 0.8rem;">
+            ℹ️ Không tìm thấy ca trực nào cho lựa chọn này trong Tháng ${month}/${year}.
+          </div>
+        `;
+        return;
+      }
+
+      this.calendarSyncShiftsList.innerHTML = shifts.map(s => `
+        <div class="calendar-shift-item">
+          <div class="calendar-shift-date">
+            <span class="calendar-shift-badge-day ${s.isWeekend ? 'weekend' : ''}">
+              Ngày ${String(s.day).padStart(2, '0')}/${String(month).padStart(2, '0')}
+            </span>
+            <span style="font-weight: 600; color: #f8fafc;">${s.dayName}</span>
+            <span style="color: #cbd5e1;">&bull; 👤 <strong>${s.shift.name}</strong></span>
+          </div>
+          <a href="${s.googleUrl}" target="_blank" rel="noopener" class="btn-shift-add-google" title="Mở trực tiếp Google Calendar cho ca này">
+            <span>📅 Thêm vào Google</span>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      `).join("");
+    }
+  }
+
+  /**
+   * Lấy cấu hình các mức chuông báo nhắc nhở từ checkbox
+   */
+  getCalendarRemindersConfig() {
+    return {
+      dayBefore: this.chkRemind1Day ? this.chkRemind1Day.checked : true,
+      twoHours: this.chkRemind2Hours ? this.chkRemind2Hours.checked : true,
+      morning: this.chkRemindMorning ? this.chkRemindMorning.checked : true
+    };
+  }
+
+  /**
+   * Xử lý thêm vào Google Calendar
+   */
+  handleSyncToGoogleCalendar() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const staffId = this.selectCalendarSyncStaff ? this.selectCalendarSyncStaff.value : "all";
+    const shifts = ToolDutyRoster.getStaffShiftsInMonth(staffId, year, month);
+
+    if (shifts.length === 0) {
+      this.showToast("Chưa có ca trực nào để thêm vào Google Calendar!", "warning");
+      return;
+    }
+
+    this.setButtonLoading(this.btnSyncToGoogleCalendar, true, "Đang mở Google...");
+    this.showTopProgress(30);
+
+    setTimeout(() => {
+      // Mở ca trực đầu tiên trên Google Calendar
+      window.open(shifts[0].googleUrl, "_blank", "noopener");
+
+      if (shifts.length > 1) {
+        this.showToast(`🌐 Đã mở Google Calendar cho ca trực ngày ${shifts[0].day}/${month}. Bạn có thể bấm "Thêm vào Google" ở danh sách bên dưới cho các ca còn lại hoặc tải gói Lịch toàn tháng!`, "info", 6500);
+      } else {
+        this.showToast(`✅ Đã mở Google Calendar! Nhấn "Lưu" trên trang Google để kích hoạt sự kiện kèm chuông báo.`, "success");
+      }
+
+      this.setButtonLoading(this.btnSyncToGoogleCalendar, false);
+      this.hideTopProgress();
+    }, 250);
+  }
+
+  /**
+   * Xử lý đồng bộ vào Apple Calendar (iPhone / iPad / Mac)
+   */
+  handleSyncToAppleCalendar() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const staffId = this.selectCalendarSyncStaff ? this.selectCalendarSyncStaff.value : "all";
+    const reminders = this.getCalendarRemindersConfig();
+
+    this.setButtonLoading(this.btnSyncToAppleCalendar, true, "Đang tạo gói Apple...");
+    this.showTopProgress(30);
+
+    setTimeout(() => {
+      const count = ToolDutyRoster.exportIcsCalendar(year, month, staffId, reminders);
+      this.setButtonLoading(this.btnSyncToAppleCalendar, false);
+      this.hideTopProgress();
+
+      if (count > 0) {
+        this.showToast(`🍏 Đã tải gói Lịch chuẩn Apple (${count} ca trực)! Trên iPhone/iPad, bấm tệp vừa tải để tự động thêm vào ứng dụng Lịch và bật chuông báo.`, "success", 6000);
+      } else {
+        this.showToast("Chưa có ca trực nào để xuất lịch.", "warning");
+      }
+    }, 300);
+  }
+
+  /**
+   * Xử lý đồng bộ vào Lịch Android / Samsung
+   */
+  handleSyncToAndroidCalendar() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const staffId = this.selectCalendarSyncStaff ? this.selectCalendarSyncStaff.value : "all";
+    const reminders = this.getCalendarRemindersConfig();
+
+    this.setButtonLoading(this.btnSyncToAndroidCalendar, true, "Đang tạo gói Android...");
+    this.showTopProgress(30);
+
+    setTimeout(() => {
+      const count = ToolDutyRoster.exportIcsCalendar(year, month, staffId, reminders);
+      this.setButtonLoading(this.btnSyncToAndroidCalendar, false);
+      this.hideTopProgress();
+
+      if (count > 0) {
+        this.showToast(`🤖 Đã tạo tệp lịch Android (${count} ca trực)! Mở tệp để điện thoại Android/Samsung tự động lưu vào Lịch kèm chuông báo nhắc nhở.`, "success", 6000);
+      } else {
+        this.showToast("Chưa có ca trực nào để xuất lịch.", "warning");
+      }
+    }, 300);
+  }
+
+  /**
+   * Tải toàn bộ file ICS chuẩn RFC 5545 có tích hợp VALARM
+   */
+  handleSyncDownloadIcsWithAlarms() {
+    if (!window.ToolDutyRoster) return;
+    const month = this.getSelectedDutyMonth();
+    const year = this.getSelectedDutyYear();
+    const staffId = this.selectCalendarSyncStaff ? this.selectCalendarSyncStaff.value : "all";
+    const reminders = this.getCalendarRemindersConfig();
+
+    this.setButtonLoading(this.btnSyncDownloadIcsFile, true, "Đang đóng gói .ICS...");
+    this.showTopProgress(30);
+
+    setTimeout(() => {
+      const count = ToolDutyRoster.exportIcsCalendar(year, month, staffId, reminders);
+      this.setButtonLoading(this.btnSyncDownloadIcsFile, false);
+      this.hideTopProgress();
+
+      if (count > 0) {
+        this.showToast(`📅 Đã tải về tệp Lịch điện tử (.ics) chứa ${count} ca trực kèm chuông báo thức chuẩn RFC 5545!`, "success", 5000);
+      } else {
+        this.showToast("Chưa có ca trực nào để xuất lịch.", "warning");
+      }
+    }, 300);
   }
 
   printDutyRosterA4() {
@@ -7354,6 +7734,97 @@ p {
         modalEl.classList.add("hidden");
       }
     }, 180);
+  }
+
+  // =========================================================================
+  // GLOBAL SMOOTH PROGRESS & BUTTON LOADING CONTROLLERS (60FPS)
+  // =========================================================================
+
+  /**
+   * Hiển thị và kích hoạt thanh tiến độ siêu mượt ở đỉnh trang
+   * @param {number} initialPercent 
+   */
+  showTopProgress(initialPercent = 25) {
+    const barWrap = document.getElementById("globalTopProgress");
+    const barFill = document.getElementById("globalTopProgressBar");
+    if (!barWrap || !barFill) return;
+
+    barWrap.classList.add("is-active");
+    barFill.classList.remove("is-indeterminate");
+    barFill.style.width = `${Math.max(10, initialPercent)}%`;
+
+    if (this._topProgressTimer) {
+      clearInterval(this._topProgressTimer);
+    }
+    let cur = Math.max(10, initialPercent);
+    this._topProgressTimer = setInterval(() => {
+      if (cur < 86) {
+        cur += Math.max(1, (88 - cur) * 0.16);
+        barFill.style.width = `${cur}%`;
+      }
+    }, 180);
+  }
+
+  /**
+   * Hoàn tất và ẩn thanh tiến độ đỉnh trang
+   */
+  hideTopProgress() {
+    const barWrap = document.getElementById("globalTopProgress");
+    const barFill = document.getElementById("globalTopProgressBar");
+    if (this._topProgressTimer) {
+      clearInterval(this._topProgressTimer);
+      this._topProgressTimer = null;
+    }
+    if (!barWrap || !barFill) return;
+
+    barFill.style.width = "100%";
+    setTimeout(() => {
+      barWrap.classList.remove("is-active");
+      setTimeout(() => {
+        barFill.style.width = "0%";
+      }, 250);
+    }, 220);
+  }
+
+  /**
+   * Kích hoạt hiệu ứng tiến trình chuyển màn hình mượt mà
+   */
+  triggerViewTransitionProgress() {
+    this.showTopProgress(35);
+    setTimeout(() => {
+      this.hideTopProgress();
+    }, 260);
+  }
+
+  /**
+   * Đặt trạng thái đang xử lý kèm Spinner xoay 60fps mượt mà cho bất kỳ nút bấm nào
+   * @param {HTMLElement} btn 
+   * @param {boolean} isLoading 
+   * @param {string} loadingText 
+   * @param {string} spinnerColor 'cyan'|'emerald'|'amber'|'rose'|'white'
+   */
+  setButtonLoading(btn, isLoading, loadingText = "Đang xử lý...", spinnerColor = "cyan") {
+    if (!btn) return;
+    if (isLoading) {
+      if (!btn.dataset.originalHtml) {
+        btn.dataset.originalHtml = btn.innerHTML;
+      }
+      btn.classList.add("btn-loading");
+      btn.disabled = true;
+      btn.innerHTML = `
+        <span class="btn-loading-content">
+          <span class="spinner-ring spinner-ring-sm spinner-${spinnerColor}"></span>
+          <span>${loadingText}</span>
+        </span>
+      `;
+    } else {
+      btn.classList.remove("btn-loading");
+      btn.disabled = false;
+      if (btn.dataset.originalHtml) {
+        btn.innerHTML = btn.dataset.originalHtml;
+        delete btn.dataset.originalHtml;
+      }
+    }
   }
 
   /**

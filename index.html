@@ -22,8 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.1.0" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.1.0" />
+  <link rel="preload" href="style.css?v=3.2.0" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.2.0" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -44,6 +44,11 @@
   </script>
 </head>
 <body>
+  <!-- Global Top Progress Bar (Hardware-Accelerated 60FPS) -->
+  <div id="globalTopProgress" class="global-top-progress">
+    <div class="global-top-progress-fill" id="globalTopProgressBar"></div>
+  </div>
+
   <!-- App Layout Wrapper -->
   <div class="app-layout">
     
@@ -1102,7 +1107,10 @@
               <!-- Progress Bar Container -->
               <div class="pdf-progress-wrap hidden" id="pdfProgressBarContainer">
                 <div class="pdf-progress-info">
-                  <span id="pdfProgressLabel">Đang kết xuất hình ảnh...</span>
+                  <span class="pdf-progress-label-wrap">
+                    <span class="spinner-ring spinner-ring-xs spinner-emerald" id="pdfProgressSpinner"></span>
+                    <span id="pdfProgressLabel">Đang kết xuất hình ảnh...</span>
+                  </span>
                   <span id="pdfProgressPercent">0%</span>
                 </div>
                 <div class="pdf-progress-bar-bg">
@@ -1529,7 +1537,10 @@
                   <!-- Progress Bar -->
                   <div class="progress-wrapper hidden" id="progressBarContainer">
                     <div class="progress-info">
-                      <span>Tiến trình xử lý</span>
+                      <span class="progress-info-title">
+                        <span class="spinner-ring spinner-ring-xs spinner-cyan" id="standardProgressSpinner"></span>
+                        <span id="standardProgressTitle">Tiến trình xử lý</span>
+                      </span>
                       <span id="progressLabel">0%</span>
                     </div>
                     <div class="progress-track">
@@ -1760,9 +1771,9 @@
                   <span>Xuất Excel</span>
                 </button>
 
-                <button type="button" class="btn-duty-action btn-duty-ics" id="btnExportDutyIcs" title="Xuất file Lịch điện tử (.ics) đồng bộ vào iPhone / Android / Google Calendar">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>Lịch Điện Tử (.ics)</span>
+                <button type="button" class="btn-duty-action btn-duty-calendar-sync" id="btnDutyCalendarSync" title="Tích hợp vào Lịch Google hoặc Lịch Điện Thoại (iOS/Android) có chuông báo thức nhắc nhở">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14v4M10 16h4"/></svg>
+                  <span>Đồng Bộ Lịch & Báo Thức</span>
                 </button>
 
                 <button type="button" class="btn-duty-action btn-duty-print" id="btnDutyPrintA4" title="In Bảng Phân Công Lịch Trực khổ A4 chuẩn hành chính bệnh viện">
@@ -1973,7 +1984,10 @@
           <!-- Progress Bar -->
           <div class="xml-progress-container hidden" id="xmlProgressContainer">
             <div class="xml-progress-header">
-              <span class="xml-progress-label" id="xmlProgressLabel">Đang giải nén và phân tích cú pháp XML...</span>
+              <span class="xml-progress-label-wrap">
+                <span class="spinner-ring spinner-ring-xs spinner-cyan" id="xmlProgressSpinner"></span>
+                <span class="xml-progress-label" id="xmlProgressLabel">Đang giải nén và phân tích cú pháp XML...</span>
+              </span>
               <span class="xml-progress-percent" id="xmlProgressPercent">0%</span>
             </div>
             <div class="xml-progress-bar-bg">
@@ -2593,6 +2607,125 @@
     </div>
   </div>
 
+  <!-- MODAL: Tích Hợp Lịch Google & Điện Thoại Có Chuông Báo -->
+  <div class="modal-overlay hidden" id="modalDutyCalendarSync">
+    <div class="modal-card" style="max-width: 630px;">
+      <div class="modal-header">
+        <div class="flex-row gap-8 align-center">
+          <span style="font-size: 1.35rem;">📅</span>
+          <h3 class="modal-title">TÍCH HỢP LỊCH GOOGLE & ĐIỆN THOẠI CÓ CHUÔNG BÁO</h3>
+        </div>
+        <button type="button" class="modal-close" id="btnCloseCalendarSyncModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Lời dẫn & Banner -->
+        <div class="calendar-sync-intro" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <span style="font-size: 1.5rem; line-height: 1;">🔔</span>
+            <div>
+              <div style="font-size: 0.9rem; font-weight: 700; color: #f8fafc; margin-bottom: 3px;">Nhắc Lịch Tự Động • Không Bao Giờ Trễ Ca Trực</div>
+              <p style="font-size: 0.78rem; color: #94a3b8; line-height: 1.45; margin: 0;">
+                Tích hợp ca trực vào ứng dụng Lịch máy (iPhone/iPad/Android) hoặc Google Calendar. Thiết bị sẽ tự động rung và đổ chuông thông báo nhắc nhở trước 1 ngày và trước 2 giờ khi vào ca.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chọn đối tượng cán bộ & Tháng -->
+        <div class="config-section" style="margin-bottom: 14px;">
+          <div class="flex-row flex-between align-center" style="margin-bottom: 8px;">
+            <label class="setting-lbl" style="font-weight: 700; color: #e2e8f0; font-size: 0.85rem;">👤 Chọn Cán Bộ Nhận Lịch Trực:</label>
+            <span id="txtCalendarSyncMonthYear" style="font-size: 0.82rem; color: #38bdf8; font-weight: 700;">Tháng 09/2026</span>
+          </div>
+          <select id="selectCalendarSyncStaff" class="w2h-text-input" style="width: 100%; font-size: 0.86rem; padding: 7px 12px;">
+            <option value="all">-- Toàn Thể Cán Bộ Phòng CNTT (Tất cả ca trong tháng) --</option>
+          </select>
+        </div>
+
+        <!-- Cài đặt Báo Thức / Nhắc Nhở -->
+        <div class="config-section" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px 14px;">
+          <label class="setting-lbl" style="font-weight: 700; color: #cbd5e1; font-size: 0.82rem; margin-bottom: 8px; display: block;">⏰ Chuông Báo Thức & Thời Điểm Nhắc Nhở:</label>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <label class="setting-checkbox-lbl" style="font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="chkRemind1Day" checked />
+              <span>Trước 1 ngày (24h)</span>
+            </label>
+            <label class="setting-checkbox-lbl" style="font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="chkRemind2Hours" checked />
+              <span>Trước ca 2 giờ</span>
+            </label>
+            <label class="setting-checkbox-lbl" style="font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="chkRemindMorning" checked />
+              <span>07:00 sáng ngày trực</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Danh sách ca trực được phát hiện -->
+        <div class="config-section" style="margin-bottom: 16px;">
+          <div class="flex-row flex-between align-center" style="margin-bottom: 6px;">
+            <label class="setting-lbl" style="font-weight: 700; color: #e2e8f0; font-size: 0.85rem;">📋 Danh Sách Ca Trực Sẽ Đồng Bộ:</label>
+            <span id="txtCalendarSyncShiftCount" style="font-size: 0.8rem; color: #10b981; font-weight: 700;">0 ca trực</span>
+          </div>
+          <div id="calendarSyncShiftsList" style="max-height: 155px; overflow-y: auto; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 6px 10px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Nút Đồng Bộ Nền Tảng -->
+        <div class="sync-platforms-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+          <!-- Google Calendar -->
+          <button type="button" class="btn-sync-platform btn-sync-google" id="btnSyncToGoogleCalendar">
+            <div class="sync-platform-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            </div>
+            <div class="sync-platform-info">
+              <div class="sync-platform-name">Thêm Vào Google Calendar</div>
+              <div class="sync-platform-sub">Mở Web / App Google Calendar</div>
+            </div>
+          </button>
+
+          <!-- Apple / iPhone Calendar -->
+          <button type="button" class="btn-sync-platform btn-sync-apple" id="btnSyncToAppleCalendar">
+            <div class="sync-platform-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.85c.66-.82 1.11-1.96.99-3.1-.96.04-2.12.64-2.8 1.44-.6.69-1.12 1.83-.98 2.94 1.07.08 2.14-.54 2.79-1.28z"/></svg>
+            </div>
+            <div class="sync-platform-info">
+              <div class="sync-platform-name">Lịch iPhone / iPad (Apple)</div>
+              <div class="sync-platform-sub">Đồng bộ tự động vào ứng dụng Lịch</div>
+            </div>
+          </button>
+
+          <!-- Android / Samsung Calendar -->
+          <button type="button" class="btn-sync-platform btn-sync-android" id="btnSyncToAndroidCalendar">
+            <div class="sync-platform-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="#10b981"><path d="M17.523 15.34c-.551 0-.998-.445-.998-.997 0-.55.447-.996.998-.996.55 0 .997.445.997.996 0 .552-.447.997-.997.997zm-11.046 0c-.551 0-.998-.445-.998-.997 0-.55.447-.996.998-.996.551 0 .998.445.998.996 0 .552-.447.997-.998.997zm11.405-6.02l1.997-3.46a.416.416 0 00-.152-.567.416.416 0 00-.568.152l-2.023 3.504A12.183 12.183 0 0012 8.01c-1.808 0-3.487.39-4.736.949L5.24 5.455a.417.417 0 00-.568-.152.416.416 0 00-.151.567l1.997 3.46C2.688 11.286.137 15.753.003 21.01h23.994c-.134-5.257-2.685-9.724-6.115-11.69z"/></svg>
+            </div>
+            <div class="sync-platform-info">
+              <div class="sync-platform-name">Lịch Android / Samsung</div>
+              <div class="sync-platform-sub">Tự động mở Lịch máy Android</div>
+            </div>
+          </button>
+
+          <!-- Tải file Lịch toàn tháng -->
+          <button type="button" class="btn-sync-platform btn-sync-ics" id="btnSyncDownloadIcsFile">
+            <div class="sync-platform-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <div class="sync-platform-info">
+              <div class="sync-platform-name">Tải File Lịch .ICS Đầy Đủ</div>
+              <div class="sync-platform-sub">Dùng cho Outlook, WebCal</div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnDismissCalendarSyncModal">Đóng</button>
+        <span style="font-size: 0.74rem; color: #94a3b8;">💡 <em>Mẹo:</em> Sau khi bấm, sự kiện sẽ có sẵn chuông báo để bạn không bao giờ quên ca trực.</span>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Cấu Hình Đồng Bộ Đám Mây & Sao Lưu Lịch Trực -->
   <div class="modal-overlay hidden" id="modalDutySyncConfig">
     <div class="modal-card" style="max-width: 600px;">
@@ -2784,21 +2917,21 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Application Scripts (Deferred for instant interactivity) -->
-  <script defer src="js/vimes-schema-data.js?v=3.1.0"></script>
-  <script defer src="js/docx-parser.js?v=3.1.0"></script>
-  <script defer src="js/tools-registry.js?v=3.1.0"></script>
-  <script defer src="js/tool-schema-lookup.js?v=3.1.0"></script>
-  <script defer src="js/tool-sql-builder.js?v=3.1.0"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.1.0"></script>
-  <script defer src="js/tool-bhyt-xml.js?v=3.1.0"></script>
-  <script defer src="js/tool-word-to-html.js?v=3.1.0"></script>
-  <script defer src="js/tool-word-page-remover.js?v=3.1.0"></script>
-  <script defer src="js/tool-pdf-to-image.js?v=3.1.0"></script>
-  <script defer src="js/tool-giamdinh.js?v=3.1.0"></script>
-  <script defer src="js/tool-vgca-doichieu.js?v=3.1.0"></script>
-  <script defer src="js/tool-vgca-cks.js?v=3.1.0"></script>
-  <script defer src="js/tool-vgca-email.js?v=3.1.0"></script>
-  <script defer src="js/notification-manager.js?v=3.1.0"></script>
-  <script defer src="js/app.js?v=3.1.0"></script>
+  <script defer src="js/vimes-schema-data.js?v=3.2.0"></script>
+  <script defer src="js/docx-parser.js?v=3.2.0"></script>
+  <script defer src="js/tools-registry.js?v=3.2.0"></script>
+  <script defer src="js/tool-schema-lookup.js?v=3.2.0"></script>
+  <script defer src="js/tool-sql-builder.js?v=3.2.0"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.2.0"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.2.0"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.2.0"></script>
+  <script defer src="js/tool-word-page-remover.js?v=3.2.0"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.2.0"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.2.0"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.2.0"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.2.0"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.2.0"></script>
+  <script defer src="js/notification-manager.js?v=3.2.0"></script>
+  <script defer src="js/app.js?v=3.2.0"></script>
 </body>
 </html>

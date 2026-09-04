@@ -1512,10 +1512,63 @@ const ToolDutyRoster = {
   },
 
   /**
-   * Xuất file định dạng iCalendar (.ics) chuẩn RFC 5545
-   * Cho phép cán bộ nhập vào ứng dụng Lịch điện thoại (iPhone/Android/Google Calendar)
+   * Tạo URL thêm trực tiếp sự kiện ca trực vào Google Calendar (Web & Mobile App)
+   * Tự động điền tiêu đề, thời gian 24h, địa điểm và mô tả chi tiết nhiệm vụ
    */
-  exportIcsCalendar(year, month, targetStaffId = null) {
+  generateGoogleCalendarUrl(dayObj, shift, year, month) {
+    const pad = (n) => String(n).padStart(2, '0');
+    const startStr = `${year}${pad(month)}${pad(dayObj.day)}T073000`;
+    const nextDate = new Date(year, month - 1, dayObj.day + 1);
+    const endStr = `${nextDate.getFullYear()}${pad(nextDate.getMonth() + 1)}${pad(nextDate.getDate())}T073000`;
+
+    const title = `[Trực CNTT] Ca Trực Bệnh Viện: ${shift.name} - BVĐK Bắc Ninh Số 2`;
+    const details = `🏥 LỊCH TRỰC PHÒNG CÔNG NGHỆ THÔNG TIN - BVĐK BẮC NINH SỐ 2\n` +
+      `📅 Ngày trực: ${dayObj.dayName}, Ngày ${dayObj.day}/${month}/${year} (Ca 24/24)\n` +
+      `👤 Cán bộ trực: ${shift.name} (${shift.role || "Cán bộ P.CNTT"})\n` +
+      `📞 Hotline liên hệ: ${shift.phone || "0912.345.678"}\n` +
+      `🛠️ Nhiệm vụ: Thường trực 24/24 xử lý sự cố HIS VIMES, Cổng BHYT, Chữ ký số, Mạng LAN & Máy tính các Khoa/Phòng\n` +
+      `🔔 Giờ bàn giao ca: 07:30 sáng hôm sau.`;
+    const location = `Phòng Công Nghệ Thông Tin - BVĐK Bắc Ninh Số 2 (Số 2 Đỗ Trọng Vỹ, TP. Bắc Ninh)`;
+
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: title,
+      dates: `${startStr}/${endStr}`,
+      details: details,
+      location: location,
+      ctz: "Asia/Ho_Chi_Minh"
+    });
+
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  },
+
+  /**
+   * Lấy danh sách toàn bộ các ca trực của cán bộ cụ thể trong tháng
+   */
+  getStaffShiftsInMonth(staffId, year, month) {
+    const schedule = this.getSchedule(year, month);
+    const shifts = [];
+    schedule.forEach(d => {
+      const shift = d.shifts["shift_cntt"];
+      if (!shift || !shift.name || shift.name === "Chưa phân công" || shift.name === "Nghỉ trực") return;
+      if (!staffId || staffId === "all" || shift.id === staffId) {
+        shifts.push({
+          day: d.day,
+          dayName: d.dayName,
+          isWeekend: d.isWeekend,
+          shift: shift,
+          googleUrl: this.generateGoogleCalendarUrl(d, shift, year, month)
+        });
+      }
+    });
+    return shifts;
+  },
+
+  /**
+   * Xuất file định dạng iCalendar (.ics) chuẩn RFC 5545 có tích hợp CHUÔNG BÁO THỨC (VALARM)
+   * Tương thích 100% với Apple Calendar (iPhone/iPad), Android Calendar, Google Calendar & Outlook
+   */
+  exportIcsCalendar(year, month, targetStaffId = null, reminders = { dayBefore: true, twoHours: true, morning: true }) {
     const schedule = this.getSchedule(year, month);
     const events = [];
     const pad = (n) => String(n).padStart(2, '0');
@@ -1523,31 +1576,51 @@ const ToolDutyRoster = {
     schedule.forEach(d => {
       const shift = d.shifts["shift_cntt"];
       if (!shift || !shift.name || shift.name === "Chưa phân công" || shift.name === "Nghỉ trực") return;
-      if (targetStaffId && shift.id !== targetStaffId) return;
+      if (targetStaffId && targetStaffId !== "all" && shift.id !== targetStaffId) return;
 
       const dateStr = `${year}${pad(month)}${pad(d.day)}`;
       const nextDate = new Date(year, month - 1, d.day + 1);
       const nextDateStr = `${nextDate.getFullYear()}${pad(nextDate.getMonth() + 1)}${pad(nextDate.getDate())}`;
 
-      events.push(`BEGIN:VEVENT
-UID:duty_${year}_${month}_${d.day}_${shift.id || 'staff'}@bvdkbacninh2.vn
-DTSTAMP:${dateStr}T000000Z
-DTSTART;VALUE=DATE:${dateStr}
-DTEND;VALUE=DATE:${nextDateStr}
-SUMMARY:🏥 Ca Trực CNTT BVĐK Bắc Ninh 2: ${shift.name}
-DESCRIPTION:Ca trực CNTT ngày ${d.day}/${month}/${year}\\nCán bộ: ${shift.name} (${shift.role || "P.CNTT"})\\nHotline: ${shift.phone || "0912.345.678"}\\nĐơn vị: BVĐK Bắc Ninh Số 2
-LOCATION:Phòng Công Nghệ Thông Tin - BVĐK Bắc Ninh Số 2
-BEGIN:VALARM
+      // Xây dựng các mức chuông báo thức (Alarm)
+      let valarms = "";
+      if (reminders.dayBefore) {
+        valarms += `BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Nhắc nhở: Ngày mai bạn có ca trực CNTT tại BVĐK Bắc Ninh Số 2!
+END:VALARM\n`;
+      }
+      if (reminders.twoHours) {
+        valarms += `BEGIN:VALARM
 TRIGGER:-PT2H
 ACTION:DISPLAY
-DESCRIPTION:Nhắc nhở ca trực CNTT BVĐK Bắc Ninh 2
-END:VALARM
-END:VEVENT`);
+DESCRIPTION:Chuẩn bị nhận ca: Còn 2 giờ nữa đến giờ giao ban trực CNTT!
+END:VALARM\n`;
+      }
+      if (reminders.morning) {
+        valarms += `BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+DESCRIPTION:Nhắc nhở: Ca trực CNTT bắt đầu lúc 07:30 sáng nay!
+END:VALARM\n`;
+      }
+
+      events.push(`BEGIN:VEVENT
+UID:duty_${year}_${month}_${d.day}_${shift.id || 'staff'}@bvdkbacninh2.vn
+DTSTAMP:${dateStr}T003000Z
+DTSTART;TZID=Asia/Ho_Chi_Minh:${dateStr}T073000
+DTEND;TZID=Asia/Ho_Chi_Minh:${nextDateStr}T073000
+SUMMARY:🏥 Ca Trực CNTT BVĐK Bắc Ninh 2: ${shift.name}
+DESCRIPTION:🏥 LỊCH TRỰC PHÒNG CNTT - BVĐK BẮC NINH SỐ 2\\n📅 Ca trực ngày ${d.day}/${month}/${year}\\n👤 Cán bộ: ${shift.name} (${shift.role || "P.CNTT"})\\n📞 Hotline: ${shift.phone || "0912.345.678"}\\n🛠️ Nhiệm vụ: Trực xử lý sự cố HIS VIMES, Cổng BHYT, Ký số & Mạng LAN\\nĐơn vị: BVĐK Bắc Ninh Số 2
+LOCATION:Phòng Công Nghệ Thông Tin - BVĐK Bắc Ninh Số 2
+STATUS:CONFIRMED
+${valarms}END:VEVENT`);
     });
 
     const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//BVDK Bac Ninh 2//Lich Truc CNTT//VI
+PRODID:-//BVDK Bac Ninh 2//Lich Truc CNTT Alarm//VI
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 X-WR-CALNAME:Lịch Trực CNTT BVĐK Bắc Ninh 2 (T${month}/${year})
@@ -1559,11 +1632,12 @@ END:VCALENDAR`;
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Lich_Truc_CNTT_T${month}_${year}.ics`;
+    const staffName = (targetStaffId && targetStaffId !== "all") ? `_${targetStaffId}` : "";
+    a.download = `Lich_Truc_CNTT_T${month}_${year}${staffName}.ics`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
     return events.length;
   },
 

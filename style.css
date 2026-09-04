@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    MASTER DESIGN SYSTEM & STYLESHEET
    Medical & IT Hub Portal - BVĐK Bắc Ninh Số 2
    Version 2.5 - Schema VIMES Explorer & Multi-tool Platform
@@ -14845,3 +14845,565 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 /* ── Utility ─────────────────────────────────────────── */
 .w-full { width: 100%; }
+
+/* ==========================================================================
+   GLOBAL LOADING & SMOOTH PROGRESS SYSTEM (60FPS HARDWARE-ACCELERATED)
+   ========================================================================== */
+
+/* ── Hardware-accelerated Keyframes ──────────────────── */
+@keyframes spinInfinite {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes shimmerWave {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes topBarIndeterminate {
+  0% {
+    left: -35%;
+    right: 100%;
+  }
+  60% {
+    left: 100%;
+    right: -90%;
+  }
+  100% {
+    left: 100%;
+    right: -90%;
+  }
+}
+
+@keyframes radarPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.6);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(56, 189, 248, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+  }
+}
+
+/* ── Universal Spinner Components ───────────────────── */
+.spinner-ring {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.22);
+  border-top-color: #38bdf8;
+  vertical-align: middle;
+  flex-shrink: 0;
+  animation: spinInfinite 0.75s linear infinite;
+  will-change: transform;
+}
+
+.spinner-ring-xs {
+  width: 13px;
+  height: 13px;
+  border-width: 2px;
+}
+
+.spinner-ring-sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.spinner-ring-md {
+  width: 22px;
+  height: 22px;
+  border-width: 2.5px;
+}
+
+.spinner-ring-lg {
+  width: 34px;
+  height: 34px;
+  border-width: 3.2px;
+}
+
+.spinner-ring-xl {
+  width: 46px;
+  height: 46px;
+  border-width: 4px;
+}
+
+/* Spinner Color Themes */
+.spinner-cyan {
+  border-color: rgba(56, 189, 248, 0.22);
+  border-top-color: #38bdf8;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.6));
+}
+
+.spinner-emerald {
+  border-color: rgba(16, 185, 129, 0.22);
+  border-top-color: #10b981;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.6));
+}
+
+.spinner-amber {
+  border-color: rgba(245, 158, 11, 0.22);
+  border-top-color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.6));
+}
+
+.spinner-rose {
+  border-color: rgba(244, 63, 94, 0.22);
+  border-top-color: #f43f5e;
+  filter: drop-shadow(0 0 4px rgba(244, 63, 94, 0.6));
+}
+
+.spinner-purple {
+  border-color: rgba(168, 85, 247, 0.22);
+  border-top-color: #c084fc;
+  filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.6));
+}
+
+.spinner-white {
+  border-color: rgba(255, 255, 255, 0.25);
+  border-top-color: #ffffff;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
+}
+
+/* ── Action Buttons Loading State ───────────────────── */
+.btn-loading,
+.btn-primary-action.is-loading,
+.btn-secondary-action.is-loading,
+.btn-success-action.is-loading {
+  position: relative !important;
+  pointer-events: none !important;
+  cursor: wait !important;
+  opacity: 0.88 !important;
+  user-select: none !important;
+  filter: saturate(1.1);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-loading .btn-icon,
+.btn-primary-action.is-loading .btn-icon,
+.btn-secondary-action.is-loading .btn-icon,
+.btn-success-action.is-loading .btn-icon {
+  display: none !important;
+}
+
+.btn-loading-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  animation: fadeIn 0.18s ease forwards;
+}
+
+/* ── Global Top Progress Bar (YouTube/GitHub Style) ─── */
+#globalTopProgress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  z-index: 999999;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(15, 23, 42, 0.35);
+  transition: opacity 0.25s ease;
+  overflow: hidden;
+}
+
+#globalTopProgress.is-active {
+  opacity: 1;
+}
+
+.global-top-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #38bdf8, #06b6d4, #10b981, #6366f1);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.9), 0 0 6px rgba(16, 185, 129, 0.8);
+  border-radius: 0 2px 2px 0;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.global-top-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 80px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8));
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+}
+
+.global-top-progress-fill.is-indeterminate {
+  position: absolute;
+  width: auto;
+  animation: topBarIndeterminate 1.6s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}
+
+/* ── Shimmer & Glow for All Progress Bars ───────────── */
+.progress-track,
+.pdf-progress-bar-bg,
+.xml-progress-bar-bg {
+  position: relative;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.progress-fill,
+.pdf-progress-bar-fill,
+.xml-progress-bar-fill {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-fill::after,
+.pdf-progress-bar-fill::after,
+.xml-progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmerWave 1.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+/* Progress Labels with Integrated Spinners */
+.progress-info-title,
+.pdf-progress-label-wrap,
+.xml-progress-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* ── Full Overlay Loading for Dropzones & Cards ─────── */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 19, 38, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  z-index: 70;
+  border-radius: inherit;
+  animation: fadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 20px;
+  text-align: center;
+  color: #f8fafc;
+}
+
+.loading-overlay.hidden {
+  display: none !important;
+}
+
+.loading-spinner-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner-center-icon {
+  position: absolute;
+  font-size: 1.2rem;
+  opacity: 0.9;
+  animation: pulseSubtle 1.5s ease-in-out infinite alternate;
+}
+
+.loading-overlay-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: 0.01em;
+}
+
+.loading-overlay-subtitle {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  max-width: 320px;
+  line-height: 1.4;
+}
+
+/* Skeleton Placeholder with Shimmer */
+.skeleton-card-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: var(--radius-md);
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+}
+
+.skeleton-card-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: shimmerWave 1.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   DUTY CALENDAR SYNC & PHONE ALARM REMINDER SYSTEM
+   ========================================================================== */
+
+/* Nút Đồng Bộ Lịch trên thanh công cụ Lịch Trực */
+.btn-duty-action.btn-duty-calendar-sync {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(168, 85, 247, 0.24));
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #c084fc;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-duty-action.btn-duty-calendar-sync:hover {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  border-color: #c084fc;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.55), 0 4px 12px rgba(99, 102, 241, 0.4);
+  transform: translateY(-1.5px);
+}
+
+/* Thẻ Nền Tảng Đồng Bộ Trong Modal */
+.btn-sync-platform {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  color: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sync-platform:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.btn-sync-platform:active {
+  transform: translateY(0);
+}
+
+.btn-sync-platform.btn-sync-google {
+  border-color: rgba(66, 133, 244, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(66, 133, 244, 0.15));
+}
+.btn-sync-platform.btn-sync-google:hover {
+  border-color: #4285f4;
+  box-shadow: 0 0 18px rgba(66, 133, 244, 0.4);
+}
+
+.btn-sync-platform.btn-sync-apple {
+  border-color: rgba(203, 213, 225, 0.3);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(148, 163, 184, 0.15));
+}
+.btn-sync-platform.btn-sync-apple:hover {
+  border-color: #f8fafc;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
+}
+
+.btn-sync-platform.btn-sync-android {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(16, 185, 129, 0.15));
+}
+.btn-sync-platform.btn-sync-android:hover {
+  border-color: #10b981;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.4);
+}
+
+.btn-sync-platform.btn-sync-ics {
+  border-color: rgba(56, 189, 248, 0.35);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(56, 189, 248, 0.15));
+}
+.btn-sync-platform.btn-sync-ics:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+}
+
+.sync-platform-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sync-platform-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.sync-platform-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.25;
+}
+
+.sync-platform-sub {
+  font-size: 0.73rem;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+/* Thẻ Ca Trực Trong Modal */
+.calendar-shift-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8rem;
+  transition: background 0.15s ease;
+}
+
+.calendar-shift-item:last-child {
+  border-bottom: none;
+}
+
+.calendar-shift-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.calendar-shift-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-shift-badge-day {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.76rem;
+}
+
+.calendar-shift-badge-day.weekend {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+}
+
+.btn-shift-add-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  background: rgba(66, 133, 244, 0.2);
+  border: 1px solid rgba(66, 133, 244, 0.4);
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-decoration: none;
+}
+
+.btn-shift-add-google:hover {
+  background: #4285f4;
+  color: #ffffff;
+  border-color: #4285f4;
+  box-shadow: 0 0 10px rgba(66, 133, 244, 0.5);
+}
+
+/* Nút Báo Thức trên từng card trong Lịch Của Tôi */
+.btn-sync-single-shift {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin-left: auto;
+}
+
+.btn-sync-single-shift:hover {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #ffffff;
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Nút Báo Thức Google Calendar trên header từng ô ngày trong lưới tháng */
+.btn-cal-header-alarm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-cal-header-alarm:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+  transform: scale(1.12);
+}
+
+
