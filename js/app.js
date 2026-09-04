@@ -7783,15 +7783,34 @@ p {
 
     if (!staffList || staffList.length === 0) return;
 
-    // 1. Điền vào Form Điền Ca (#selectFormExecStaff)
+    // Lấy thông tin tài khoản đang đăng nhập từ Lịch Trực CNTT
+    const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+      ? window.ToolDutyRoster.getCurrentSession()
+      : null;
+    const loggedUserFullname = session ? (session.fullname || session.username) : null;
+
+    // 1. Điền vào Form Điền Ca (#selectFormExecStaff): Luôn ưu tiên tài khoản đang đăng nhập
     if (this.selectFormExecStaff) {
-      const curVal = this.selectFormExecStaff.value;
-      this.selectFormExecStaff.innerHTML = staffList.map(s => {
-        const role = s.role ? ` (${s.role})` : '';
-        return `<option value="${s.name}">${s.name}${role}</option>`;
-      }).join("") + `<option value="P.CNTT">Cả Phòng CNTT</option><option value="Khác">Cán bộ khác</option>`;
-      if (curVal && Array.from(this.selectFormExecStaff.options).some(o => o.value === curVal)) {
-        this.selectFormExecStaff.value = curVal;
+      let optionsHtml = "";
+
+      // Nếu có tài khoản đăng nhập, đưa tài khoản đó lên đầu tiên và tự động chọn
+      if (loggedUserFullname) {
+        optionsHtml += `<option value="${loggedUserFullname}" selected>👤 ${loggedUserFullname} (Tài khoản đang đăng nhập)</option>`;
+      }
+
+      // Danh sách các cán bộ khác trong phòng để người dùng có thể chọn thay đổi nếu cần
+      optionsHtml += staffList
+        .filter(s => s.name !== loggedUserFullname)
+        .map(s => {
+          const role = s.role ? ` (${s.role})` : '';
+          return `<option value="${s.name}">${s.name}${role}</option>`;
+        }).join("");
+
+      optionsHtml += `<option value="P.CNTT">Cả Phòng CNTT</option><option value="Khác">Cán bộ khác</option>`;
+      this.selectFormExecStaff.innerHTML = optionsHtml;
+
+      if (loggedUserFullname) {
+        this.selectFormExecStaff.value = loggedUserFullname;
       }
     }
 
@@ -7806,6 +7825,7 @@ p {
       }
       this.selectCnttFilterStaff.innerHTML = `
         <option value="all">-- Toàn Bộ Cán Bộ P.CNTT --</option>
+        ${loggedUserFullname && !staffList.some(s => s.name === loggedUserFullname) ? `<option value="${loggedUserFullname}">👤 ${loggedUserFullname} (Tài khoản của bạn)</option>` : ''}
         ${staffList.map(s => {
           const cnt = countMap[s.name] || 0;
           return `<option value="${s.name}">${s.name} ${cnt > 0 ? `(${cnt} ca)` : ''}</option>`;
@@ -7837,20 +7857,23 @@ p {
       }
       if (this.cnttAuthSyncPill) {
         this.cnttAuthSyncPill.textContent = `✓ Đã khớp TK: ${displayName}`;
+        this.cnttAuthSyncPill.style.color = "#34d399";
+        this.cnttAuthSyncPill.style.background = "rgba(16, 185, 129, 0.2)";
+        this.cnttAuthSyncPill.title = `Cán Bộ Thực Hiện đã được tự động đồng bộ theo tài khoản [${displayName}]`;
       }
 
-      // Tự động chọn Cán bộ thực hiện trong form khớp với người dùng đang đăng nhập
-      if (this.selectFormExecStaff && displayName) {
-        const cleanName = displayName.trim().toLowerCase();
-        let matched = false;
-        for (let opt of this.selectFormExecStaff.options) {
-          const optLower = opt.value.trim().toLowerCase();
-          if (optLower === cleanName || cleanName.includes(optLower) || optLower.includes(cleanName)) {
-            this.selectFormExecStaff.value = opt.value;
-            matched = true;
-            break;
-          }
+      // ĐỒNG BỘ CÁN BỘ THỰC HIỆN VỚI TÀI KHOẢN ĐĂNG NHẬP:
+      if (this.selectFormExecStaff) {
+        let optUser = Array.from(this.selectFormExecStaff.options).find(o => o.value === displayName);
+        if (!optUser) {
+          optUser = document.createElement("option");
+          optUser.value = displayName;
+          optUser.textContent = `👤 ${displayName} (Tài khoản đang đăng nhập)`;
+          this.selectFormExecStaff.insertBefore(optUser, this.selectFormExecStaff.firstChild);
+        } else {
+          optUser.textContent = `👤 ${displayName} (Tài khoản đang đăng nhập)`;
         }
+        this.selectFormExecStaff.value = displayName;
       }
     } else {
       if (this.cnttSessionUserDisplay) {
@@ -7862,29 +7885,10 @@ p {
       }
       if (this.cnttAuthSyncPill) {
         this.cnttAuthSyncPill.textContent = "⚠️ Chưa đăng nhập";
+        this.cnttAuthSyncPill.style.color = "#f59e0b";
+        this.cnttAuthSyncPill.style.background = "rgba(245, 158, 11, 0.2)";
       }
     }
-  }
-
-  /**
-   * Xử lý khi người dùng đổi Sheet cần điền (Tháng 1 - Tháng 12)
-   */
-  handleTargetSheetChange(targetSheet) {
-    if (!targetSheet) return;
-    this.cnttSelectedSheet = targetSheet;
-
-    if (this.cnttTargetSheetBadge) {
-      this.cnttTargetSheetBadge.textContent = targetSheet;
-    }
-
-    // Cập nhật iframe Google Sheet
-    if (this.cnttGoogleSheetIframe && window.ToolCnttReport) {
-      const cfg = ToolCnttReport.getConfig();
-      this.cnttGoogleSheetIframe.src = `https://docs.google.com/spreadsheets/d/${cfg.sheetId}/edit?usp=sharing&sheet=${encodeURIComponent(targetSheet)}&rm=minimal`;
-    }
-
-    this.showToast(`📂 Đang tải dữ liệu và dò tìm dòng trống cho [${targetSheet}]...`, "info", 3000);
-    this.fetchGoogleSheetDataForCntt(false, targetSheet);
   }
 
   /**
@@ -8015,14 +8019,8 @@ p {
         `;
       }
 
-      // Populate Cán bộ thực hiện từ danh sách Lịch trực CNTT
-      if (this.selectFormExecStaff) {
-        const staffList = ToolCnttReport.getDutyStaffList();
-        this.selectFormExecStaff.innerHTML = `
-          ${staffList.map(s => `<option value="${s.name}">${s.name} (${s.role || 'Cán bộ CNTT'})</option>`).join("")}
-          <option value="P.CNTT">Cả Phòng CNTT</option>
-        `;
-      }
+      // Đồng bộ Cán bộ thực hiện từ Lịch trực CNTT và tài khoản đăng nhập
+      this.populateCnttStaffDropdowns();
 
       // 2. Render Stepper Cards danh mục Phần Mềm (21 mục) - Hỗ trợ nhập 1, 2, 3, 4...
       const swContainer = document.getElementById("containerSoftwareCheckboxes");
@@ -8921,6 +8919,8 @@ p {
       this.filterSoftwareCards("");
     }
     this.updateCnttFormSummary();
+    // Giữ cán bộ thực hiện luôn đồng bộ theo tài khoản đang đăng nhập sau khi reset form
+    this.updateCnttUserSessionUI();
   }
 
   /**
