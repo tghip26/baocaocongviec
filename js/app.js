@@ -4935,6 +4935,9 @@ p {
     this.dutyHeaderRoleTag = document.getElementById("dutyHeaderRoleTag");
     this.btnOpenLoginModalHeader = document.getElementById("btnOpenLoginModalHeader");
     this.btnOpenUserManageModal = document.getElementById("btnOpenUserManageModal");
+    this.btnHeaderOpenUserManage = document.getElementById("btnHeaderOpenUserManage");
+    this.btnLoginOpenUserManage = document.getElementById("btnLoginOpenUserManage");
+    this.btnOpenUserManageFromStaffList = document.getElementById("btnOpenUserManageFromStaffList");
 
     // Modal: Auth Login
     this.modalDutyLogin = document.getElementById("modalDutyLogin");
@@ -4956,8 +4959,13 @@ p {
     this.inputNewAccPass = document.getElementById("inputNewAccPass");
     this.selectNewAccStaff = document.getElementById("selectNewAccStaff");
     this.selectNewAccRole = document.getElementById("selectNewAccRole");
+    this.inputNewAccFullName = document.getElementById("inputNewAccFullName");
     this.btnSubmitCreateAccount = document.getElementById("btnSubmitCreateAccount");
     this.btnResetAccountForm = document.getElementById("btnResetAccountForm");
+    this.btnRestoreDefaultAccounts = document.getElementById("btnRestoreDefaultAccounts");
+    this.inputSearchUserAccounts = document.getElementById("inputSearchUserAccounts");
+    this.userAccountsCountBadge = document.getElementById("userAccountsCountBadge");
+    this.userCountBtnBadge = document.getElementById("userCountBtnBadge");
 
     // Modal: Add/Edit Staff
     this.btnAddStaffModalBtn = document.getElementById("btnAddStaffModalBtn");
@@ -5208,10 +5216,41 @@ p {
 
     // User Management Modal
     if (this.btnOpenUserManageModal) this.btnOpenUserManageModal.addEventListener("click", () => this.openUserManageModal());
+    if (this.btnHeaderOpenUserManage) this.btnHeaderOpenUserManage.addEventListener("click", () => this.openUserManageModal());
+    if (this.btnLoginOpenUserManage) {
+      this.btnLoginOpenUserManage.addEventListener("click", () => {
+        this.hideModal(this.modalDutyLogin);
+        this.openUserManageModal();
+      });
+    }
+    if (this.btnOpenUserManageFromStaffList) {
+      this.btnOpenUserManageFromStaffList.addEventListener("click", () => {
+        this.hideModal(this.modalDutyStaffList);
+        this.openUserManageModal();
+      });
+    }
     if (this.btnCloseUserManageModal) this.btnCloseUserManageModal.addEventListener("click", () => this.hideModal(this.modalUserManagement));
     if (this.btnCloseUserManageModalFooter) this.btnCloseUserManageModalFooter.addEventListener("click", () => this.hideModal(this.modalUserManagement));
     if (this.btnSubmitCreateAccount) this.btnSubmitCreateAccount.addEventListener("click", () => this.saveUserAccount());
     if (this.btnResetAccountForm) this.btnResetAccountForm.addEventListener("click", () => this.resetAccountForm());
+    if (this.btnRestoreDefaultAccounts) this.btnRestoreDefaultAccounts.addEventListener("click", () => this.restoreDefaultAccounts());
+    if (this.inputSearchUserAccounts) {
+      this.inputSearchUserAccounts.addEventListener("input", (e) => this.renderUserAccountsTable(e.target.value));
+    }
+    if (this.selectNewAccStaff) {
+      this.selectNewAccStaff.addEventListener("change", (e) => {
+        const staffId = e.target.value;
+        if (staffId && this.dutyStaffList) {
+          const s = this.dutyStaffList.find(st => st.id === staffId);
+          if (s) {
+            if (this.inputNewAccFullName) this.inputNewAccFullName.value = s.name;
+            if (this.inputNewAccUser && !this.inputNewAccUser.value.trim()) {
+              this.inputNewAccUser.value = this.generateSuggestedUsername(s.name);
+            }
+          }
+        }
+      });
+    }
 
     // Add / Edit Staff Modal & Clean All Staff & Restore Default Staff
     if (this.btnAddStaffModalBtn) this.btnAddStaffModalBtn.addEventListener("click", () => this.openStaffModal());
@@ -5425,6 +5464,7 @@ p {
 
   openUserManageModal() {
     this.resetAccountForm();
+    if (this.inputSearchUserAccounts) this.inputSearchUserAccounts.value = "";
     this.populateStaffSelectInUserModal();
     this.renderUserAccountsTable();
     this.showModal(this.modalUserManagement);
@@ -5442,12 +5482,68 @@ p {
     });
   }
 
-  renderUserAccountsTable() {
+  removeVietnameseTones(str) {
+    if (!str) return "";
+    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    str = str.replace(/đ/g, "d");
+    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    str = str.replace(/Đ/g, "D");
+    return str;
+  }
+
+  generateSuggestedUsername(fullname) {
+    if (!fullname) return "";
+    const clean = this.removeVietnameseTones(fullname.trim()).toLowerCase();
+    const parts = clean.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "";
+    if (parts.length === 1) return parts[0];
+    const lastName = parts[parts.length - 1];
+    const initials = parts.slice(0, parts.length - 1).map(p => p[0]).join("");
+    return lastName + initials;
+  }
+
+  renderUserAccountsTable(filterText = "") {
     if (!this.dutyAccountsTableBody || !window.ToolDutyRoster) return;
-    const accounts = ToolDutyRoster.getAccounts();
+    let accounts = ToolDutyRoster.getAccounts();
+    const totalCount = accounts.length;
+
+    if (this.userAccountsCountBadge) {
+      this.userAccountsCountBadge.textContent = `${totalCount} tài khoản`;
+    }
+    const userCountBtnBadge = document.getElementById("userCountBtnBadge");
+    if (userCountBtnBadge) {
+      userCountBtnBadge.textContent = totalCount;
+    }
+
+    if (filterText) {
+      const q = filterText.toLowerCase().trim();
+      accounts = accounts.filter(a =>
+        (a.username && a.username.toLowerCase().includes(q)) ||
+        (a.fullname && a.fullname.toLowerCase().includes(q)) ||
+        (a.role && a.role.toLowerCase().includes(q))
+      );
+    }
+
     this.dutyAccountsTableBody.innerHTML = "";
+    if (accounts.length === 0) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td colspan="6" style="text-align:center;color:#94a3b8;padding:24px 10px;">Không tìm thấy tài khoản phù hợp với từ khóa "${filterText}"</td>`;
+      this.dutyAccountsTableBody.appendChild(tr);
+      return;
+    }
+
     accounts.forEach((acc, idx) => {
-      const linkedStaff = this.dutyStaffList.find(s => s.id === acc.staffId);
+      const linkedStaff = this.dutyStaffList ? this.dutyStaffList.find(s => s.id === acc.staffId) : null;
       const staffName = linkedStaff ? linkedStaff.name : (acc.fullname || "Chưa gắn cán bộ");
       const isRootAdmin = (acc.username === "admin");
       const tr = document.createElement("tr");
@@ -5456,25 +5552,43 @@ p {
         <td><strong style="color:#f1f5f9;">${acc.username}</strong></td>
         <td>
           <div class="pass-cell-display">
-            <span class="user-pass-text">${acc.password}</span>
+            <span class="user-pass-text" id="passText_${acc.id}">••••••</span>
+            <button type="button" class="btn-toggle-row-pass" title="Ẩn/Hiện mật khẩu">👁️</button>
             <button type="button" class="btn-copy-pass-sm" title="Sao chép mật khẩu">📋</button>
           </div>
         </td>
         <td><span style="color:#38bdf8;">${staffName}</span></td>
         <td><span class="tool-badge badge-${acc.role === 'admin' ? 'purple' : 'blue'}">${acc.role === 'admin' ? 'Admin' : 'User'}</span></td>
-        <td>
-          <div class="acc-actions-wrap">
+        <td style="text-align:center;">
+          <div class="acc-actions-wrap" style="justify-content:center;">
             <button type="button" class="btn-acc-act btn-edit-acc" title="Chỉnh sửa tài khoản">✏️ Sửa</button>
             ${!isRootAdmin ? `<button type="button" class="btn-acc-act btn-del-acc" title="Xóa tài khoản">🗑️ Xóa</button>` : `<span style="font-size:0.68rem;color:#94a3b8;font-style:italic;">Mặc định</span>`}
           </div>
         </td>
       `;
+
+      // Toggle password
+      const passSpan = tr.querySelector(".user-pass-text");
+      const toggleBtn = tr.querySelector(".btn-toggle-row-pass");
+      let isVisible = false;
+      toggleBtn.addEventListener("click", () => {
+        isVisible = !isVisible;
+        passSpan.textContent = isVisible ? acc.password : "••••••";
+        toggleBtn.textContent = isVisible ? "🔒" : "👁️";
+      });
+
+      // Copy password
       tr.querySelector(".btn-copy-pass-sm").addEventListener("click", () => {
         navigator.clipboard.writeText(acc.password).then(() => this.showToast(`Đã sao chép mật khẩu tài khoản "${acc.username}": ${acc.password}`, "success"));
       });
+
+      // Edit
       tr.querySelector(".btn-edit-acc").addEventListener("click", () => this.openEditAccountForm(acc.id));
+
+      // Delete
       const delBtn = tr.querySelector(".btn-del-acc");
       if (delBtn) delBtn.addEventListener("click", () => this.deleteAccount(acc.id));
+
       this.dutyAccountsTableBody.appendChild(tr);
     });
   }
@@ -5486,6 +5600,7 @@ p {
     if (this.inputEditAccId) this.inputEditAccId.value = acc.id;
     if (this.inputNewAccUser) this.inputNewAccUser.value = acc.username;
     if (this.inputNewAccPass) this.inputNewAccPass.value = acc.password;
+    if (this.inputNewAccFullName) this.inputNewAccFullName.value = acc.fullname || "";
     if (this.selectNewAccStaff) this.selectNewAccStaff.value = acc.staffId || "";
     if (this.selectNewAccRole) this.selectNewAccRole.value = acc.role || "user";
     if (this.userFormTitle) this.userFormTitle.textContent = `✏️ Chỉnh Sửa Tài Khoản: ${acc.username}`;
@@ -5497,6 +5612,7 @@ p {
     if (this.inputEditAccId) this.inputEditAccId.value = "";
     if (this.inputNewAccUser) this.inputNewAccUser.value = "";
     if (this.inputNewAccPass) this.inputNewAccPass.value = "admin";
+    if (this.inputNewAccFullName) this.inputNewAccFullName.value = "";
     if (this.selectNewAccStaff) this.selectNewAccStaff.value = "";
     if (this.selectNewAccRole) this.selectNewAccRole.value = "user";
     if (this.userFormTitle) this.userFormTitle.textContent = "➕ Cấp Tài Khoản Mới";
@@ -5509,6 +5625,8 @@ p {
     const p = this.inputNewAccPass ? this.inputNewAccPass.value.trim() : "";
     const role = this.selectNewAccRole ? this.selectNewAccRole.value : "user";
     const staffId = this.selectNewAccStaff ? this.selectNewAccStaff.value : null;
+    const customFullName = this.inputNewAccFullName ? this.inputNewAccFullName.value.trim() : "";
+
     if (!u) {
       this.showToast("Vui lòng nhập tên đăng nhập!", "warning");
       return;
@@ -5517,13 +5635,16 @@ p {
       this.showToast("Mật khẩu không được để trống!", "warning");
       return;
     }
+
     const editId = this.inputEditAccId ? this.inputEditAccId.value : "";
     const accounts = ToolDutyRoster.getAccounts();
-    let linkedStaffName = u;
-    if (staffId) {
-      const s = this.dutyStaffList.find(st => st.id === staffId);
+
+    let linkedStaffName = customFullName || u;
+    if (staffId && !customFullName) {
+      const s = this.dutyStaffList ? this.dutyStaffList.find(st => st.id === staffId) : null;
       if (s) linkedStaffName = s.name;
     }
+
     if (editId) {
       const acc = accounts.find(a => a.id === editId);
       if (acc) {
@@ -5533,20 +5654,31 @@ p {
         acc.staffId = staffId || null;
         acc.fullname = linkedStaffName;
         ToolDutyRoster.saveAccounts(accounts);
+
+        // Nếu người dùng hiện đang đăng nhập là tài khoản vừa sửa, cập nhật session luôn
+        if (this.currentDutySession && (this.currentDutySession.id === editId || this.currentDutySession.username === u)) {
+          this.currentDutySession = { ...this.currentDutySession, username: u, fullname: linkedStaffName, role: role };
+          ToolDutyRoster.setSession(this.currentDutySession);
+        }
+
         this.showToast(`Đã cập nhật tài khoản "${u}" thành công!`, "success");
       }
     } else {
       if (accounts.some(a => a.username.toLowerCase() === u.toLowerCase())) {
-        this.showToast(`Tên đăng nhập "${u}" đã tồn tại!`, "error");
+        this.showToast(`Tên đăng nhập "${u}" đã tồn tại! Vui lòng chọn tên khác.`, "error");
         return;
       }
       const newAcc = { id: "acc_" + Date.now(), username: u, password: p, fullname: linkedStaffName, role: role, dept: "Phòng CNTT", staffId: staffId || null };
       accounts.push(newAcc);
       ToolDutyRoster.saveAccounts(accounts);
-      this.showToast(`Đã cấp mới tài khoản "${u}" thành công!`, "success");
+      this.showToast(`Đã cấp mới tài khoản "${u}" (${linkedStaffName}) thành công!`, "success");
     }
+
     this.resetAccountForm();
-    this.renderUserAccountsTable();
+    this.renderUserAccountsTable(this.inputSearchUserAccounts ? this.inputSearchUserAccounts.value : "");
+    if (typeof this.populateCnttStaffDropdowns === "function") this.populateCnttStaffDropdowns();
+    if (typeof this.updateCnttUserSessionUI === "function") this.updateCnttUserSessionUI();
+    if (typeof this.updateDutySessionUI === "function") this.updateDutySessionUI();
   }
 
   deleteAccount(accId) {
@@ -5557,11 +5689,22 @@ p {
       this.showToast("Không thể xóa tài khoản Quản trị viên root (admin)!", "error");
       return;
     }
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${acc.username}"?`)) return;
+    if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản "${acc.username}" (${acc.fullname || ''})?`)) return;
     const filtered = accounts.filter(a => a.id !== accId);
     ToolDutyRoster.saveAccounts(filtered);
-    this.renderUserAccountsTable();
+    this.renderUserAccountsTable(this.inputSearchUserAccounts ? this.inputSearchUserAccounts.value : "");
+    if (typeof this.populateCnttStaffDropdowns === "function") this.populateCnttStaffDropdowns();
+    if (typeof this.updateCnttUserSessionUI === "function") this.updateCnttUserSessionUI();
     this.showToast(`Đã xóa tài khoản "${acc.username}"!`, "info");
+  }
+
+  restoreDefaultAccounts() {
+    if (!confirm("Bạn có chắc muốn khôi phục danh sách tài khoản mặc định chuẩn của Phòng CNTT? Dữ liệu tài khoản hiện tại sẽ được cập nhật lại theo danh sách gốc.")) return;
+    ToolDutyRoster.saveAccounts([...ToolDutyRoster.defaultAccounts]);
+    this.renderUserAccountsTable();
+    if (typeof this.populateCnttStaffDropdowns === "function") this.populateCnttStaffDropdowns();
+    if (typeof this.updateCnttUserSessionUI === "function") this.updateCnttUserSessionUI();
+    this.showToast("Đã khôi phục danh sách tài khoản mặc định thành công!", "success");
   }
 
   openStaffModal(staffId = null) {
@@ -7928,6 +8071,7 @@ p {
     this.cnttUserSessionChip = document.getElementById("cnttUserSessionChip");
     this.cnttSessionUserDisplay = document.getElementById("cnttSessionUserDisplay");
     this.btnCnttOpenLoginModal = document.getElementById("btnCnttOpenLoginModal");
+    this.btnCnttOpenUserManage = document.getElementById("btnCnttOpenUserManage");
 
     // Form Toolbar Strip Components
     this.selectTargetSheetForEntry = document.getElementById("selectTargetSheetForEntry");
@@ -8103,6 +8247,9 @@ p {
     }
     if (this.cnttUserSourceTag) {
       this.cnttUserSourceTag.addEventListener("click", () => this.openDutyLoginModal());
+    }
+    if (this.btnCnttOpenUserManage) {
+      this.btnCnttOpenUserManage.addEventListener("click", () => this.openUserManageModal());
     }
 
     // Tabs

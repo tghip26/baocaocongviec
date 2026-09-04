@@ -293,6 +293,10 @@
               <span class="duty-header-name" id="dutyHeaderUserName">Chưa đăng nhập</span>
               <span class="duty-header-role" id="dutyHeaderRoleTag">KHÁCH</span>
             </button>
+            <button type="button" class="btn-duty-manage-users" id="btnHeaderOpenUserManage" title="Quản lý tài khoản người dùng P.CNTT (Admin)">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span>User</span>
+            </button>
             <button type="button" class="btn-duty-logout hidden" id="btnDutyLogout" title="Đăng xuất khỏi tài khoản">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Đăng xuất</span>
@@ -1840,7 +1844,7 @@
 
               <div class="duty-sub-divider"></div>
 
-              <!-- 2 Quick Action Buttons: Thống Kê & Danh Sách Cán Bộ -->
+              <!-- Quick Action Buttons: Thống Kê, Cán Bộ & Quản Lý User -->
               <div class="duty-quick-panels-btns">
                 <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStatsModal" title="Xem tổng hợp ca trực, ca sắp tới & thống kê chi tiết">
                   <span class="btn-panel-icon">📊</span>
@@ -1849,6 +1853,10 @@
                 <button type="button" class="btn-duty-panel-toggle" id="btnOpenDutyStaffModal" title="Xem & quản lý danh sách cán bộ P.CNTT">
                   <span class="btn-panel-icon">👥</span>
                   <span>Cán Bộ (<strong id="staffCountBtnBadge" style="color: #38bdf8;">0</strong>)</span>
+                </button>
+                <button type="button" class="btn-duty-panel-toggle" id="btnOpenUserManageModal" title="Quản lý danh sách tài khoản, cấp quyền & xem mật khẩu người dùng (User/Admin)">
+                  <span class="btn-panel-icon">🔑</span>
+                  <span>Quản Lý User (<strong id="userCountBtnBadge" style="color: #c084fc;">0</strong>)</span>
                 </button>
               </div>
             </div>
@@ -1948,6 +1956,10 @@
               </button>
               <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
+              <button type="button" class="btn-cntt-action btn-cntt-users" id="btnCnttOpenUserManage" title="Quản lý tài khoản người dùng & cán bộ (User/Admin)">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <span>Quản Lý User</span>
               </button>
               <!-- Nút / Badge Tài Khoản Người Dùng từ Lịch Trực -->
               <div class="cntt-user-session-chip" id="cnttUserSessionChip" title="Tài khoản cán bộ từ Lịch Trực CNTT">
@@ -2861,6 +2873,7 @@
         <div class="staff-header-actions flex-row gap-8 align-center flex-wrap">
           <button type="button" class="btn-duty-action" id="btnAddStaffModalBtn" title="Thêm cán bộ mới" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.76rem;">➕ Thêm Cán Bộ</button>
           <button type="button" class="btn-duty-action" id="btnResetStaffOrderBtn" title="Khôi phục thứ tự cán bộ chuẩn ban đầu" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🔄 Thứ Tự Chuẩn</button>
+          <button type="button" class="btn-duty-action" id="btnOpenUserManageFromStaffList" title="Quản lý tài khoản & Mật khẩu người dùng" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">👥 Quản Lý User</button>
           <button type="button" class="btn-duty-action" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🗑️ Dọn Sạch</button>
           <button type="button" class="modal-close" id="btnCloseDutyStaffListModal">&times;</button>
         </div>
@@ -2948,7 +2961,10 @@
         </div>
       </div>
       <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnCancelLoginModal">Hủy bỏ</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button type="button" class="btn-modal-reset" id="btnCancelLoginModal">Hủy bỏ</button>
+          <button type="button" class="btn-login-manage-users" id="btnLoginOpenUserManage" title="Xem danh sách tài khoản hoặc cấp tài khoản">👥 Quản lý tài khoản User</button>
+        </div>
         <button type="button" class="btn-modal-confirm" id="btnSubmitDutyLogin">ĐĂNG NHẬP NGAY &rarr;</button>
       </div>
     </div>
@@ -2956,29 +2972,38 @@
 
   <!-- MODAL: Quản Lý Người Dùng & Cấp Tài Khoản (Xem Mật Khẩu, Thêm, Sửa, Xóa) -->
   <div class="modal-overlay hidden" id="modalUserManagement">
-    <div class="modal-card modal-users-card">
+    <div class="modal-card modal-users-card" style="max-width: 960px;">
       <div class="modal-header">
-        <h3 class="modal-title">👥 QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG P.CNTT (ADMIN)</h3>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">👥</span>
+          <div>
+            <h3 class="modal-title" style="margin: 0;">QUẢN LÝ TÀI KHOẢN NGƯỜI DÙNG PHÒNG CNTT</h3>
+            <span style="font-size: 0.74rem; color: #94a3b8;">Cấp tài khoản, phân quyền Admin/User, xem/đổi mật khẩu và đồng bộ cán bộ thực hiện</span>
+          </div>
+        </div>
         <button type="button" class="modal-close" id="btnCloseUserManageModal">&times;</button>
       </div>
       <div class="modal-body">
         <div class="user-management-grid">
           <!-- Bảng danh sách tài khoản hiện tại -->
           <div class="user-list-pane">
-            <div class="flex-between" style="margin-bottom: 8px;">
-              <h4 class="pane-title" style="margin:0;">📋 Danh Sách Tài Khoản & Mật Khẩu</h4>
-              <span style="font-size:0.72rem;color:#38bdf8;">Admin xem & cấp trực tiếp cho cán bộ</span>
+            <div class="flex-between" style="margin-bottom: 8px; align-items: center;">
+              <h4 class="pane-title" style="margin: 0;">📋 Danh Sách Tài Khoản & Mật Khẩu</h4>
+              <span class="tool-badge badge-purple" id="userAccountsCountBadge">0 tài khoản</span>
             </div>
-            <div class="user-table-scroll">
+            <div style="margin-bottom: 8px;">
+              <input type="text" id="inputSearchUserAccounts" class="form-input" placeholder="🔍 Tìm theo username, tên cán bộ, vai trò..." style="padding: 6px 12px; font-size: 0.78rem;" />
+            </div>
+            <div class="user-table-scroll" style="max-height: 420px;">
               <table class="user-accounts-table">
                 <thead>
                   <tr>
-                    <th>STT</th>
+                    <th style="width: 36px; text-align: center;">STT</th>
                     <th>Tên Đăng Nhập</th>
                     <th>Mật Khẩu</th>
                     <th>Cán Bộ Liên Kết</th>
                     <th>Quyền</th>
-                    <th>Thao Tác</th>
+                    <th style="text-align: center;">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody id="dutyAccountsTableBody"></tbody>
@@ -2992,8 +3017,19 @@
             <input type="hidden" id="inputEditAccId" value="" />
             
             <div class="config-form-group">
+              <label class="form-label">Liên kết Cán bộ P.CNTT:</label>
+              <select id="selectNewAccStaff" class="form-select"></select>
+              <span style="font-size: 0.7rem; color: #94a3b8; margin-top: 3px; display: block;">Chọn cán bộ để tự động điền họ tên & gợi ý username</span>
+            </div>
+
+            <div class="config-form-group">
+              <label class="form-label">Họ và tên hiển thị / Tên Cán bộ:</label>
+              <input type="text" id="inputNewAccFullName" class="form-input" placeholder="Ví dụ: KS. Nguyễn Văn A" />
+            </div>
+
+            <div class="config-form-group">
               <label class="form-label">Tên đăng nhập (Username):</label>
-              <input type="text" id="inputNewAccUser" class="form-input" placeholder="Ví dụ: namtv, dangnh..." />
+              <input type="text" id="inputNewAccUser" class="form-input" placeholder="Ví dụ: hoanm, phuongnd, tungnt..." />
             </div>
             
             <div class="config-form-group">
@@ -3007,30 +3043,28 @@
             </div>
 
             <div class="config-form-group">
-              <label class="form-label">Liên kết Cán bộ P.CNTT:</label>
-              <select id="selectNewAccStaff" class="form-select"></select>
-            </div>
-
-            <div class="config-form-group">
               <label class="form-label">Phân quyền tài khoản:</label>
               <select id="selectNewAccRole" class="form-select">
-                <option value="user" selected>User (Xem lịch cá nhân & toàn phòng)</option>
+                <option value="user" selected>User (Xem lịch cá nhân & BC Sửa CNTT)</option>
                 <option value="admin">Admin (Toàn quyền xếp lịch, đổi ca, sửa user)</option>
               </select>
             </div>
 
-            <div style="display:flex;gap:8px;margin-top:12px;">
+            <div style="display: flex; gap: 8px; margin-top: 14px;">
               <button type="button" class="btn-create-acc-submit" id="btnSubmitCreateAccount">
                 ✨ LƯU TÀI KHOẢN
               </button>
-              <button type="button" class="btn-modal-reset" id="btnResetAccountForm" style="display:none;padding:6px 12px;font-size:0.75rem;">
+              <button type="button" class="btn-modal-reset" id="btnResetAccountForm" style="display: none; padding: 6px 12px; font-size: 0.75rem;">
                 Hủy sửa
               </button>
             </div>
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnRestoreDefaultAccounts" title="Khôi phục danh sách tài khoản chuẩn ban đầu của phòng CNTT" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.35); font-size: 0.75rem;">
+          🔄 Khôi Phục Tài Khoản Mặc Định
+        </button>
         <button type="button" class="btn-modal-reset" id="btnCloseUserManageModalFooter">Đóng</button>
       </div>
     </div>

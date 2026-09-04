@@ -1841,6 +1841,29 @@ mark.highlight-term {
   color: #ffffff;
 }
 
+.btn-duty-manage-users {
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #e9d5ff;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-duty-manage-users:hover {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: #c084fc;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+}
+
 /* ==========================================================================
    APP CONTENT CONTAINER
    ========================================================================== */
@@ -15583,6 +15606,50 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .btn-cntt-action.btn-cntt-config:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
+}
+
+.btn-cntt-action.btn-cntt-users {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.35);
+}
+.btn-cntt-action.btn-cntt-users:hover {
+  background: rgba(168, 85, 247, 0.3);
+  border-color: #c084fc;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-login-manage-users {
+  background: none;
+  border: none;
+  color: #a855f7;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.btn-login-manage-users:hover {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.12);
+}
+
+.btn-toggle-row-pass {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0 2px;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.btn-toggle-row-pass:hover {
+  opacity: 1;
 }
 
 /* Chip Tài Khoản Cán Bộ Lịch Trực trên Toolbar */
