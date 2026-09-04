@@ -1904,53 +1904,53 @@
           <div class="workspace-top-bar cntt-top-bar">
             <div class="workspace-top-left">
               <button type="button" class="btn-back" id="btnBackToHubFromCntt" title="Quay về danh mục">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
                 <span>Quay lại</span>
               </button>
               <div class="workspace-heading">
                 <div class="flex-row gap-8 align-center">
-                  <h1 class="workspace-title">Báo Cáo Công Tác Sửa Chữa Hàng Ngày (P.CNTT)</h1>
+                  <h1 class="workspace-title cntt-main-title">Sửa Chữa CNTT</h1>
                   <span class="cntt-cloud-badge" id="cnttSyncStatusBadge" title="Nguồn: Google Trang Tính Phòng CNTT">
                     <span class="cntt-pulse-dot"></span>
-                    <span id="cnttSyncStatusText">Google Trang Tính</span>
+                    <span id="cnttSyncStatusText">Google Sheet</span>
                   </span>
                 </div>
               </div>
             </div>
 
             <div class="workspace-top-actions cntt-top-actions">
-              <button type="button" class="btn-cntt-action btn-cntt-sync" id="btnFetchGoogleSheet" title="Tải dữ liệu mới nhất trực tiếp từ Google Sheet">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>Đồng Bộ Google Sheet</span>
+              <button type="button" class="btn-cntt-action btn-cntt-sync" id="btnFetchGoogleSheet" title="Tải dữ liệu mới nhất từ Google Sheet">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span>Đồng Bộ Sheet</span>
               </button>
               <button type="button" class="btn-cntt-action btn-cntt-add" id="btnCnttGoToForm" title="Điền ca sửa chữa mới">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Điền Ca Mới</span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>+ Điền Ca</span>
               </button>
               <button type="button" class="btn-cntt-action btn-cntt-excel" id="btnExportCnttExcel" title="Xuất Báo Cáo Thống Kê ra file Excel">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 <span>Xuất Excel</span>
               </button>
               <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                <span>Cấu Hình Sheet</span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Cấu Hình</span>
               </button>
             </div>
           </div>
 
-          <!-- Tab Navigation Switcher -->
+          <!-- Tab Navigation Switcher (Gọn gàng & ngắn gọn) -->
           <div class="cntt-tabs-nav">
             <button type="button" class="cntt-nav-tab active" id="btnTabCnttForm">
-              <span>📝 Điền Ca Trực Tiếp Vào Sheet</span>
+              <span>📝 Điền Ca</span>
             </button>
             <button type="button" class="cntt-nav-tab" id="btnTabCnttEmbedded">
-              <span>🗂️ Google Trang Tính Trực Tiếp</span>
+              <span>🗂️ Google Sheet</span>
             </button>
             <button type="button" class="cntt-nav-tab" id="btnTabCnttAnalytics">
-              <span>📊 Bảng Thống Kê & Phân Tích</span>
+              <span>📊 Thống Kê</span>
             </button>
             <button type="button" class="cntt-nav-tab" id="btnTabCnttTable">
-              <span>📋 Danh Sách Ca Công Tác (<span id="cnttTableCountBadge">0</span>)</span>
+              <span>📋 Danh Sách (<span id="cnttTableCountBadge">0</span>)</span>
             </button>
           </div>
 
@@ -1960,16 +1960,16 @@
             <div class="cntt-tab-pane" id="cnttFormPane">
               <div class="cntt-form-container">
                 <div class="cntt-form-header">
-                  <div>
-                    <h2 style="font-size: 1.15rem; color: #f8fafc; font-weight: 700; margin-bottom: 4px;">📝 Điền Ca Công Tác & Đồng Bộ Google Trang Tính</h2>
-                    <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">Điền nhanh ca tiếp nhận sự cố. Hỗ trợ nhập số lượng 1, 2, 3... cho từng lỗi phần mềm và linh kiện phần cứng.</p>
+                  <div class="cntt-form-header-title">
+                    <h2 class="cntt-form-heading">📝 Điền Ca Tiếp Nhận</h2>
+                    <p class="cntt-form-subheading">Hỗ trợ điền số lượng 1, 2, 3... cho từng lỗi phần mềm và linh kiện.</p>
                   </div>
-                  <div class="flex-row gap-10 align-center">
+                  <div class="cntt-form-actions-cluster">
                     <div class="cntt-form-live-summary" id="cnttFormLiveSummary">
-                      <span class="summary-empty">Chưa chọn sự cố Phần Mềm hoặc Phần Cứng nào</span>
+                      <span class="summary-empty">Chưa chọn sự cố nào</span>
                     </div>
                     <button type="button" class="btn-cntt-action btn-cntt-copy" id="btnCopyFormTsvRow" title="Sao chép hàng dữ liệu định dạng chuẩn Google Sheet để dán Ctrl+V">
-                      <span>📋 Sao Chép Hàng Dán (Ctrl+V)</span>
+                      <span>📋 Copy Dòng (Ctrl+V)</span>
                     </button>
                     <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenGoogleSheetExternal">
                       <span>↗ Mở Sheet</span>
