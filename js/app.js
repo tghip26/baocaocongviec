@@ -2483,8 +2483,11 @@ class AppController {
     const term = DocxTableParser.removeAccents(searchTerm.trim().toLowerCase());
 
     const filteredTools = window.TOOLS_REGISTRY.filter(tool => {
-      if (this.currentCategory !== "all" && tool.categoryId !== this.currentCategory) {
-        return false;
+      if (this.currentCategory !== "all") {
+        const isCatMatch = (tool.categoryId === this.currentCategory) ||
+          (tool.id === "cntt" && (this.currentCategory === "giamdinh" || this.currentCategory === "duty")) ||
+          (tool.id === "duty-roster" && (this.currentCategory === "duty" || this.currentCategory === "giamdinh"));
+        if (!isCatMatch) return false;
       }
       if (term) {
         const titleNorm = DocxTableParser.removeAccents(tool.title.toLowerCase());

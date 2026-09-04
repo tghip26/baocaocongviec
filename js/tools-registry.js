@@ -39,6 +39,44 @@ window.TOOLS_CATEGORIES = [
 
 window.TOOLS_REGISTRY = [
   {
+    id: "cntt",
+    categoryId: "giamdinh",
+    title: "Báo Cáo Công Tác Sửa Chữa P.CNTT",
+    subtitle: "Tích hợp trực tiếp Google Trang Tính & Bộ Thống Kê Đi Kèm",
+    description: "Truy cập, điền trực tiếp vào Google Trang Tính, đồng bộ tự động 44 cột, phân tích sự cố Phần Mềm & Phần Cứng, KPI và xuất Excel.",
+    badge: "Google Sheet & Thống Kê",
+    badgeColor: "emerald",
+    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+    inputType: "cntt-interactive",
+    outputName: "Google Trang Tính Live & Báo Cáo Excel",
+    guide: [
+      "Bước 1: Hệ thống tự động đồng bộ dữ liệu ca sửa chữa từ Google Trang Tính.",
+      "Bước 2: Xem các biểu đồ phân tích KPI, Top Khoa/Phòng và Năng suất Cán bộ.",
+      "Bước 3: Sang tab 'Điền Ca Mới' để nhập nhanh ca sửa chữa hoặc dán trực tiếp Ctrl+V.",
+      "Bước 4: Nhấn 'Xuất Excel' để tải file báo cáo thống kê hoàn chỉnh."
+    ],
+    executeKey: "openCnttWorkReport"
+  },
+  {
+    id: "duty-roster",
+    categoryId: "duty",
+    title: "Lịch Trực & Chấm Công P.CNTT",
+    subtitle: "Xếp ca trực công bằng, tài khoản cá nhân & xuất Excel",
+    description: "Tự động xếp ca trực công bằng cho cán bộ CNTT, đổi ca linh hoạt và xuất file Excel bảng chấm công chuẩn.",
+    badge: "Lịch Trực Phòng CNTT",
+    badgeColor: "cyan",
+    icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M15 14h2"/><path d="M15 17h3"/></svg>`,
+    inputType: "duty-roster-interactive",
+    outputName: "Lich_Truc_Phong_CNTT.xlsx",
+    guide: [
+      "Bước 1: Quản lý danh sách cán bộ P.CNTT và tài khoản đăng nhập.",
+      "Bước 2: Chọn Tháng / Năm và nhấn '⚡ Xếp Lịch Tự Động'.",
+      "Bước 3: Nhấp vào từng ngày để đổi cán bộ trực khi có nhu cầu.",
+      "Bước 4: Chuyển tab '⭐ Lịch Của Tôi' hoặc nhấn '📊 Xuất Excel'."
+    ],
+    executeKey: "openDutyRoster"
+  },
+  {
     id: "word-to-html",
     categoryId: "web-cms",
     title: "Chuyển Word sang HTML/CSS",
