@@ -449,6 +449,13 @@ class AppController {
     this.btnSyncToAppleCalendar = document.getElementById("btnSyncToAppleCalendar");
     this.btnSyncToAndroidCalendar = document.getElementById("btnSyncToAndroidCalendar");
     this.btnSyncDownloadIcsFile = document.getElementById("btnSyncDownloadIcsFile");
+
+    // CNTT Work Report Elements & State
+    this.cnttWorkReportView = document.getElementById("cnttWorkReportView");
+    this.modalCnttSheetConfig = document.getElementById("modalCnttSheetConfig");
+    this.cnttRecords = [];
+    this.cnttAnalytics = null;
+    this.cnttActiveTab = "analytics";
   }
 
   initEvents() {
@@ -461,6 +468,7 @@ class AppController {
     this.initDutyRosterEvents();
     this.initBhytXmlEvents();
     this.initWordPageRemoverEvents();
+    this.initCnttWorkReportEvents();
 
     // Password Visibility Toggles
     this.setupPasswordToggle("btnToggleLoginPass", "inputDutyLoginPass");
@@ -1832,6 +1840,7 @@ class AppController {
     if (this.wordPageRemoverView) this.wordPageRemoverView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
+    if (this.cnttWorkReportView) this.cnttWorkReportView.classList.add("hidden");
     if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
     if (this.dutyHeaderSessionWidget) this.dutyHeaderSessionWidget.classList.add("hidden");
   }
@@ -1846,6 +1855,8 @@ class AppController {
       this.showSqlBuilderView();
     } else if (hash === "duty-roster") {
       this.showDutyRosterView();
+    } else if (hash === "cntt") {
+      this.showCnttWorkReportView();
     } else if (hash === "bhyt-xml") {
       this.showBhytXmlView();
     } else if (hash === "word-to-html") {
@@ -1869,6 +1880,8 @@ class AppController {
           this.showSqlBuilderView();
         } else if (tool.id === "duty-roster") {
           this.showDutyRosterView();
+        } else if (tool.id === "cntt") {
+          this.showCnttWorkReportView();
         } else {
           this.showToolView(tool.id);
         }
@@ -2397,6 +2410,10 @@ class AppController {
     }
     if (toolId === "word-page-remover") {
       this.showWordPageRemoverView();
+      return;
+    }
+    if (toolId === "cntt") {
+      this.showCnttWorkReportView();
       return;
     }
 
@@ -7716,6 +7733,719 @@ p {
     const year = this.getSelectedDutyYear();
     ToolDutyRoster.printDutyRosterA4(year, month);
     this.showToast("🖨️ Đã mở cửa sổ in Bảng Phân Công Lịch Trực khổ A4 chuẩn hành chính!", "info");
+  }
+
+  // =========================================================================
+  // BÁO CÁO CÔNG TÁC SỬA CHỮA PHÒNG CNTT (GOOGLE SHEETS INTEGRATION & ANALYTICS)
+  updateActiveNav(toolId) {
+    if (!this.sidebarNav) return;
+    this.sidebarNav.querySelectorAll(".nav-item").forEach(item => {
+      item.classList.toggle("active", item.dataset.tool === toolId);
+    });
+  }
+
+  showCnttWorkReportView() {
+    this.triggerViewTransitionProgress();
+    this.currentToolId = "cntt";
+    this.hideAllViews();
+    if (this.cnttWorkReportView) {
+      this.cnttWorkReportView.classList.remove("hidden");
+    }
+    this.updateActiveNav("cntt");
+    window.location.hash = "cntt";
+
+    if (!this.cnttRecords || this.cnttRecords.length === 0) {
+      this.fetchGoogleSheetDataForCntt(true);
+    }
+  }
+
+  initCnttWorkReportEvents() {
+    this.cnttWorkReportView = document.getElementById("cnttWorkReportView");
+    this.btnBackToHubFromCntt = document.getElementById("btnBackToHubFromCntt");
+    this.btnFetchGoogleSheet = document.getElementById("btnFetchGoogleSheet");
+    this.btnCnttGoToForm = document.getElementById("btnCnttGoToForm");
+    this.btnExportCnttExcel = document.getElementById("btnExportCnttExcel");
+    this.btnOpenSheetConfigModal = document.getElementById("btnOpenSheetConfigModal");
+    this.cnttSyncStatusBadge = document.getElementById("cnttSyncStatusBadge");
+    this.cnttSyncStatusText = document.getElementById("cnttSyncStatusText");
+
+    // Tabs
+    this.btnTabCnttAnalytics = document.getElementById("btnTabCnttAnalytics");
+    this.btnTabCnttTable = document.getElementById("btnTabCnttTable");
+    this.btnTabCnttForm = document.getElementById("btnTabCnttForm");
+    this.btnTabCnttEmbedded = document.getElementById("btnTabCnttEmbedded");
+    this.cnttAnalyticsPane = document.getElementById("cnttAnalyticsPane");
+    this.cnttTablePane = document.getElementById("cnttTablePane");
+    this.cnttFormPane = document.getElementById("cnttFormPane");
+    this.cnttEmbeddedPane = document.getElementById("cnttEmbeddedPane");
+
+    // Form
+    this.formCnttRepairEntry = document.getElementById("formCnttRepairEntry");
+    this.inputFormDept = document.getElementById("inputFormDept");
+    this.inputFormSoHoSo = document.getElementById("inputFormSoHoSo");
+    this.inputFormSoPhieu = document.getElementById("inputFormSoPhieu");
+    this.inputFormReqStaff = document.getElementById("inputFormReqStaff");
+    this.selectFormExecStaff = document.getElementById("selectFormExecStaff");
+    this.selectFormStatus = document.getElementById("selectFormStatus");
+    this.inputFormNote = document.getElementById("inputFormNote");
+    this.btnCopyFormTsvRow = document.getElementById("btnCopyFormTsvRow");
+    this.btnResetCnttForm = document.getElementById("btnResetCnttForm");
+
+    // Table & Filters
+    this.inputCnttSearch = document.getElementById("inputCnttSearch");
+    this.selectCnttFilterDept = document.getElementById("selectCnttFilterDept");
+    this.selectCnttFilterStaff = document.getElementById("selectCnttFilterStaff");
+    this.selectCnttFilterType = document.getElementById("selectCnttFilterType");
+    this.tbodyCnttRecords = document.getElementById("tbodyCnttRecords");
+    this.cnttTableCountBadge = document.getElementById("cnttTableCountBadge");
+
+    // Embedded Sheet
+    this.btnReloadSheetIframe = document.getElementById("btnReloadSheetIframe");
+    this.cnttGoogleSheetIframe = document.getElementById("cnttGoogleSheetIframe");
+
+    // Modal Config
+    this.modalCnttSheetConfig = document.getElementById("modalCnttSheetConfig");
+    this.btnCloseCnttSheetConfig = document.getElementById("btnCloseCnttSheetConfig");
+    this.btnDismissCnttSheetConfig = document.getElementById("btnDismissCnttSheetConfig");
+    this.inputCustomCnttSheetUrl = document.getElementById("inputCustomCnttSheetUrl");
+    this.btnTestCnttSheetConnection = document.getElementById("btnTestCnttSheetConnection");
+    this.btnResetDefaultCnttSheet = document.getElementById("btnResetDefaultCnttSheet");
+    this.btnSaveCnttSheetConfig = document.getElementById("btnSaveCnttSheetConfig");
+    this.txtCnttSheetConnectionStatus = document.getElementById("txtCnttSheetConnectionStatus");
+
+    // 1. Populate Dropdown Khoa/Phòng (47 khoa chuẩn)
+    if (window.ToolCnttReport) {
+      if (this.inputFormDept) {
+        this.inputFormDept.innerHTML = `
+          <option value="">-- Chọn Khoa / Phòng Yêu Cầu --</option>
+          ${ToolCnttReport.DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join("")}
+        `;
+      }
+      if (this.selectCnttFilterDept) {
+        this.selectCnttFilterDept.innerHTML = `
+          <option value="all">-- Tất Cả Khoa / Phòng --</option>
+          ${ToolCnttReport.DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join("")}
+        `;
+      }
+
+      // 2. Render Checkbox danh mục Phần Mềm (21 mục)
+      const swContainer = document.getElementById("containerSoftwareCheckboxes");
+      if (swContainer) {
+        swContainer.innerHTML = ToolCnttReport.SOFTWARE_CATEGORIES.map(cat => `
+          <label class="cntt-checkbox-card" title="${cat.label}">
+            <input type="checkbox" name="sw_issue" value="${cat.key}" data-label="${cat.label}" />
+            <span>${cat.label}</span>
+          </label>
+        `).join("");
+      }
+
+      // 3. Render Inputs danh mục Phần Cứng (10 mục)
+      const hwContainer = document.getElementById("containerHardwareInputs");
+      if (hwContainer) {
+        hwContainer.innerHTML = ToolCnttReport.HARDWARE_CATEGORIES.map(cat => `
+          <div class="cntt-hw-card">
+            <label>${cat.label} (${cat.unit || 'mô tả'}):</label>
+            <input type="${cat.isText ? 'text' : 'number'}" name="hw_issue" min="0" data-key="${cat.key}" data-label="${cat.label}" placeholder="${cat.isText ? 'Nội dung...' : '0'}" />
+          </div>
+        `).join("");
+      }
+    }
+
+    // Event Bindings
+    if (this.btnBackToHubFromCntt) {
+      this.btnBackToHubFromCntt.addEventListener("click", () => {
+        window.location.hash = "";
+      });
+    }
+
+    if (this.btnTabCnttAnalytics) this.btnTabCnttAnalytics.addEventListener("click", () => this.switchCnttTab("analytics"));
+    if (this.btnTabCnttTable) this.btnTabCnttTable.addEventListener("click", () => this.switchCnttTab("table"));
+    if (this.btnTabCnttForm) this.btnTabCnttForm.addEventListener("click", () => this.switchCnttTab("form"));
+    if (this.btnTabCnttEmbedded) this.btnTabCnttEmbedded.addEventListener("click", () => this.switchCnttTab("embedded"));
+
+    if (this.btnFetchGoogleSheet) {
+      this.btnFetchGoogleSheet.addEventListener("click", () => this.fetchGoogleSheetDataForCntt(false));
+    }
+    if (this.btnCnttGoToForm) {
+      this.btnCnttGoToForm.addEventListener("click", () => this.switchCnttTab("form"));
+    }
+    if (this.btnExportCnttExcel) {
+      this.btnExportCnttExcel.addEventListener("click", () => this.exportCnttReportExcel());
+    }
+    if (this.btnOpenSheetConfigModal) {
+      this.btnOpenSheetConfigModal.addEventListener("click", () => this.openCnttSheetConfigModal());
+    }
+
+    // Form Events
+    if (this.formCnttRepairEntry) {
+      this.formCnttRepairEntry.addEventListener("submit", (e) => this.handleCnttFormSubmit(e));
+    }
+    if (this.btnCopyFormTsvRow) {
+      this.btnCopyFormTsvRow.addEventListener("click", () => this.copyFormTsvRow());
+    }
+    if (this.btnResetCnttForm) {
+      this.btnResetCnttForm.addEventListener("click", () => this.resetCnttForm());
+    }
+
+    // Search & Filter Events
+    if (this.inputCnttSearch) {
+      this.inputCnttSearch.addEventListener("input", () => this.renderCnttTable());
+    }
+    if (this.selectCnttFilterDept) {
+      this.selectCnttFilterDept.addEventListener("change", () => this.renderCnttTable());
+    }
+    if (this.selectCnttFilterStaff) {
+      this.selectCnttFilterStaff.addEventListener("change", () => this.renderCnttTable());
+    }
+    if (this.selectCnttFilterType) {
+      this.selectCnttFilterType.addEventListener("change", () => this.renderCnttTable());
+    }
+
+    // Iframe Reload
+    if (this.btnReloadSheetIframe && this.cnttGoogleSheetIframe) {
+      this.btnReloadSheetIframe.addEventListener("click", () => {
+        const cur = this.cnttGoogleSheetIframe.src;
+        this.cnttGoogleSheetIframe.src = cur;
+        this.showToast("🔄 Đang làm mới khung Google Trang Tính...", "info");
+      });
+    }
+
+    // Modal Config Events
+    if (this.btnCloseCnttSheetConfig) {
+      this.btnCloseCnttSheetConfig.addEventListener("click", () => this.hideModal(this.modalCnttSheetConfig));
+    }
+    if (this.btnDismissCnttSheetConfig) {
+      this.btnDismissCnttSheetConfig.addEventListener("click", () => this.hideModal(this.modalCnttSheetConfig));
+    }
+    if (this.btnTestCnttSheetConnection) {
+      this.btnTestCnttSheetConnection.addEventListener("click", () => this.testCnttSheetConnection());
+    }
+    if (this.btnResetDefaultCnttSheet) {
+      this.btnResetDefaultCnttSheet.addEventListener("click", () => this.resetDefaultCnttSheetConfig());
+    }
+    if (this.btnSaveCnttSheetConfig) {
+      this.btnSaveCnttSheetConfig.addEventListener("click", () => this.saveCnttSheetConfig());
+    }
+  }
+
+  /**
+   * Chuyển tab trong Báo Cáo Công Tác
+   */
+  switchCnttTab(tabName) {
+    this.cnttActiveTab = tabName;
+    const tabs = [
+      { name: "analytics", btn: this.btnTabCnttAnalytics, pane: this.cnttAnalyticsPane },
+      { name: "table", btn: this.btnTabCnttTable, pane: this.cnttTablePane },
+      { name: "form", btn: this.btnTabCnttForm, pane: this.cnttFormPane },
+      { name: "embedded", btn: this.btnTabCnttEmbedded, pane: this.cnttEmbeddedPane }
+    ];
+
+    tabs.forEach(t => {
+      if (t.name === tabName) {
+        if (t.btn) t.btn.classList.add("active");
+        if (t.pane) t.pane.classList.remove("hidden");
+      } else {
+        if (t.btn) t.btn.classList.remove("active");
+        if (t.pane) t.pane.classList.add("hidden");
+      }
+    });
+
+    if (tabName === "analytics") this.renderCnttAnalytics();
+    if (tabName === "table") this.renderCnttTable();
+  }
+
+  /**
+   * Tải dữ liệu từ Google Sheets
+   */
+  async fetchGoogleSheetDataForCntt(isSilent = false) {
+    if (!window.ToolCnttReport) return;
+    this.setButtonLoading(this.btnFetchGoogleSheet, true, "Đang đồng bộ...");
+    this.showTopProgress(35);
+
+    try {
+      const records = await ToolCnttReport.fetchGoogleSheetData();
+      const localRows = ToolCnttReport.getLocalRows();
+
+      // Hợp nhất dữ liệu: các ca tạo cục bộ ưu tiên đứng đầu
+      this.cnttRecords = [...localRows, ...records];
+      this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
+
+      this.renderCnttAnalytics();
+      this.renderCnttTable();
+
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      if (this.cnttSyncStatusText) {
+        this.cnttSyncStatusText.textContent = `Đã đồng bộ (${timeStr})`;
+      }
+
+      // Cập nhật dropdown cán bộ thực hiện từ dữ liệu thực tế
+      if (this.selectCnttFilterStaff && this.cnttAnalytics.staffRanking) {
+        const cur = this.selectCnttFilterStaff.value;
+        this.selectCnttFilterStaff.innerHTML = `
+          <option value="all">-- Tất Cả Cán Bộ P.CNTT --</option>
+          ${this.cnttAnalytics.staffRanking.map(s => `<option value="${s.name}">${s.name} (${s.total} ca)</option>`).join("")}
+        `;
+        if (cur) this.selectCnttFilterStaff.value = cur;
+      }
+
+      if (!isSilent) {
+        this.showToast(`⚡ Đã đồng bộ thành công ${records.length} ca công tác từ Google Trang Tính!`, "success");
+      }
+    } catch (err) {
+      console.error("fetchGoogleSheetData error:", err);
+      this.showToast(`Lỗi đồng bộ Google Sheet: ${err.message}. Đang sử dụng dữ liệu cục bộ.`, "warning");
+      const localRows = ToolCnttReport.getLocalRows();
+      if (localRows.length > 0) {
+        this.cnttRecords = localRows;
+        this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
+        this.renderCnttAnalytics();
+        this.renderCnttTable();
+      }
+    } finally {
+      this.setButtonLoading(this.btnFetchGoogleSheet, false);
+      this.hideTopProgress();
+    }
+  }
+
+  /**
+   * Hiển thị bảng phân tích thống kê KPI & biểu đồ
+   */
+  renderCnttAnalytics() {
+    if (!this.cnttAnalytics) return;
+    const a = this.cnttAnalytics;
+
+    // KPI Cards
+    const kpiTotal = document.getElementById("kpiTotalCases");
+    const kpiTotalSub = document.getElementById("kpiTotalSub");
+    const kpiSw = document.getElementById("kpiSoftwareCases");
+    const kpiSwSub = document.getElementById("kpiSoftwareSub");
+    const kpiHw = document.getElementById("kpiHardwareCases");
+    const kpiHwSub = document.getElementById("kpiHardwareSub");
+    const kpiComp = document.getElementById("kpiCompletionRate");
+    const kpiCompSub = document.getElementById("kpiCompletionSub");
+
+    if (kpiTotal) kpiTotal.textContent = a.totalCases;
+    if (kpiTotalSub) kpiTotalSub.textContent = `Tổng cộng ${a.totalSwItems + a.totalHwItems} lượt xử lý`;
+    if (kpiSw) kpiSw.textContent = a.casesWithSw;
+    if (kpiSwSub) kpiSwSub.textContent = `${a.swRate}% ca • ${a.totalSwItems} lượt xử lý`;
+    if (kpiHw) kpiHw.textContent = a.casesWithHw;
+    if (kpiHwSub) kpiHwSub.textContent = `${a.hwRate}% ca • ${a.totalHwItems} lượt linh kiện`;
+    if (kpiComp) kpiComp.textContent = `${a.completionRate}%`;
+    if (kpiCompSub) kpiCompSub.textContent = `${a.completedCases} xong • ${a.pendingCases} tồn đọng`;
+
+    const bSw = document.getElementById("badgeTotalSwItems");
+    const bHw = document.getElementById("badgeTotalHwItems");
+    if (bSw) bSw.textContent = `${a.totalSwItems} lượt`;
+    if (bHw) bHw.textContent = `${a.totalHwItems} lượt`;
+
+    // 1. Top Khoa / Phòng
+    const deptContainer = document.getElementById("chartDeptRankingContainer");
+    if (deptContainer) {
+      if (a.deptRanking.length === 0) {
+        deptContainer.innerHTML = `<div style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:20px;">Chưa có dữ liệu khoa phòng</div>`;
+      } else {
+        const maxDept = a.deptRanking[0].total || 1;
+        deptContainer.innerHTML = a.deptRanking.slice(0, 8).map(d => {
+          const pct = Math.round((d.total / maxDept) * 100);
+          return `
+            <div class="cntt-bar-item">
+              <div class="cntt-bar-info">
+                <span class="cntt-bar-label" title="${d.name}">🏥 <strong>${d.name}</strong></span>
+                <span class="cntt-bar-val">${d.total} ca <small style="color:#94a3b8;font-weight:normal;">(PM: ${d.sw}, PC: ${d.hw})</small></span>
+              </div>
+              <div class="cntt-bar-track">
+                <div class="cntt-bar-fill fill-blue" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+
+    // 2. Năng suất Cán bộ P.CNTT
+    const staffContainer = document.getElementById("chartStaffRankingContainer");
+    if (staffContainer) {
+      if (a.staffRanking.length === 0) {
+        staffContainer.innerHTML = `<div style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:20px;">Chưa có dữ liệu cán bộ</div>`;
+      } else {
+        const maxStaff = a.staffRanking[0].total || 1;
+        staffContainer.innerHTML = a.staffRanking.map(s => {
+          const pct = Math.round((s.total / maxStaff) * 100);
+          return `
+            <div class="cntt-bar-item">
+              <div class="cntt-bar-info">
+                <span class="cntt-bar-label" title="${s.name}">👤 <strong>${s.name}</strong></span>
+                <span class="cntt-bar-val">${s.total} ca <small style="color:#94a3b8;font-weight:normal;">(PM: ${s.sw}, PC: ${s.hw})</small></span>
+              </div>
+              <div class="cntt-bar-track">
+                <div class="cntt-bar-fill fill-purple" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+
+    // 3. Cơ cấu Phần Mềm
+    const swContainer = document.getElementById("chartSoftwareBreakdownContainer");
+    if (swContainer) {
+      if (a.swRanking.length === 0) {
+        swContainer.innerHTML = `<div style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:20px;">Chưa có dữ liệu lỗi phần mềm</div>`;
+      } else {
+        const maxSw = a.swRanking[0].count || 1;
+        swContainer.innerHTML = a.swRanking.slice(0, 10).map(s => {
+          const pct = Math.round((s.count / maxSw) * 100);
+          return `
+            <div class="cntt-bar-item">
+              <div class="cntt-bar-info">
+                <span class="cntt-bar-label" title="${s.label}">⚙️ ${s.label}</span>
+                <span class="cntt-bar-val">${s.count} lượt</span>
+              </div>
+              <div class="cntt-bar-track">
+                <div class="cntt-bar-fill fill-blue" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+
+    // 4. Cơ cấu Phần Cứng
+    const hwContainer = document.getElementById("chartHardwareBreakdownContainer");
+    if (hwContainer) {
+      if (a.hwRanking.length === 0) {
+        hwContainer.innerHTML = `<div style="color:#94a3b8;font-size:0.8rem;text-align:center;padding:20px;">Chưa có dữ liệu phần cứng</div>`;
+      } else {
+        const maxHw = a.hwRanking[0].count || 1;
+        hwContainer.innerHTML = a.hwRanking.map(h => {
+          const pct = Math.round((h.count / maxHw) * 100);
+          return `
+            <div class="cntt-bar-item">
+              <div class="cntt-bar-info">
+                <span class="cntt-bar-label" title="${h.label}">🔧 ${h.label}</span>
+                <span class="cntt-bar-val">${h.count} lượt</span>
+              </div>
+              <div class="cntt-bar-track">
+                <div class="cntt-bar-fill fill-green" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    }
+  }
+
+  /**
+   * Hiển thị bảng danh sách ca công tác có tìm kiếm và bộ lọc
+   */
+  renderCnttTable() {
+    if (!this.tbodyCnttRecords) return;
+    const records = this.cnttRecords || [];
+
+    const searchKeyword = (this.inputCnttSearch ? this.inputCnttSearch.value : "").trim().toLowerCase();
+    const filterDept = this.selectCnttFilterDept ? this.selectCnttFilterDept.value : "all";
+    const filterStaff = this.selectCnttFilterStaff ? this.selectCnttFilterStaff.value : "all";
+    const filterType = this.selectCnttFilterType ? this.selectCnttFilterType.value : "all";
+
+    const filtered = records.filter(r => {
+      if (filterDept !== "all" && r.dept !== filterDept) return false;
+      if (filterStaff !== "all" && !r.execStaff.includes(filterStaff)) return false;
+      if (filterType === "sw" && r.softwareCount === 0) return false;
+      if (filterType === "hw" && r.hardwareCount === 0) return false;
+      if (searchKeyword) {
+        const str = `${r.stt} ${r.dept} ${r.soHoSo} ${r.soPhieu} ${r.reqStaff} ${r.execStaff} ${r.note} ${r.softwareIssues.map(s => s.label).join(' ')} ${r.hardwareIssues.map(h => h.label).join(' ')}`.toLowerCase();
+        if (!str.includes(searchKeyword)) return false;
+      }
+      return true;
+    });
+
+    if (this.cnttTableCountBadge) {
+      this.cnttTableCountBadge.textContent = String(filtered.length);
+    }
+
+    if (filtered.length === 0) {
+      this.tbodyCnttRecords.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center; padding: 30px; color: #94a3b8;">
+            ℹ️ Không tìm thấy ca công tác nào phù hợp với bộ lọc hiện tại.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    this.tbodyCnttRecords.innerHTML = filtered.map((r, i) => {
+      const swBadges = r.softwareIssues.map(s => `<span class="cntt-badge-tag badge-tag-sw">${s.label}${s.count > 1 ? ` (${s.count})` : ''}</span>`).join("");
+      const hwBadges = r.hardwareIssues.map(h => `<span class="cntt-badge-tag badge-tag-hw">${h.label}${h.count > 1 ? ` (${h.count})` : ''}</span>`).join("");
+
+      const isCompleted = (r.status || "").toLowerCase().includes("xong") || (r.status || "").toLowerCase().includes("hoàn thành") || (r.status || "").toLowerCase().includes("đã");
+      const statusBadge = isCompleted
+        ? `<span class="tool-badge badge-emerald" style="font-size:0.7rem;">${r.status || 'Đã xử lý'}</span>`
+        : `<span class="tool-badge badge-amber" style="font-size:0.7rem;">${r.status || 'Đang xử lý'}</span>`;
+
+      return `
+        <tr>
+          <td style="text-align:center; font-weight:700; color:#94a3b8;">${r.stt || (i + 1)}</td>
+          <td>
+            <strong style="color:#f8fafc;">${r.dept}</strong>
+          </td>
+          <td>
+            ${r.soHoSo ? `<div style="font-size:0.74rem;color:#38bdf8;">HS: <strong>${r.soHoSo}</strong></div>` : ''}
+            ${r.soPhieu ? `<div style="font-size:0.72rem;color:#94a3b8;">Số: ${r.soPhieu}</div>` : ''}
+          </td>
+          <td>${swBadges || '<span style="color:#64748b;">-</span>'}</td>
+          <td>${hwBadges || '<span style="color:#64748b;">-</span>'}</td>
+          <td style="font-size:0.78rem;color:#cbd5e1;">${r.reqStaff || '-'}</td>
+          <td>
+            <span class="cntt-badge-tag" style="background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);">
+              👤 ${r.execStaff}
+            </span>
+          </td>
+          <td style="text-align:center;">${statusBadge}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  /**
+   * Xử lý lưu ca công tác từ Form
+   */
+  handleCnttFormSubmit(e) {
+    e.preventDefault();
+    if (!window.ToolCnttReport) return;
+
+    const dept = this.inputFormDept ? this.inputFormDept.value : "";
+    const soHoSo = this.inputFormSoHoSo ? this.inputFormSoHoSo.value.trim() : "";
+    const soPhieu = this.inputFormSoPhieu ? this.inputFormSoPhieu.value.trim() : "";
+    const reqStaff = this.inputFormReqStaff ? this.inputFormReqStaff.value.trim() : "";
+    const execStaff = this.selectFormExecStaff ? this.selectFormExecStaff.value : "Dương";
+    const status = this.selectFormStatus ? this.selectFormStatus.value : "Đã xử lý";
+    const note = this.inputFormNote ? this.inputFormNote.value.trim() : "";
+
+    const swIssues = [];
+    const swObj = {};
+    let swCount = 0;
+    const swBoxes = document.querySelectorAll('input[name="sw_issue"]:checked');
+    swBoxes.forEach(b => {
+      swIssues.push({ key: b.value, label: b.dataset.label, count: 1 });
+      swObj[b.value] = 1;
+      swCount += 1;
+    });
+
+    const hwIssues = [];
+    const hwObj = {};
+    let hwCount = 0;
+    const hwInputs = document.querySelectorAll('input[name="hw_issue"]');
+    hwInputs.forEach(inp => {
+      const val = inp.value.trim();
+      if (val && val !== "0") {
+        const num = parseInt(val, 10);
+        const count = isNaN(num) ? 1 : num;
+        hwIssues.push({ key: inp.dataset.key, label: inp.dataset.label, value: val, count: count });
+        hwObj[inp.dataset.key] = val;
+        hwCount += count;
+      }
+    });
+
+    if (!dept) {
+      this.showToast("Vui lòng chọn Khoa / Phòng!", "warning");
+      return;
+    }
+
+    const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
+    const newRecord = {
+      id: `local_${Date.now()}`,
+      stt: nextStt,
+      dept: dept,
+      soHoSo: soHoSo,
+      soPhieu: soPhieu,
+      softwareIssues: swIssues,
+      softwareCount: swCount,
+      hardwareIssues: hwIssues,
+      hardwareCount: hwCount,
+      reqStaff: reqStaff,
+      execStaff: execStaff,
+      note: note,
+      status: status
+    };
+
+    ToolCnttReport.saveLocalRow(newRecord);
+
+    if (!this.cnttRecords) this.cnttRecords = [];
+    this.cnttRecords.unshift(newRecord);
+    this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
+
+    this.renderCnttAnalytics();
+    this.renderCnttTable();
+
+    const tsv = ToolCnttReport.buildTsvRow({
+      dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
+    }, nextStt);
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(tsv).then(() => {
+        this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}]! Dòng dữ liệu đã được tự động COPY. Bạn có thể mở Google Sheet và bấm Ctrl+V để dán trực tiếp.`, "success", 7000);
+      }).catch(() => {
+        this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}]!`, "success");
+      });
+    } else {
+      this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}] thành công!`, "success");
+    }
+
+    this.resetCnttForm();
+    this.switchCnttTab("table");
+  }
+
+  /**
+   * Sao chép dòng dữ liệu định dạng TSV của Form để dán Ctrl+V vào Google Sheet
+   */
+  copyFormTsvRow() {
+    if (!window.ToolCnttReport) return;
+    const dept = this.inputFormDept ? this.inputFormDept.value : "";
+    const soHoSo = this.inputFormSoHoSo ? this.inputFormSoHoSo.value.trim() : "";
+    const soPhieu = this.inputFormSoPhieu ? this.inputFormSoPhieu.value.trim() : "";
+    const reqStaff = this.inputFormReqStaff ? this.inputFormReqStaff.value.trim() : "";
+    const execStaff = this.selectFormExecStaff ? this.selectFormExecStaff.value : "Dương";
+    const status = this.selectFormStatus ? this.selectFormStatus.value : "Đã xử lý";
+    const note = this.inputFormNote ? this.inputFormNote.value.trim() : "";
+
+    const swObj = {};
+    document.querySelectorAll('input[name="sw_issue"]:checked').forEach(b => { swObj[b.value] = 1; });
+
+    const hwObj = {};
+    document.querySelectorAll('input[name="hw_issue"]').forEach(inp => {
+      const val = inp.value.trim();
+      if (val && val !== "0") hwObj[inp.dataset.key] = val;
+    });
+
+    const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
+    const tsv = ToolCnttReport.buildTsvRow({
+      dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
+    }, nextStt);
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(tsv).then(() => {
+        this.showToast("📋 Đã sao chép hàng dữ liệu định dạng chuẩn Google Sheet! Hãy mở trang tính và nhấn Ctrl+V vào ô đầu dòng.", "success", 6000);
+      }).catch(() => {
+        this.showToast("Không thể truy cập bộ nhớ đệm.", "warning");
+      });
+    } else {
+      this.showToast("Trình duyệt không hỗ trợ tự động sao chép.", "warning");
+    }
+  }
+
+  /**
+   * Đặt lại form nhập liệu
+   */
+  resetCnttForm() {
+    if (this.formCnttRepairEntry) this.formCnttRepairEntry.reset();
+    document.querySelectorAll('input[name="sw_issue"]').forEach(b => { b.checked = false; });
+    document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = ""; });
+  }
+
+  /**
+   * Xuất báo cáo Excel
+   */
+  exportCnttReportExcel() {
+    if (!window.ToolCnttReport) return;
+    if (!this.cnttRecords || this.cnttRecords.length === 0) {
+      this.showToast("Chưa có dữ liệu để xuất báo cáo!", "warning");
+      return;
+    }
+    try {
+      ToolCnttReport.exportExcelReport(this.cnttRecords, this.cnttAnalytics);
+      this.showToast("📊 Đã xuất file Báo Cáo Thống Kê Công Tác Sửa Chữa CNTT thành công!", "success");
+    } catch (err) {
+      console.error(err);
+      this.showToast(`Lỗi xuất Excel: ${err.message}`, "error");
+    }
+  }
+
+  /**
+   * Mở modal cấu hình liên kết Google Sheet
+   */
+  openCnttSheetConfigModal() {
+    if (!window.ToolCnttReport) return;
+    const cfg = ToolCnttReport.getConfig();
+    if (this.inputCustomCnttSheetUrl) {
+      this.inputCustomCnttSheetUrl.value = cfg.customUrl;
+    }
+    if (this.txtCnttSheetConnectionStatus) {
+      this.txtCnttSheetConnectionStatus.style.display = "none";
+    }
+    this.showModal(this.modalCnttSheetConfig);
+  }
+
+  /**
+   * Kiểm tra kết nối tới URL Google Sheet
+   */
+  async testCnttSheetConnection() {
+    if (!window.ToolCnttReport) return;
+    const url = this.inputCustomCnttSheetUrl ? this.inputCustomCnttSheetUrl.value.trim() : "";
+    const sheetId = ToolCnttReport.extractSheetId(url);
+
+    this.setButtonLoading(this.btnTestCnttSheetConnection, true, "Đang kiểm tra...");
+    if (this.txtCnttSheetConnectionStatus) {
+      this.txtCnttSheetConnectionStatus.style.display = "block";
+      this.txtCnttSheetConnectionStatus.style.color = "#38bdf8";
+      this.txtCnttSheetConnectionStatus.textContent = "⏳ Đang kết nối tới Google Sheets...";
+    }
+
+    try {
+      const records = await ToolCnttReport.fetchGoogleSheetData(sheetId);
+      if (this.txtCnttSheetConnectionStatus) {
+        this.txtCnttSheetConnectionStatus.style.color = "#10b981";
+        this.txtCnttSheetConnectionStatus.innerHTML = `✅ Kết nối thành công! Đọc được <strong>${records.length}</strong> ca công tác từ bảng tính.`;
+      }
+      this.showToast(`✅ Kết nối thành công! Tìm thấy ${records.length} dòng dữ liệu.`, "success");
+    } catch (err) {
+      if (this.txtCnttSheetConnectionStatus) {
+        this.txtCnttSheetConnectionStatus.style.color = "#ef4444";
+        this.txtCnttSheetConnectionStatus.textContent = `❌ Lỗi kết nối: ${err.message}. Hãy đảm bảo Sheet đã được Bật chia sẻ công khai ("Bất kỳ ai có liên kết đều xem được").`;
+      }
+      this.showToast(`Lỗi kết nối: ${err.message}`, "error");
+    } finally {
+      this.setButtonLoading(this.btnTestCnttSheetConnection, false);
+    }
+  }
+
+  /**
+   * Đặt lại cấu hình link Google Sheet mặc định
+   */
+  resetDefaultCnttSheetConfig() {
+    if (!window.ToolCnttReport) return;
+    if (this.inputCustomCnttSheetUrl) {
+      this.inputCustomCnttSheetUrl.value = `https://docs.google.com/spreadsheets/d/${ToolCnttReport.DEFAULT_SHEET_ID}/edit?usp=sharing`;
+    }
+    if (this.txtCnttSheetConnectionStatus) {
+      this.txtCnttSheetConnectionStatus.style.display = "none";
+    }
+    this.showToast("Đã khôi phục đường link Google Trang Tính gốc của bệnh viện.", "info");
+  }
+
+  /**
+   * Lưu cấu hình liên kết Google Sheet mới
+   */
+  saveCnttSheetConfig() {
+    if (!window.ToolCnttReport) return;
+    const url = this.inputCustomCnttSheetUrl ? this.inputCustomCnttSheetUrl.value.trim() : "";
+    const sheetId = ToolCnttReport.extractSheetId(url);
+
+    ToolCnttReport.saveConfig({
+      sheetId: sheetId,
+      customUrl: url || `https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing`
+    });
+
+    if (this.cnttGoogleSheetIframe) {
+      this.cnttGoogleSheetIframe.src = `https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing&rm=minimal`;
+    }
+
+    this.hideModal(this.modalCnttSheetConfig);
+    this.showToast("⚙️ Đã lưu cấu hình Google Trang Tính mới!", "success");
+
+    // Tải lại dữ liệu
+    this.fetchGoogleSheetDataForCntt(false);
   }
 
   showModal(modalEl) {
