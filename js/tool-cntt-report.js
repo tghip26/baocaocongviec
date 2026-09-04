@@ -73,9 +73,14 @@
         const saved = localStorage.getItem(STORAGE_KEY_CONFIG);
         if (saved) {
           const parsed = JSON.parse(saved);
+          let sName = parsed.sheetName || "";
+          // Nếu lưu tên sheet cũ là 'Tháng ...' không đúng với sheet ngày thực tế trên Google Sheets, xóa đi
+          if (sName && (sName.startsWith("Tháng") || sName === "Sheet1")) {
+            sName = "";
+          }
           return {
             sheetId: parsed.sheetId || DEFAULT_SHEET_ID,
-            sheetName: parsed.sheetName || "",
+            sheetName: sName,
             customUrl: parsed.customUrl || `https://docs.google.com/spreadsheets/d/${DEFAULT_SHEET_ID}/edit?usp=sharing`
           };
         }
@@ -109,16 +114,71 @@
     },
 
     /**
-     * Danh sách các sheet (Tháng 1 - Tháng 12 & Sheet1) trong Google Sheet P.CNTT
+     * Danh sách 30 sheet thực tế theo ngày trong Google Trang Tính P.CNTT (kèm GID chuẩn)
      */
     AVAILABLE_SHEETS: [
-      "Tháng 9", "Tháng 8", "Tháng 7", "Tháng 6", "Tháng 5", "Tháng 4",
-      "Tháng 3", "Tháng 2", "Tháng 1", "Tháng 10", "Tháng 11", "Tháng 12", "Sheet1"
+      { name: "4.9", gid: "229402778", label: "4.9 (Hôm nay / Hiện tại)" },
+      { name: "5-7.9", gid: "1974215368", label: "5-7.9" },
+      { name: "6.9", gid: "1419054481", label: "6.9" },
+      { name: "3.9", gid: "36166584", label: "3.9" },
+      { name: "31.8-1.9-2.9", gid: "222465239", label: "31.8-1.9-2.9 (Lễ 2/9)" },
+      { name: "28-29-30.8", gid: "524042424", label: "28-29-30.8" },
+      { name: "27.8", gid: "1878348164", label: "27.8" },
+      { name: "26.8", gid: "968668128", label: "26.8" },
+      { name: "25.8", gid: "120079373", label: "25.8" },
+      { name: "24.8", gid: "120561833", label: "24.8" },
+      { name: "21-22-23.8", gid: "1765495205", label: "21-22-23.8" },
+      { name: "20.8", gid: "1208165993", label: "20.8" },
+      { name: "19.8", gid: "2049801848", label: "19.8" },
+      { name: "18.8", gid: "1169776705", label: "18.8" },
+      { name: "17.8", gid: "1904439057", label: "17.8" },
+      { name: "14-15-16.8", gid: "486650833", label: "14-15-16.8" },
+      { name: "15.8", gid: "1153734661", label: "15.8" },
+      { name: "13.8", gid: "2036004273", label: "13.8" },
+      { name: "12.8", gid: "1531838084", label: "12.8" },
+      { name: "11.8", gid: "967954531", label: "11.8" },
+      { name: "10.8", gid: "1496271494", label: "10.8" },
+      { name: "7-8-9.8", gid: "282274476", label: "7-8-9.8" },
+      { name: "6.8", gid: "1226218874", label: "6.8" },
+      { name: "5.8", gid: "1390351569", label: "5.8" },
+      { name: "4.8", gid: "1376384020", label: "4.8" },
+      { name: "3.8", gid: "128387271", label: "3.8" },
+      { name: "31.7-2.8", gid: "1276120505", label: "31.7-2.8" },
+      { name: "30.7", gid: "366364974", label: "30.7" },
+      { name: "29.7", gid: "102951631", label: "29.7" },
+      { name: "Sheet292", gid: "1288431692", label: "Sheet292" }
     ],
 
     /**
+     * Tra cứu GID chuẩn của sheet từ tên sheet
+     */
+    getSheetGid(sheetName) {
+      if (!sheetName) return null;
+      const target = String(sheetName).trim().toLowerCase();
+      const found = this.AVAILABLE_SHEETS.find(s => {
+        const sName = (typeof s === "object" ? s.name : s).toLowerCase();
+        const sLabel = (typeof s === "object" && s.label ? s.label : "").toLowerCase();
+        return sName === target || sLabel.startsWith(target);
+      });
+      return found && typeof found === "object" ? found.gid : null;
+    },
+
+    /**
+     * Tự động xác định tên sheet phù hợp với ngày hiện tại
+     */
+    getTodaySheetName() {
+      const now = new Date();
+      const d = now.getDate();
+      const m = now.getMonth() + 1;
+      const single = `${d}.${m}`;
+      const exact = this.AVAILABLE_SHEETS.find(s => (typeof s === "object" ? s.name : s) === single);
+      if (exact) return (typeof exact === "object" ? exact.name : exact);
+      return "4.9";
+    },
+
+    /**
      * Tính toán dò tìm hàng trống tiếp theo trong khoảng từ startRow (mặc định 7) đến maxRow (100)
-     * Trả về số hàng, chuỗi tọa độ (ví dụ: B51:AK51) và cờ đầy dữ liệu
+     * Trả về số hàng, chuỗi tọa độ (ví dụ: B17:AK17) và cờ đầy dữ liệu
      */
     computeNextEmptyRow(rows, startRow = 7, maxRow = 100) {
       if (!Array.isArray(rows) || rows.length === 0) {
@@ -158,13 +218,21 @@
 
     /**
      * Tải dữ liệu trực tiếp từ Google Sheets qua Google Visualization API (GViz)
-     * Hỗ trợ chỉ định Sheet cụ thể (ví dụ: Tháng 9, Tháng 8...)
+     * Hỗ trợ chỉ định Sheet cụ thể (ví dụ: 4.9, 3.9, 5-7.9...) bằng GID hoặc tên Sheet
      */
     async fetchGoogleSheetData(sheetId = null, sheetName = null) {
       const id = sheetId || this.getConfig().sheetId;
-      const targetSheet = sheetName || this.getConfig().sheetName || "Tháng 9";
-      const sheetParam = targetSheet ? `&sheet=${encodeURIComponent(targetSheet)}` : "";
-      const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json${sheetParam}`;
+      const targetSheet = sheetName || this.getConfig().sheetName || this.getTodaySheetName();
+      const targetGid = this.getSheetGid(targetSheet);
+
+      // Ưu tiên dùng GID để đảm bảo 100% khớp tab trên Google Sheets
+      let sheetQuery = "";
+      if (targetGid) {
+        sheetQuery = `&gid=${targetGid}`;
+      } else if (targetSheet) {
+        sheetQuery = `&sheet=${encodeURIComponent(targetSheet)}`;
+      }
+      const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json${sheetQuery}`;
 
       try {
         const resp = await fetch(gvizUrl);
@@ -187,16 +255,19 @@
         records._rawRows = data.table.rows || [];
         records._nextEmptyRow = this.computeNextEmptyRow(records._rawRows, 7, 100);
         records._targetSheet = targetSheet;
+        records._targetGid = targetGid;
         return records;
       } catch (gvizErr) {
         console.warn("GViz API failed, fallback to CSV export", gvizErr);
         // Fallback sang CSV endpoint
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${targetSheet ? `&sheet=${encodeURIComponent(targetSheet)}` : ''}`;
+        const csvQuery = targetGid ? `&gid=${targetGid}` : (targetSheet ? `&sheet=${encodeURIComponent(targetSheet)}` : "");
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${csvQuery}`;
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error(`Không thể kết nối Google Sheet: ${resp.statusText}`);
         const csvText = await resp.text();
         const records = this.parseCsvText(csvText);
         records._targetSheet = targetSheet;
+        records._targetGid = targetGid;
         return records;
       }
     },
@@ -567,10 +638,11 @@
     },
 
     /**
-     * Tạo chuỗi dữ liệu 1 dòng phân tách bởi Tab (TSV) để dán trực tiếp (Ctrl+V) vào Google Sheets
+     * Tạo chuỗi dữ liệu 1 dòng phân tách bởi Tab (TSV) để dán trực tiếp (Ctrl+V) vào ô B trong Google Sheets (B7:AK100)
+     * Mặc định includeSttColA = false để khi chọn ô B và bấm Ctrl+V, dữ liệu rơi đúng từ Cột B -> Cột AM
      */
-    buildTsvRow(formData, nextStt = "") {
-      const cols = new Array(44).fill("");
+    buildTsvRow(formData, nextStt = "", includeSttColA = false) {
+      const cols = new Array(39).fill("");
 
       cols[0] = nextStt || "";
       cols[1] = formData.dept || "";
@@ -594,6 +666,10 @@
       cols[37] = formData.note || "";
       cols[38] = formData.status || "Đã xử lý";
 
+      // Khi dán vào Google Sheet từ ô B (B7:AK100), cắt bỏ cột A (STT đã được in sẵn trong bảng)
+      if (!includeSttColA) {
+        return cols.slice(1).join("\t");
+      }
       return cols.join("\t");
     },
 

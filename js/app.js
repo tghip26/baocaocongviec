@@ -7907,7 +7907,7 @@ p {
     }
 
     if (this.cnttTargetSheetBadge) {
-      this.cnttTargetSheetBadge.textContent = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+      this.cnttTargetSheetBadge.textContent = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
     }
   }
 
@@ -7989,9 +7989,16 @@ p {
     this.btnSaveCnttSheetConfig = document.getElementById("btnSaveCnttSheetConfig");
     this.txtCnttSheetConnectionStatus = document.getElementById("txtCnttSheetConnectionStatus");
 
-    // Trạng thái ban đầu
-    this.cnttSelectedSheet = (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
-    this.cnttNextEmptyRow = { row: 51, rangeStr: "B51:AK51", isFull: false };
+    // Trạng thái ban đầu: Đảm bảo chọn sheet chuẩn ngày hôm nay (4.9)
+    if (this.selectTargetSheetForEntry) {
+      if (!this.selectTargetSheetForEntry.value || this.selectTargetSheetForEntry.value.startsWith("Tháng") || this.selectTargetSheetForEntry.value === "Sheet1") {
+        this.selectTargetSheetForEntry.value = "4.9";
+      }
+      this.cnttSelectedSheet = this.selectTargetSheetForEntry.value || "4.9";
+    } else {
+      this.cnttSelectedSheet = "4.9";
+    }
+    this.cnttNextEmptyRow = { row: 17, rangeStr: "B17:AK17", isFull: false };
 
     // 1. Populate Dropdown Khoa/Phòng (47 khoa chuẩn)
     if (window.ToolCnttReport) {
@@ -8186,6 +8193,78 @@ p {
 
     // Cập nhật session ban đầu
     this.updateCnttUserSessionUI();
+
+    // Cập nhật liên kết Google Sheet mở ngoài theo sheet mặc định
+    this.updateCnttTargetSheetLinks(this.cnttSelectedSheet);
+  }
+
+  /**
+   * Xử lý khi người dùng chọn đổi Sheet (ví dụ: 4.9, 3.9, 5-7.9... hoặc nhập sheet mới)
+   */
+  handleTargetSheetChange(newSheet) {
+    if (newSheet === "__custom__") {
+      const customName = prompt("Nhập tên sheet trên Google Trang Tính (ví dụ: 7.9 hoặc 8.9):");
+      if (customName && customName.trim()) {
+        const cleanName = customName.trim();
+        let exists = false;
+        if (this.selectTargetSheetForEntry) {
+          for (let opt of this.selectTargetSheetForEntry.options) {
+            if (opt.value === cleanName) {
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            const newOpt = document.createElement("option");
+            newOpt.value = cleanName;
+            newOpt.textContent = cleanName;
+            this.selectTargetSheetForEntry.insertBefore(newOpt, this.selectTargetSheetForEntry.lastElementChild);
+          }
+          this.selectTargetSheetForEntry.value = cleanName;
+        }
+        newSheet = cleanName;
+      } else {
+        if (this.selectTargetSheetForEntry) {
+          this.selectTargetSheetForEntry.value = this.cnttSelectedSheet || "4.9";
+        }
+        return;
+      }
+    }
+
+    this.cnttSelectedSheet = newSheet;
+    if (this.cnttTargetSheetBadge) {
+      this.cnttTargetSheetBadge.textContent = newSheet;
+    }
+
+    // Cập nhật đường link và iframe theo GID tương ứng
+    this.updateCnttTargetSheetLinks(newSheet);
+
+    this.showToast(`🔍 Đang tải dữ liệu từ Sheet [${newSheet}]...`, "info", 1800);
+    this.fetchGoogleSheetDataForCntt(false, newSheet);
+  }
+
+  /**
+   * Cập nhật đường dẫn mở Google Sheet và nhúng iframe tới đúng tab/sheet
+   */
+  updateCnttTargetSheetLinks(sheetName) {
+    if (!window.ToolCnttReport) return;
+    const gid = ToolCnttReport.getSheetGid ? ToolCnttReport.getSheetGid(sheetName) : null;
+    const cfg = ToolCnttReport.getConfig();
+    const sheetId = cfg.sheetId || ToolCnttReport.DEFAULT_SHEET_ID;
+    const baseUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+    const fullUrl = gid ? `${baseUrl}?gid=${gid}#gid=${gid}` : baseUrl;
+
+    const linkExternal = document.getElementById("linkOpenGoogleSheetExternal");
+    if (linkExternal) linkExternal.href = fullUrl;
+
+    const linkTab = document.getElementById("linkOpenSheetTab");
+    if (linkTab) linkTab.href = fullUrl;
+
+    if (this.cnttGoogleSheetIframe) {
+      this.cnttGoogleSheetIframe.src = gid 
+        ? `${baseUrl}?gid=${gid}&rm=minimal` 
+        : `${baseUrl}?usp=sharing&rm=minimal`;
+    }
   }
 
   /**
@@ -8222,7 +8301,7 @@ p {
     this.setButtonLoading(this.btnFetchGoogleSheet, true, "Đang đồng bộ...");
     this.showTopProgress(35);
 
-    const sheetToFetch = targetSheet || this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
+    const sheetToFetch = targetSheet || this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
     this.cnttSelectedSheet = sheetToFetch;
 
     if (this.selectTargetSheetForEntry && this.selectTargetSheetForEntry.value !== sheetToFetch) {
@@ -8236,8 +8315,21 @@ p {
       const localRows = allLocalRows.filter(r => !r.targetSheet || r.targetSheet === sheetToFetch);
 
       // Cập nhật vị trí dòng trống tiếp theo được tính toán từ B7:AK100
-      this.cnttNextEmptyRow = records._nextEmptyRow || ToolCnttReport.computeNextEmptyRow(records._rawRows, 7, 100);
+      let nextEmpty = records._nextEmptyRow || ToolCnttReport.computeNextEmptyRow(records._rawRows, 7, 100);
+      const sheetLocalRows = localRows.filter(r => r.targetSheet === sheetToFetch && r.targetRow);
+      if (sheetLocalRows.length > 0) {
+        const maxLocalRow = Math.max(...sheetLocalRows.map(r => parseInt(r.targetRow, 10) || 0));
+        if (maxLocalRow >= nextEmpty.row) {
+          nextEmpty = {
+            row: maxLocalRow + 1,
+            rangeStr: `B${maxLocalRow + 1}:AK${maxLocalRow + 1}`,
+            isFull: maxLocalRow >= 100
+          };
+        }
+      }
+      this.cnttNextEmptyRow = nextEmpty;
       this.updateNextEmptyRowUI();
+      this.updateCnttTargetSheetLinks(sheetToFetch);
 
       // Hợp nhất dữ liệu: các ca tạo cục bộ ưu tiên đứng đầu
       this.cnttRecords = [...localRows, ...records];
@@ -8696,8 +8788,8 @@ p {
       ? window.ToolDutyRoster.getCurrentSession()
       : null;
 
-    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
-    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 51;
+    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
+    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 17;
     const targetRange = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.rangeStr : `B${targetRow}:AK${targetRow}`;
 
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
@@ -8750,7 +8842,7 @@ p {
 
     const tsv = ToolCnttReport.buildTsvRow({
       dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
-    }, nextStt);
+    }, nextStt, false);
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(tsv).then(() => {
@@ -8795,13 +8887,13 @@ p {
       hwObj[hwTextInput.dataset.key] = hwTextInput.value.trim();
     }
 
-    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "Tháng 9");
-    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 51;
+    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
+    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 17;
 
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
     const tsv = ToolCnttReport.buildTsvRow({
       dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
-    }, nextStt);
+    }, nextStt, false);
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(tsv).then(() => {
