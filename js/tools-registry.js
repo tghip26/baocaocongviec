@@ -234,12 +234,12 @@ window.TOOLS_REGISTRY = [
     executeKey: "runGiamDinh"
   },
   {
-    id: "cntt",
+    id: "cntt-file",
     categoryId: "giamdinh",
-    title: "Báo Cáo Công Việc P.CNTT",
-    subtitle: "Xử lý & định dạng bảng tổng hợp công việc CNTT",
+    title: "Báo Cáo Công Việc P.CNTT (File Excel)",
+    subtitle: "Xử lý & định dạng bảng tổng hợp công việc CNTT từ file Excel",
     description: "Chuẩn hóa font chữ, viền bảng và căn chỉnh bố cục bảng tổng hợp công việc Phòng CNTT chuyên nghiệp.",
-    badge: "Phòng CNTT",
+    badge: "File Excel P.CNTT",
     badgeColor: "emerald",
     icon: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
     inputType: "single-excel",

@@ -156,6 +156,13 @@
           <span class="nav-text">Báo Cáo Công Tác CNTT</span>
         </a>
 
+        <a href="#cntt-file" class="nav-item" data-tool="cntt-file" data-tooltip="Báo Cáo Công Việc P.CNTT (File Excel)">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </span>
+          <span class="nav-text">BC Công Việc (Excel)</span>
+        </a>
+
         <a href="#vgca-doi-chieu" class="nav-item" data-tool="vgca-doi-chieu" data-tooltip="Đối Chiếu CKS (19 Cột)">
           <span class="nav-icon">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><path d="M18 12H6"/><path d="m14 8 4 4-4 4"/><path d="m10 16-4-4 4-4"/></svg>
@@ -1933,24 +1940,157 @@
 
           <!-- Tab Navigation Switcher -->
           <div class="cntt-tabs-nav">
-            <button type="button" class="cntt-nav-tab active" id="btnTabCnttAnalytics">
-              <span>📊 Bảng Thống Kê & Phân Tích</span>
-            </button>
-            <button type="button" class="cntt-nav-tab" id="btnTabCnttTable">
-              <span>📋 Danh Sách Ca Công Tác (<span id="cnttTableCountBadge">0</span>)</span>
-            </button>
-            <button type="button" class="cntt-nav-tab" id="btnTabCnttForm">
+            <button type="button" class="cntt-nav-tab active" id="btnTabCnttForm">
               <span>📝 Điền Ca Trực Tiếp Vào Sheet</span>
             </button>
             <button type="button" class="cntt-nav-tab" id="btnTabCnttEmbedded">
               <span>🗂️ Google Trang Tính Trực Tiếp</span>
             </button>
+            <button type="button" class="cntt-nav-tab" id="btnTabCnttAnalytics">
+              <span>📊 Bảng Thống Kê & Phân Tích</span>
+            </button>
+            <button type="button" class="cntt-nav-tab" id="btnTabCnttTable">
+              <span>📋 Danh Sách Ca Công Tác (<span id="cnttTableCountBadge">0</span>)</span>
+            </button>
           </div>
 
           <!-- Main View Body -->
           <div class="cntt-view-body">
-            <!-- TAB 1: THỐNG KÊ & PHÂN TÍCH -->
-            <div class="cntt-tab-pane" id="cnttAnalyticsPane">
+            <!-- TAB 1: ĐIỀN CA CÔNG TÁC TRỰC TIẾP (FORM - HIỂN THỊ ĐẦU TIÊN) -->
+            <div class="cntt-tab-pane" id="cnttFormPane">
+              <div class="cntt-form-container">
+                <div class="cntt-form-header">
+                  <div>
+                    <h2 style="font-size: 1.15rem; color: #f8fafc; font-weight: 700; margin-bottom: 4px;">📝 Điền Ca Công Tác & Đồng Bộ Google Trang Tính</h2>
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">Điền nhanh ca tiếp nhận sự cố. Dữ liệu sẽ được lưu vào hệ thống và tạo chuỗi dán trực tiếp `Ctrl+V` vào Google Sheet.</p>
+                  </div>
+                  <div class="flex-row gap-8">
+                    <button type="button" class="btn-cntt-action btn-cntt-copy" id="btnCopyFormTsvRow" title="Sao chép hàng dữ liệu định dạng chuẩn Google Sheet để dán Ctrl+V">
+                      <span>📋 Sao Chép Hàng Dán (Ctrl+V)</span>
+                    </button>
+                    <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenGoogleSheetExternal">
+                      <span>↗ Mở Google Sheet</span>
+                    </a>
+                  </div>
+                </div>
+
+                <form id="formCnttRepairEntry" class="cntt-entry-form">
+                  <!-- Section 1: Thông tin Hành Chính -->
+                  <div class="cntt-form-section">
+                    <h4 class="cntt-section-title">1. Thông Tin Tiếp Nhận & Hành Chính</h4>
+                    <div class="cntt-form-grid-3">
+                      <div class="form-group">
+                        <label class="form-label required">Khoa / Phòng / Trung Tâm:</label>
+                        <select id="inputFormDept" class="w2h-text-input" style="width: 100%;" required>
+                          <!-- Populated by JS -->
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Số Hồ Sơ (nếu có, cách nhau dấu ;):</label>
+                        <input type="text" id="inputFormSoHoSo" class="w2h-text-input" placeholder="Ví dụ: 26183381; 26183112" />
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Số Phiếu (nếu có):</label>
+                        <input type="text" id="inputFormSoPhieu" class="w2h-text-input" placeholder="Ví dụ: 7860435, 7860506" />
+                      </div>
+                    </div>
+
+                    <div class="cntt-form-grid-3" style="margin-top: 12px;">
+                      <div class="form-group">
+                        <label class="form-label">Cán Bộ Yêu Cầu (Khoa/Phòng):</label>
+                        <input type="text" id="inputFormReqStaff" class="w2h-text-input" placeholder="Ví dụ: Bs Hùng, ĐD Nga..." />
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label required">Cán Bộ P.CNTT Thực Hiện (Lấy từ Lịch Trực):</label>
+                        <select id="selectFormExecStaff" class="w2h-text-input" style="width: 100%;">
+                          <option value="Chu Thị Dương">Chu Thị Dương (Phần mềm)</option>
+                          <option value="Trương Hoàng Hiệp">Trương Hoàng Hiệp (Phần cứng & mềm)</option>
+                          <option value="Bùi Minh Chí">Bùi Minh Chí (Phần cứng)</option>
+                          <option value="Vương Bá Tuấn">Vương Bá Tuấn (Phần cứng)</option>
+                          <option value="Phí Đức Phương">Phí Đức Phương (Phần cứng)</option>
+                          <option value="Nguyễn Trọng Nhân">Nguyễn Trọng Nhân (Phần cứng)</option>
+                          <option value="Nguyễn Thu Huyền">Nguyễn Thu Huyền (Phần mềm)</option>
+                          <option value="Nguyễn Đức Lâm">Nguyễn Đức Lâm (Phần cứng & mềm)</option>
+                          <option value="Nguyễn Thị Quyên">Nguyễn Thị Quyên (Phần cứng & mềm)</option>
+                          <option value="Nguyễn Duy Phương">Nguyễn Duy Phương (Phó phòng)</option>
+                          <option value="Dương Văn Phương">Dương Văn Phương (Phần cứng & mềm)</option>
+                          <option value="Lê Thị Huyền Ly">Lê Thị Huyền Ly (Phần mềm)</option>
+                          <option value="Nguyễn Minh Họa">Nguyễn Minh Họa (Trưởng phòng)</option>
+                          <option value="P.CNTT">Cả Phòng CNTT</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Tình Trạng Xử Lý:</label>
+                        <select id="selectFormStatus" class="w2h-text-input" style="width: 100%;">
+                          <option value="Đã xử lý">Đã xử lý xong</option>
+                          <option value="Đang xử lý">Đang xử lý</option>
+                          <option value="Chờ VIMES">Chờ VIMES hỗ trợ</option>
+                          <option value="Chờ linh kiện">Chờ linh kiện</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Section 2: Nội Dung Đề Xuất Sửa Chữa Phần Mềm (21 Mục) -->
+                  <div class="cntt-form-section" style="margin-top: 16px;">
+                    <h4 class="cntt-section-title">2. Nội Dung Sửa Chữa Phần Mềm (Tích chọn lỗi thực hiện)</h4>
+                    <div class="cntt-checkbox-grid" id="containerSoftwareCheckboxes">
+                      <!-- Rendered by JS -->
+                    </div>
+                  </div>
+
+                  <!-- Section 3: Nội Dung Đề Xuất Sửa Chữa Phần Cứng (Linh kiện) -->
+                  <div class="cntt-form-section" style="margin-top: 16px;">
+                    <h4 class="cntt-section-title">3. Phần Cứng & Linh Kiện (Đánh số lượng)</h4>
+                    <div class="cntt-hardware-inputs-grid" id="containerHardwareInputs">
+                      <!-- Rendered by JS -->
+                    </div>
+                  </div>
+
+                  <!-- Section 4: Ghi Chú & Nút Lưu -->
+                  <div class="cntt-form-section" style="margin-top: 16px;">
+                    <div class="form-group">
+                      <label class="form-label">Ghi Chú & Nội Dung Chi Tiết Khác:</label>
+                      <textarea id="inputFormNote" class="w2h-text-input" rows="2" style="width: 100%;" placeholder="Nhập mô tả lỗi cụ thể, nguyên nhân hoặc hướng giải quyết..."></textarea>
+                    </div>
+
+                    <div class="flex-row gap-12 align-center" style="margin-top: 14px;">
+                      <button type="submit" class="btn-cntt-submit" id="btnSubmitCnttRecord">
+                        <span>💾 Lưu Ca Sửa Chữa & Cập Nhật Thống Kê</span>
+                      </button>
+                      <button type="button" class="btn-modal-reset" id="btnResetCnttForm">
+                        <span>Làm Lại</span>
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- TAB 2: GOOGLE TRANG TÍNH TRỰC TIẾP (EMBEDDED IFRAME) -->
+            <div class="cntt-tab-pane hidden" id="cnttEmbeddedPane">
+              <div class="cntt-iframe-toolbar flex-between align-center">
+                <div class="flex-row gap-8 align-center">
+                  <span style="font-size: 0.85rem; font-weight: 700; color: #f8fafc;">🗂️ Google Trang Tính: Báo Cáo Sửa Chữa Hàng Ngày P.CNTT</span>
+                  <span class="tool-badge badge-blue">Tương tác trực tiếp</span>
+                </div>
+                <div class="flex-row gap-8 align-center">
+                  <button type="button" class="btn-cntt-action btn-cntt-reload-frame" id="btnReloadSheetIframe" title="Tải lại bảng tính">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    <span>Làm Mới</span>
+                  </button>
+                  <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenSheetTab">
+                    <span>Mở Tab Mới ↗</span>
+                  </a>
+                </div>
+              </div>
+              <div class="cntt-iframe-wrapper" id="cnttIframeWrapper">
+                <iframe id="cnttGoogleSheetIframe" src="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing&rm=minimal" allow="clipboard-read; clipboard-write"></iframe>
+              </div>
+            </div>
+
+            <!-- TAB 3: THỐNG KÊ & PHÂN TÍCH -->
+            <div class="cntt-tab-pane hidden" id="cnttAnalyticsPane">
               <!-- KPI Summary Cards -->
               <div class="cntt-kpi-grid">
                 <div class="cntt-kpi-card kpi-total">
@@ -2048,7 +2188,7 @@
               </div>
             </div>
 
-            <!-- TAB 2: DANH SÁCH CA CÔNG TÁC (TABLE VIEW) -->
+            <!-- TAB 4: DANH SÁCH CA CÔNG TÁC (TABLE VIEW) -->
             <div class="cntt-tab-pane hidden" id="cnttTablePane">
               <!-- Filter Toolbar -->
               <div class="cntt-table-toolbar">
@@ -2090,135 +2230,6 @@
                     <!-- Rendered by JS -->
                   </tbody>
                 </table>
-              </div>
-            </div>
-
-            <!-- TAB 3: ĐIỀN CA CÔNG TÁC TRỰC TIẾP (FORM) -->
-            <div class="cntt-tab-pane hidden" id="cnttFormPane">
-              <div class="cntt-form-container">
-                <div class="cntt-form-header">
-                  <div>
-                    <h2 style="font-size: 1.15rem; color: #f8fafc; font-weight: 700; margin-bottom: 4px;">📝 Điền Ca Công Tác & Đồng Bộ Google Trang Tính</h2>
-                    <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">Điền nhanh ca tiếp nhận sự cố. Dữ liệu sẽ được lưu vào hệ thống và tạo chuỗi dán trực tiếp `Ctrl+V` vào Google Sheet.</p>
-                  </div>
-                  <div class="flex-row gap-8">
-                    <button type="button" class="btn-cntt-action btn-cntt-copy" id="btnCopyFormTsvRow" title="Sao chép hàng dữ liệu định dạng chuẩn Google Sheet để dán Ctrl+V">
-                      <span>📋 Sao Chép Hàng Dán (Ctrl+V)</span>
-                    </button>
-                    <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenGoogleSheetExternal">
-                      <span>↗ Mở Google Sheet</span>
-                    </a>
-                  </div>
-                </div>
-
-                <form id="formCnttRepairEntry" class="cntt-entry-form">
-                  <!-- Section 1: Thông tin Hành Chính -->
-                  <div class="cntt-form-section">
-                    <h4 class="cntt-section-title">1. Thông Tin Tiếp Nhận & Hành Chính</h4>
-                    <div class="cntt-form-grid-3">
-                      <div class="form-group">
-                        <label class="form-label required">Khoa / Phòng / Trung Tâm:</label>
-                        <select id="inputFormDept" class="w2h-text-input" style="width: 100%;" required>
-                          <!-- Populated by JS -->
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Số Hồ Sơ (nếu có, cách nhau dấu ;):</label>
-                        <input type="text" id="inputFormSoHoSo" class="w2h-text-input" placeholder="Ví dụ: 26183381; 26183112" />
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Số Phiếu (nếu có):</label>
-                        <input type="text" id="inputFormSoPhieu" class="w2h-text-input" placeholder="Ví dụ: 7860435, 7860506" />
-                      </div>
-                    </div>
-
-                    <div class="cntt-form-grid-3" style="margin-top: 12px;">
-                      <div class="form-group">
-                        <label class="form-label">Cán Bộ Yêu Cầu (Khoa/Phòng):</label>
-                        <input type="text" id="inputFormReqStaff" class="w2h-text-input" placeholder="Ví dụ: Bs Hùng, ĐD Nga..." />
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label required">Cán Bộ P.CNTT Thực Hiện:</label>
-                        <select id="selectFormExecStaff" class="w2h-text-input" style="width: 100%;">
-                          <option value="Dương">Chu Thị Dương</option>
-                          <option value="Hiệp">Trần Giang Hiệp</option>
-                          <option value="Phương">Nguyễn Duy Phương</option>
-                          <option value="Tuấn">Vương Bá Tuấn</option>
-                          <option value="Nhân">Nguyễn Trọng Nhân</option>
-                          <option value="Lâm">Nguyễn Đức Lâm</option>
-                          <option value="Chí">Bùi Minh Chí</option>
-                          <option value="Huyền">Nguyễn Thu Huyền</option>
-                          <option value="Quyên">Nguyễn Thị Quyên</option>
-                          <option value="Khác">Cán bộ khác</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Tình Trạng Xử Lý:</label>
-                        <select id="selectFormStatus" class="w2h-text-input" style="width: 100%;">
-                          <option value="Đã xử lý">Đã xử lý xong</option>
-                          <option value="Đang xử lý">Đang xử lý</option>
-                          <option value="Chờ VIMES">Chờ VIMES hỗ trợ</option>
-                          <option value="Chờ linh kiện">Chờ linh kiện</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Section 2: Nội Dung Đề Xuất Sửa Chữa Phần Mềm (21 Mục) -->
-                  <div class="cntt-form-section" style="margin-top: 16px;">
-                    <h4 class="cntt-section-title">2. Nội Dung Sửa Chữa Phần Mềm (Tích chọn lỗi thực hiện)</h4>
-                    <div class="cntt-checkbox-grid" id="containerSoftwareCheckboxes">
-                      <!-- Rendered by JS -->
-                    </div>
-                  </div>
-
-                  <!-- Section 3: Nội Dung Đề Xuất Sửa Chữa Phần Cứng (Linh kiện) -->
-                  <div class="cntt-form-section" style="margin-top: 16px;">
-                    <h4 class="cntt-section-title">3. Phần Cứng & Linh Kiện (Đánh số lượng)</h4>
-                    <div class="cntt-hardware-inputs-grid" id="containerHardwareInputs">
-                      <!-- Rendered by JS -->
-                    </div>
-                  </div>
-
-                  <!-- Section 4: Ghi Chú & Nút Lưu -->
-                  <div class="cntt-form-section" style="margin-top: 16px;">
-                    <div class="form-group">
-                      <label class="form-label">Ghi Chú & Nội Dung Chi Tiết Khác:</label>
-                      <textarea id="inputFormNote" class="w2h-text-input" rows="2" style="width: 100%;" placeholder="Nhập mô tả lỗi cụ thể, nguyên nhân hoặc hướng giải quyết..."></textarea>
-                    </div>
-
-                    <div class="flex-row gap-12 align-center" style="margin-top: 14px;">
-                      <button type="submit" class="btn-cntt-submit" id="btnSubmitCnttRecord">
-                        <span>💾 Lưu Ca Sửa Chữa & Cập Nhật Thống Kê</span>
-                      </button>
-                      <button type="button" class="btn-modal-reset" id="btnResetCnttForm">
-                        <span>Làm Lại</span>
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            <!-- TAB 4: GOOGLE TRANG TÍNH TRỰC TIẾP (EMBEDDED IFRAME) -->
-            <div class="cntt-tab-pane hidden" id="cnttEmbeddedPane">
-              <div class="cntt-iframe-toolbar flex-between align-center">
-                <div class="flex-row gap-8 align-center">
-                  <span style="font-size: 0.85rem; font-weight: 700; color: #f8fafc;">🗂️ Google Trang Tính: Báo Cáo Sửa Chữa Hàng Ngày P.CNTT</span>
-                  <span class="tool-badge badge-blue">Tương tác trực tiếp</span>
-                </div>
-                <div class="flex-row gap-8 align-center">
-                  <button type="button" class="btn-cntt-action btn-cntt-reload-frame" id="btnReloadSheetIframe" title="Tải lại bảng tính">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    <span>Làm Mới</span>
-                  </button>
-                  <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing" target="_blank" rel="noopener" class="btn-cntt-action btn-cntt-open-sheet" id="linkOpenSheetTab">
-                    <span>Mở Tab Mới ↗</span>
-                  </a>
-                </div>
-              </div>
-              <div class="cntt-iframe-wrapper" id="cnttIframeWrapper">
-                <iframe id="cnttGoogleSheetIframe" src="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit?usp=sharing&rm=minimal" allow="clipboard-read; clipboard-write"></iframe>
               </div>
             </div>
           </div>
@@ -3287,22 +3298,22 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Application Scripts (Deferred for instant interactivity) -->
-  <script defer src="js/vimes-schema-data.js?v=3.3.0"></script>
-  <script defer src="js/docx-parser.js?v=3.3.0"></script>
-  <script defer src="js/tools-registry.js?v=3.3.0"></script>
-  <script defer src="js/tool-schema-lookup.js?v=3.3.0"></script>
-  <script defer src="js/tool-sql-builder.js?v=3.3.0"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.3.0"></script>
-  <script defer src="js/tool-bhyt-xml.js?v=3.3.0"></script>
-  <script defer src="js/tool-word-to-html.js?v=3.3.0"></script>
-  <script defer src="js/tool-word-page-remover.js?v=3.3.0"></script>
-  <script defer src="js/tool-pdf-to-image.js?v=3.3.0"></script>
-  <script defer src="js/tool-giamdinh.js?v=3.3.0"></script>
-  <script defer src="js/tool-cntt-report.js?v=3.3.0"></script>
-  <script defer src="js/tool-vgca-doichieu.js?v=3.3.0"></script>
-  <script defer src="js/tool-vgca-cks.js?v=3.3.0"></script>
-  <script defer src="js/tool-vgca-email.js?v=3.3.0"></script>
-  <script defer src="js/notification-manager.js?v=3.3.0"></script>
-  <script defer src="js/app.js?v=3.3.0"></script>
+  <script defer src="js/vimes-schema-data.js?v=3.3.1"></script>
+  <script defer src="js/docx-parser.js?v=3.3.1"></script>
+  <script defer src="js/tools-registry.js?v=3.3.1"></script>
+  <script defer src="js/tool-schema-lookup.js?v=3.3.1"></script>
+  <script defer src="js/tool-sql-builder.js?v=3.3.1"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.3.1"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.3.1"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.3.1"></script>
+  <script defer src="js/tool-word-page-remover.js?v=3.3.1"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.3.1"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.3.1"></script>
+  <script defer src="js/tool-cntt-report.js?v=3.3.1"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.3.1"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.3.1"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.3.1"></script>
+  <script defer src="js/notification-manager.js?v=3.3.1"></script>
+  <script defer src="js/app.js?v=3.3.1"></script>
 </body>
 </html>

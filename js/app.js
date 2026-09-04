@@ -2485,7 +2485,7 @@ class AppController {
     const filteredTools = window.TOOLS_REGISTRY.filter(tool => {
       if (this.currentCategory !== "all") {
         const isCatMatch = (tool.categoryId === this.currentCategory) ||
-          (tool.id === "cntt" && (this.currentCategory === "giamdinh" || this.currentCategory === "duty")) ||
+          ((tool.id === "cntt" || tool.id === "cntt-file") && (this.currentCategory === "giamdinh" || this.currentCategory === "duty")) ||
           (tool.id === "duty-roster" && (this.currentCategory === "duty" || this.currentCategory === "giamdinh"));
         if (!isCatMatch) return false;
       }
@@ -3477,7 +3477,7 @@ ${this.currentW2hHtmlOutput}
     try {
       if (tool.id === "giam-dinh") {
         await this.handleGiamDinhFlow();
-      } else if (tool.id === "cntt") {
+      } else if (tool.id === "cntt" || tool.id === "cntt-file") {
         await this.handleCnttFlow();
       } else if (tool.id === "vgca-doi-chieu") {
         await this.handleVgcaDoiChieuFlow();
@@ -7757,8 +7757,60 @@ p {
     this.updateActiveNav("cntt");
     window.location.hash = "cntt";
 
+    // Mặc định mở Tab Điền Ca đầu tiên theo yêu cầu
+    this.switchCnttTab("form");
+    this.populateCnttStaffDropdowns();
+
     if (!this.cnttRecords || this.cnttRecords.length === 0) {
       this.fetchGoogleSheetDataForCntt(true);
+    }
+  }
+
+  /**
+   * Đồng bộ danh sách cán bộ thực hiện từ Lịch Trực CNTT vào Form và Bộ Lọc
+   */
+  populateCnttStaffDropdowns() {
+    let staffList = [];
+    if (window.ToolCnttReport && typeof window.ToolCnttReport.getDutyStaffList === "function") {
+      staffList = window.ToolCnttReport.getDutyStaffList();
+    } else if (window.ToolDutyRoster && typeof window.ToolDutyRoster.getStaffList === "function") {
+      staffList = window.ToolDutyRoster.getStaffList();
+    }
+
+    if (!staffList || staffList.length === 0) return;
+
+    // 1. Điền vào Form Điền Ca (#selectFormExecStaff)
+    if (this.selectFormExecStaff) {
+      const curVal = this.selectFormExecStaff.value;
+      this.selectFormExecStaff.innerHTML = staffList.map(s => {
+        const role = s.role ? ` (${s.role})` : '';
+        return `<option value="${s.name}">${s.name}${role}</option>`;
+      }).join("") + `<option value="P.CNTT">Cả Phòng CNTT</option><option value="Khác">Cán bộ khác</option>`;
+      if (curVal && Array.from(this.selectFormExecStaff.options).some(o => o.value === curVal)) {
+        this.selectFormExecStaff.value = curVal;
+      }
+    }
+
+    // 2. Điền vào Bộ Lọc Danh Sách Ca (#selectCnttFilterStaff)
+    if (this.selectCnttFilterStaff) {
+      const curFilter = this.selectCnttFilterStaff.value;
+      const countMap = {};
+      if (this.cnttAnalytics && Array.isArray(this.cnttAnalytics.staffRanking)) {
+        this.cnttAnalytics.staffRanking.forEach(s => {
+          countMap[s.name] = s.total;
+        });
+      }
+      this.selectCnttFilterStaff.innerHTML = `
+        <option value="all">-- Toàn Bộ Cán Bộ P.CNTT --</option>
+        ${staffList.map(s => {
+          const cnt = countMap[s.name] || 0;
+          return `<option value="${s.name}">${s.name} ${cnt > 0 ? `(${cnt} ca)` : ''}</option>`;
+        }).join("")}
+        <option value="P.CNTT (Chung)">P.CNTT (Chung) ${countMap["P.CNTT (Chung)"] ? `(${countMap["P.CNTT (Chung)"]} ca)` : ''}</option>
+      `;
+      if (curFilter && Array.from(this.selectCnttFilterStaff.options).some(o => o.value === curFilter)) {
+        this.selectCnttFilterStaff.value = curFilter;
+      }
     }
   }
 
@@ -7982,15 +8034,8 @@ p {
         this.cnttSyncStatusText.textContent = `Đã đồng bộ (${timeStr})`;
       }
 
-      // Cập nhật dropdown cán bộ thực hiện từ dữ liệu thực tế
-      if (this.selectCnttFilterStaff && this.cnttAnalytics.staffRanking) {
-        const cur = this.selectCnttFilterStaff.value;
-        this.selectCnttFilterStaff.innerHTML = `
-          <option value="all">-- Tất Cả Cán Bộ P.CNTT --</option>
-          ${this.cnttAnalytics.staffRanking.map(s => `<option value="${s.name}">${s.name} (${s.total} ca)</option>`).join("")}
-        `;
-        if (cur) this.selectCnttFilterStaff.value = cur;
-      }
+      // Cập nhật dropdown cán bộ thực hiện từ Lịch Trực CNTT kèm số ca thực tế
+      this.populateCnttStaffDropdowns();
 
       if (!isSilent) {
         this.showToast(`⚡ Đã đồng bộ thành công ${records.length} ca công tác từ Google Trang Tính!`, "success");
@@ -8153,7 +8198,14 @@ p {
 
     const filtered = records.filter(r => {
       if (filterDept !== "all" && r.dept !== filterDept) return false;
-      if (filterStaff !== "all" && !r.execStaff.includes(filterStaff)) return false;
+      if (filterStaff !== "all") {
+        const staffLower = filterStaff.toLowerCase();
+        const execLower = (r.execStaff || "").toLowerCase();
+        const parts = staffLower.split(/\s+/);
+        const lastName = parts[parts.length - 1];
+        const isMatch = execLower.includes(staffLower) || staffLower.includes(execLower) || execLower.includes(lastName);
+        if (!isMatch) return false;
+      }
       if (filterType === "sw" && r.softwareCount === 0) return false;
       if (filterType === "hw" && r.hardwareCount === 0) return false;
       if (searchKeyword) {

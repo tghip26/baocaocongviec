@@ -346,6 +346,71 @@
     },
 
     /**
+     * Lấy danh sách cán bộ chuẩn từ Lịch Trực CNTT
+     */
+    getDutyStaffList() {
+      if (typeof window !== "undefined" && window.ToolDutyRoster && typeof window.ToolDutyRoster.getStaffList === "function") {
+        return window.ToolDutyRoster.getStaffList();
+      }
+      try {
+        if (typeof localStorage !== "undefined") {
+          const raw = localStorage.getItem("DUTY_CNTT_STAFF_LIST");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        }
+      } catch (e) {}
+      if (typeof window !== "undefined" && window.ToolDutyRoster && Array.isArray(window.ToolDutyRoster.defaultStaffList)) {
+        return window.ToolDutyRoster.defaultStaffList;
+      }
+      return [
+        { id: "nv1", name: "Nguyễn Minh Họa", role: "Trưởng phòng" },
+        { id: "nv2", name: "Nguyễn Duy Phương", role: "Phó phòng" },
+        { id: "nv3", name: "Bùi Minh Chí", role: "Phần cứng" },
+        { id: "nv4", name: "Vương Bá Tuấn", role: "Phần cứng" },
+        { id: "nv5", name: "Phí Đức Phương", role: "Phần cứng" },
+        { id: "nv6", name: "Chu Thị Dương", role: "Phần mềm" },
+        { id: "nv7", name: "Nguyễn Trọng Nhân", role: "Phần cứng" },
+        { id: "nv8", name: "Nguyễn Thu Huyền", role: "Phần mềm" },
+        { id: "nv9", name: "Nguyễn Đức Lâm", role: "Phần cứng & mềm" },
+        { id: "nv10", name: "Nguyễn Thị Quyên", role: "Phần cứng & mềm" },
+        { id: "nv11", name: "Dương Văn Phương", role: "Phần cứng & mềm" },
+        { id: "nv12", name: "Lê Thị Huyền Ly", role: "Phần mềm" },
+        { id: "nv13", name: "Trương Hoàng Hiệp", role: "Phần cứng & mềm" }
+      ];
+    },
+
+    /**
+     * Ánh xạ tên cán bộ ghi trên Google Sheet sang tên chuẩn trong Lịch Trực CNTT
+     */
+    resolveStaffName(rawName) {
+      if (!rawName) return "P.CNTT (Chung)";
+      const clean = rawName.trim();
+      const lower = clean.toLowerCase();
+      if (lower === "p.cntt" || lower === "cntt" || lower === "phòng cntt" || lower === "p cntt") {
+        return "P.CNTT (Chung)";
+      }
+
+      const dutyList = this.getDutyStaffList();
+      
+      // 1. Khớp chính xác toàn bộ họ tên
+      const exact = dutyList.find(s => s.name.toLowerCase() === lower);
+      if (exact) return exact.name;
+
+      // 2. Khớp theo từ cuối / tên ngắn (VD: "Dương" -> "Chu Thị Dương", "Nhân" -> "Nguyễn Trọng Nhân", "Chí" -> "Bùi Minh Chí")
+      const matched = dutyList.find(s => {
+        const sLower = s.name.toLowerCase();
+        const parts = sLower.split(/\s+/);
+        const lastName = parts[parts.length - 1];
+        return lastName === lower || sLower.endsWith(" " + lower) || sLower.includes(lower);
+      });
+      if (matched) return matched.name;
+
+      return clean;
+    },
+
+    /**
      * Tính toán toàn diện các chỉ số thống kê & phân tích nghiệp vụ
      */
     computeAnalytics(records = []) {
@@ -403,10 +468,11 @@
         const staff = r.execStaff || "P.CNTT";
         const staffList = staff.split(/[,;\/&]+/).map(s => s.trim()).filter(Boolean);
         staffList.forEach(stf => {
-          if (!staffCounts[stf]) staffCounts[stf] = { total: 0, sw: 0, hw: 0 };
-          staffCounts[stf].total++;
-          staffCounts[stf].sw += r.softwareCount;
-          staffCounts[stf].hw += r.hardwareCount;
+          const resolvedName = this.resolveStaffName(stf);
+          if (!staffCounts[resolvedName]) staffCounts[resolvedName] = { total: 0, sw: 0, hw: 0 };
+          staffCounts[resolvedName].total++;
+          staffCounts[resolvedName].sw += r.softwareCount;
+          staffCounts[resolvedName].hw += r.hardwareCount;
         });
       });
 
