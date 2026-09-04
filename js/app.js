@@ -2322,6 +2322,10 @@ class AppController {
       this.showPdfToImageView();
       return;
     }
+    if (toolId === "word-page-remover") {
+      this.showWordPageRemoverView();
+      return;
+    }
 
     const tool = window.getToolById(toolId);
     if (!tool) return;
@@ -2330,6 +2334,7 @@ class AppController {
     this.hideAllViews();
     if (this.wordToHtmlView) this.wordToHtmlView.classList.add("hidden");
     if (this.pdfToImageView) this.pdfToImageView.classList.add("hidden");
+    if (this.wordPageRemoverView) this.wordPageRemoverView.classList.add("hidden");
     if (this.sqlBuilderView) this.sqlBuilderView.classList.add("hidden");
     if (this.dutyRosterView) this.dutyRosterView.classList.add("hidden");
     if (this.bhytXmlView) this.bhytXmlView.classList.add("hidden");
@@ -2514,6 +2519,7 @@ class AppController {
         return;
       }
 
+      const fragment = document.createDocumentFragment();
       allTables.forEach((tbl, idx) => {
         const row = document.createElement("div");
         row.className = "schema-item-card";
@@ -2537,8 +2543,9 @@ class AppController {
           row.classList.add("selected");
         });
 
-        this.schemaResultsList.appendChild(row);
+        fragment.appendChild(row);
       });
+      this.schemaResultsList.appendChild(fragment);
 
       if (!this.currentInspectedTable && allTables.length > 0) {
         this.inspectTable(allTables[0].name);
@@ -3393,14 +3400,49 @@ ${this.currentW2hHtmlOutput}
     this.showModal(this.modalDayRange);
 
     const userConfirmed = await new Promise((resolve) => {
-      const onConfirm = () => {
-        this.btnConfirmDayRange.removeEventListener("click", onConfirm);
-        this.hideModal(this.modalDayRange);
-        const selected = document.querySelector('input[name="dayRangeRadio"]:checked').value;
-        resolve(selected);
+      const btnCancel = document.getElementById("btnCancelDayRange");
+
+      const cleanup = () => {
+        if (this.btnConfirmDayRange) this.btnConfirmDayRange.removeEventListener("click", onConfirm);
+        if (this.btnCloseDayModal) this.btnCloseDayModal.removeEventListener("click", onCancel);
+        if (btnCancel) btnCancel.removeEventListener("click", onCancel);
+        if (this.modalDayRange) this.modalDayRange.removeEventListener("click", onOverlay);
+        document.removeEventListener("keydown", onKeydown);
       };
-      this.btnConfirmDayRange.addEventListener("click", onConfirm);
+
+      const onConfirm = () => {
+        cleanup();
+        this.hideModal(this.modalDayRange);
+        const checkedEl = document.querySelector('input[name="dayRangeRadio"]:checked');
+        resolve(checkedEl ? checkedEl.value : defaultRange);
+      };
+
+      const onCancel = () => {
+        cleanup();
+        this.hideModal(this.modalDayRange);
+        resolve(null);
+      };
+
+      const onOverlay = (e) => {
+        if (e.target === this.modalDayRange) onCancel();
+      };
+
+      const onKeydown = (e) => {
+        if (e.key === "Escape") onCancel();
+      };
+
+      if (this.btnConfirmDayRange) this.btnConfirmDayRange.addEventListener("click", onConfirm);
+      if (this.btnCloseDayModal) this.btnCloseDayModal.addEventListener("click", onCancel);
+      if (btnCancel) btnCancel.addEventListener("click", onCancel);
+      if (this.modalDayRange) this.modalDayRange.addEventListener("click", onOverlay);
+      document.addEventListener("keydown", onKeydown);
     });
+
+    if (!userConfirmed) {
+      this.appendLog("⚠️ Người dùng đã hủy thao tác chọn khoảng ngày xử lý.", "warning");
+      this.showToast("Đã hủy thao tác xử lý.", "info");
+      return;
+    }
 
     let startDay = 1, endDay = 14;
     if (userConfirmed === "15-31") {
@@ -3418,7 +3460,7 @@ ${this.currentW2hHtmlOutput}
     this.lastResult = {
       blob: new Blob([result.buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
       fileName: "DANH SÁCH THEO DÕI GIÁM ĐỊNH BẢO HIỂM.xlsx",
-      previewHeaders: ["STT", "Khoa/Phòng", ...Array.from({ length: endDay - startDay + 1 }, (_, i) => `Ngày ${startDay + i}`)],
+      previewHeaders: result.headers || ["STT", "Khoa/Phòng/Người dùng", ...Array.from({ length: endDay - startDay + 1 }, (_, i) => `Ngày ${startDay + i}`)],
       previewRows: result.previewRows,
       totalRecords: result.totalRecords
     };
@@ -3439,20 +3481,55 @@ ${this.currentW2hHtmlOutput}
     this.showModal(this.modalSheetSelect);
 
     const chosenSheet = await new Promise((resolve) => {
-      const onConfirm = () => {
-        this.btnConfirmSheet.removeEventListener("click", onConfirm);
-        this.hideModal(this.modalSheetSelect);
-        resolve(this.sheetDropdown.value);
+      const btnCancel = document.getElementById("btnCancelSheetSelect");
+
+      const cleanup = () => {
+        if (this.btnConfirmSheet) this.btnConfirmSheet.removeEventListener("click", onConfirm);
+        if (this.btnCloseSheetModal) this.btnCloseSheetModal.removeEventListener("click", onCancel);
+        if (btnCancel) btnCancel.removeEventListener("click", onCancel);
+        if (this.modalSheetSelect) this.modalSheetSelect.removeEventListener("click", onOverlay);
+        document.removeEventListener("keydown", onKeydown);
       };
-      this.btnConfirmSheet.addEventListener("click", onConfirm);
+
+      const onConfirm = () => {
+        cleanup();
+        this.hideModal(this.modalSheetSelect);
+        resolve(this.sheetDropdown ? this.sheetDropdown.value : sheetNames[0]);
+      };
+
+      const onCancel = () => {
+        cleanup();
+        this.hideModal(this.modalSheetSelect);
+        resolve(null);
+      };
+
+      const onOverlay = (e) => {
+        if (e.target === this.modalSheetSelect) onCancel();
+      };
+
+      const onKeydown = (e) => {
+        if (e.key === "Escape") onCancel();
+      };
+
+      if (this.btnConfirmSheet) this.btnConfirmSheet.addEventListener("click", onConfirm);
+      if (this.btnCloseSheetModal) this.btnCloseSheetModal.addEventListener("click", onCancel);
+      if (btnCancel) btnCancel.addEventListener("click", onCancel);
+      if (this.modalSheetSelect) this.modalSheetSelect.addEventListener("click", onOverlay);
+      document.addEventListener("keydown", onKeydown);
     });
+
+    if (!chosenSheet) {
+      this.appendLog("⚠️ Người dùng đã hủy thao tác chọn Sheet xử lý.", "warning");
+      this.showToast("Đã hủy thao tác xử lý.", "info");
+      return;
+    }
 
     this.appendLog(`Bắt đầu xử lý Sheet [${chosenSheet}] Báo cáo Công việc P.CNTT...`);
     this.updateProgress(40);
 
     const result = await ToolGiamDinh.processCntt(arrayBuffer, chosenSheet);
     this.updateProgress(100);
-    this.appendLog(`🎉 Đã xử lý thành công! Tổng số khoa/phòng có phát sinh công việc: ${result.totalRecords}`, "success");
+    this.appendLog(`🎉 Đã xử lý thành công! Tổng số bản ghi công việc: ${result.totalRecords}`, "success");
 
     this.lastResult = {
       blob: new Blob([result.buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),

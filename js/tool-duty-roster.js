@@ -608,11 +608,18 @@ const ToolDutyRoster = {
       this.lastSyncStatus = "syncing";
       this.notifyListeners({ type: "SYNC_STATUS_CHANGED", status: "syncing" });
 
+      const timeoutPromise = (p, ms = 3500) => {
+        return Promise.race([
+          p,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Firebase request timeout")), ms))
+        ]);
+      };
+
       // Ưu tiên 1: Firebase Realtime Database
       const rtdb = this.getRealtimeDb();
       if (rtdb) {
         try {
-          const snapshot = await rtdb.ref("duty_roster").once("value");
+          const snapshot = await timeoutPromise(rtdb.ref("duty_roster").once("value"), 3500);
           const data = snapshot.val();
           if (data && typeof data === "object") {
             this.isSyncing = false;
@@ -628,7 +635,7 @@ const ToolDutyRoster = {
       const db = this.getFirestoreDb();
       if (db) {
         try {
-          const doc = await db.collection("duty_roster").doc("master").get();
+          const doc = await timeoutPromise(db.collection("duty_roster").doc("master").get(), 3500);
           this.isSyncing = false;
           if (doc.exists) {
             const data = doc.data();
@@ -646,7 +653,7 @@ const ToolDutyRoster = {
                 version: "3.2.0"
               }
             };
-            await db.collection("duty_roster").doc("master").set(initialData);
+            await timeoutPromise(db.collection("duty_roster").doc("master").set(initialData), 3500);
             this.applyCloudData(initialData, false);
             return { success: true, data: initialData };
           }

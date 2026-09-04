@@ -80,6 +80,9 @@ class ToolBhytXml {
 
     for (const [filename, xmlContent] of fileEntries) {
       processedCount++;
+      if (processedCount % 15 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
       const pct = 30 + Math.round((processedCount / fileEntries.length) * 40);
       if (progressCallback) progressCallback(pct, `Đang kiểm tra tệp (${processedCount}/${fileEntries.length}): ${filename.split("/").pop()}`);
 
@@ -119,7 +122,11 @@ class ToolBhytXml {
     let criticalCount = 0;
     const allErrorsList = [];
 
-    encountersList.forEach(enc => {
+    for (let i = 0; i < encountersList.length; i++) {
+      if (i % 25 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
+      const enc = encountersList[i];
       this.evaluateEncounterRules(enc);
 
       if (enc.errors.length > 0) {
@@ -132,7 +139,7 @@ class ToolBhytXml {
 
       enc.errors.forEach(e => allErrorsList.push({ ...e, maLk: enc.maLk, patientName: enc.patientName, cardNo: enc.cardNo, fileName: enc.fileName }));
       enc.warnings.forEach(w => allErrorsList.push({ ...w, maLk: enc.maLk, patientName: enc.patientName, cardNo: enc.cardNo, fileName: enc.fileName }));
-    });
+    }
 
     if (progressCallback) progressCallback(100, "Hoàn tất kiểm tra dữ liệu BHYT!");
 
