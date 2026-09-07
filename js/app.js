@@ -6490,20 +6490,12 @@ p {
       const isMyDay = (isAssigned && targetStaffId && assigned.id === targetStaffId);
       const isDimmed = (isFilteringSpecific && !isMyDay && !isOff);
       const isToday = (dayObj.day === curRealDay && month === curRealMonth && year === curRealYear);
-      const googleUrl = (isAssigned && !isOff && window.ToolDutyRoster) ? ToolDutyRoster.generateGoogleCalendarUrl(dayObj, assigned, year, month) : "#";
 
       html += `
         <div class="calendar-day-cell ${dayObj.isWeekend ? "weekend" : ""} ${isMyDay ? "my-duty-highlight" : ""} ${isOff ? "day-off-duty" : ""} ${isToday ? "is-today today-cell" : ""}">
           <div class="cal-day-header">
             <span class="cal-date-num">${dayObj.day < 10 ? '0' + dayObj.day : dayObj.day}</span>
-            <div class="flex-row gap-4 align-center">
-              ${isAssigned && !isOff ? `
-                <a href="${googleUrl}" target="_blank" rel="noopener" class="btn-cal-header-alarm" title="Thêm ca trực ngày ${dayObj.day}/${month} vào Google Calendar có chuông báo" onclick="event.stopPropagation()">
-                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                </a>
-              ` : ''}
-              <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
-            </div>
+            <span class="cal-day-tag ${dayObj.isWeekend ? 'tag-weekend' : ''}">${dayObj.dayName}</span>
           </div>
           <div class="cal-shift-list">
             <div class="cal-duty-badge ${isOff ? 'badge-day-off' : (isAssigned ? 'has-staff' : 'empty-staff')} ${isMyDay ? 'highlight-duty' : ''} ${isDimmed ? 'dimmed' : ''}" data-day="${dayObj.day}" draggable="${isAssigned ? 'true' : 'false'}" title="${isAdmin ? 'Kéo thả sang ngày khác để đổi ca, hoặc nhấp để điều chỉnh chi tiết' : (isOff ? 'Ngày nghỉ trực' : (isAssigned ? `${assignedName} (${assignedRole})` : 'Chưa phân công'))}" style="cursor: pointer;">
