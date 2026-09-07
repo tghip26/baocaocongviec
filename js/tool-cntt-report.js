@@ -210,47 +210,82 @@
 
     /**
      * Tự động quét thời gian thực toàn bộ danh sách Sheet và GID từ Google Trang Tính
-     * Bóc tách trực tiếp từ cấu trúc bootstrap của Google Spreadsheet
+     * Bóc tách trực tiếp từ cấu trúc bootstrap hoặc htmlview của Google Spreadsheet
      */
     async fetchLiveGoogleSheetsList(sheetId = null) {
       const id = sheetId || this.getConfig().sheetId || DEFAULT_SHEET_ID;
       try {
-        const editUrl = `https://docs.google.com/spreadsheets/d/${id}/edit`;
-        const resp = await fetch(editUrl);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const html = await resp.text();
-
-        // Bóc tách GID và tên Sheet từ dữ liệu nhúng [27,0,"1974215368",[{"1":[[0,0,"7.9"]
-        const reJson = /\[\d+,\s*0,\s*\\?"(\d+)\\?",\s*\[\{\\?"1\\?":\[\[0,\s*0,\s*\\?"([^\\"]+)\\?"\]/g;
-        let m;
         const liveSheets = [];
-        while ((m = reJson.exec(html)) !== null) {
-          const gid = m[1];
-          const name = m[2].trim();
-          if (name && !liveSheets.some(s => s.name === name)) {
-            liveSheets.push({ gid, name, label: name });
+
+        // 1. Quét qua htmlview (nhẹ, nhanh, không yêu cầu xác thực Google)
+        try {
+          const htmlUrl = `https://docs.google.com/spreadsheets/d/${id}/htmlview`;
+          const resp = await fetch(htmlUrl);
+          if (resp.ok) {
+            const html = await resp.text();
+            // Bóc tách items.push({name: "7.9", ..., gid: "1974215368"})
+            const reItem = /items\.push\(\{\s*name:\s*"([^"]+)"[^}]+?gid:\s*"([^"]+)"/g;
+            let m;
+            while ((m = reItem.exec(html)) !== null) {
+              const name = m[1].trim();
+              const gid = m[2].trim();
+              if (name && !liveSheets.some(s => s.name === name)) {
+                liveSheets.push({ gid, name, label: name });
+              }
+            }
           }
+        } catch (htmlErr) {
+          console.warn("Lỗi quét htmlview, chuyển tiếp:", htmlErr);
         }
 
-        // Fallback sang DOM captions nếu regex json không khớp
+        // 2. Fallback sang /edit nếu htmlview chưa tìm thấy
         if (liveSheets.length === 0) {
-          const reDom = /docs-sheet-tab-caption">([^<]+)<\/div>/g;
-          while ((m = reDom.exec(html)) !== null) {
-            const name = m[1].trim();
-            if (name && !liveSheets.some(s => s.name === name)) {
-              liveSheets.push({ gid: this.getSheetGid(name) || null, name, label: name });
+          const editUrl = `https://docs.google.com/spreadsheets/d/${id}/edit`;
+          const resp = await fetch(editUrl);
+          if (resp.ok) {
+            const html = await resp.text();
+            const reJson = /\[\d+,\s*0,\s*\\?"(\d+)\\?",\s*\[\{\\?"1\\?":\[\[0,\s*0,\s*\\?"([^\\"]+)\\?"\]/g;
+            let m;
+            while ((m = reJson.exec(html)) !== null) {
+              const gid = m[1];
+              const name = m[2].trim();
+              if (name && !liveSheets.some(s => s.name === name)) {
+                liveSheets.push({ gid, name, label: name });
+              }
+            }
+            if (liveSheets.length === 0) {
+              const reDom = /docs-sheet-tab-caption">([^<]+)<\/div>/g;
+              while ((m = reDom.exec(html)) !== null) {
+                const name = m[1].trim();
+                if (name && !liveSheets.some(s => s.name === name)) {
+                  liveSheets.push({ gid: this.getSheetGid(name) || null, name, label: name });
+                }
+              }
             }
           }
         }
 
         if (liveSheets.length > 0) {
-          // Đảo ngược thứ tự để sheet ngày mới nhất (ví dụ 8.9, 7.9) luôn ở trên cùng
-          const sorted = [...liveSheets].reverse();
-          this.AVAILABLE_SHEETS = sorted;
+          // Sắp xếp các sheet ngày mới nhất lên đầu (ví dụ: 8.9, 7.9, 4.9, 3.9)
+          liveSheets.sort((a, b) => {
+            const parseDate = (str) => {
+              const p = str.split('.');
+              if (p.length === 2 && !isNaN(p[0]) && !isNaN(p[1])) {
+                return parseInt(p[1], 10) * 100 + parseInt(p[0], 10);
+              }
+              return -1;
+            };
+            return parseDate(b.name) - parseDate(a.name);
+          });
+
+          // Giữ lại các sheet lịch sử (ví dụ tháng 8) từ AVAILABLE_SHEETS nếu chưa có trong liveSheets
+          const existingHistorical = (this.AVAILABLE_SHEETS || []).filter(old => !liveSheets.some(ls => ls.name === old.name));
+          const merged = [...liveSheets, ...existingHistorical];
+          this.AVAILABLE_SHEETS = merged;
           try {
-            localStorage.setItem("CNTT_REPORT_LIVE_SHEETS", JSON.stringify(sorted));
+            localStorage.setItem("CNTT_REPORT_LIVE_SHEETS", JSON.stringify(merged));
           } catch (e) {}
-          return sorted;
+          return merged;
         }
       } catch (err) {
         console.warn("fetchLiveGoogleSheetsList error, using cache/fallback:", err);
@@ -406,7 +441,7 @@
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error(`Không thể kết nối Google Sheet: ${resp.statusText}`);
         const csvText = await resp.text();
-        const records = this.parseCsvText(csvText);
+        const records = this.parseCsvText(csvText, targetSheet);
         records._targetSheet = targetSheet;
         records._targetGid = targetGid;
         return records;
@@ -415,10 +450,12 @@
 
     /**
      * Phân tích đối tượng bảng GViz thành mảng các ca công tác chuẩn
+     * Loại bỏ triệt để dữ liệu ảo từ bảng tổng hợp khoa phòng và công thức tổng ở cuối sheet
      */
     parseGvizTable(table, currentSheet = "") {
       const records = [];
       const rows = table.rows || [];
+      let inSummarySection = false;
 
       rows.forEach((r, rowIdx) => {
         const cells = (r.c || []).map(cell => (cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : (cell.f || "")) : ""));
@@ -432,10 +469,28 @@
         const execStaff = cells[36] || "";
         const note = cells[37] || "";
         const status = cells[38] || "Đã xử lý";
+        const col34_khac = cells[34] || "";
 
-        // Kiểm tra xem dòng này có dữ liệu công tác hay không (bỏ qua dòng trống hoặc bảng danh mục khoa ở cuối)
-        const isHeaderOrCategoryTable = (stt === "STT" || soHoSo === "STT" || soPhieu === "KHOA, PHÒNG, TRUNG TÂM");
-        if (isHeaderOrCategoryTable) return;
+        // 1. Nhận diện bắt đầu bảng tổng hợp Khoa/Phòng ở cuối sheet (Bảng đếm số lượng lỗi theo từng khoa)
+        if (soPhieu === "KHOA, PHÒNG, TRUNG TÂM" || soPhieu === "TỔNG CỘNG" || dept === "KHOA, PHÒNG, TRUNG TÂM" || dept === "TỔNG CỘNG") {
+          inSummarySection = true;
+          return;
+        }
+        if (inSummarySection) {
+          // Bỏ qua toàn bộ các dòng thống kê khoa phòng phía dưới
+          return;
+        }
+
+        // 2. Bỏ qua các dòng tiêu đề cột
+        if (stt === "STT" || soHoSo === "STT" || dept === "KHOA/PHÒNG" || cells[25] === "Phần cứng") {
+          return;
+        }
+
+        // 3. Nhận diện dòng bảng tổng hợp nếu dept trống và soPhieu là tên khoa trong danh mục hoặc có số thứ tự thống kê
+        if (!dept && (DEPARTMENTS.includes(soPhieu) || soPhieu === "TỔNG CỘNG" || (/^\d+$/.test(soHoSo) && parseInt(soHoSo, 10) <= 47 && DEPARTMENTS.includes(soPhieu)))) {
+          inSummarySection = true;
+          return;
+        }
 
         // Quét danh mục phần mềm
         const swIssues = [];
@@ -484,9 +539,18 @@
           }
         });
 
-        if (dept || soHoSo || soPhieu || swIssues.length > 0 || hwIssues.length > 0 || execStaff || reqStaff) {
+        const isNumericStt = /^\d+$/.test(stt);
+        const hasWorkContent = swCount > 0 || hwCount > 0 || note || reqStaff || col34_khac;
+
+        // Bỏ qua dòng cộng tổng cuối bảng ca công tác (ví dụ STT 94, không có khoa, không có người làm, nhưng có sum công thức)
+        if (!dept && !execStaff && !reqStaff && isNumericStt && parseInt(stt, 10) > 75 && swCount > 5) {
+          return;
+        }
+
+        // Chỉ nhận diện các ca công việc thực tế từ Google Sheet
+        if ((dept && (hasWorkContent || execStaff || reqStaff)) || (isNumericStt && (hasWorkContent || dept || execStaff))) {
           records.push({
-            id: `row_${rowIdx + 1}`,
+            id: `row_${currentSheet || "sheet"}_${rowIdx + 1}`,
             rowNumber: excelRowNumber,
             sheetName: currentSheet || "Tháng 9",
             stt: stt || String(records.length + 1),
@@ -498,9 +562,9 @@
             hardwareIssues: hwIssues,
             hardwareCount: hwCount,
             reqStaff: reqStaff,
-            execStaff: execStaff || "P.CNTT",
+            execStaff: execStaff || "Chưa ghi nhận",
             note: note,
-            status: status || "Hoàn thành"
+            status: status || "Đã xử lý"
           });
         }
       });
@@ -511,9 +575,10 @@
     /**
      * Fallback: Phân tích CSV text
      */
-    parseCsvText(csvText) {
+    parseCsvText(csvText, currentSheet = "") {
       const lines = this.parseCSVMatrix(csvText);
       const records = [];
+      let inSummarySection = false;
 
       lines.forEach((cells, rowIdx) => {
         if (rowIdx < 5) return;
@@ -525,8 +590,20 @@
         const execStaff = cells[36] || "";
         const note = cells[37] || "";
         const status = cells[38] || "Đã xử lý";
+        const col34_khac = cells[34] || "";
 
-        if (stt === "STT" || soHoSo === "STT" || soPhieu === "KHOA, PHÒNG, TRUNG TÂM") return;
+        if (soPhieu === "KHOA, PHÒNG, TRUNG TÂM" || soPhieu === "TỔNG CỘNG" || dept === "KHOA, PHÒNG, TRUNG TÂM" || dept === "TỔNG CỘNG") {
+          inSummarySection = true;
+          return;
+        }
+        if (inSummarySection) return;
+
+        if (stt === "STT" || soHoSo === "STT" || dept === "KHOA/PHÒNG" || cells[25] === "Phần cứng") return;
+
+        if (!dept && (DEPARTMENTS.includes(soPhieu) || soPhieu === "TỔNG CỘNG" || (/^\d+$/.test(soHoSo) && parseInt(soHoSo, 10) <= 47 && DEPARTMENTS.includes(soPhieu)))) {
+          inSummarySection = true;
+          return;
+        }
 
         const swIssues = [];
         let swCount = 0;
@@ -545,17 +622,30 @@
         HARDWARE_CATEGORIES.forEach(cat => {
           const val = cells[cat.col] || "";
           if (val && val !== "0") {
-            const num = parseInt(val, 10);
-            const count = (cat.isText || isNaN(num)) ? 1 : num;
-            hwCount += count;
-            hwIssues.push({ key: cat.key, label: cat.label, value: val, count: count });
+            if (cat.isText) {
+              hwCount += 1;
+              hwIssues.push({ key: cat.key, label: cat.label, value: val, count: 1, isText: true });
+            } else {
+              const num = parseInt(val, 10);
+              const count = isNaN(num) ? 1 : num;
+              hwCount += count;
+              hwIssues.push({ key: cat.key, label: cat.label, value: val, count: count });
+            }
           }
         });
 
-        if (dept || soHoSo || soPhieu || swIssues.length > 0 || hwIssues.length > 0 || execStaff || reqStaff) {
+        const isNumericStt = /^\d+$/.test(stt);
+        const hasWorkContent = swCount > 0 || hwCount > 0 || note || reqStaff || col34_khac;
+
+        if (!dept && !execStaff && !reqStaff && isNumericStt && parseInt(stt, 10) > 75 && swCount > 5) {
+          return;
+        }
+
+        if ((dept && (hasWorkContent || execStaff || reqStaff)) || (isNumericStt && (hasWorkContent || dept || execStaff))) {
           records.push({
-            id: `row_${rowIdx + 1}`,
+            id: `row_${currentSheet || "sheet"}_${rowIdx + 1}`,
             rowNumber: rowIdx + 1,
+            sheetName: currentSheet || "Tháng 9",
             stt: stt || String(records.length + 1),
             dept: dept || "Khác",
             soHoSo: soHoSo,
@@ -565,9 +655,9 @@
             hardwareIssues: hwIssues,
             hardwareCount: hwCount,
             reqStaff: reqStaff,
-            execStaff: execStaff || "P.CNTT",
+            execStaff: execStaff || "Chưa ghi nhận",
             note: note,
-            status: status || "Hoàn thành"
+            status: status || "Đã xử lý"
           });
         }
       });
@@ -657,14 +747,46 @@
 
     /**
      * Ánh xạ tên cán bộ ghi trên Google Sheet sang tên chuẩn trong Lịch Trực CNTT
+     * Chuẩn hóa chính xác 100% các bí danh viết tắt, loại bỏ dữ liệu ảo
      */
     resolveStaffName(rawName) {
-      if (!rawName) return "P.CNTT (Chung)";
+      if (!rawName) return "Chưa ghi nhận";
       const clean = rawName.trim();
       const lower = clean.toLowerCase();
       if (lower === "p.cntt" || lower === "cntt" || lower === "phòng cntt" || lower === "p cntt") {
         return "P.CNTT (Chung)";
       }
+      if (lower === "chưa ghi" || lower === "chưa ghi nhận" || lower === "chưa có" || lower === "chưa rõ") {
+        return "Chưa ghi nhận";
+      }
+
+      // Danh mục alias chuẩn xác cho các cách viết tắt trên Google Sheet
+      const aliases = {
+        "v phương": "Dương Văn Phương",
+        "v.phương": "Dương Văn Phương",
+        "v. phương": "Dương Văn Phương",
+        "vũ phương": "Dương Văn Phương",
+        "d phương": "Nguyễn Duy Phương",
+        "d.phương": "Nguyễn Duy Phương",
+        "d. phương": "Nguyễn Duy Phương",
+        "duy phương": "Nguyễn Duy Phương",
+        "p phương": "Phí Đức Phương",
+        "p.phương": "Phí Đức Phương",
+        "p. phương": "Phí Đức Phương",
+        "đức phương": "Phí Đức Phương",
+        "hiệp": "Trương Hoàng Hiệp",
+        "dương": "Chu Thị Dương",
+        "quyên": "Nguyễn Thị Quyên",
+        "ly": "Lê Thị Huyền Ly",
+        "nhân": "Nguyễn Trọng Nhân",
+        "lâm": "Nguyễn Đức Lâm",
+        "chí": "Bùi Minh Chí",
+        "tuấn": "Vương Bá Tuấn",
+        "huyền": "Nguyễn Thu Huyền",
+        "họa": "Nguyễn Minh Họa"
+      };
+
+      if (aliases[lower]) return aliases[lower];
 
       const dutyList = this.getDutyStaffList();
       
@@ -677,7 +799,7 @@
         const sLower = s.name.toLowerCase();
         const parts = sLower.split(/\s+/);
         const lastName = parts[parts.length - 1];
-        return lastName === lower || sLower.endsWith(" " + lower) || sLower.includes(lower);
+        return lastName === lower || sLower.endsWith(" " + lower);
       });
       if (matched) return matched.name;
 
@@ -739,7 +861,7 @@
           }
         });
 
-        const staff = r.execStaff || "P.CNTT";
+        const staff = (r.execStaff || "").trim() || "Chưa ghi nhận";
         const staffList = staff.split(/[,;\/&]+/).map(s => s.trim()).filter(Boolean);
         staffList.forEach(stf => {
           const resolvedName = this.resolveStaffName(stf);
@@ -1065,7 +1187,7 @@
       const globalCategories = {};
 
       records.forEach(r => {
-        const rawStaff = (r.execStaff || "").trim() || "Chưa ghi";
+        const rawStaff = (r.execStaff || "").trim() || "Chưa ghi nhận";
         // Tách nếu có nhiều cán bộ cùng thực hiện (ngăn cách bởi dấu phẩy, cộng, gạch chéo, dấu &)
         const staffTokens = rawStaff.split(/[,&+/;]+/).map(s => s.trim()).filter(Boolean);
         const staffList = staffTokens.length > 0 ? staffTokens : [rawStaff];
@@ -1090,7 +1212,7 @@
           const sm = staffMap[resolvedName];
           sm.rawNames.add(rawToken);
           sm.totalCases++;
-          if (r.dept) {
+          if (r.dept && r.dept !== "Khác") {
             sm.depts.add(r.dept);
             allDepts.add(r.dept);
           }
