@@ -44,16 +44,16 @@
       };
 
       window.__toggleAppTheme = function() {
+        if (window.appController && typeof window.appController.toggleTheme === 'function') {
+          return window.appController.toggleTheme();
+        }
         var current = document.documentElement.getAttribute('data-theme') || 'dark';
         var next = current === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', next);
+        if (document.body) document.body.setAttribute('data-theme', next);
         try { localStorage.setItem('APP_THEME', next); } catch (e) {}
         window.__syncThemeButtonUi();
         try { window.dispatchEvent(new CustomEvent('app-theme-changed', { detail: { theme: next } })); } catch (e) {}
-        if (window.appController && typeof window.appController.showToast === 'function') {
-          var modeText = next === 'light' ? 'Giao diện Sáng (Light Mode)' : 'Giao diện Tối (Dark Mode)';
-          window.appController.showToast('Đã chuyển sang ' + modeText, 'info');
-        }
       };
 
       if (document.readyState === 'loading') {
@@ -65,8 +65,8 @@
   </script>
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.5.1" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.5.1" />
+  <link rel="preload" href="style.css?v=3.6.0" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.6.0" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -3740,17 +3740,17 @@
   <script defer src="js/tools-registry.js?v=3.3.1"></script>
   <script defer src="js/tool-schema-lookup.js?v=3.3.1"></script>
   <script defer src="js/tool-sql-builder.js?v=3.3.1"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.4.2"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.6.0"></script>
   <script defer src="js/tool-bhyt-xml.js?v=3.4.0"></script>
   <script defer src="js/tool-word-to-html.js?v=3.4.0"></script>
   <script defer src="js/tool-word-page-remover.js?v=3.4.0"></script>
   <script defer src="js/tool-pdf-to-image.js?v=3.4.0"></script>
   <script defer src="js/tool-giamdinh.js?v=3.4.0"></script>
-  <script defer src="js/tool-cntt-report.js?v=3.4.7"></script>
+  <script defer src="js/tool-cntt-report.js?v=3.6.0"></script>
   <script defer src="js/tool-vgca-doichieu.js?v=3.4.0"></script>
   <script defer src="js/tool-vgca-cks.js?v=3.4.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.4.0"></script>
   <script defer src="js/notification-manager.js?v=3.4.0"></script>
-  <script defer src="js/app.js?v=3.5.1"></script>
+  <script defer src="js/app.js?v=3.6.0"></script>
 </body>
 </html>
