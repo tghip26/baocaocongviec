@@ -8414,9 +8414,9 @@ p {
             return `
               <div class="cntt-card-stepper hw-stepper hw-text-card" data-key="${cat.key}" data-label="${cat.label}">
                 <div class="stepper-body">
-                  <span class="stepper-name" style="font-weight:600; color:#34d399;">${cat.label}:</span>
+                  <span class="stepper-name" style="font-weight:700; color:#34d399;">🛠️ ${cat.label}:</span>
                 </div>
-                <input type="text" class="step-text-input" name="hw_issue_text" data-key="${cat.key}" data-label="${cat.label}" placeholder="Nhập chi tiết sửa chữa..." />
+                <input type="text" class="step-text-input" name="hw_issue_text" data-key="${cat.key}" data-label="${cat.label}" placeholder="Nhập chi tiết sửa chữa phần cứng, thiết bị hoặc công việc khác..." />
               </div>
             `;
           }
