@@ -16078,17 +16078,6 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   overflow: visible;
 }
 
-.cntt-form-container::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2.5px;
-  background: linear-gradient(90deg, #38bdf8, #818cf8, #34d399);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
-}
-
 /* Thanh Điều Khiển Form Mỏng (Toolbar Strip) */
 .cntt-form-toolbar-strip {
   display: flex;
