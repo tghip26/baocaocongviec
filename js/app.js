@@ -8104,10 +8104,11 @@ p {
         this.cnttUserSourceTagText.textContent = `TK: ${displayName}`;
       }
       if (this.cnttAuthSyncPill) {
-        this.cnttAuthSyncPill.textContent = `✓ Đã khớp TK: ${displayName}`;
+        this.cnttAuthSyncPill.textContent = "✓";
         this.cnttAuthSyncPill.style.color = "#34d399";
         this.cnttAuthSyncPill.style.background = "rgba(16, 185, 129, 0.2)";
-        this.cnttAuthSyncPill.title = `Cán Bộ Thực Hiện đã được tự động đồng bộ theo tài khoản [${displayName}]`;
+        this.cnttAuthSyncPill.style.borderColor = "rgba(16, 185, 129, 0.35)";
+        this.cnttAuthSyncPill.title = `✓ Đã khớp tài khoản: ${displayName}`;
       }
 
       // ĐỒNG BỘ CÁN BỘ THỰC HIỆN VỚI TÀI KHOẢN ĐĂNG NHẬP:
@@ -8132,9 +8133,11 @@ p {
         this.cnttUserSourceTagText.textContent = "Bấm để đăng nhập TK";
       }
       if (this.cnttAuthSyncPill) {
-        this.cnttAuthSyncPill.textContent = "⚠️ Chưa đăng nhập";
+        this.cnttAuthSyncPill.textContent = "⚠️";
         this.cnttAuthSyncPill.style.color = "#f59e0b";
         this.cnttAuthSyncPill.style.background = "rgba(245, 158, 11, 0.2)";
+        this.cnttAuthSyncPill.style.borderColor = "rgba(245, 158, 11, 0.35)";
+        this.cnttAuthSyncPill.title = "Chưa đăng nhập tài khoản Lịch Trực";
       }
     }
 
