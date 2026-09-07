@@ -2915,6 +2915,68 @@
     </div>
   </div>
 
+  <!-- MODAL: Cấu hình Đồng bộ Online Trực tiếp Google Trang Tính (Google Apps Script Web App) -->
+  <div class="modal-overlay hidden" id="modalCnttSheetConfig">
+    <div class="modal-card modal-config-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ CẤU HÌNH ĐỒNG BỘ ONLINE GOOGLE SHEET</h3>
+        <button type="button" class="modal-close" id="btnCloseCnttSheetConfigModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="config-section-alert" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.85rem; line-height: 1.5; color: #bae6fd;">
+          <div style="font-weight: 700; color: #38bdf8; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <span>🚀 Tự động ghi dữ liệu 100% online vào Google Trang Tính</span>
+          </div>
+          Để dữ liệu khi bấm <strong>"Lưu Báo Cáo"</strong> tự động điền trực tiếp vào đúng các cột trên Google Sheet mà <em>không cần dán Ctrl+V thủ công</em>, bạn chỉ cần liên kết <strong>Google Apps Script Web App</strong> theo hướng dẫn 1 phút dưới đây.
+        </div>
+
+        <div class="config-form-group">
+          <label class="form-label" style="font-weight: 700; color: #f8fafc;">1. ID Bảng tính Google (Spreadsheet ID):</label>
+          <input type="text" id="cfgCnttSheetId" class="form-input" placeholder="1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA" />
+        </div>
+
+        <div class="config-form-group">
+          <label class="form-label" style="font-weight: 700; color: #f8fafc; display: flex; justify-content: space-between; align-items: center;">
+            <span>2. URL Ứng dụng Web (Google Apps Script Web App URL):</span>
+            <span id="cnttWebhookStatusBadge" class="tool-badge badge-amber" style="font-size: 0.72rem;">Chưa liên kết</span>
+          </label>
+          <input type="text" id="cfgCnttAppsScriptUrl" class="form-input" placeholder="https://script.google.com/macros/s/AKfycb.../exec" />
+          <p style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Dán đường link Web App (kết thúc bằng <code>/exec</code>) được tạo từ Google Apps Script.</p>
+        </div>
+
+        <div class="config-section-divider" style="margin: 16px 0 10px 0;">
+          <span style="font-weight: 700; color: #34d399;">📋 HƯỚNG DẪN CÀI ĐẶT MÃ APPS SCRIPT (CHỈ LÀM 1 LẦN DUY NHẤT):</span>
+        </div>
+
+        <div class="apps-script-guide-steps" style="font-size: 0.8rem; line-height: 1.55; color: #cbd5e1; background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+          <div style="margin-bottom: 6px;"><strong>Bước 1:</strong> Mở <a href="https://docs.google.com/spreadsheets/d/1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA/edit" target="_blank" rel="noopener" style="color: #38bdf8; text-decoration: underline;">Google Trang Tính</a>, trên thanh menu chọn <strong>Tiện ích mở rộng (Extensions) &gt; Apps Script</strong>.</div>
+          <div style="margin-bottom: 6px;"><strong>Bước 2:</strong> Bấm nút <strong>"📋 Sao Chép Mã Apps Script"</strong> bên dưới, sau đó dán toàn bộ vào ô soạn thảo trong Apps Script rồi bấm <strong>Lưu (Ctrl + S)</strong>.</div>
+          <div style="margin-bottom: 6px;"><strong>Bước 3:</strong> Bấm nút màu xanh <strong>Triển khai (Deploy) &gt; Tùy chọn triển khai mới (New deployment)</strong>.</div>
+          <div style="margin-bottom: 6px;"><strong>Bước 4:</strong> Bấm bánh răng ⚙️ chọn <strong>Ứng dụng web (Web app)</strong>:
+            <ul style="margin: 4px 0 0 16px; padding: 0;">
+              <li>Thực thi dưới dạng: <strong>Tôi (Me)</strong></li>
+              <li>Ai có quyền truy cập: <strong>Bất kỳ ai (Anyone)</strong> <em>(để website gửi được dữ liệu lên)</em></li>
+            </ul>
+          </div>
+          <div><strong>Bước 5:</strong> Bấm <strong>Triển khai</strong>, sao chép URL ứng dụng web (dạng <code>https://script.google.com/macros/s/.../exec</code>), dán vào ô số 2 ở trên và bấm <strong>"LƯU CẤU HÌNH"</strong>!</div>
+        </div>
+
+        <div class="flex-row gap-8 align-center" style="margin-top: 12px;">
+          <button type="button" class="btn-cntt-action" id="btnCopyAppsScriptCode" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-weight: 700; padding: 7px 14px;">
+            📋 Sao Chép Mã Apps Script
+          </button>
+          <button type="button" class="btn-cntt-action" id="btnTestAppsScriptConnection" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; padding: 7px 14px;">
+            🧪 Kiểm Tra Kết Nối
+          </button>
+        </div>
+      </div>
+      <div class="modal-footer flex-between">
+        <button type="button" class="btn-modal-reset" id="btnResetCnttSheetConfig">Đặt lại mặc định</button>
+        <button type="button" class="btn-modal-confirm" id="btnSaveCnttSheetConfig">LƯU CẤU HÌNH &rarr;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: Xem & Sao chép câu lệnh SQL SELECT -->
   <div class="modal-overlay hidden" id="modalSqlView">
     <div class="modal-card modal-sql-card">
@@ -3746,11 +3808,11 @@
   <script defer src="js/tool-word-page-remover.js?v=3.7.0"></script>
   <script defer src="js/tool-pdf-to-image.js?v=3.7.0"></script>
   <script defer src="js/tool-giamdinh.js?v=3.7.0"></script>
-  <script defer src="js/tool-cntt-report.js?v=3.8.0"></script>
+  <script defer src="js/tool-cntt-report.js?v=3.8.3"></script>
   <script defer src="js/tool-vgca-doichieu.js?v=3.8.0"></script>
   <script defer src="js/tool-vgca-cks.js?v=3.8.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.8.0"></script>
   <script defer src="js/notification-manager.js?v=3.8.0"></script>
-  <script defer src="js/app.js?v=3.8.2"></script>
+  <script defer src="js/app.js?v=3.8.3"></script>
 </body>
 </html>

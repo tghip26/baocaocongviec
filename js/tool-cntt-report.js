@@ -945,6 +945,211 @@
     },
 
     /**
+     * Tạo mảng 38 phần tử tương ứng với các cột từ Cột B đến Cột AM trong Google Sheets
+     * Dùng để gửi trực tiếp qua Google Apps Script Web App để ghi dữ liệu online
+     */
+    buildRowArray(formData, nextStt = "") {
+      const cols = new Array(38).fill("");
+
+      cols[0] = formData.dept || ""; // Cột B: KHOA, PHÒNG, TRUNG TÂM
+      cols[1] = formData.soHoSo || ""; // Cột C: Số hồ sơ
+      cols[2] = formData.soPhieu || ""; // Cột D: Số phiếu
+
+      SOFTWARE_CATEGORIES.forEach(cat => {
+        if (formData.software && formData.software[cat.key]) {
+          cols[cat.col - 1] = String(formData.software[cat.key]); // Cột E -> Y (col 4 -> 24)
+        }
+      });
+
+      HARDWARE_CATEGORIES.forEach(cat => {
+        if (formData.hardware && formData.hardware[cat.key]) {
+          cols[cat.col - 1] = String(formData.hardware[cat.key]); // Cột Z -> AI (col 25 -> 34)
+        }
+      });
+
+      cols[34] = formData.reqStaff || ""; // Cột AJ (col 35): CÁN BỘ YÊU CẦU
+      cols[35] = formData.execStaff || ""; // Cột AK (col 36): CÁN BỘ THỰC HIỆN
+      cols[36] = formData.note || ""; // Cột AL (col 37): GHI CHÚ
+      cols[37] = formData.status || "Đã xử lý"; // Cột AM (col 38): TÌNH TRẠNG THỰC HIỆN
+
+      return cols;
+    },
+
+    /**
+     * Lấy cấu hình kết nối Google Sheet & Apps Script Webhook
+     */
+    getConfig() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return {
+          sheetId: parsed.sheetId || DEFAULT_SHEET_ID,
+          appsScriptUrl: (parsed.appsScriptUrl || "").trim()
+        };
+      } catch (e) {
+        return {
+          sheetId: DEFAULT_SHEET_ID,
+          appsScriptUrl: ""
+        };
+      }
+    },
+
+    /**
+     * Lưu cấu hình kết nối
+     */
+    saveConfig(cfg) {
+      try {
+        const current = this.getConfig();
+        const merged = { ...current, ...cfg };
+        localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(merged));
+        return merged;
+      } catch (e) {
+        console.error("Error saving CNTT config", e);
+        return null;
+      }
+    },
+
+    /**
+     * Đoạn mã nguồn Google Apps Script chuẩn để người dùng dán vào Tiện ích mở rộng của Google Trang Tính
+     */
+    getAppsScriptTemplate() {
+      return `/**
+ * ============================================================================
+ * GOOGLE APPS SCRIPT - TỰ ĐỘNG GHI BÁO CÁO CÔNG TÁC CNTT
+ * Bệnh Viện Đa Khoa Bắc Ninh Số 2
+ * ============================================================================
+ * HƯỚNG DẪN CÀI ĐẶT 1 LẦN DUY NHẤT (MẤT 1 PHÚT):
+ * 1. Trên Google Trang Tính này, chọn menu "Tiện ích mở rộng" (Extensions) > "Apps Script".
+ * 2. Xóa toàn bộ nội dung trong ô soạn thảo và dán toàn bộ đoạn mã này vào.
+ * 3. Bấm biểu tượng Đĩa mềm "Lưu dự án" (Ctrl + S).
+ * 4. Bấm nút màu xanh "Triển khai" (Deploy) ở góc trên bên phải > chọn "Tùy chọn triển khai mới" (New deployment).
+ * 5. Bấm vào biểu tượng Bánh răng (Chọn loại) > chọn "Ứng dụng web" (Web app):
+ *    - Mô tả: "Đồng bộ Báo Cáo CNTT"
+ *    - Thực thi dưới dạng (Execute as): "Tôi" (Me)
+ *    - Ai có quyền truy cập (Who has access): "Bất kỳ ai" (Anyone)
+ * 6. Bấm "Triển khai" (Deploy) > Cấp quyền truy cập nếu Google hỏi xác nhận.
+ * 7. Sao chép "URL ứng dụng web" (kết thúc bằng /exec) và dán vào cài đặt trên website!
+ * ============================================================================
+ */
+
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(15000);
+  try {
+    var rawText = e.postData ? e.postData.contents : "";
+    if (!rawText) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No post data received" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var data = JSON.parse(rawText);
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheetName = data.sheetName || "7.9";
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) {
+      sheet = ss.getSheets()[0];
+    }
+
+    var targetRow = parseInt(data.targetRow, 10);
+    // Tự động tìm dòng trống hợp lệ (từ dòng 7 đến 100) nếu chưa có
+    if (!targetRow || isNaN(targetRow) || targetRow < 7) {
+      for (var r = 7; r <= 100; r++) {
+        var valB = sheet.getRange(r, 2).getValue();
+        if (valB === "" || valB === null) {
+          targetRow = r;
+          break;
+        }
+      }
+      if (!targetRow) targetRow = 99;
+    }
+
+    // Ghi dữ liệu 38 cột từ B đến AM
+    var cols = data.cols;
+    if (Array.isArray(cols) && cols.length > 0) {
+      sheet.getRange(targetRow, 2, 1, cols.length).setValues([cols]);
+    }
+
+    // Nếu có STT và cột A đang trống, điền số STT
+    if (data.targetStt) {
+      var cellA = sheet.getRange(targetRow, 1);
+      if (cellA.getValue() === "" || cellA.getValue() === null) {
+        cellA.setValue(data.targetStt);
+      }
+    }
+
+    SpreadsheetApp.flush();
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "success",
+      sheetName: sheet.getName(),
+      row: targetRow,
+      stt: data.targetStt
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "error",
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "online",
+    message: "Google Apps Script Báo Cáo CNTT đang hoạt động sẵn sàng nhận dữ liệu!"
+  })).setMimeType(ContentService.MimeType.JSON);
+}`;
+    },
+
+    /**
+     * Gửi trực tiếp 1 dòng dữ liệu lên Google Trang Tính qua Apps Script Web App
+     */
+    async sendRowToGoogleSheet({ sheetName, targetRow, targetStt, cols }) {
+      const config = this.getConfig();
+      const scriptUrl = config.appsScriptUrl;
+      if (!scriptUrl) {
+        return {
+          success: false,
+          needConfig: true,
+          message: "Chưa cấu hình Google Apps Script Web App URL để tự động ghi online."
+        };
+      }
+
+      try {
+        const payload = JSON.stringify({
+          sheetName: sheetName || "7.9",
+          targetRow: parseInt(targetRow, 10) || 99,
+          targetStt: String(targetStt || ""),
+          cols: cols
+        });
+
+        // Do Google Apps Script trả về redirect 302, gửi với mode 'no-cors' để vượt qua chính sách CORS của trình duyệt
+        await fetch(scriptUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: payload
+        });
+
+        return {
+          success: true,
+          message: "Đã gửi dữ liệu thành công lên Google Trang Tính!"
+        };
+      } catch (err) {
+        console.error("Lỗi khi gửi dữ liệu lên Apps Script:", err);
+        return {
+          success: false,
+          error: err.message
+        };
+      }
+    },
+
+    /**
      * Lưu ca công tác mới vào bộ nhớ cục bộ (Local cache)
      */
     saveLocalRow(record) {
