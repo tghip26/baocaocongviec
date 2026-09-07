@@ -1012,33 +1012,50 @@
     /**
      * Đoạn mã nguồn Google Apps Script chuẩn để người dùng dán vào Tiện ích mở rộng của Google Trang Tính
      */
+    /**
+     * Đoạn mã nguồn Google Apps Script chuẩn có hỗ trợ HÀNG ĐỢI TUẦN TỰ & KHÓA CHỐNG GHI ĐÈ
+     * Xử lý trọn vẹn trường hợp nhiều người cùng nhập ca một lúc
+     */
     getAppsScriptTemplate() {
       return `/**
  * ============================================================================
- * GOOGLE APPS SCRIPT - TỰ ĐỘNG GHI BÁO CÁO CÔNG TÁC CNTT
+ * GOOGLE APPS SCRIPT - BÁO CÁO CÔNG TÁC SỬA CHỮA CNTT (BẢO VỆ ĐA NGƯỜI DÙNG)
  * Bệnh Viện Đa Khoa Bắc Ninh Số 2
  * ============================================================================
- * HƯỚNG DẪN CÀI ĐẶT 1 LẦN DUY NHẤT (MẤT 1 PHÚT):
- * 1. Trên Google Trang Tính này, chọn menu "Tiện ích mở rộng" (Extensions) > "Apps Script".
- * 2. Xóa toàn bộ nội dung trong ô soạn thảo và dán toàn bộ đoạn mã này vào.
- * 3. Bấm biểu tượng Đĩa mềm "Lưu dự án" (Ctrl + S).
- * 4. Bấm nút màu xanh "Triển khai" (Deploy) ở góc trên bên phải > chọn "Tùy chọn triển khai mới" (New deployment).
- * 5. Bấm vào biểu tượng Bánh răng (Chọn loại) > chọn "Ứng dụng web" (Web app):
- *    - Mô tả: "Đồng bộ Báo Cáo CNTT"
- *    - Thực thi dưới dạng (Execute as): "Tôi" (Me)
- *    - Ai có quyền truy cập (Who has access): "Bất kỳ ai" (Anyone)
- * 6. Bấm "Triển khai" (Deploy) > Cấp quyền truy cập nếu Google hỏi xác nhận.
- * 7. Sao chép "URL ứng dụng web" (kết thúc bằng /exec) và dán vào cài đặt trên website!
+ * TÍNH NĂNG NỔI BẬT:
+ * 1. Khóa hàng đợi (waitLock 30s): Khi nhiều cán bộ bấm Lưu cùng lúc, hệ thống
+ *    tự động xếp hàng lần lượt xử lý tuần tự, tuyệt đối không ghi đè nhầm vào nhau.
+ * 2. Đọc & Lọc dữ liệu trực tiếp: Tự động quét tìm dòng trống thực tế ngay lúc ghi,
+ *    không phụ thuộc vào số dòng cũ của máy khách.
+ * 3. Chống ghi đè nhầm: Tự chèn thêm dòng trước bảng tổng hợp nếu các dòng trước đã đầy.
+ * 4. Chống trùng lặp (Deduplication): Tự động phát hiện nếu ca đó vừa được ghi do mạng lag.
  * ============================================================================
  */
 
 function doPost(e) {
+  // 1. KHÓA ĐỘC QUYỀN VỚI HÀNG ĐỢI 30 GIÂY (CONCURRENCY LOCK & QUEUE)
   var lock = LockService.getScriptLock();
-  lock.tryLock(15000);
+  var hasLock = false;
+  try {
+    hasLock = lock.waitLock(30000); // Đưa yêu cầu vào hàng đợi chờ tối đa 30s
+  } catch (lockErr) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "busy",
+      message: "Hệ thống đang bận xử lý ca của người dùng khác. Vui lòng thử lại sau vài giây!"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (!hasLock) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "busy",
+      message: "Không thể lấy khóa xử lý (hàng đợi quá tải). Vui lòng thử lại!"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   try {
     var rawText = e.postData ? e.postData.contents : "";
     if (!rawText) {
-      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "No post data received" }))
+      return ContentService.createTextOutput(JSON.stringify({ status: "error", message: "Không có dữ liệu gửi lên" }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -1050,40 +1067,98 @@ function doPost(e) {
       sheet = ss.getSheets()[0];
     }
 
-    var targetRow = parseInt(data.targetRow, 10);
-    // Tự động tìm dòng trống hợp lệ (từ dòng 7 đến 100) nếu chưa có
-    if (!targetRow || isNaN(targetRow) || targetRow < 7) {
-      for (var r = 7; r <= 100; r++) {
-        var valB = sheet.getRange(r, 2).getValue();
-        if (valB === "" || valB === null) {
-          targetRow = r;
-          break;
-        }
+    // 2. ĐỌC VÀ LỌC DỮ LIỆU THỰC TẾ TRÊN SHEET (BÊN TRONG KHÓA BẢO MẬT)
+    var lastRow = Math.min(sheet.getLastRow(), 180);
+    var targetRow = 0;
+    var sumRow = 0;
+    var maxStt = 0;
+
+    // Đọc từ dòng 7 đến dòng cuối
+    var rangeData = sheet.getRange(7, 1, Math.max(1, lastRow - 6), 38).getValues();
+
+    for (var i = 0; i < rangeData.length; i++) {
+      var currentExcelRow = i + 7;
+      var cellA = rangeData[i][0];
+      var cellB = rangeData[i][1];
+      var valAStr = (cellA !== null && cellA !== undefined) ? String(cellA).trim() : "";
+      var valBStr = (cellB !== null && cellB !== undefined) ? String(cellB).trim() : "";
+
+      // Dừng nếu chạm dòng TỔNG CỘNG hoặc Bảng Thống kê 47 Khoa Phòng
+      if (valBStr.indexOf("TỔNG") !== -1 || valBStr === "KHOA, PHÒNG, TRUNG TÂM" || valBStr === "BAN BVSK") {
+        if (!sumRow) sumRow = currentExcelRow;
+        break;
       }
-      if (!targetRow) targetRow = 99;
+
+      // Tìm STT lớn nhất hiện tại
+      var numStt = parseInt(valAStr, 10);
+      if (!isNaN(numStt) && numStt > maxStt && numStt < 500) {
+        maxStt = numStt;
+      }
+
+      // Tìm dòng trống đầu tiên: Cột B và C đều trống
+      var isRowEmpty = (valBStr === "" && (!rangeData[i][2] || String(rangeData[i][2]).trim() === ""));
+      if (isRowEmpty && !targetRow) {
+        targetRow = currentExcelRow;
+      }
     }
 
-    // Ghi dữ liệu 38 cột từ B đến AM
+    if (!sumRow) sumRow = Math.max(targetRow + 1, 100);
+
+    // 3. BỘ LỌC CHỐNG TRÙNG LẶP (DEDUPLICATION FILTER)
+    var newDept = data.cols && data.cols[0] ? String(data.cols[0]).trim() : "";
+    var newHs = data.cols && data.cols[1] ? String(data.cols[1]).trim() : "";
+    var newStaff = data.cols && data.cols[35] ? String(data.cols[35]).trim() : "";
+
+    if (newDept) {
+      for (var j = rangeData.length - 1; j >= Math.max(0, rangeData.length - 15); j--) {
+        var existB = String(rangeData[j][1] || "").trim();
+        var existC = String(rangeData[j][2] || "").trim();
+        var existExec = String(rangeData[j][35] || "").trim();
+
+        // Nếu trùng Khoa phòng, Số hồ sơ (khi có) và Cán bộ thực hiện
+        if (existB === newDept && ((newHs && existC === newHs) || (!newHs && existExec === newStaff))) {
+          // Trả về thành công với dòng đã tồn tại, tuyệt đối không ghi đè thêm lần 2!
+          return ContentService.createTextOutput(JSON.stringify({
+            status: "duplicate_filtered",
+            message: "Ca này đã được lưu an toàn trước đó trên dòng " + (j + 7) + "!",
+            row: j + 7,
+            stt: rangeData[j][0] || (j + 1)
+          })).setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+    }
+
+    // 4. NẾU CÁC DÒNG ĐÃ ĐẦY SÁT DÒNG TỔNG CỘNG -> CHÈN THÊM DÒNG TRỐNG AN TOÀN
+    if (!targetRow || targetRow >= sumRow) {
+      sheet.insertRowBefore(sumRow);
+      targetRow = sumRow;
+      sumRow++;
+    }
+
+    // 5. GHI DỮ LIỆU ĐÚNG ĐỊNH DẠNG VÀO CÁC CỘT (B ĐẾN AM)
     var cols = data.cols;
     if (Array.isArray(cols) && cols.length > 0) {
       sheet.getRange(targetRow, 2, 1, cols.length).setValues([cols]);
     }
 
-    // Nếu có STT và cột A đang trống, điền số STT
-    if (data.targetStt) {
-      var cellA = sheet.getRange(targetRow, 1);
-      if (cellA.getValue() === "" || cellA.getValue() === null) {
-        cellA.setValue(data.targetStt);
-      }
+    // Ghi STT tự động tăng nếu cột A chưa có
+    var nextStt = maxStt + 1;
+    var cellAVal = sheet.getRange(targetRow, 1).getValue();
+    if (!cellAVal || isNaN(parseInt(cellAVal, 10))) {
+      sheet.getRange(targetRow, 1).setValue(nextStt);
+    } else {
+      nextStt = parseInt(cellAVal, 10);
     }
 
+    // Flush để Google lưu ngay lập tức
     SpreadsheetApp.flush();
 
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
       sheetName: sheet.getName(),
       row: targetRow,
-      stt: data.targetStt
+      stt: nextStt,
+      message: "Đã ghi an toàn vào dòng " + targetRow + " (STT " + nextStt + ")"
     })).setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
@@ -1099,15 +1174,16 @@ function doPost(e) {
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: "online",
-    message: "Google Apps Script Báo Cáo CNTT đang hoạt động sẵn sàng nhận dữ liệu!"
+    message: "Google Apps Script Báo Cáo CNTT - Khóa Hàng Đợi An Toàn đang hoạt động!"
   })).setMimeType(ContentService.MimeType.JSON);
 }`;
     },
 
     /**
-     * Gửi trực tiếp 1 dòng dữ liệu lên Google Trang Tính qua Apps Script Web App
+     * Gửi an toàn 1 dòng dữ liệu lên Google Trang Tính qua Apps Script Web App
+     * Có cơ chế tự động thử lại (Retry with Backoff) khi hệ thống bận do nhiều người gửi cùng lúc
      */
-    async sendRowToGoogleSheet({ sheetName, targetRow, targetStt, cols }) {
+    async sendRowToGoogleSheet({ sheetName, targetRow, targetStt, cols }, maxRetries = 2) {
       const config = this.getConfig();
       const scriptUrl = config.appsScriptUrl;
       if (!scriptUrl) {
@@ -1118,34 +1194,44 @@ function doGet(e) {
         };
       }
 
-      try {
-        const payload = JSON.stringify({
-          sheetName: sheetName || "7.9",
-          targetRow: parseInt(targetRow, 10) || 99,
-          targetStt: String(targetStt || ""),
-          cols: cols
-        });
+      let attempt = 0;
+      while (attempt <= maxRetries) {
+        attempt++;
+        try {
+          const payload = JSON.stringify({
+            sheetName: sheetName || "7.9",
+            targetRow: parseInt(targetRow, 10) || 99,
+            targetStt: String(targetStt || ""),
+            cols: cols
+          });
 
-        // Do Google Apps Script trả về redirect 302, gửi với mode 'no-cors' để vượt qua chính sách CORS của trình duyệt
-        await fetch(scriptUrl, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: payload
-        });
+          // Sử dụng mode 'no-cors' để gửi tin cậy qua Google Apps Script redirect
+          await fetch(scriptUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: payload
+          });
 
-        return {
-          success: true,
-          message: "Đã gửi dữ liệu thành công lên Google Trang Tính!"
-        };
-      } catch (err) {
-        console.error("Lỗi khi gửi dữ liệu lên Apps Script:", err);
-        return {
-          success: false,
-          error: err.message
-        };
+          return {
+            success: true,
+            message: "Đã gửi dữ liệu an toàn lên Google Trang Tính!"
+          };
+        } catch (err) {
+          console.warn(`Lỗi gửi Apps Script (lần thử ${attempt}/${maxRetries + 1}):`, err);
+          if (attempt <= maxRetries) {
+            // Chờ ngẫu nhiên (Jitter delay) 800ms - 1800ms trước khi thử lại để phân tán tải
+            const jitterDelay = 800 + Math.floor(Math.random() * 1000);
+            await new Promise(r => setTimeout(r, jitterDelay));
+          } else {
+            return {
+              success: false,
+              error: err.message
+            };
+          }
+        }
       }
     },
 

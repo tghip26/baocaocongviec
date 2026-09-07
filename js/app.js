@@ -8270,6 +8270,10 @@ p {
     this.cfgCnttAppsScriptUrl = document.getElementById("cfgCnttAppsScriptUrl");
     this.cnttWebhookStatusBadge = document.getElementById("cnttWebhookStatusBadge");
 
+    // Hàng đợi gửi dữ liệu & Chống xung đột đa người dùng
+    this.cnttSubmissionQueue = [];
+    this.isProcessingCnttQueue = false;
+
     // Single-row Toolbar Components
     this.cnttUserSessionChip = document.getElementById("cnttUserSessionChip");
     this.cnttSessionUserDisplay = document.getElementById("cnttSessionUserDisplay");
@@ -9516,116 +9520,189 @@ p {
       hwCount += 1;
     }
 
-    // Hiển thị trạng thái đang kiểm tra Google Sheet thời gian thực
-    this.setButtonLoading(this.btnSubmitCnttRecord, true, "Đang quét Google Sheet...");
-
     const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
     const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : fallbackSheet);
 
-    try {
-      // 1. TỰ ĐỘNG ĐỒNG BỘ & XÁC MINH DÒNG TRỐNG THỜI GIAN THỰC TẠI THỜI ĐIỂM BẤM
-      const verified = await this.syncAndVerifyEmptyRow(targetSheet);
-      const targetRow = verified ? verified.row : (this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 48);
-      const targetRange = verified ? verified.rangeStr : `B${targetRow}:AK${targetRow}`;
-      const nextStt = verified ? verified.stt : String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
+    // Lấy thông tin tài khoản đăng nhập từ Lịch Trực CNTT
+    const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+      ? window.ToolDutyRoster.getCurrentSession()
+      : null;
 
-      // Lấy thông tin tài khoản đăng nhập từ Lịch Trực CNTT
-      const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
-        ? window.ToolDutyRoster.getCurrentSession()
-        : null;
-
-      const newRecord = {
-        id: `local_${Date.now()}`,
-        stt: nextStt,
-        dept: dept,
-        soHoSo: soHoSo,
-        soPhieu: soPhieu,
-        softwareIssues: swIssues,
-        softwareCount: swCount,
-        hardwareIssues: hwIssues,
-        hardwareCount: hwCount,
-        reqStaff: reqStaff,
-        execStaff: execStaff,
-        note: note,
-        status: status,
-        targetSheet: targetSheet,
-        targetRow: targetRow,
-        targetRange: targetRange,
-        userAccount: session ? session.username : "guest",
-        userFullname: session ? (session.fullname || session.username) : execStaff,
-        userRole: session ? (session.role || "staff") : "staff",
-        createdAt: new Date().toISOString()
-      };
-
-      // 1. Lưu cục bộ & nhật ký
-      ToolCnttReport.saveLocalRow(newRecord);
-      if (ToolCnttReport.logUserActivity) {
-        ToolCnttReport.logUserActivity(newRecord, session);
+    // KIỂM TRA & LỌC TRÙNG LẶP SƠ BỘ TRÊN BỘ NHỚ CỤC BỘ (Deduplication Guard)
+    if (this.cnttRecords && this.cnttRecords.length > 0 && soHoSo) {
+      const recentDup = this.cnttRecords.slice(0, 5).find(r => 
+        r.dept === dept && r.soHoSo === soHoSo && (Date.now() - new Date(r.createdAt || 0).getTime() < 45000)
+      );
+      if (recentDup) {
+        const confirmDup = confirm(`⚠️ Ca "${dept}" với số hồ sơ "${soHoSo}" vừa mới được tạo cách đây ít giây. Bạn có chắc chắn muốn gửi thêm ca này không?`);
+        if (!confirmDup) return;
       }
-
-      if (!this.cnttRecords) this.cnttRecords = [];
-      this.cnttRecords.unshift(newRecord);
-      this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
-      this.renderCnttAnalytics();
-      this.renderCnttTable();
-      this.renderUserActivityLogUI();
-
-      // 2. Cập nhật dòng trống tiếp theo xuống dòng kế
-      this.cnttNextEmptyRow = {
-        row: targetRow + 1,
-        rangeStr: `B${targetRow + 1}:AK${targetRow + 1}`,
-        isFull: targetRow >= 100,
-        stt: String(parseInt(nextStt, 10) + 1)
-      };
-      this.updateNextEmptyRowUI();
-      this.updateCnttTargetSheetLinks(targetSheet, targetRow);
-
-      // 3. Chuẩn bị mảng 38 cột và chuỗi TSV chuẩn xác cho dòng này
-      const rowArray = ToolCnttReport.buildRowArray({
-        dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
-      }, nextStt);
-
-      const tsv = ToolCnttReport.buildTsvRow({
-        dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
-      }, nextStt, false);
-
-      if (navigator.clipboard) {
-        try { await navigator.clipboard.writeText(tsv); } catch (e) {}
-      }
-
-      const config = ToolCnttReport.getConfig();
-      if (config.appsScriptUrl) {
-        // TỰ ĐỘNG GHI TRỰC TIẾP ONLINE VÀO GOOGLE TRANG TÍNH
-        this.showToast(`🚀 Đang tự động điền trực tiếp vào ô B${targetRow} trên Google Sheet [${targetSheet}]...`, "info", 3000);
-        const sendRes = await ToolCnttReport.sendRowToGoogleSheet({
-          sheetName: targetSheet,
-          targetRow: targetRow,
-          targetStt: nextStt,
-          cols: rowArray
-        });
-
-        if (sendRes.success) {
-          this.showToast(`🎉 ĐÃ ĐIỀN THÀNH CÔNG VÀO GOOGLE SHEET! Dòng B${targetRow}:AM${targetRow} trên sheet [${targetSheet}] đã được cập nhật đúng định dạng.`, "success", 8000);
-          // Tự động tải lại dữ liệu từ Google Sheet sau 1.5 giây để cập nhật đồng bộ 2 chiều
-          setTimeout(() => {
-            this.fetchGoogleSheetDataForCntt(true, targetSheet);
-          }, 1500);
-        } else {
-          this.showToast(`⚠️ Không thể tự động ghi online: ${sendRes.message || sendRes.error}. Dữ liệu đã COPY sẵn, bạn có thể dán Ctrl+V vào ô B${targetRow}.`, "warning", 8500);
-        }
-      } else {
-        // Chưa cấu hình Apps Script -> Thông báo rõ ràng kèm hướng dẫn cài đặt 1 lần
-        this.showToast(`📋 Dữ liệu đã lưu tạm & COPY vào Clipboard! Mở ô B${targetRow} trên Google Sheet và ấn Ctrl+V để dán đúng định dạng (Hoặc bấm biểu tượng ⚙️ trên thanh công cụ để kích hoạt Tự Động Ghi Trực Tiếp không cần dán thủ công).`, "info", 9500);
-      }
-
-      this.resetCnttForm();
-      this.switchCnttTab("table");
-    } catch (err) {
-      console.error("Lỗi khi lưu ca:", err);
-      this.showToast(`Lỗi đồng bộ: ${err.message}`, "error");
-    } finally {
-      this.setButtonLoading(this.btnSubmitCnttRecord, false);
     }
+
+    // Đưa ca vào Hàng Đợi Xử Lý Tuần Tự (Queue)
+    const job = {
+      id: `job_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: Date.now(),
+      dept, soHoSo, soPhieu,
+      swIssues, swObj, swCount,
+      hwIssues, hwObj, hwCount,
+      reqStaff, execStaff, note, status,
+      targetSheet,
+      session
+    };
+
+    if (!this.cnttSubmissionQueue) this.cnttSubmissionQueue = [];
+    this.cnttSubmissionQueue.push(job);
+
+    this.showToast(`📥 Đã đưa ca [${dept}] vào hàng đợi đồng bộ an toàn (Vị trí: ${this.cnttSubmissionQueue.length})...`, "info", 2000);
+    this.resetCnttForm();
+    this.switchCnttTab("table");
+
+    // Khởi chạy bộ xử lý hàng đợi
+    this.processCnttSubmissionQueue();
+  }
+
+  /**
+   * Bộ xử lý HÀNG ĐỢI TUẦN TỰ (Sequential Queue Worker)
+   * Đảm bảo thời gian chờ, đọc lại Google Sheet thời gian thực và ghi tuần tự từng ca
+   * Tuyệt đối không để nhiều người hoặc nhiều yêu cầu ghi đè nhầm lên nhau
+   */
+  async processCnttSubmissionQueue() {
+    if (this.isProcessingCnttQueue) return;
+    this.isProcessingCnttQueue = true;
+
+    while (this.cnttSubmissionQueue && this.cnttSubmissionQueue.length > 0) {
+      const job = this.cnttSubmissionQueue[0];
+      const queueLen = this.cnttSubmissionQueue.length;
+
+      this.setButtonLoading(this.btnSubmitCnttRecord, true, `Đang xử lý hàng đợi (${queueLen})...`);
+
+      try {
+        // 1. ĐỌC VÀ LỌC DỮ LIỆU GOOGLE SHEET THỜI GIAN THỰC ĐỂ TÌM DÒNG TRỐNG MỚI NHẤT
+        this.showToast(`🔍 [Hàng đợi còn ${queueLen}] Đang quét Google Sheet để tìm dòng an toàn cho ca [${job.dept}]...`, "info", 2000);
+        const verified = await this.syncAndVerifyEmptyRow(job.targetSheet);
+        const targetRow = verified ? verified.row : (this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 99);
+        const targetRange = verified ? verified.rangeStr : `B${targetRow}:AK${targetRow}`;
+        const nextStt = verified ? verified.stt : String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
+
+        const newRecord = {
+          id: `local_${Date.now()}`,
+          stt: nextStt,
+          dept: job.dept,
+          soHoSo: job.soHoSo,
+          soPhieu: job.soPhieu,
+          softwareIssues: job.swIssues,
+          softwareCount: job.swCount,
+          hardwareIssues: job.hwIssues,
+          hardwareCount: job.hwCount,
+          reqStaff: job.reqStaff,
+          execStaff: job.execStaff,
+          note: job.note,
+          status: job.status,
+          targetSheet: job.targetSheet,
+          targetRow: targetRow,
+          targetRange: targetRange,
+          userAccount: job.session ? job.session.username : "guest",
+          userFullname: job.session ? (job.session.fullname || job.session.username) : job.execStaff,
+          userRole: job.session ? (job.session.role || "staff") : "staff",
+          createdAt: new Date().toISOString()
+        };
+
+        // Lưu cục bộ & nhật ký thao tác
+        ToolCnttReport.saveLocalRow(newRecord);
+        if (ToolCnttReport.logUserActivity) {
+          ToolCnttReport.logUserActivity(newRecord, job.session);
+        }
+
+        if (!this.cnttRecords) this.cnttRecords = [];
+        this.cnttRecords.unshift(newRecord);
+        this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
+        this.renderCnttAnalytics();
+        this.renderCnttTable();
+        this.renderUserActivityLogUI();
+
+        // Cập nhật vị trí dòng trống tiếp theo
+        this.cnttNextEmptyRow = {
+          row: targetRow + 1,
+          rangeStr: `B${targetRow + 1}:AK${targetRow + 1}`,
+          isFull: targetRow >= 100,
+          stt: String(parseInt(nextStt, 10) + 1)
+        };
+        this.updateNextEmptyRowUI();
+        this.updateCnttTargetSheetLinks(job.targetSheet, targetRow);
+
+        // 2. TẠO MẢNG DỮ LIỆU CHUẨN 38 CỘT (Cột B -> AM)
+        const rowArray = ToolCnttReport.buildRowArray({
+          dept: job.dept,
+          soHoSo: job.soHoSo,
+          soPhieu: job.soPhieu,
+          software: job.swObj,
+          hardware: job.hwObj,
+          reqStaff: job.reqStaff,
+          execStaff: job.execStaff,
+          note: job.note,
+          status: job.status
+        }, nextStt);
+
+        const tsv = ToolCnttReport.buildTsvRow({
+          dept: job.dept,
+          soHoSo: job.soHoSo,
+          soPhieu: job.soPhieu,
+          software: job.swObj,
+          hardware: job.hwObj,
+          reqStaff: job.reqStaff,
+          execStaff: job.execStaff,
+          note: job.note,
+          status: job.status
+        }, nextStt, false);
+
+        if (navigator.clipboard) {
+          try { await navigator.clipboard.writeText(tsv); } catch (e) {}
+        }
+
+        // 3. GỬI ONLINE LÊN GOOGLE APPS SCRIPT VỚI CƠ CHẾ KHÓA ĐỘC QUYỀN
+        const config = ToolCnttReport.getConfig();
+        if (config.appsScriptUrl) {
+          this.showToast(`🚀 [Hàng đợi] Đang ghi an toàn ca [${job.dept}] lên Google Sheet [${job.targetSheet}]...`, "info", 3000);
+          const sendRes = await ToolCnttReport.sendRowToGoogleSheet({
+            sheetName: job.targetSheet,
+            targetRow: targetRow,
+            targetStt: nextStt,
+            cols: rowArray
+          }, 2); // Tự động thử lại tối đa 2 lần nếu bận
+
+          if (sendRes.success) {
+            this.showToast(`🎉 ĐÃ ĐỒNG BỘ AN TOÀN! Ca [${job.dept}] đã ghi vào ô B${targetRow}:AM${targetRow} trên sheet [${job.targetSheet}] (Tránh xung đột thành công).`, "success", 7500);
+          } else {
+            this.showToast(`⚠️ Không thể tự động ghi online: ${sendRes.message || sendRes.error}. Dữ liệu đã lưu tạm & copy để dán Ctrl+V vào ô B${targetRow}.`, "warning", 8500);
+          }
+        } else {
+          this.showToast(`📋 Dữ liệu ca [${job.dept}] đã lưu & copy vào Clipboard! Mở ô B${targetRow} trên Google Sheet và ấn Ctrl+V (Hoặc bấm ⚙️ để kích hoạt Tự Động Ghi không cần dán thủ công).`, "info", 9000);
+        }
+
+      } catch (jobErr) {
+        console.error("Lỗi khi xử lý hàng đợi ca:", jobErr);
+        this.showToast(`Lỗi xử lý ca [${job.dept}]: ${jobErr.message}`, "error");
+      } finally {
+        // Rút ca đã xử lý xong ra khỏi hàng đợi
+        this.cnttSubmissionQueue.shift();
+
+        // 4. THỜI GIAN CHỜ AN TOÀN GIỮA CÁC CA (Safety buffer / Debounce)
+        if (this.cnttSubmissionQueue.length > 0) {
+          this.showToast(`⏳ Đang chờ giãn cách an toàn 1.2s trước khi xử lý ca kế tiếp trong hàng đợi...`, "info", 1200);
+          await new Promise(r => setTimeout(r, 1200));
+        }
+      }
+    }
+
+    this.isProcessingCnttQueue = false;
+    this.setButtonLoading(this.btnSubmitCnttRecord, false);
+
+    // Khi hàng đợi đã xong toàn bộ, tự động tải lại dữ liệu từ Google Sheet để đồng bộ đồng nghiệp
+    const currentSheet = this.cnttSelectedSheet || "7.9";
+    setTimeout(() => {
+      this.fetchGoogleSheetDataForCntt(true, currentSheet);
+    }, 1500);
   }
 
   /**
