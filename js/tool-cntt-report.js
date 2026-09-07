@@ -114,7 +114,7 @@
     { code: "CĐT", name: "Phòng Chỉ Đạo Tuyến", cat: "phong", catName: "Phòng ban", keywords: "chi dao tuyen dao tao ho tro tuyen duoi cdt" },
     { code: "CSGN", name: "Đơn vị Chăm Sóc Giảm Nhẹ", cat: "phong", catName: "Phòng ban", keywords: "cham soc giam nhe ung thu giai doan cuoi csgn" },
     { code: "BAN BVSK", name: "Ban Bảo Vệ Sức Khỏe Cán Bộ", cat: "phong", catName: "Phòng ban", keywords: "bao ve suc khoe can bo kham can bo ttp" },
-    { code: "HTL", name: "Bộ phận Hậu Cần / Hỗ Trợ Khác", cat: "phong", catName: "Phòng ban", keywords: "hau can ho tro luu kho htl" }
+    { code: "HTL", name: "Hóa Trị Liệu", cat: "phong", catName: "Phòng ban", keywords: "hoa tri lieu" }
   ];
 
   const ToolCnttReport = {

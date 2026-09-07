@@ -12961,9 +12961,9 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   background: rgba(248, 113, 113, 0.16);
 }
 
-/* admin-only elements hidden by default (nếu cần giới hạn vai trò) */
+/* admin-only elements hidden by default */
 .admin-only-btn {
-  display: inline-flex !important;
+  display: none;
 }
 
 /* ==========================================================================
@@ -15441,26 +15441,36 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 /* ==========================================================================
-   THANH CÔNG CỤ 1 HÀNG DUY NHẤT (SINGLE-ROW UNIFIED TOOLBAR)
+   KHỐI HEADER 2 DÒNG TINH TẾ BC SỬA CNTT (2-TIER MODERN HEADER)
    ========================================================================== */
+.cntt-header-container,
 .cntt-single-row-toolbar {
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+/* Dòng 1: Tiêu đề + Trạng thái Cloud + Cụm hành động hệ thống */
+.cntt-header-row.cntt-header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 6px 16px;
-  background: rgba(15, 23, 42, 0.88);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  flex-shrink: 0;
-  min-height: 46px;
-  z-index: 10;
+  gap: 12px;
+  padding: 8px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 44px;
 }
 
+.cntt-header-left,
 .cntt-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
 }
 
@@ -15471,7 +15481,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .cntt-main-title {
-  font-size: 0.98rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: #f8fafc;
   letter-spacing: -0.01em;
@@ -15503,21 +15513,32 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   animation: pulseNeonDot 2s infinite ease-in-out;
 }
 
-/* Center Inline Tab Switcher */
-.cntt-toolbar-center {
+/* Dòng 1 bên phải: Đồng Bộ, Xuất Excel, Cấu Hình, Quản Lý User, Tài Khoản */
+.cntt-header-right,
+.cntt-toolbar-right {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex: 1;
-  min-width: 0;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Dòng 2: Thanh Tab điều hướng (4 thẻ làm việc) & Tiện ích mở Sheet */
+.cntt-header-row.cntt-header-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 18px;
+  background: rgba(10, 15, 30, 0.4);
+  min-height: 40px;
 }
 
 .cntt-tabs-nav-inline {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   background: rgba(15, 23, 42, 0.65);
-  padding: 3px 4px;
+  padding: 3px 5px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -15526,22 +15547,22 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .cntt-nav-tab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 11px;
+  gap: 6px;
+  padding: 5px 13px;
   border-radius: 6px;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #94a3b8;
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
 .cntt-nav-tab:hover {
   color: #f8fafc;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .cntt-nav-tab.active {
@@ -15551,12 +15572,31 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
 }
 
-/* Right Actions & User Session Chip */
-.cntt-toolbar-right {
+.cntt-header-bottom-extra {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  gap: 8px;
+}
+
+.cntt-extra-sheet-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  transition: all 0.18s ease;
+}
+
+.cntt-extra-sheet-btn:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
 }
 
 .btn-cntt-action {
@@ -15696,17 +15736,20 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 /* Responsive Toolbar Wrap */
-@media (max-width: 1100px) {
-  .cntt-single-row-toolbar {
+@media (max-width: 1024px) {
+  .cntt-header-row.cntt-header-top {
     flex-wrap: wrap;
+    gap: 8px;
     padding: 8px 12px;
   }
-  .cntt-toolbar-center {
-    order: 3;
-    width: 100%;
-    margin-top: 4px;
-    justify-content: flex-start;
+  .cntt-header-row.cntt-header-bottom {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 6px 12px;
+  }
+  .cntt-tabs-nav-inline {
     overflow-x: auto;
+    max-width: 100%;
   }
 }
 

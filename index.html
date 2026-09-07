@@ -22,8 +22,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.3.0" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.3.0" />
+  <link rel="preload" href="style.css?v=3.4.2" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.4.2" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1854,7 +1854,7 @@
                   <span class="btn-panel-icon">👥</span>
                   <span>Cán Bộ (<strong id="staffCountBtnBadge" style="color: #38bdf8;">0</strong>)</span>
                 </button>
-                <button type="button" class="btn-duty-panel-toggle" id="btnOpenUserManageModal" title="Quản lý danh sách tài khoản, cấp quyền & xem mật khẩu người dùng (User/Admin)">
+                <button type="button" class="btn-duty-panel-toggle admin-only-btn" id="btnOpenUserManageModal" title="Quản lý danh sách tài khoản, cấp quyền & xem mật khẩu người dùng (Dành riêng cho Admin)" style="display: none;">
                   <span class="btn-panel-icon">🔑</span>
                   <span>Quản Lý User (<strong id="userCountBtnBadge" style="color: #c084fc;">0</strong>)</span>
                 </button>
@@ -1909,25 +1909,51 @@
              TÍCH HỢP GOOGLE TRANG TÍNH & BỘ THỐNG KÊ ĐI KÈM
              ============================================================ -->
         <section class="workspace-view hidden" id="cnttWorkReportView">
-          <!-- THANH CÔNG CỤ DUY NHẤT 1 HÀNG (SINGLE-ROW UNIFIED TOOLBAR) -->
-          <div class="cntt-single-row-toolbar">
-            <!-- Cụm trái: Nút Quay lại + Tiêu đề ngắn gọn + Cloud Status -->
-            <div class="cntt-toolbar-left">
-              <button type="button" class="btn-back" id="btnBackToHubFromCntt" title="Quay về danh mục">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-                <span>Quay lại</span>
-              </button>
-              <div class="cntt-brand-cluster">
-                <h1 class="workspace-title cntt-main-title">BC Sửa CNTT</h1>
-                <span class="cntt-cloud-badge" id="cnttSyncStatusBadge" title="Nguồn: Google Trang Tính Phòng CNTT">
-                  <span class="cntt-pulse-dot"></span>
-                  <span id="cnttSyncStatusText">Google Sheet</span>
-                </span>
+          <!-- KHỐI HEADER BỐ CỤC 2 DÒNG TINH TẾ & GỌN GÀNG (2-TIER MODERN HEADER) -->
+          <div class="cntt-header-container">
+            <!-- DÒNG 1: QUAY LẠI, TIÊU ĐỀ, TRẠNG THÁI CLOUD VÀ CÁC THAO TÁC HỆ THỐNG -->
+            <div class="cntt-header-row cntt-header-top">
+              <div class="cntt-header-left">
+                <button type="button" class="btn-back" id="btnBackToHubFromCntt" title="Quay về danh mục">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                  <span>Quay lại</span>
+                </button>
+                <div class="cntt-brand-cluster">
+                  <h1 class="workspace-title cntt-main-title">BC Sửa CNTT</h1>
+                  <span class="cntt-cloud-badge" id="cnttSyncStatusBadge" title="Nguồn: Google Trang Tính Phòng CNTT">
+                    <span class="cntt-pulse-dot"></span>
+                    <span id="cnttSyncStatusText">Google Sheet</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="cntt-header-right">
+                <button type="button" class="btn-cntt-action btn-cntt-sync" id="btnFetchGoogleSheet" title="Tải dữ liệu mới nhất từ Google Sheet">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  <span>Đồng Bộ</span>
+                </button>
+                <button type="button" class="btn-cntt-action btn-cntt-excel" id="btnExportCnttExcel" title="Xuất Báo Cáo Thống Kê ra file Excel">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Xuất Excel</span>
+                </button>
+                <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <button type="button" class="btn-cntt-action btn-cntt-users admin-only-btn" id="btnCnttOpenUserManage" title="Quản lý tài khoản người dùng & phân quyền (Chỉ dành cho Admin)" style="display: none;">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Quản Lý User</span>
+                </button>
+                <!-- Nút / Badge Tài Khoản Người Dùng từ Lịch Trực -->
+                <div class="cntt-user-session-chip" id="cnttUserSessionChip" title="Tài khoản cán bộ từ Lịch Trực CNTT">
+                  <span class="cntt-user-avatar">👤</span>
+                  <span class="cntt-user-name" id="cnttSessionUserDisplay">Đang tải...</span>
+                  <button type="button" class="btn-cntt-switch-user" id="btnCnttOpenLoginModal" title="Đăng nhập hoặc đổi tài khoản cán bộ">&plusmn;</button>
+                </div>
               </div>
             </div>
 
-            <!-- Cụm giữa: 4 Tabs trực quan trên cùng 1 hàng -->
-            <div class="cntt-toolbar-center">
+            <!-- DÒNG 2: 4 THẺ CHẾ ĐỘ LÀM VIỆC (TABS) & PHÍM TẮT MỞ GOOGLE SHEET -->
+            <div class="cntt-header-row cntt-header-bottom">
               <div class="cntt-tabs-nav-inline">
                 <button type="button" class="cntt-nav-tab active" id="btnTabCnttForm" title="Điền ca sửa chữa mới">
                   <span>📝 Điền Ca</span>
@@ -1942,30 +1968,12 @@
                   <span>📋 Danh Sách (<span id="cnttTableCountBadge">0</span>)</span>
                 </button>
               </div>
-            </div>
 
-            <!-- Cụm phải: Đồng Bộ + Xuất Excel + Cấu Hình + Tài khoản Lịch Trực -->
-            <div class="cntt-toolbar-right">
-              <button type="button" class="btn-cntt-action btn-cntt-sync" id="btnFetchGoogleSheet" title="Tải dữ liệu mới nhất từ Google Sheet">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <span>Đồng Bộ</span>
-              </button>
-              <button type="button" class="btn-cntt-action btn-cntt-excel" id="btnExportCnttExcel" title="Xuất Báo Cáo Thống Kê ra file Excel">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span>Xuất Excel</span>
-              </button>
-              <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              </button>
-              <button type="button" class="btn-cntt-action btn-cntt-users" id="btnCnttOpenUserManage" title="Quản lý tài khoản người dùng & cán bộ (User/Admin)">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span>Quản Lý User</span>
-              </button>
-              <!-- Nút / Badge Tài Khoản Người Dùng từ Lịch Trực -->
-              <div class="cntt-user-session-chip" id="cnttUserSessionChip" title="Tài khoản cán bộ từ Lịch Trực CNTT">
-                <span class="cntt-user-avatar">👤</span>
-                <span class="cntt-user-name" id="cnttSessionUserDisplay">Đang tải...</span>
-                <button type="button" class="btn-cntt-switch-user" id="btnCnttOpenLoginModal" title="Đăng nhập hoặc đổi tài khoản cán bộ">&plusmn;</button>
+              <div class="cntt-header-bottom-extra">
+                <a href="https://docs.google.com/spreadsheets/d/1wfZdrg65fZgPsmDdQ389cybc2_1zPqf_N3oHhU6_b74/edit" target="_blank" class="cntt-extra-sheet-btn" title="Mở trang tính gốc trên Google Sheets">
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  <span>Mở Google Sheets ↗</span>
+                </a>
               </div>
             </div>
           </div>
@@ -2965,7 +2973,7 @@
         <div class="staff-header-actions flex-row gap-8 align-center flex-wrap">
           <button type="button" class="btn-duty-action" id="btnAddStaffModalBtn" title="Thêm cán bộ mới" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.76rem;">➕ Thêm Cán Bộ</button>
           <button type="button" class="btn-duty-action" id="btnResetStaffOrderBtn" title="Khôi phục thứ tự cán bộ chuẩn ban đầu" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🔄 Thứ Tự Chuẩn</button>
-          <button type="button" class="btn-duty-action" id="btnOpenUserManageFromStaffList" title="Quản lý tài khoản & Mật khẩu người dùng" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">👥 Quản Lý User</button>
+          <button type="button" class="btn-duty-action admin-only-btn" id="btnOpenUserManageFromStaffList" title="Quản lý tài khoản & Mật khẩu người dùng (Admin)" style="display: none; background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">👥 Quản Lý User</button>
           <button type="button" class="btn-duty-action" id="btnClearAllStaffBtn" title="Xóa sạch toàn bộ cán bộ" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 6px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.76rem;">🗑️ Dọn Sạch</button>
           <button type="button" class="modal-close" id="btnCloseDutyStaffListModal">&times;</button>
         </div>
@@ -3055,7 +3063,7 @@
       <div class="modal-footer flex-between">
         <div style="display: flex; align-items: center; gap: 8px;">
           <button type="button" class="btn-modal-reset" id="btnCancelLoginModal">Hủy bỏ</button>
-          <button type="button" class="btn-login-manage-users" id="btnLoginOpenUserManage" title="Xem danh sách tài khoản hoặc cấp tài khoản">👥 Quản lý tài khoản User</button>
+          <button type="button" class="btn-login-manage-users admin-only-btn" id="btnLoginOpenUserManage" title="Xem danh sách tài khoản hoặc cấp tài khoản (Dành riêng cho Admin)" style="display: none;">👥 Quản lý tài khoản User</button>
         </div>
         <button type="button" class="btn-modal-confirm" id="btnSubmitDutyLogin">ĐĂNG NHẬP NGAY &rarr;</button>
       </div>
@@ -3539,17 +3547,17 @@
   <script defer src="js/tools-registry.js?v=3.3.1"></script>
   <script defer src="js/tool-schema-lookup.js?v=3.3.1"></script>
   <script defer src="js/tool-sql-builder.js?v=3.3.1"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.3.1"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.4.2"></script>
   <script defer src="js/tool-bhyt-xml.js?v=3.4.0"></script>
   <script defer src="js/tool-word-to-html.js?v=3.4.0"></script>
   <script defer src="js/tool-word-page-remover.js?v=3.4.0"></script>
   <script defer src="js/tool-pdf-to-image.js?v=3.4.0"></script>
   <script defer src="js/tool-giamdinh.js?v=3.4.0"></script>
-  <script defer src="js/tool-cntt-report.js?v=3.4.0"></script>
+  <script defer src="js/tool-cntt-report.js?v=3.4.2"></script>
   <script defer src="js/tool-vgca-doichieu.js?v=3.4.0"></script>
   <script defer src="js/tool-vgca-cks.js?v=3.4.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.4.0"></script>
   <script defer src="js/notification-manager.js?v=3.4.0"></script>
-  <script defer src="js/app.js?v=3.4.0"></script>
+  <script defer src="js/app.js?v=3.4.2"></script>
 </body>
 </html>

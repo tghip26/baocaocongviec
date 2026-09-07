@@ -5430,9 +5430,17 @@ p {
     this.recordOfflineChange("Xóa Danh Sách Cán Bộ", "Đã dọn sạch danh sách cán bộ");
   }
 
+  isCurrentSessionAdmin() {
+    const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+      ? window.ToolDutyRoster.getCurrentSession()
+      : this.currentDutySession;
+    if (!session) return false;
+    return session.role === "admin" || session.username === "admin";
+  }
+
   updateDutySessionUI() {
     const isLogged = !!this.currentDutySession;
-    const isAdmin = isLogged && (this.currentDutySession.role === "admin");
+    const isAdmin = this.isCurrentSessionAdmin();
 
     if (this.dutyHeaderUserName) {
       this.dutyHeaderUserName.textContent = isLogged ? (this.currentDutySession.fullname || this.currentDutySession.username) : "Chưa đăng nhập";
@@ -5448,6 +5456,20 @@ p {
     }
     if (this.dutyGuestLoginBanner) {
       this.dutyGuestLoginBanner.classList.toggle("hidden", isLogged);
+    }
+
+    // Chỉ tài khoản Admin mới được xem nút Quản Lý User & mật khẩu
+    if (this.btnCnttOpenUserManage) {
+      this.btnCnttOpenUserManage.style.display = isAdmin ? "inline-flex" : "none";
+    }
+    if (this.btnOpenUserManageModal) {
+      this.btnOpenUserManageModal.style.display = isAdmin ? "inline-flex" : "none";
+    }
+    if (this.btnOpenUserManageFromStaffList) {
+      this.btnOpenUserManageFromStaffList.style.display = isAdmin ? "inline-flex" : "none";
+    }
+    if (this.btnLoginOpenUserManage) {
+      this.btnLoginOpenUserManage.style.display = isAdmin ? "inline-flex" : "none";
     }
 
     const adminButtons = document.querySelectorAll(".admin-only-btn");
@@ -5515,6 +5537,16 @@ p {
   }
 
   openUserManageModal() {
+    if (!this.isCurrentSessionAdmin()) {
+      this.showToast("🔒 Chỉ tài khoản Quản trị viên (Admin) mới có quyền truy cập Quản lý User và xem mật khẩu!", "error");
+      const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+        ? window.ToolDutyRoster.getCurrentSession()
+        : this.currentDutySession;
+      if (!session) {
+        this.openDutyLoginModal();
+      }
+      return;
+    }
     this.resetAccountForm();
     if (this.inputSearchUserAccounts) this.inputSearchUserAccounts.value = "";
     this.populateStaffSelectInUserModal();
@@ -5566,6 +5598,11 @@ p {
 
   renderUserAccountsTable(filterText = "") {
     if (!this.dutyAccountsTableBody || !window.ToolDutyRoster) return;
+    if (!this.isCurrentSessionAdmin()) {
+      this.dutyAccountsTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:24px 10px;font-weight:600;">🔒 Bạn không có quyền xem thông tin tài khoản và mật khẩu. Vui lòng đăng nhập với tài khoản Admin.</td></tr>`;
+      if (this.userAccountsCountBadge) this.userAccountsCountBadge.textContent = "0 tài khoản";
+      return;
+    }
     let accounts = ToolDutyRoster.getAccounts();
     const totalCount = accounts.length;
 
@@ -5646,6 +5683,10 @@ p {
   }
 
   openEditAccountForm(accId) {
+    if (!this.isCurrentSessionAdmin()) {
+      this.showToast("🔒 Chỉ tài khoản Quản trị viên (Admin) mới có quyền chỉnh sửa tài khoản!", "error");
+      return;
+    }
     const accounts = ToolDutyRoster.getAccounts();
     const acc = accounts.find(a => a.id === accId);
     if (!acc) return;
@@ -5673,6 +5714,10 @@ p {
   }
 
   saveUserAccount() {
+    if (!this.isCurrentSessionAdmin()) {
+      this.showToast("🔒 Chỉ tài khoản Quản trị viên (Admin) mới có quyền cấp hoặc sửa tài khoản!", "error");
+      return;
+    }
     const u = this.inputNewAccUser ? this.inputNewAccUser.value.trim() : "";
     const p = this.inputNewAccPass ? this.inputNewAccPass.value.trim() : "";
     const role = this.selectNewAccRole ? this.selectNewAccRole.value : "user";
@@ -5734,6 +5779,10 @@ p {
   }
 
   deleteAccount(accId) {
+    if (!this.isCurrentSessionAdmin()) {
+      this.showToast("🔒 Chỉ tài khoản Quản trị viên (Admin) mới có quyền xóa tài khoản!", "error");
+      return;
+    }
     const accounts = ToolDutyRoster.getAccounts();
     const acc = accounts.find(a => a.id === accId);
     if (!acc) return;
@@ -5751,6 +5800,10 @@ p {
   }
 
   restoreDefaultAccounts() {
+    if (!this.isCurrentSessionAdmin()) {
+      this.showToast("🔒 Chỉ tài khoản Quản trị viên (Admin) mới có quyền khôi phục tài khoản mặc định!", "error");
+      return;
+    }
     if (!confirm("Bạn có chắc muốn khôi phục danh sách tài khoản mặc định chuẩn của Phòng CNTT? Dữ liệu tài khoản hiện tại sẽ được cập nhật lại theo danh sách gốc.")) return;
     ToolDutyRoster.saveAccounts([...ToolDutyRoster.defaultAccounts]);
     this.renderUserAccountsTable();
@@ -8083,6 +8136,12 @@ p {
         this.cnttAuthSyncPill.style.color = "#f59e0b";
         this.cnttAuthSyncPill.style.background = "rgba(245, 158, 11, 0.2)";
       }
+    }
+
+    // Chỉ Quản trị viên (Admin) mới hiển thị nút Quản Lý User
+    const isAdmin = this.isCurrentSessionAdmin();
+    if (this.btnCnttOpenUserManage) {
+      this.btnCnttOpenUserManage.style.display = isAdmin ? "inline-flex" : "none";
     }
   }
 
