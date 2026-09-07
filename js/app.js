@@ -4166,82 +4166,134 @@ ${this.currentW2hHtmlOutput}
       return "<p style='color: #64748b; font-style: italic; text-align: center; text-indent: 0;'>Không tìm thấy lớp văn bản (text layer) trong trang PDF này. Có thể đây là trang quét ảnh scan thuần túy.</p>";
     }
 
-    const normalized = rawText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-    const rawLines = normalized.split("\n");
+    // Hàn gắn lỗi văn bản tiếng Việt bị cách chữ/dính đoạn
+    let healedText = rawText;
+    if (window.PdfToImageConverter && typeof window.PdfToImageConverter.healVietnameseText === "function") {
+      healedText = window.PdfToImageConverter.healVietnameseText(rawText);
+    }
 
-    const paragraphs = [];
-    let currentPara = "";
+    const normalized = healedText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const blocks = normalized.split(/\n{2,}/);
+    const elements = [];
 
-    const isHeadingOrSpecial = (line) => {
+    const isTwoColumnHeader = (line) => {
+      return (line.includes("    ") || line.includes("\t")) &&
+        /(?:SỞ|PHÒNG|BỆNH VIỆN|CỘNG HÒA|Độc lập|Số:|ngày.*tháng.*năm)/i.test(line);
+    };
+
+    const isCenteredTitle = (line) => {
+      const trimmed = line.trim();
+      return /^(?:CỘNG\s+HÒA\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM|Độc\s+lập\s*[-–—]\s*Tự\s+do\s*[-–—]\s*Hạnh\s+phúc|YÊU\s+CẦU\s+BÁO\s+GIÁ|QUYẾT\s+ĐỊNH|THÔNG\s+BÁO|BÁO\s+CÁO|TỜ\s+TRÌNH|GIẤY\s+MỜI|HỢP\s+ĐỒNG|GIẤY\s+CHỨNG\s+NHẬN)$/i.test(trimmed);
+    };
+
+    const isSpecialLine = (line) => {
       const trimmed = line.trim();
       if (!trimmed) return false;
-      if (trimmed.length < 90 && trimmed === trimmed.toUpperCase() && /[A-ZÀ-Ỹ]/.test(trimmed)) return true;
+      if (trimmed.length < 85 && trimmed === trimmed.toUpperCase() && /[A-ZÀ-Ỹ]/.test(trimmed)) return true;
       if (/^(?:[0-9]+[\.\:]|[IVXLCDM]+[\.\:]|Điều\s+[0-9]+|Chương\s+[IVXLCDM0-9]+|Mục\s+[0-9]+)/i.test(trimmed)) return true;
       if (/^[-+*•–—]\s+/.test(trimmed)) return true;
-      if (/^(?:Số\s*:|V\/v\s*:|Kính\s+gửi\s*:|Độc\s+lập\s*-\s*Tự\s+do\s*-\s*Hạnh\s+phúc)/i.test(trimmed)) return true;
+      if (/^(?:Số\s*:|V\/v\s*:|Kính\s+gửi\s*:?|Gói\s+thầu\s*:?|CỘNG\s+HÒA|Độc\s+lập)/i.test(trimmed)) return true;
       if (/,\s*ngày\s+\d{1,2}\s+tháng\s+\d{1,2}\s+năm\s+\d{4}/i.test(trimmed)) return true;
       if (/^===\s*\[TRANG\s+\d+/i.test(trimmed)) return true;
       return false;
     };
 
-    const isCenteredTitle = (line) => {
-      const trimmed = line.trim();
-      return /^(?:CỘNG\s+HÒA\s+XÃ\s+HỘI\s+CHỦ\s+NGHĨA\s+VIỆT\s+NAM|Độc\s+lập\s*-\s*Tự\s+do\s*-\s*Hạnh\s+phúc|YÊU\s+CẦU\s+BÁO\s+GIÁ|QUYẾT\s+ĐỊNH|THÔNG\s+BÁO|BÁO\s+CÁO|TỜ\s+TRÌNH|GIẤY\s+MỜI|HỢP\s+ĐỒNG|GIẤY\s+CHỨNG\s+NHẬN)/i.test(trimmed);
-    };
+    for (const block of blocks) {
+      const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) continue;
 
-    if (!reflow) {
-      for (const line of rawLines) {
-        const trimmed = line.trim();
-        if (trimmed) {
-          paragraphs.push({ text: trimmed, isTitle: isCenteredTitle(trimmed), isSpecial: isHeadingOrSpecial(trimmed) });
+      // Xử lý khối 2 cột (Quốc hiệu / Cơ quan văn bản hành chính)
+      if (lines.some(l => isTwoColumnHeader(l))) {
+        for (const line of lines) {
+          const parts = line.split(/\s{4,}|\t+/);
+          if (parts.length >= 2) {
+            const left = parts[0].trim();
+            const right = parts.slice(1).join(" ").trim();
+            const isMottoSub = /Độc lập|ngày.*tháng.*năm/i.test(right);
+            const rightStyle = isMottoSub ? "font-style: italic; font-weight: normal;" : "font-weight: bold;";
+            const isLeftSub = /^Số\s*:/i.test(left);
+            const leftStyle = isLeftSub ? "font-weight: normal;" : "font-weight: bold;";
+
+            elements.push(`
+              <table class="doc-header-table" style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 3pt; font-family: 'Times New Roman', Times, serif; font-size: ${fontSize};">
+                <tr>
+                  <td style="width: 46%; text-align: center; border: none; padding: 1px 0; vertical-align: top; ${leftStyle}">${this.escapeHtml(left)}</td>
+                  <td style="width: 54%; text-align: center; border: none; padding: 1px 0; vertical-align: top; ${rightStyle}">${this.escapeHtml(right)}</td>
+                </tr>
+              </table>
+            `);
+            continue;
+          } else {
+            elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.4; margin: 0 0 4pt 0;">${this.escapeHtml(line)}</p>`);
+          }
         }
+        continue;
       }
-    } else {
-      for (let i = 0; i < rawLines.length; i++) {
-        const line = rawLines[i].trim();
-        if (!line) {
-          if (currentPara) {
-            paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
-            currentPara = "";
-          }
-          continue;
-        }
 
-        if (isHeadingOrSpecial(line)) {
-          if (currentPara) {
-            paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
-            currentPara = "";
+      if (!reflow) {
+        for (const line of lines) {
+          const isTitle = isCenteredTitle(line);
+          const isSpec = isSpecialLine(line);
+          const alignStyle = isTitle ? "text-align: center; font-weight: bold; text-indent: 0;" : (isSpec ? "text-align: left; text-indent: 0;" : "text-align: justify;");
+          const indentStyle = (!isTitle && !isSpec && indent) ? "text-indent: 1.27cm;" : "text-indent: 0;";
+          const weightStyle = isSpec && !isTitle ? "font-weight: bold;" : "";
+          elements.push(`<p class="${isTitle ? 'doc-title-line' : (isSpec ? 'doc-special-line' : 'doc-para')}" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 5pt 0; ${alignStyle} ${indentStyle} ${weightStyle}">${this.escapeHtml(line)}</p>`);
+        }
+      } else {
+        let currentPara = "";
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+
+          if (isCenteredTitle(line)) {
+            if (currentPara) {
+              elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 6pt 0; text-align: justify; ${indent ? 'text-indent: 1.27cm;' : ''}">${this.escapeHtml(currentPara)}</p>`);
+              currentPara = "";
+            }
+            elements.push(`<p class="doc-title-line" style="font-family: 'Times New Roman', Times, serif; font-size: 14pt; font-weight: bold; text-align: center; margin: 10pt 0 6pt 0; text-indent: 0;">${this.escapeHtml(line)}</p>`);
+            continue;
           }
-          paragraphs.push({ text: line, isTitle: isCenteredTitle(line), isSpecial: true });
-        } else {
+
+          if (isSpecialLine(line)) {
+            if (currentPara) {
+              elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 6pt 0; text-align: justify; ${indent ? 'text-indent: 1.27cm;' : ''}">${this.escapeHtml(currentPara)}</p>`);
+              currentPara = "";
+            }
+            const isBullet = /^[-+*•–—]\s+/.test(line);
+            const isUnderVv = /^V\/v\s*:/i.test(line);
+            const bulletStyle = isBullet ? "padding-left: 0.8cm; text-indent: 0; font-weight: normal;" : (isUnderVv ? "font-style: italic; font-weight: normal;" : "font-weight: bold; text-indent: 0;");
+            elements.push(`<p class="doc-special-line" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.4; margin: 0 0 4pt 0; ${bulletStyle}">${this.escapeHtml(line)}</p>`);
+            continue;
+          }
+
+          // Đoạn ngắn kết thúc câu không nối liền đoạn văn
+          if (line.length < 50 && !line.endsWith(",")) {
+            if (currentPara) {
+              elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 6pt 0; text-align: justify; ${indent ? 'text-indent: 1.27cm;' : ''}">${this.escapeHtml(currentPara)}</p>`);
+              currentPara = "";
+            }
+            elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 5pt 0; text-align: justify; text-indent: 0;">${this.escapeHtml(line)}</p>`);
+            continue;
+          }
+
           if (!currentPara) {
             currentPara = line;
           } else {
-            const endsWithPunctuation = /[.:;!?]$/.test(currentPara);
-            if (endsWithPunctuation) {
-              paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
+            if (/[.:;!?]$/.test(currentPara)) {
+              elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 6pt 0; text-align: justify; ${indent ? 'text-indent: 1.27cm;' : ''}">${this.escapeHtml(currentPara)}</p>`);
               currentPara = line;
             } else {
               currentPara += " " + line;
             }
           }
         }
-      }
-      if (currentPara) {
-        paragraphs.push({ text: currentPara, isTitle: isCenteredTitle(currentPara), isSpecial: isHeadingOrSpecial(currentPara) });
+
+        if (currentPara) {
+          elements.push(`<p class="doc-para" style="font-family: 'Times New Roman', Times, serif; font-size: ${fontSize}; line-height: 1.5; margin: 0 0 6pt 0; text-align: justify; ${indent ? 'text-indent: 1.27cm;' : ''}">${this.escapeHtml(currentPara)}</p>`);
+        }
       }
     }
 
-    const html = paragraphs.map(p => {
-      const isTitle = p.isTitle;
-      const isSpec = p.isSpecial;
-      const alignStyle = isTitle ? "text-align: center; font-weight: bold; text-indent: 0;" : "text-align: justify;";
-      const indentStyle = (!isTitle && !isSpec && indent) ? "text-indent: 1.27cm;" : "text-indent: 0;";
-      const weightStyle = isSpec && !isTitle ? "font-weight: bold;" : "";
-      return `<p class="${isTitle ? 'doc-title-line' : (isSpec ? 'doc-special-line' : 'doc-para')}" style="font-family: 'Times New Roman', Times, 'Liberation Serif', serif; font-size: ${fontSize}; line-height: 1.5; color: #111827; margin: 0 0 6pt 0; ${alignStyle} ${indentStyle} ${weightStyle}">${this.escapeHtml(p.text)}</p>`;
-    }).join("");
-
-    return html;
+    return elements.join("\n");
   }
 
   /**
@@ -8148,14 +8200,9 @@ p {
     }
     this.cnttNextEmptyRow = { row: 17, rangeStr: "B17:AK17", isFull: false };
 
-    // 1. Populate Dropdown Khoa/Phòng (47 khoa chuẩn)
+    // 1. Khởi tạo Combobox tìm kiếm & chọn Khoa/Phòng (47 khoa chuẩn)
     if (window.ToolCnttReport) {
-      if (this.inputFormDept) {
-        this.inputFormDept.innerHTML = `
-          <option value="">-- Chọn Khoa / Phòng Yêu Cầu --</option>
-          ${ToolCnttReport.DEPARTMENTS.map(d => `<option value="${d}">${d}</option>`).join("")}
-        `;
-      }
+      this.initCnttDeptCombobox();
       if (this.selectCnttFilterDept) {
         this.selectCnttFilterDept.innerHTML = `
           <option value="all">-- Tất Cả Khoa / Phòng --</option>
@@ -8277,6 +8324,28 @@ p {
     }
     if (this.btnResetCnttForm) {
       this.btnResetCnttForm.addEventListener("click", () => this.resetCnttForm());
+    }
+    const btnCopyBottom = document.getElementById("btnCopyFormTsvRowBottom");
+    if (btnCopyBottom) {
+      btnCopyBottom.addEventListener("click", () => this.copyFormTsvRow());
+    }
+    const btnClearSw = document.getElementById("btnClearSwSection");
+    if (btnClearSw) {
+      btnClearSw.addEventListener("click", () => {
+        document.querySelectorAll('input[name="sw_issue"]').forEach(inp => { inp.value = "0"; });
+        document.querySelectorAll('.cntt-card-stepper.sw-stepper').forEach(c => c.classList.remove('is-selected'));
+        this.updateCnttFormSummary();
+      });
+    }
+    const btnClearHw = document.getElementById("btnClearHwSection");
+    if (btnClearHw) {
+      btnClearHw.addEventListener("click", () => {
+        document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = "0"; });
+        const hwTxt = document.querySelector('input[name="hw_issue_text"]');
+        if (hwTxt) hwTxt.value = "";
+        document.querySelectorAll('.cntt-card-stepper.hw-stepper').forEach(c => c.classList.remove('is-selected'));
+        this.updateCnttFormSummary();
+      });
     }
 
     // Search & Filter Events
@@ -9056,6 +9125,13 @@ p {
    */
   resetCnttForm() {
     if (this.formCnttRepairEntry) this.formCnttRepairEntry.reset();
+    if (this.inputFormDept) this.inputFormDept.value = "";
+    if (this.btnClearDept) this.btnClearDept.classList.add("hidden");
+    if (this.cnttDeptQuickChips) {
+      this.cnttDeptQuickChips.querySelectorAll(".dept-quick-chip").forEach(ch => ch.classList.remove("is-active"));
+    }
+    if (this.cnttDeptDropdownMenu) this.cnttDeptDropdownMenu.classList.add("hidden");
+    if (this.btnToggleDeptDropdown) this.btnToggleDeptDropdown.classList.remove("is-open");
     document.querySelectorAll('.cntt-card-stepper').forEach(c => c.classList.remove('is-selected'));
     document.querySelectorAll('input[name="sw_issue"]').forEach(inp => { inp.value = "0"; });
     document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = "0"; });
@@ -9068,6 +9144,252 @@ p {
     this.updateCnttFormSummary();
     // Giữ cán bộ thực hiện luôn đồng bộ theo tài khoản đang đăng nhập sau khi reset form
     this.updateCnttUserSessionUI();
+  }
+
+  /**
+   * Khởi tạo Combobox tìm kiếm & hiển thị danh sách 47 Khoa/Phòng
+   */
+  initCnttDeptCombobox() {
+    this.inputFormDept = document.getElementById("inputFormDept");
+    this.btnClearDept = document.getElementById("btnClearDept");
+    this.btnToggleDeptDropdown = document.getElementById("btnToggleDeptDropdown");
+    this.cnttDeptDropdownMenu = document.getElementById("cnttDeptDropdownMenu");
+    this.cnttDeptDropdownList = document.getElementById("cnttDeptDropdownList");
+    this.cnttDeptBadgeCount = document.getElementById("cnttDeptBadgeCount");
+    this.cnttDeptCatTabs = document.getElementById("cnttDeptCatTabs");
+    this.cnttDeptQuickChips = document.getElementById("cnttDeptQuickChips");
+    this.cnttDeptFilterHint = document.getElementById("cnttDeptFilterHint");
+
+    if (!this.inputFormDept || !this.cnttDeptDropdownList) return;
+
+    const deptsMeta = (window.ToolCnttReport && window.ToolCnttReport.DEPARTMENTS_META)
+      ? window.ToolCnttReport.DEPARTMENTS_META
+      : (window.ToolCnttReport && window.ToolCnttReport.DEPARTMENTS)
+        ? window.ToolCnttReport.DEPARTMENTS.map(d => ({ code: d, name: d, cat: "cls", catName: "Khoa/Phòng", keywords: d.toLowerCase() }))
+        : [];
+
+    let currentCategory = "all";
+    let focusedIndex = -1;
+
+    // Helper xóa dấu tiếng Việt phục vụ tìm kiếm thông minh
+    const normalizeVi = (str) => {
+      if (!str) return "";
+      return str.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d").replace(/Đ/g, "d")
+        .trim();
+    };
+
+    // Render danh sách khoa phòng với bộ lọc
+    const renderDropdownList = () => {
+      const rawInput = this.inputFormDept.value || "";
+      const query = normalizeVi(rawInput);
+      
+      const filtered = deptsMeta.filter(item => {
+        const matchCat = (currentCategory === "all") || (item.cat === currentCategory);
+        if (!matchCat) return false;
+        if (!query) return true;
+        const normCode = normalizeVi(item.code);
+        const normName = normalizeVi(item.name);
+        const normKeywords = normalizeVi(item.keywords || "");
+        return normCode.includes(query) || normName.includes(query) || normKeywords.includes(query);
+      });
+
+      if (this.cnttDeptBadgeCount) {
+        this.cnttDeptBadgeCount.textContent = `${filtered.length} Khoa/Phòng`;
+      }
+      if (this.cnttDeptFilterHint) {
+        this.cnttDeptFilterHint.textContent = query ? `Tìm thấy ${filtered.length} kết quả` : `Hiển thị ${filtered.length} khoa/phòng`;
+      }
+
+      if (filtered.length === 0) {
+        const rawTyped = rawInput.trim();
+        this.cnttDeptDropdownList.innerHTML = `
+          <div class="dept-empty-state">
+            <div>Không tìm thấy khoa/phòng danh mục với "<strong>${this.escapeHtml(rawTyped)}</strong>"</div>
+            ${rawTyped ? `<button type="button" class="btn-use-custom-dept" id="btnUseCustomDept">➕ Dùng tên: "${this.escapeHtml(rawTyped)}"</button>` : ''}
+          </div>
+        `;
+        const btnCustom = document.getElementById("btnUseCustomDept");
+        if (btnCustom) {
+          btnCustom.addEventListener("click", () => {
+            closeDropdown();
+          });
+        }
+        return;
+      }
+
+      const currentVal = rawInput.trim().toUpperCase();
+
+      this.cnttDeptDropdownList.innerHTML = filtered.map((item, idx) => {
+        const isSelected = item.code.toUpperCase() === currentVal;
+        return `
+          <div class="dept-dropdown-item ${isSelected ? 'is-selected' : ''}" data-code="${item.code}" data-index="${idx}">
+            <div class="dept-item-left">
+              <span class="dept-item-code">${item.code}</span>
+              <span class="dept-item-name" title="${item.name}">${item.name}</span>
+            </div>
+            <span class="dept-item-badge dept-badge-${item.cat}">${item.catName || item.cat}</span>
+          </div>
+        `;
+      }).join("");
+
+      // Gắn sự kiện click chọn item
+      this.cnttDeptDropdownList.querySelectorAll(".dept-dropdown-item").forEach(el => {
+        el.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          const code = el.getAttribute("data-code");
+          selectDepartment(code);
+        });
+      });
+    };
+
+    const selectDepartment = (code) => {
+      this.inputFormDept.value = code;
+      if (this.btnClearDept) this.btnClearDept.classList.remove("hidden");
+      
+      // Đánh dấu active trên quick chips
+      if (this.cnttDeptQuickChips) {
+        this.cnttDeptQuickChips.querySelectorAll(".dept-quick-chip").forEach(ch => {
+          if (ch.getAttribute("data-dept") === code) ch.classList.add("is-active");
+          else ch.classList.remove("is-active");
+        });
+      }
+
+      closeDropdown();
+      this.inputFormDept.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+
+    const openDropdown = () => {
+      if (!this.cnttDeptDropdownMenu) return;
+      this.cnttDeptDropdownMenu.classList.remove("hidden");
+      if (this.btnToggleDeptDropdown) this.btnToggleDeptDropdown.classList.add("is-open");
+      if (this.inputFormDept) this.inputFormDept.classList.add("is-active");
+      focusedIndex = -1;
+      renderDropdownList();
+    };
+
+    const closeDropdown = () => {
+      if (!this.cnttDeptDropdownMenu) return;
+      this.cnttDeptDropdownMenu.classList.add("hidden");
+      if (this.btnToggleDeptDropdown) this.btnToggleDeptDropdown.classList.remove("is-open");
+      if (this.inputFormDept) this.inputFormDept.classList.remove("is-active");
+      focusedIndex = -1;
+    };
+
+    // Sự kiện gõ tìm kiếm
+    this.inputFormDept.addEventListener("input", () => {
+      const val = this.inputFormDept.value.trim();
+      if (this.btnClearDept) {
+        if (val) this.btnClearDept.classList.remove("hidden");
+        else this.btnClearDept.classList.add("hidden");
+      }
+      openDropdown();
+    });
+
+    this.inputFormDept.addEventListener("focus", () => {
+      openDropdown();
+    });
+
+    // Phím tắt điều hướng ArrowDown, ArrowUp, Enter, Escape
+    this.inputFormDept.addEventListener("keydown", (e) => {
+      const items = this.cnttDeptDropdownList.querySelectorAll(".dept-dropdown-item");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (this.cnttDeptDropdownMenu.classList.contains("hidden")) {
+          openDropdown();
+          return;
+        }
+        if (items.length > 0) {
+          focusedIndex = (focusedIndex + 1) % items.length;
+          updateFocusedItem(items);
+        }
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (items.length > 0) {
+          focusedIndex = (focusedIndex - 1 + items.length) % items.length;
+          updateFocusedItem(items);
+        }
+      } else if (e.key === "Enter") {
+        if (!this.cnttDeptDropdownMenu.classList.contains("hidden") && items.length > 0 && focusedIndex >= 0) {
+          e.preventDefault();
+          const code = items[focusedIndex].getAttribute("data-code");
+          selectDepartment(code);
+        }
+      } else if (e.key === "Escape") {
+        closeDropdown();
+      }
+    });
+
+    const updateFocusedItem = (items) => {
+      items.forEach((it, idx) => {
+        if (idx === focusedIndex) {
+          it.classList.add("is-focused");
+          it.scrollIntoView({ block: "nearest" });
+        } else {
+          it.classList.remove("is-focused");
+        }
+      });
+    };
+
+    // Nút Clear (x)
+    if (this.btnClearDept) {
+      this.btnClearDept.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.inputFormDept.value = "";
+        this.btnClearDept.classList.add("hidden");
+        if (this.cnttDeptQuickChips) {
+          this.cnttDeptQuickChips.querySelectorAll(".dept-quick-chip").forEach(ch => ch.classList.remove("is-active"));
+        }
+        this.inputFormDept.focus();
+        renderDropdownList();
+      });
+    }
+
+    // Nút Toggle Dropdown
+    if (this.btnToggleDeptDropdown) {
+      this.btnToggleDeptDropdown.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (this.cnttDeptDropdownMenu.classList.contains("hidden")) {
+          this.inputFormDept.focus();
+          openDropdown();
+        } else {
+          closeDropdown();
+        }
+      });
+    }
+
+    // Category tabs filter (Tất cả, Cận lâm sàng, Ngoại, Nội, Phòng ban)
+    if (this.cnttDeptCatTabs) {
+      this.cnttDeptCatTabs.querySelectorAll(".dept-cat-tab").forEach(tab => {
+        tab.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.cnttDeptCatTabs.querySelectorAll(".dept-cat-tab").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentCategory = tab.getAttribute("data-cat") || "all";
+          renderDropdownList();
+        });
+      });
+    }
+
+    // Quick chips 1-click
+    if (this.cnttDeptQuickChips) {
+      this.cnttDeptQuickChips.querySelectorAll(".dept-quick-chip").forEach(chip => {
+        chip.addEventListener("click", (e) => {
+          e.preventDefault();
+          const d = chip.getAttribute("data-dept");
+          if (d) selectDepartment(d);
+        });
+      });
+    }
+
+    // Click ngoài đóng dropdown
+    document.addEventListener("click", (e) => {
+      const combobox = document.getElementById("cnttDeptCombobox");
+      if (combobox && !combobox.contains(e.target)) {
+        closeDropdown();
+      }
+    });
   }
 
   /**
@@ -9252,12 +9574,20 @@ p {
         : `0 mục đã chọn`;
       this.badgeSelectedSwCount.classList.toggle('has-selected', swDistinct > 0);
     }
+    const btnClearSw = document.getElementById("btnClearSwSection");
+    if (btnClearSw) {
+      btnClearSw.classList.toggle("hidden", swDistinct === 0);
+    }
 
     if (this.badgeSelectedHwCount) {
       this.badgeSelectedHwCount.textContent = hwDistinct > 0 
         ? `${hwDistinct} mục (${hwTotal} lượt)` 
         : `0 mục đã chọn`;
       this.badgeSelectedHwCount.classList.toggle('has-selected', hwDistinct > 0);
+    }
+    const btnClearHw = document.getElementById("btnClearHwSection");
+    if (btnClearHw) {
+      btnClearHw.classList.toggle("hidden", hwDistinct === 0);
     }
 
     if (this.cnttFormLiveSummary) {

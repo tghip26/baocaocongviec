@@ -2042,71 +2042,148 @@
                 </div>
 
                 <form id="formCnttRepairEntry" class="cntt-entry-form">
-                  <!-- Section 1: Thông tin Hành Chính -->
-                  <div class="cntt-form-section">
+                  <!-- Section 1: Thông tin Hành Chính & Tiếp Nhận -->
+                  <div class="cntt-form-section cntt-admin-section">
                     <div class="cntt-section-header-row">
-                      <h4 class="cntt-section-title" style="margin-bottom: 0;">1. Thông Tin Tiếp Nhận & Hành Chính</h4>
+                      <div class="flex-row gap-8 align-center">
+                        <div class="cntt-section-icon-badge">
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                        </div>
+                        <h4 class="cntt-section-title" style="margin-bottom: 0;">1. Thông Tin Tiếp Nhận & Hành Chính</h4>
+                      </div>
                       <div class="cntt-user-source-tag" id="cnttUserSourceTag" title="Tài khoản đăng nhập từ Lịch Trực CNTT">
                         <span class="pulse-dot-sm"></span>
                         <span id="cnttUserSourceTagText">Lấy từ TK Lịch Trực</span>
                       </div>
                     </div>
-                    <div class="cntt-form-grid-3">
-                      <div class="form-group">
-                        <label class="form-label required">Khoa / Phòng / Trung Tâm:</label>
-                        <select id="inputFormDept" class="w2h-text-input" style="width: 100%;" required>
-                          <!-- Populated by JS -->
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Số Hồ Sơ (nếu có, cách nhau dấu ;):</label>
-                        <input type="text" id="inputFormSoHoSo" class="w2h-text-input" placeholder="Ví dụ: 26183381; 26183112" />
-                      </div>
-                      <div class="form-group">
-                        <label class="form-label">Số Phiếu (nếu có):</label>
-                        <input type="text" id="inputFormSoPhieu" class="w2h-text-input" placeholder="Ví dụ: 7860435, 7860506" />
-                      </div>
-                    </div>
 
-                    <div class="cntt-form-grid-3" style="margin-top: 10px;">
-                      <div class="form-group">
-                        <label class="form-label">Cán Bộ Yêu Cầu (Khoa/Phòng):</label>
-                        <input type="text" id="inputFormReqStaff" class="w2h-text-input" placeholder="Ví dụ: Bs Hùng, ĐD Nga..." />
-                      </div>
-                      <div class="form-group">
-                        <div class="flex-between align-center" style="margin-bottom: 3px;">
-                          <label class="form-label required" style="margin-bottom: 0;">Cán Bộ P.CNTT Thực Hiện:</label>
-                          <span class="cntt-auth-sync-pill" id="cnttAuthSyncPill" title="Tự động đồng bộ theo tài khoản đăng nhập Lịch Trực">
-                            ✓ Đồng bộ TK
-                          </span>
+                    <div class="cntt-admin-grid">
+                      <!-- Cột 1: Khoa / Phòng / Trung Tâm (Nhập tìm kiếm & hiển thị list danh sách) -->
+                      <div class="form-group cntt-dept-group">
+                        <div class="flex-between align-center" style="margin-bottom: 5px;">
+                          <label class="form-label required" style="margin-bottom: 0;">
+                            <span class="label-icon">🏢</span> Khoa / Phòng / Trung Tâm:
+                          </label>
+                          <span class="cntt-dept-badge-count" id="cnttDeptBadgeCount">47 Khoa/Phòng</span>
                         </div>
-                        <select id="selectFormExecStaff" class="w2h-text-input" style="width: 100%;">
-                          <option value="Quản Trị Hệ Thống (P.CNTT)" selected>👤 Quản Trị Hệ Thống (P.CNTT) (Tài khoản đang đăng nhập)</option>
-                          <option value="Chu Thị Dương">Chu Thị Dương (Phần mềm)</option>
-                          <option value="Trương Hoàng Hiệp">Trương Hoàng Hiệp (Phần cứng & mềm)</option>
-                          <option value="Nguyễn Duy Phương">Nguyễn Duy Phương (Phó phòng)</option>
-                          <option value="Nguyễn Minh Họa">Nguyễn Minh Họa (Trưởng phòng)</option>
-                          <option value="Bùi Minh Chí">Bùi Minh Chí (Phần cứng)</option>
-                          <option value="Vương Bá Tuấn">Vương Bá Tuấn (Phần cứng)</option>
-                          <option value="Phí Đức Phương">Phí Đức Phương (Phần cứng)</option>
-                          <option value="Nguyễn Trọng Nhân">Nguyễn Trọng Nhân (Phần cứng)</option>
-                          <option value="Nguyễn Thu Huyền">Nguyễn Thu Huyền (Phần mềm)</option>
-                          <option value="Nguyễn Đức Lâm">Nguyễn Đức Lâm (Phần cứng & mềm)</option>
-                          <option value="Nguyễn Thị Quyên">Nguyễn Thị Quyên (Phần cứng & mềm)</option>
-                          <option value="Dương Văn Phương">Dương Văn Phương (Phần cứng & mềm)</option>
-                          <option value="Lê Thị Huyền Ly">Lê Thị Huyền Ly (Phần mềm)</option>
-                          <option value="P.CNTT">Cả Phòng CNTT</option>
-                          <option value="Khác">Cán bộ khác</option>
-                        </select>
+                        
+                        <div class="cntt-dept-combobox" id="cnttDeptCombobox">
+                          <div class="cntt-dept-input-wrapper">
+                            <span class="cntt-dept-input-icon">
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </span>
+                            <input type="text" 
+                                   id="inputFormDept" 
+                                   class="w2h-text-input cntt-dept-input" 
+                                   placeholder="Nhập tên khoa/phòng hoặc bấm mở danh sách (CĐHA, HSTC, Ngoại...)" 
+                                   autocomplete="off" 
+                                   required />
+                            <button type="button" class="btn-clear-dept hidden" id="btnClearDept" title="Xóa để chọn lại">&times;</button>
+                            <button type="button" class="btn-toggle-dept-dropdown" id="btnToggleDeptDropdown" title="Mở danh sách khoa/phòng">
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                            </button>
+                          </div>
+
+                          <!-- Gợi ý chọn nhanh các khoa phòng thường gặp nhất -->
+                          <div class="cntt-dept-quick-chips" id="cnttDeptQuickChips">
+                            <span class="quick-chip-label">Chọn nhanh:</span>
+                            <button type="button" class="dept-quick-chip" data-dept="CĐHA">CĐHA</button>
+                            <button type="button" class="dept-quick-chip" data-dept="HSTC">HSTC</button>
+                            <button type="button" class="dept-quick-chip" data-dept="KB">KB</button>
+                            <button type="button" class="dept-quick-chip" data-dept="DƯỢC">DƯỢC</button>
+                            <button type="button" class="dept-quick-chip" data-dept="XNTT">XNTT</button>
+                            <button type="button" class="dept-quick-chip" data-dept="NGOẠI CT">NGOẠI CT</button>
+                            <button type="button" class="dept-quick-chip" data-dept="PHỤ SẢN">PHỤ SẢN</button>
+                            <button type="button" class="dept-quick-chip" data-dept="CC115">CC115</button>
+                          </div>
+
+                          <!-- Dropdown Menu Popup hiển thị danh sách -->
+                          <div class="cntt-dept-dropdown-menu hidden" id="cnttDeptDropdownMenu">
+                            <div class="dept-dropdown-header">
+                              <span class="dropdown-header-title">DANH SÁCH 47 KHOA / PHÒNG / TRUNG TÂM</span>
+                              <span class="dropdown-header-hint" id="cnttDeptFilterHint">Nhập từ khóa hoặc bấm chọn</span>
+                            </div>
+                            <div class="dept-category-tabs" id="cnttDeptCatTabs">
+                              <button type="button" class="dept-cat-tab active" data-cat="all">Tất cả (47)</button>
+                              <button type="button" class="dept-cat-tab" data-cat="cls">Cận lâm sàng</button>
+                              <button type="button" class="dept-cat-tab" data-cat="ngoai">Khối Ngoại</button>
+                              <button type="button" class="dept-cat-tab" data-cat="noi">Nội & Khám</button>
+                              <button type="button" class="dept-cat-tab" data-cat="phong">Phòng ban</button>
+                            </div>
+                            <div class="dept-dropdown-list" id="cnttDeptDropdownList">
+                              <!-- Rendered by JS -->
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="form-group">
-                        <label class="form-label">Tình Trạng Xử Lý:</label>
-                        <select id="selectFormStatus" class="w2h-text-input" style="width: 100%;">
-                          <option value="Đã xử lý">Đã xử lý xong</option>
-                          <option value="Đang xử lý">Đang xử lý</option>
-                          <option value="Chờ VIMES">Chờ VIMES hỗ trợ</option>
-                          <option value="Chờ linh kiện">Chờ linh kiện</option>
-                        </select>
+
+                      <!-- Cột 2: Cán bộ yêu cầu & Cán bộ CNTT thực hiện -->
+                      <div class="cntt-col-staff">
+                        <div class="form-group">
+                          <label class="form-label">
+                            <span class="label-icon">👨‍⚕️</span> Cán Bộ Yêu Cầu (Khoa/Phòng):
+                          </label>
+                          <input type="text" id="inputFormReqStaff" class="w2h-text-input" placeholder="Ví dụ: Bs Hùng, ĐD Nga..." />
+                        </div>
+
+                        <div class="form-group" style="margin-top: 10px;">
+                          <div class="flex-between align-center" style="margin-bottom: 3px;">
+                            <label class="form-label required" style="margin-bottom: 0;">
+                              <span class="label-icon">💻</span> Cán Bộ P.CNTT Thực Hiện:
+                            </label>
+                            <span class="cntt-auth-sync-pill" id="cnttAuthSyncPill" title="Tự động đồng bộ theo tài khoản đăng nhập Lịch Trực">
+                              ✓ Đồng bộ TK
+                            </span>
+                          </div>
+                          <select id="selectFormExecStaff" class="w2h-text-input" style="width: 100%;">
+                            <option value="Quản Trị Hệ Thống (P.CNTT)" selected>👤 Quản Trị Hệ Thống (P.CNTT) (Tài khoản đang đăng nhập)</option>
+                            <option value="Chu Thị Dương">Chu Thị Dương (Phần mềm)</option>
+                            <option value="Trương Hoàng Hiệp">Trương Hoàng Hiệp (Phần cứng & mềm)</option>
+                            <option value="Nguyễn Duy Phương">Nguyễn Duy Phương (Phó phòng)</option>
+                            <option value="Nguyễn Minh Họa">Nguyễn Minh Họa (Trưởng phòng)</option>
+                            <option value="Bùi Minh Chí">Bùi Minh Chí (Phần cứng)</option>
+                            <option value="Vương Bá Tuấn">Vương Bá Tuấn (Phần cứng)</option>
+                            <option value="Phí Đức Phương">Phí Đức Phương (Phần cứng)</option>
+                            <option value="Nguyễn Trọng Nhân">Nguyễn Trọng Nhân (Phần cứng)</option>
+                            <option value="Nguyễn Thu Huyền">Nguyễn Thu Huyền (Phần mềm)</option>
+                            <option value="Nguyễn Đức Lâm">Nguyễn Đức Lâm (Phần cứng & mềm)</option>
+                            <option value="Nguyễn Thị Quyên">Nguyễn Thị Quyên (Phần cứng & mềm)</option>
+                            <option value="Dương Văn Phương">Dương Văn Phương (Phần cứng & mềm)</option>
+                            <option value="Lê Thị Huyền Ly">Lê Thị Huyền Ly (Phần mềm)</option>
+                            <option value="P.CNTT">Cả Phòng CNTT</option>
+                            <option value="Khác">Cán bộ khác</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- Cột 3: Số hồ sơ, số phiếu & Tình trạng xử lý -->
+                      <div class="cntt-col-ticket">
+                        <div class="cntt-numbers-row">
+                          <div class="form-group" style="flex: 1;">
+                            <label class="form-label">
+                              <span class="label-icon">📁</span> Số Hồ Sơ:
+                            </label>
+                            <input type="text" id="inputFormSoHoSo" class="w2h-text-input" placeholder="Ví dụ: 26183381" />
+                          </div>
+                          <div class="form-group" style="flex: 1;">
+                            <label class="form-label">
+                              <span class="label-icon">🧾</span> Số Phiếu:
+                            </label>
+                            <input type="text" id="inputFormSoPhieu" class="w2h-text-input" placeholder="Ví dụ: 7860435" />
+                          </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 10px;">
+                          <label class="form-label">
+                            <span class="label-icon">⚡</span> Tình Trạng Xử Lý:
+                          </label>
+                          <select id="selectFormStatus" class="w2h-text-input cntt-status-select" style="width: 100%;">
+                            <option value="Đã xử lý" selected>✅ Đã xử lý xong</option>
+                            <option value="Đang xử lý">⏳ Đang xử lý</option>
+                            <option value="Chờ VIMES">🔄 Chờ VIMES hỗ trợ</option>
+                            <option value="Chờ linh kiện">📦 Chờ linh kiện</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2115,8 +2192,12 @@
                   <div class="cntt-form-section" style="margin-top: 18px;">
                     <div class="cntt-section-header-row">
                       <div class="flex-row gap-8 align-center">
+                        <div class="cntt-section-icon-badge badge-blue">
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        </div>
                         <h4 class="cntt-section-title" style="margin-bottom: 0;">2. Nội Dung Sửa Chữa Phần Mềm</h4>
                         <span class="cntt-section-badge" id="badgeSelectedSwCount">0 mục đã chọn</span>
+                        <button type="button" class="btn-clear-section-count hidden" id="btnClearSwSection" title="Bỏ chọn tất cả lỗi phần mềm">✕ Bỏ chọn</button>
                       </div>
                       <div class="cntt-sw-filter-box">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -2134,8 +2215,12 @@
                   <div class="cntt-form-section" style="margin-top: 18px;">
                     <div class="cntt-section-header-row">
                       <div class="flex-row gap-8 align-center">
+                        <div class="cntt-section-icon-badge badge-emerald">
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                        </div>
                         <h4 class="cntt-section-title" style="margin-bottom: 0;">3. Phần Cứng, Mạng & Linh Kiện</h4>
                         <span class="cntt-section-badge badge-emerald" id="badgeSelectedHwCount">0 mục đã chọn</span>
+                        <button type="button" class="btn-clear-section-count hidden" id="btnClearHwSection" title="Bỏ chọn tất cả linh kiện">✕ Bỏ chọn</button>
                       </div>
                     </div>
                     <p class="cntt-section-guide">Bấm <strong>+ / -</strong> hoặc nhập trực tiếp số lượng thay thế linh kiện (Đổ mực, Main, Chip, Nguồn, Cài win...).</p>
@@ -2147,16 +2232,23 @@
                   <!-- Section 4: Ghi Chú & Nút Lưu -->
                   <div class="cntt-form-section" style="margin-top: 18px;">
                     <div class="form-group">
-                      <label class="form-label">Ghi Chú & Nội Dung Chi Tiết Khác:</label>
+                      <label class="form-label">
+                        <span class="label-icon">📝</span> Ghi Chú & Nội Dung Chi Tiết Khác:
+                      </label>
                       <textarea id="inputFormNote" class="w2h-text-input" rows="2" style="width: 100%;" placeholder="Nhập mô tả lỗi cụ thể, nguyên nhân hoặc hướng giải quyết..."></textarea>
                     </div>
 
-                    <div class="flex-row gap-12 align-center" style="margin-top: 16px;">
+                    <div class="cntt-form-actions-bar">
                       <button type="submit" class="btn-cntt-submit" id="btnSubmitCnttRecord">
-                        <span>💾 Lưu Ca Sửa Chữa & Cập Nhật Thống Kê</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        <span>Lưu Ca Sửa Chữa & Cập Nhật Thống Kê</span>
+                      </button>
+                      <button type="button" class="btn-cntt-action btn-cntt-copy" id="btnCopyFormTsvRowBottom" title="Sao chép dòng TSV để dán Ctrl+V vào Google Sheet">
+                        <span>📋 Copy Dòng (Ctrl+V)</span>
                       </button>
                       <button type="button" class="btn-modal-reset" id="btnResetCnttForm">
-                        <span>🔄 Làm Lại</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        <span>Làm Lại Form</span>
                       </button>
                     </div>
                   </div>

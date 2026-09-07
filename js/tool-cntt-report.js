@@ -59,9 +59,68 @@
     { key: "sua_chua_khac", col: 34, label: "Sửa chữa khác", isText: true }
   ];
 
+  // Danh mục 47 Khoa, Phòng, Trung Tâm chi tiết kèm phân loại & từ khóa tìm kiếm
+  const DEPARTMENTS_META = [
+    // Cận lâm sàng (cls)
+    { code: "CĐHA", name: "Khoa Chẩn Đoán Hình Ảnh", cat: "cls", catName: "Cận lâm sàng", keywords: "xquang ct mri sieu am chieu chup chan doan hinh anh cdha" },
+    { code: "XNTT", name: "Khoa Xét Nghiệm Trung Tâm", cat: "cls", catName: "Cận lâm sàng", keywords: "xet nghiem mau sinh hoa huyet hoc vi sinh xntt" },
+    { code: "HHLS", name: "Khoa Huyết Học Lâm Sàng", cat: "cls", catName: "Cận lâm sàng", keywords: "huyet hoc lam sang mau truyen mau dong mau hhls" },
+    { code: "GPB", name: "Khoa Giải Phẫu Bệnh", cat: "cls", catName: "Cận lâm sàng", keywords: "giai phau benh te bao sinh thiet gpb" },
+    { code: "TDCN", name: "Khoa Thăm Dò Chức Năng", cat: "cls", catName: "Cận lâm sàng", keywords: "tham do chuc nang dien tim dien nao noi soi tdcn" },
+    { code: "DƯỢC", name: "Khoa Dược", cat: "cls", catName: "Cận lâm sàng", keywords: "duoc thuoc kho thuoc phat thuoc vat tu" },
+    { code: "KSNK", name: "Khoa Kiểm Soát Nhiễm Khuẩn", cat: "cls", catName: "Cận lâm sàng", keywords: "kiem soat nhiem khuan tiet trung giat la ksnk" },
+    { code: "DINH DƯỠNG", name: "Khoa Dinh Dưỡng", cat: "cls", catName: "Cận lâm sàng", keywords: "dinh duong tiet che suat an" },
+    { code: "TTTM", name: "Trung Tâm Tim Mạch", cat: "cls", catName: "Cận lâm sàng", keywords: "trung tam tim mach can thiep mach tttm" },
+    { code: "GĐYK", name: "Phòng Giám Định Y Khoa", cat: "cls", catName: "Cận lâm sàng", keywords: "giam dinh y khoa thuong tat gdyk" },
+
+    // Khối Ngoại (ngoai)
+    { code: "NGOẠI CT", name: "Khoa Ngoại Chấn Thương", cat: "ngoai", catName: "Khối Ngoại", keywords: "ngoai chan thuong gay xuong bo bot ket hop xuong ngoai ct" },
+    { code: "NGOẠI TH", name: "Khoa Ngoại Tổng Hợp", cat: "ngoai", catName: "Khối Ngoại", keywords: "ngoai tong hop tieu hoa gan mat ruot thua ngoai th" },
+    { code: "NGOẠI TKLN", name: "Khoa Ngoại Thần Kinh - Lồng Ngực", cat: "ngoai", catName: "Khối Ngoại", keywords: "than kinh long nguc so nao cot song ngoai tkln" },
+    { code: "NGOẠI TN", name: "Khoa Ngoại Tiết Niệu", cat: "ngoai", catName: "Khối Ngoại", keywords: "tiet nieu soi than tan soi bang quang ngoai tn" },
+    { code: "NGOẠI ƯB", name: "Khoa Ngoại Ung Bướu", cat: "ngoai", catName: "Khối Ngoại", keywords: "ung buou ung thu khoi u xa tri hoa tri ngoai ub" },
+    { code: "NGOẠI XT", name: "Khoa Ngoại Xương Khớp / Xương Tủy", cat: "ngoai", catName: "Khối Ngoại", keywords: "xuong khop xuong tuy chinh hinh ngoai xt" },
+    { code: "PTGMHS", name: "Khoa Phẫu Thuật Gây Mê Hồi Sức", cat: "ngoai", catName: "Khối Ngoại", keywords: "phau thuat gay me hoi suc phong mo ptgmhs" },
+
+    // Khối Nội & Khám bệnh (noi)
+    { code: "KB", name: "Khoa Khám Bệnh", cat: "noi", catName: "Nội & Khám", keywords: "kham benh tiep don phong kham bhyt dang ky kb" },
+    { code: "CC115", name: "Khoa Cấp Cứu 115", cat: "noi", catName: "Nội & Khám", keywords: "cap cuu 115 cap cuu luu chuyen vien cc115" },
+    { code: "HSTC", name: "Khoa Hồi Sức Tích Cực & Chống Độc", cat: "noi", catName: "Nội & Khám", keywords: "hoi suc tich cuc chong doc icu tho may hstc" },
+    { code: "NỘI TH", name: "Khoa Nội Tổng Hợp", cat: "noi", catName: "Nội & Khám", keywords: "noi tong hop noi khoa tieu hoa tim mach noi th" },
+    { code: "NHI", name: "Khoa Nhi", cat: "noi", catName: "Nội & Khám", keywords: "nhi so sinh tre em nhi khoa nhi" },
+    { code: "PHỤ SẢN", name: "Khoa Phụ Sản", cat: "noi", catName: "Nội & Khám", keywords: "phu san de sinh mo de san khoa phu khoa" },
+    { code: "TRUYỀN NHIỄM", name: "Khoa Truyền Nhiễm", cat: "noi", catName: "Nội & Khám", keywords: "truyen nhiem sot xuat huyet covid cum viem gan" },
+    { code: "THẬN", name: "Khoa Thận - Tiết Niệu - Lọc Máu", cat: "noi", catName: "Nội & Khám", keywords: "than loc mau chay than nhan tao suy than than" },
+    { code: "PHCN", name: "Khoa Phục Hồi Chức Năng", cat: "noi", catName: "Nội & Khám", keywords: "phuc hoi chuc nang vat ly tri lieu phcn" },
+    { code: "ĐÔNG Y", name: "Khoa Y Học Cổ Truyền (Đông Y)", cat: "noi", catName: "Nội & Khám", keywords: "dong y y hoc co truyen cham cuu xoa bop" },
+    { code: "DA LIỄU", name: "Khoa Da Liễu", cat: "noi", catName: "Nội & Khám", keywords: "da lieu nam di ung my pham da lieu" },
+    { code: "MẮT", name: "Khoa Mắt", cat: "noi", catName: "Nội & Khám", keywords: "mat thi luc do thi luc duc thuy tinh the phaco mat" },
+    { code: "TMH", name: "Khoa Tai Mũi Họng", cat: "noi", catName: "Nội & Khám", keywords: "tai mui hong viem xoang viem amydal noi soi tmh" },
+    { code: "RHM", name: "Khoa Răng Hàm Mặt", cat: "noi", catName: "Nội & Khám", keywords: "rang ham mat nho rang han rang bsy rhm" },
+    { code: "CXK", name: "Khoa Cơ Xương Khớp", cat: "noi", catName: "Nội & Khám", keywords: "co xuong khop viem khop thoai hoa gout cxk" },
+    { code: "NHH", name: "Khoa Nội Hô Hấp", cat: "noi", catName: "Nội & Khám", keywords: "noi ho hap phoi copd hen phe quan nhh" },
+    { code: "LKTK", name: "Khoa Lão Khoa - Thần Kinh", cat: "noi", catName: "Nội & Khám", keywords: "lao khoa than kinh nguoi cao tuoi tai bien lktk" },
+
+    // Khối Phòng Ban chức năng (phong)
+    { code: "CNTT", name: "Phòng Công Nghệ Thông Tin", cat: "phong", catName: "Phòng ban", keywords: "cong nghe thong tin may tinh may in his lis pacs cntt" },
+    { code: "KHTH", name: "Phòng Kế Hoạch Tổng Hợp", cat: "phong", catName: "Phòng ban", keywords: "ke hoach tong hop ho so benh an chuyen tuyen khth" },
+    { code: "TCKT", name: "Phòng Tài Chính Kế Toán", cat: "phong", catName: "Phòng ban", keywords: "tai chinh ke toan vien phi thu ngan ke toan tckt" },
+    { code: "TCCB", name: "Phòng Tổ Chức Cán Bộ", cat: "phong", catName: "Phòng ban", keywords: "to chuc can bo nhan su luong nhan vien tccb" },
+    { code: "HCQT", name: "Phòng Hành Chính Quản Trị", cat: "phong", catName: "Phòng ban", keywords: "hanh chinh quan tri xe van thu cong van hcqt" },
+    { code: "QLCL", name: "Phòng Quản Lý Chất Lượng", cat: "phong", catName: "Phòng ban", keywords: "quan ly chat luong su co tieu chi benh vien qlcl" },
+    { code: "ĐIỀU DƯỠNG", name: "Phòng Điều Dưỡng", cat: "phong", catName: "Phòng ban", keywords: "dieu duong cham soc quy trinh ky thuat" },
+    { code: "VT", name: "Phòng Vật Tư - Thiết Bị Y Tế", cat: "phong", catName: "Phòng ban", keywords: "vat tu thiet bi y te sua chua may moc vt" },
+    { code: "CTXH", name: "Phòng Công Tác Xã Hội", cat: "phong", catName: "Phòng ban", keywords: "cong tac xa hoi tu thien truyen thong ho tro ctxh" },
+    { code: "CĐT", name: "Phòng Chỉ Đạo Tuyến", cat: "phong", catName: "Phòng ban", keywords: "chi dao tuyen dao tao ho tro tuyen duoi cdt" },
+    { code: "CSGN", name: "Đơn vị Chăm Sóc Giảm Nhẹ", cat: "phong", catName: "Phòng ban", keywords: "cham soc giam nhe ung thu giai doan cuoi csgn" },
+    { code: "BAN BVSK", name: "Ban Bảo Vệ Sức Khỏe Cán Bộ", cat: "phong", catName: "Phòng ban", keywords: "bao ve suc khoe can bo kham can bo ttp" },
+    { code: "HTL", name: "Bộ phận Hậu Cần / Hỗ Trợ Khác", cat: "phong", catName: "Phòng ban", keywords: "hau can ho tro luu kho htl" }
+  ];
+
   const ToolCnttReport = {
     DEFAULT_SHEET_ID,
     DEPARTMENTS,
+    DEPARTMENTS_META,
     SOFTWARE_CATEGORIES,
     HARDWARE_CATEGORIES,
 

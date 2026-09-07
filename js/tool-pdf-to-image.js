@@ -376,36 +376,180 @@ class PdfToImageConverter {
       return "";
     }
 
-    // Sắp xếp items theo tọa độ: từ trên xuống dưới (Y giảm dần), từ trái sang phải (X tăng dần)
-    const items = textContent.items.slice().sort((a, b) => {
+    // 1. Nhóm các text items thành các dòng dựa trên tọa độ Y (baseline)
+    const sortedItems = textContent.items.slice().sort((a, b) => {
       const yDiff = b.transform[5] - a.transform[5];
-      if (Math.abs(yDiff) > 5) return yDiff;
+      if (Math.abs(yDiff) > 3) return yDiff;
       return a.transform[4] - b.transform[4];
     });
 
-    let lastY = undefined;
-    let text = "";
+    const lines = [];
+    for (const item of sortedItems) {
+      const str = item.str;
+      if (!str && str !== " ") continue;
 
-    for (const item of items) {
-      if (!item.str) continue;
-      const curY = item.transform[5];
+      const x = item.transform[4];
+      const y = item.transform[5];
+      const fontSize = Math.hypot(item.transform[0], item.transform[1]) || item.height || 12;
+      const width = item.width || 0;
+      const height = Math.hypot(item.transform[2], item.transform[3]) || item.height || fontSize;
 
-      if (lastY !== undefined) {
-        const diff = Math.abs(curY - lastY);
-        if (diff > 16) {
-          // Khoảng cách Y lớn -> Ngắt đoạn văn mới
-          text += "\n\n";
-        } else if (diff > 5) {
-          // Xuống dòng thông thường
-          text += "\n";
-        } else if (text.length > 0 && !text.endsWith("\n") && !text.endsWith(" ")) {
-          text += " ";
+      let foundLine = null;
+      const tolerance = Math.max(2.5, fontSize * 0.35);
+
+      for (const l of lines) {
+        if (Math.abs(l.baselineY - y) <= tolerance) {
+          foundLine = l;
+          break;
         }
       }
-      text += item.str;
-      lastY = curY;
+
+      const itemObj = { str, x, y, width, height, fontSize, hasEOL: item.hasEOL };
+
+      if (foundLine) {
+        foundLine.items.push(itemObj);
+        if (height > foundLine.height) foundLine.height = height;
+      } else {
+        lines.push({
+          baselineY: y,
+          height: height,
+          items: [itemObj]
+        });
+      }
     }
-    return text.trim();
+
+    // Sắp xếp các dòng từ trên xuống dưới (Y giảm dần)
+    lines.sort((a, b) => b.baselineY - a.baselineY);
+
+    // 2. Xây dựng chuỗi văn bản cho từng dòng dựa trên khoảng cách X (gap)
+    const lineOutputs = [];
+
+    for (let li = 0; li < lines.length; li++) {
+      const line = lines[li];
+      line.items.sort((a, b) => a.x - b.x);
+
+      let lineText = "";
+      let prevRight = null;
+      let prevFontSize = 12;
+
+      for (let i = 0; i < line.items.length; i++) {
+        const it = line.items[i];
+        const str = it.str;
+        if (!str) continue;
+
+        if (prevRight !== null) {
+          const gap = it.x - prevRight;
+          const avgFont = (prevFontSize + it.fontSize) / 2;
+          const spaceMinGap = Math.max(1.8, avgFont * 0.20);
+
+          if (gap > 45) {
+            // Khoảng cách 2 cột văn bản hành chính
+            lineText += "    ";
+          } else if (gap >= spaceMinGap) {
+            if (!lineText.endsWith(" ") && !str.startsWith(" ")) {
+              lineText += " ";
+            }
+          }
+          // Nếu gap < spaceMinGap: đây là các ký tự/dấu thanh của cùng 1 từ, KHÔNG chèn dấu cách!
+        }
+
+        lineText += str;
+        prevRight = it.x + (it.width || 0);
+        prevFontSize = it.fontSize;
+      }
+
+      if (lineText.trim()) {
+        lineOutputs.push({
+          text: lineText.trim(),
+          baselineY: line.baselineY,
+          height: line.height
+        });
+      }
+    }
+
+    // 3. Ghép các dòng thành văn bản hoàn chỉnh có ngắt đoạn thông minh
+    let fullDoc = "";
+    for (let i = 0; i < lineOutputs.length; i++) {
+      const cur = lineOutputs[i];
+      fullDoc += cur.text;
+
+      if (i < lineOutputs.length - 1) {
+        const next = lineOutputs[i + 1];
+        const vDrop = cur.baselineY - next.baselineY;
+        const avgH = (cur.height + next.height) / 2;
+
+        if (vDrop > avgH * 1.65) {
+          fullDoc += "\n\n";
+        } else {
+          fullDoc += "\n";
+        }
+      }
+    }
+
+    // 4. Áp dụng giải thuật hàn gắn chữ tiếng Việt chuẩn
+    return PdfToImageConverter.healVietnameseText(fullDoc);
+  }
+
+  /**
+   * Hàn gắn văn bản tiếng Việt bị phân mảnh hoặc dính chữ khi trích xuất từ PDF
+   */
+  static healVietnameseText(text) {
+    if (!text) return "";
+    let res = text;
+
+    // A. Tách các cụm bị dính chặt vào nhau do luồng chữ PDF 2 cột hoặc thiếu ngắt đoạn
+    res = res.replace(/(VI\s*Ệ\s*T\s*NAM)\s*(B\s*Ệ\s*NH\s*VI\s*Ệ\s*N)/gi, "$1\n$2");
+    res = res.replace(/(H\s*ạ\s*nh\s*phúc|PHÚC)\s*(S\s*ố\s*:)/gi, "$1\n$2");
+    res = res.replace(/(\))\s*(YÊU\s+CẦU\s+BÁO\s+GIÁ)/gi, "$1\n\n$2");
+    res = res.replace(/(YÊU\s+CẦU\s+BÁO\s+GIÁ)\s*(Gói\s+thầu)/gi, "$1\n\n$2");
+    res = res.replace(/(\))\s*(Kính\s+gửi)/gi, "$1\n\n$2");
+    res = res.replace(/(Việt\s+Nam)\s*(Bệnh\s+viện)/gi, "$1\n\n$2");
+    res = res.replace(/([:;.])\s*([IVXLCDM]+\.\s+[A-ZÀ-Ỹ])/g, "$1\n\n$2");
+    res = res.replace(/([a-zà-ỹ\)])\s*([0-9]+\.\s+[A-ZÀ-Ỹ])/g, "$1\n\n$2");
+    res = res.replace(/([a-zà-ỹ])\s*\.\s*([0-9]+\.\s+[A-ZÀ-Ỹ])/g, "$1.\n\n$2");
+    res = res.replace(/(\d+\.)\s*([A-ZÀ-Ỹ][a-zà-ỹ]+:)/g, "$1\n$2");
+    res = res.replace(/(\.com|\.vn|\.gov\.vn)\s*([0-9]+\.\s+[A-ZÀ-Ỹ])/gi, "$1\n\n$2");
+    res = res.replace(/(\b(?:báo giá|như sau|tiếp nhận)\s*:)\s*([A-ZÀ-Ỹ][a-zà-ỹ])/g, "$1\n$2");
+    res = res.replace(/(:)\s*-\s*([A-ZÀ-Ỹ])/g, "$1\n- $2");
+    res = res.replace(/([a-zà-ỹ0-9])\s*-\s*([A-ZÀ-Ỹ][a-zà-ỹ]+:)/g, "$1\n- $2");
+
+    // Dấu phẩy / chấm phẩy dính chữ
+    res = res.replace(/([a-zA-Zà-ỹ0-9]),([a-zA-Zà-ỹ])/g, "$1, $2");
+    res = res.replace(/([a-zA-Zà-ỹ0-9]);([a-zA-Zà-ỹ])/g, "$1; $2");
+
+    // Năm bị cách rời số: 202 6 -> 2026
+    res = res.replace(/\b(19\d|20\d)\s+(\d)\b/g, "$1$2");
+    res = res.replace(/\(lần(\d+)\)/gi, "(lần $1)");
+    res = res.replace(/phẫuthuật/gi, "phẫu thuật");
+
+    // B. Nối các âm tiết tiếng Việt bị gãy/rời rạc giữa từ (t ả i -> tải, s ắ m -> sắm, v ậ t -> vật, thu ật -> thuật...)
+    const singleConsonants = "b|c|d|đ|g|h|k|l|m|n|p|r|s|t|v|x|ph|th|tr|ch|nh|kh|ng|ngh";
+    const regexConsonantLeading = new RegExp(`\\b(${singleConsonants})\\s+([àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ][a-zA-Zà-ỹÀ-Ỹ]*)`, "gi");
+
+    const finalConsonants = "c|ch|m|n|ng|nh|p|t";
+    const regexConsonantTrailing = new RegExp(`([a-zA-Zà-ỹÀ-Ỹ]*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ])\\s+(${finalConsonants})\\b`, "gi");
+
+    const regexVowelTrailing = /([a-zA-Zà-ỹÀ-Ỹ]*[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữự])\s+([iuo])\b/gi;
+
+    const regexRhymeTrailing = /\b([bcdfghjklmnpqrstvwx]|ph|th|tr|ch|nh|kh|ng|ngh|qu|gi)?([uioea])\s+([ăằắẳẵặâầấẩẫậêềếểễệôồốổỗộơờớởỡợưừứửữự](?:[cmnpt]|ch|ng|nh))\b/gi;
+
+    for (let i = 0; i < 4; i++) {
+      res = res.replace(regexConsonantLeading, "$1$2");
+      res = res.replace(regexConsonantTrailing, "$1$2");
+      res = res.replace(regexVowelTrailing, "$1$2");
+      res = res.replace(regexRhymeTrailing, "$1$2$3");
+    }
+
+    // C. Đảm bảo V/v ngắt dòng độc lập
+    res = res.replace(/([^\n])\s*(V\/v\s+)/g, "$1\n\n$2");
+
+    // Chuẩn hóa khoảng trắng
+    res = res.replace(/[ \t]+/g, " ");
+    res = res.replace(/\n +/g, "\n");
+    res = res.replace(/ +\n/g, "\n");
+    res = res.replace(/\n{3,}/g, "\n\n");
+
+    return res.trim();
   }
 
   /**

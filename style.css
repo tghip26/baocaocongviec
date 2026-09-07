@@ -16001,15 +16001,17 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 /* Entry Form */
 .cntt-form-container {
-  max-width: 1080px;
+  width: 96%;
+  max-width: 1240px;
   margin: 0 auto;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.55), rgba(15, 23, 42, 0.85));
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  border-radius: 12px;
-  padding: 16px 20px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, rgba(20, 30, 48, 0.78), rgba(15, 23, 42, 0.94));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cntt-form-container::before {
@@ -16268,6 +16270,441 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   color: #f43f5e;
 }
 
+/* Section Icons & Labels */
+.cntt-section-icon-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.cntt-section-icon-badge.badge-blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.cntt-section-icon-badge.badge-emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.label-icon {
+  margin-right: 4px;
+  font-size: 0.9rem;
+}
+
+/* Section 1: Admin Grid Layout (3 Cột hài hòa) */
+.cntt-admin-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.cntt-col-staff,
+.cntt-col-ticket {
+  display: flex;
+  flex-direction: column;
+}
+
+.cntt-numbers-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* Khoa / Phòng / Trung Tâm: Combobox Nhập & List Danh Sách */
+.cntt-dept-group {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.cntt-dept-badge-count {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-weight: 700;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.cntt-dept-combobox {
+  position: relative;
+  width: 100%;
+}
+
+.cntt-dept-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.cntt-dept-input-icon {
+  position: absolute;
+  left: 11px;
+  color: #64748b;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.cntt-dept-input {
+  width: 100%;
+  padding-left: 36px !important;
+  padding-right: 64px !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1.5px solid rgba(56, 189, 248, 0.35) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cntt-dept-input:focus,
+.cntt-dept-input.is-active {
+  border-color: #38bdf8 !important;
+  background: rgba(15, 23, 42, 0.98) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22), 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.btn-clear-dept {
+  position: absolute;
+  right: 34px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #cbd5e1;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 2;
+  line-height: 1;
+}
+
+.btn-clear-dept:hover {
+  background: #f43f5e;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.btn-toggle-dept-dropdown {
+  position: absolute;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
+  z-index: 2;
+}
+
+.btn-toggle-dept-dropdown:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.btn-toggle-dept-dropdown.is-open {
+  transform: rotate(180deg);
+  color: #7dd3fc;
+}
+
+/* Gợi ý chọn nhanh (Quick chips) */
+.cntt-dept-quick-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  flex-wrap: wrap;
+}
+
+.quick-chip-label {
+  font-size: 0.69rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.dept-quick-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dept-quick-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.dept-quick-chip.is-active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+/* Dropdown Menu Popup hiển thị danh sách 47 khoa phòng */
+.cntt-dept-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background: #0f172a;
+  border: 1.5px solid rgba(56, 189, 248, 0.45);
+  border-radius: 10px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75), 0 0 24px rgba(56, 189, 248, 0.2);
+  overflow: hidden;
+  animation: cnttFadeInDown 0.15s ease-out;
+}
+
+@keyframes cnttFadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dept-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  background: rgba(30, 41, 59, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.69rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.dept-category-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dept-category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.dept-cat-tab {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.dept-cat-tab:hover {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dept-cat-tab.active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.dept-dropdown-list {
+  max-height: 250px;
+  overflow-y: auto;
+  padding: 4px;
+  scrollbar-width: thin;
+}
+
+.dept-dropdown-list::-webkit-scrollbar {
+  width: 5px;
+}
+.dept-dropdown-list::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.35);
+  border-radius: 4px;
+}
+
+.dept-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.dept-dropdown-item:hover,
+.dept-dropdown-item.is-focused {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.dept-dropdown-item.is-selected {
+  background: linear-gradient(90deg, rgba(2, 132, 199, 0.3), rgba(15, 23, 42, 0.9));
+  border-left: 3px solid #38bdf8;
+}
+
+.dept-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dept-item-code {
+  font-weight: 800;
+  color: #38bdf8;
+  font-size: 0.82rem;
+  min-width: 68px;
+  letter-spacing: 0.3px;
+}
+
+.dept-item-name {
+  color: #cbd5e1;
+  font-size: 0.77rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dept-item-badge {
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.dept-badge-cls {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.dept-badge-ngoai {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.dept-badge-noi {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.dept-badge-phong {
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.dept-empty-state {
+  padding: 18px 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.btn-use-custom-dept {
+  margin-top: 8px;
+  padding: 5px 12px;
+  font-size: 0.74rem;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 6px;
+  color: #38bdf8;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-use-custom-dept:hover {
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+/* Tình trạng xử lý select */
+.cntt-status-select {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  padding: 7px 10px !important;
+  font-size: 0.82rem !important;
+}
+
+/* Nút bỏ chọn mục trong Section */
+.btn-clear-section-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-clear-section-count:hover {
+  background: #f43f5e;
+  color: #ffffff;
+}
+
+/* Thanh Thao Tác Form Hành Động */
+.cntt-form-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
 .cntt-form-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -16486,17 +16923,22 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 @media (max-width: 1024px) {
+  .cntt-admin-grid { grid-template-columns: 1fr 1fr; }
+  .cntt-dept-group { grid-column: span 2; }
   .cntt-stepper-grid { grid-template-columns: repeat(2, 1fr); }
   .cntt-hardware-stepper-grid { grid-template-columns: repeat(2, 1fr); }
   .hw-text-card { grid-column: span 2; }
 }
 
 @media (max-width: 768px) {
+  .cntt-admin-grid { grid-template-columns: 1fr; }
+  .cntt-dept-group { grid-column: span 1; }
+  .cntt-numbers-row { flex-direction: column; }
   .cntt-stepper-grid { grid-template-columns: 1fr; }
   .cntt-hardware-stepper-grid { grid-template-columns: 1fr; }
   .cntt-form-grid-3 { grid-template-columns: 1fr; }
   .hw-text-card { grid-column: span 1; }
-  .cntt-form-container { padding: 18px 14px; }
+  .cntt-form-container { padding: 14px 12px; }
   .cntt-sw-filter-box { width: 100%; }
 }
 
