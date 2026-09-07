@@ -8202,10 +8202,33 @@ p {
     this.btnTabCnttTable = document.getElementById("btnTabCnttTable");
     this.btnTabCnttForm = document.getElementById("btnTabCnttForm");
     this.btnTabCnttEmbedded = document.getElementById("btnTabCnttEmbedded");
+    this.btnTabCnttMultiSummary = document.getElementById("btnTabCnttMultiSummary");
     this.cnttAnalyticsPane = document.getElementById("cnttAnalyticsPane");
     this.cnttTablePane = document.getElementById("cnttTablePane");
     this.cnttFormPane = document.getElementById("cnttFormPane");
     this.cnttEmbeddedPane = document.getElementById("cnttEmbeddedPane");
+    this.cnttMultiSummaryPane = document.getElementById("cnttMultiSummaryPane");
+
+    // Multi-Summary Elements
+    this.cnttMultiSheetChipsGrid = document.getElementById("cnttMultiSheetChipsGrid");
+    this.btnRunMultiSummary = document.getElementById("btnRunMultiSummary");
+    this.btnCopyMultiSummaryText = document.getElementById("btnCopyMultiSummaryText");
+    this.btnExportMultiSummaryExcel = document.getElementById("btnExportMultiSummaryExcel");
+    this.selectMultiSummaryStaffFilter = document.getElementById("selectMultiSummaryStaffFilter");
+    this.inputMultiSummarySearch = document.getElementById("inputMultiSummarySearch");
+    this.cnttStaffCardsContainer = document.getElementById("cnttStaffCardsContainer");
+    this.cnttMultiStatusText = document.getElementById("cnttMultiSummaryStatusText");
+    this.kpiMultiSelectedSheets = document.getElementById("kpiMultiSelectedSheets");
+    this.kpiMultiSelectedSheetsSub = document.getElementById("kpiMultiSelectedSheetsSub");
+    this.kpiMultiTotalCases = document.getElementById("kpiMultiTotalCases");
+    this.kpiMultiTotalCasesSub = document.getElementById("kpiMultiTotalCasesSub");
+    this.kpiMultiActiveStaff = document.getElementById("kpiMultiActiveStaff");
+    this.kpiMultiActiveStaffSub = document.getElementById("kpiMultiActiveStaffSub");
+    this.kpiMultiOtherRepairs = document.getElementById("kpiMultiOtherRepairs");
+    this.kpiMultiOtherRepairsSub = document.getElementById("kpiMultiOtherRepairsSub");
+    this.cnttMultiSelectedSheets = [];
+    this.cnttMultiAggregatedData = null;
+    this.cnttMultiRawRecords = [];
 
     // Form Inputs
     this.formCnttRepairEntry = document.getElementById("formCnttRepairEntry");
@@ -8369,6 +8392,45 @@ p {
     if (this.btnTabCnttTable) this.btnTabCnttTable.addEventListener("click", () => this.switchCnttTab("table"));
     if (this.btnTabCnttForm) this.btnTabCnttForm.addEventListener("click", () => this.switchCnttTab("form"));
     if (this.btnTabCnttEmbedded) this.btnTabCnttEmbedded.addEventListener("click", () => this.switchCnttTab("embedded"));
+    if (this.btnTabCnttMultiSummary) this.btnTabCnttMultiSummary.addEventListener("click", () => this.switchCnttTab("multiSummary"));
+
+    // Multi-Summary Action Listeners
+    if (this.btnRunMultiSummary) {
+      this.btnRunMultiSummary.addEventListener("click", () => this.runMultiSheetSummary());
+    }
+    if (this.btnCopyMultiSummaryText) {
+      this.btnCopyMultiSummaryText.addEventListener("click", () => this.copyMultiSheetSummaryText());
+    }
+    if (this.btnExportMultiSummaryExcel) {
+      this.btnExportMultiSummaryExcel.addEventListener("click", () => this.exportMultiSheetExcel());
+    }
+    if (this.selectMultiSummaryStaffFilter) {
+      this.selectMultiSummaryStaffFilter.addEventListener("change", () => this.filterMultiSheetCards());
+    }
+    if (this.inputMultiSummarySearch) {
+      this.inputMultiSummarySearch.addEventListener("input", () => this.filterMultiSheetCards());
+    }
+
+    const btnPresetCurrentWeek = document.getElementById("btnPresetCurrentWeek");
+    if (btnPresetCurrentWeek) {
+      btnPresetCurrentWeek.addEventListener("click", () => this.applyMultiSheetPreset("currentWeek"));
+    }
+    const btnPresetTodayOnly = document.getElementById("btnPresetTodayOnly");
+    if (btnPresetTodayOnly) {
+      btnPresetTodayOnly.addEventListener("click", () => this.applyMultiSheetPreset("todayOnly"));
+    }
+    const btnPresetAllSep = document.getElementById("btnPresetAllSep");
+    if (btnPresetAllSep) {
+      btnPresetAllSep.addEventListener("click", () => this.applyMultiSheetPreset("allSep"));
+    }
+    const btnSelectAllMultiSheets = document.getElementById("btnSelectAllMultiSheets");
+    if (btnSelectAllMultiSheets) {
+      btnSelectAllMultiSheets.addEventListener("click", () => this.setAllMultiSheetCheckboxes(true));
+    }
+    const btnDeselectAllMultiSheets = document.getElementById("btnDeselectAllMultiSheets");
+    if (btnDeselectAllMultiSheets) {
+      btnDeselectAllMultiSheets.addEventListener("click", () => this.setAllMultiSheetCheckboxes(false));
+    }
 
     if (this.btnFetchGoogleSheet) {
       this.btnFetchGoogleSheet.addEventListener("click", () => this.fetchGoogleSheetDataForCntt(false, this.cnttSelectedSheet));
@@ -8702,7 +8764,8 @@ p {
       { name: "analytics", btn: this.btnTabCnttAnalytics, pane: this.cnttAnalyticsPane },
       { name: "table", btn: this.btnTabCnttTable, pane: this.cnttTablePane },
       { name: "form", btn: this.btnTabCnttForm, pane: this.cnttFormPane },
-      { name: "embedded", btn: this.btnTabCnttEmbedded, pane: this.cnttEmbeddedPane }
+      { name: "embedded", btn: this.btnTabCnttEmbedded, pane: this.cnttEmbeddedPane },
+      { name: "multiSummary", btn: this.btnTabCnttMultiSummary, pane: this.cnttMultiSummaryPane }
     ];
 
     tabs.forEach(t => {
@@ -8720,6 +8783,7 @@ p {
     }
     if (tabName === "analytics") this.renderCnttAnalytics();
     if (tabName === "table") this.renderCnttTable();
+    if (tabName === "multiSummary") this.initMultiSheetSummaryUI();
   }
 
   /**
@@ -9107,7 +9171,7 @@ p {
       if (filterType === "sw" && r.softwareCount === 0) return false;
       if (filterType === "hw" && r.hardwareCount === 0) return false;
       if (searchKeyword) {
-        const str = `${r.stt} ${r.dept} ${r.soHoSo} ${r.soPhieu} ${r.reqStaff} ${r.execStaff} ${r.userAccount || ''} ${r.userFullname || ''} ${r.note} ${r.softwareIssues.map(s => s.label).join(' ')} ${r.hardwareIssues.map(h => h.label).join(' ')}`.toLowerCase();
+        const str = `${r.stt} ${r.dept} ${r.soHoSo} ${r.soPhieu} ${r.reqStaff} ${r.execStaff} ${r.userAccount || ''} ${r.userFullname || ''} ${r.note || ''} ${r.softwareIssues.map(s => s.label).join(' ')} ${r.hardwareIssues.map(h => `${h.label} ${h.value || ''}`).join(' ')}`.toLowerCase();
         if (!str.includes(searchKeyword)) return false;
       }
       return true;
@@ -9130,7 +9194,13 @@ p {
 
     this.tbodyCnttRecords.innerHTML = filtered.map((r, i) => {
       const swBadges = r.softwareIssues.map(s => `<span class="cntt-badge-tag badge-tag-sw">${s.label}${s.count > 1 ? ` (${s.count})` : ''}</span>`).join("");
-      const hwBadges = r.hardwareIssues.map(h => `<span class="cntt-badge-tag badge-tag-hw">${h.label}${h.count > 1 ? ` (${h.count})` : ''}</span>`).join("");
+      const hwBadges = r.hardwareIssues.map(h => {
+        if (h.key === "sua_chua_khac" || h.isText) {
+          const txt = (h.value && h.value !== "0" && h.value !== "1") ? h.value : (r.note || h.label);
+          return `<span class="cntt-badge-tag badge-tag-hw" style="background: rgba(245, 158, 11, 0.18); border-color: rgba(245, 158, 11, 0.45); color: #fbbf24; font-weight: 600;" title="Sửa chữa khác: ${txt}">🛠️ ${txt}</span>`;
+        }
+        return `<span class="cntt-badge-tag badge-tag-hw">${h.label}${h.count > 1 ? ` (${h.count})` : ''}</span>`;
+      }).join("");
 
       const isCompleted = (r.status || "").toLowerCase().includes("xong") || (r.status || "").toLowerCase().includes("hoàn thành") || (r.status || "").toLowerCase().includes("đã");
       const statusBadge = isCompleted
@@ -10031,6 +10101,502 @@ p {
 
     // Tải lại dữ liệu
     this.fetchGoogleSheetDataForCntt(false);
+  }
+
+  // =========================================================================
+  // MULTI-SHEET WORKLOAD SUMMARY (TỔNG HỢP CÔNG VIỆC ĐA SHEET)
+  // =========================================================================
+
+  /**
+   * Khởi tạo giao diện Tổng Hợp Đa Sheet khi chuyển sang Tab 5
+   */
+  async initMultiSheetSummaryUI() {
+    if (!window.ToolCnttReport) return;
+    this.renderMultiSheetChips();
+
+    // Nếu chưa từng nạp dữ liệu tổng hợp, tự động nạp theo preset Tuần này (4.9 -> 7.9)
+    if (!this.cnttMultiAggregatedData && this.cnttMultiSelectedSheets.length > 0) {
+      await this.runMultiSheetSummary();
+    }
+  }
+
+  /**
+   * Vẽ danh sách các chip chọn Sheet kèm checkbox
+   */
+  renderMultiSheetChips() {
+    if (!this.cnttMultiSheetChipsGrid || !window.ToolCnttReport) return;
+    const available = ToolCnttReport.AVAILABLE_SHEETS || [];
+
+    // Nếu chưa chọn sheet nào, mặc định chọn 7.9 và 4.9 (hoặc các sheet 4/9 đến 7/9)
+    if (this.cnttMultiSelectedSheets.length === 0) {
+      const defaultPresets = ["7.9", "4.9"];
+      this.cnttMultiSelectedSheets = available
+        .map(s => typeof s === "object" ? s.name : s)
+        .filter(name => defaultPresets.includes(name) || (name.endsWith(".9") && (name.includes("4") || name.includes("7"))));
+      
+      if (this.cnttMultiSelectedSheets.length === 0 && available.length > 0) {
+        this.cnttMultiSelectedSheets = [typeof available[0] === "object" ? available[0].name : available[0]];
+      }
+    }
+
+    this.cnttMultiSheetChipsGrid.innerHTML = available.map(s => {
+      const name = typeof s === "object" ? s.name : s;
+      const label = typeof s === "object" && s.label ? s.label : name;
+      const isChecked = this.cnttMultiSelectedSheets.includes(name);
+
+      return `
+        <label class="sheet-chip-item ${isChecked ? 'is-selected' : ''}" data-sheet="${name}">
+          <input type="checkbox" value="${name}" ${isChecked ? 'checked' : ''} />
+          <span>${label}</span>
+        </label>
+      `;
+    }).join("");
+
+    // Bắt sự kiện thay đổi checkbox
+    this.cnttMultiSheetChipsGrid.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+      chk.addEventListener("change", (e) => {
+        const sheetName = e.target.value;
+        const parent = e.target.closest(".sheet-chip-item");
+        if (e.target.checked) {
+          if (!this.cnttMultiSelectedSheets.includes(sheetName)) {
+            this.cnttMultiSelectedSheets.push(sheetName);
+          }
+          if (parent) parent.classList.add("is-selected");
+        } else {
+          this.cnttMultiSelectedSheets = this.cnttMultiSelectedSheets.filter(s => s !== sheetName);
+          if (parent) parent.classList.remove("is-selected");
+        }
+        this.updateMultiSheetPresetActiveState();
+      });
+    });
+
+    this.updateMultiSheetPresetActiveState();
+  }
+
+  /**
+   * Áp dụng phím tắt chọn nhanh Sheet
+   */
+  applyMultiSheetPreset(presetType) {
+    if (!window.ToolCnttReport) return;
+    const available = ToolCnttReport.AVAILABLE_SHEETS || [];
+    const allNames = available.map(s => typeof s === "object" ? s.name : s);
+
+    if (presetType === "currentWeek") {
+      // Chọn 4.9 đến 7.9
+      this.cnttMultiSelectedSheets = allNames.filter(name => {
+        if (name === "4.9" || name === "7.9" || name === "5.9" || name === "6.9") return true;
+        const m = name.match(/^(\d+)\.9$/);
+        if (m) {
+          const day = parseInt(m[1], 10);
+          return day >= 4 && day <= 7;
+        }
+        return false;
+      });
+      if (this.cnttMultiSelectedSheets.length === 0) {
+        this.cnttMultiSelectedSheets = allNames.filter(n => n === "7.9" || n === "4.9");
+      }
+    } else if (presetType === "todayOnly") {
+      const todaySheet = ToolCnttReport.getTodaySheetName();
+      this.cnttMultiSelectedSheets = [todaySheet];
+    } else if (presetType === "allSep") {
+      this.cnttMultiSelectedSheets = allNames.filter(name => name.includes(".9") || name.endsWith(".9"));
+    }
+
+    // Đồng bộ lại trạng thái checkbox trên giao diện
+    if (this.cnttMultiSheetChipsGrid) {
+      this.cnttMultiSheetChipsGrid.querySelectorAll(".sheet-chip-item").forEach(item => {
+        const sheetName = item.dataset.sheet;
+        const chk = item.querySelector('input[type="checkbox"]');
+        const isSelected = this.cnttMultiSelectedSheets.includes(sheetName);
+        if (chk) chk.checked = isSelected;
+        item.classList.toggle("is-selected", isSelected);
+      });
+    }
+
+    this.updateMultiSheetPresetActiveState(presetType);
+    this.runMultiSheetSummary();
+  }
+
+  /**
+   * Chọn hoặc bỏ chọn toàn bộ checkbox
+   */
+  setAllMultiSheetCheckboxes(select = true) {
+    if (!window.ToolCnttReport || !this.cnttMultiSheetChipsGrid) return;
+    const available = ToolCnttReport.AVAILABLE_SHEETS || [];
+    const allNames = available.map(s => typeof s === "object" ? s.name : s);
+
+    this.cnttMultiSelectedSheets = select ? [...allNames] : [];
+    this.cnttMultiSheetChipsGrid.querySelectorAll(".sheet-chip-item").forEach(item => {
+      const chk = item.querySelector('input[type="checkbox"]');
+      if (chk) chk.checked = select;
+      item.classList.toggle("is-selected", select);
+    });
+    this.updateMultiSheetPresetActiveState();
+  }
+
+  /**
+   * Cập nhật trạng thái active cho nút preset
+   */
+  updateMultiSheetPresetActiveState(activeType = null) {
+    const btnWeek = document.getElementById("btnPresetCurrentWeek");
+    const btnToday = document.getElementById("btnPresetTodayOnly");
+    const btnSep = document.getElementById("btnPresetAllSep");
+    if (btnWeek) btnWeek.classList.toggle("active", activeType === "currentWeek");
+    if (btnToday) btnToday.classList.toggle("active", activeType === "todayOnly");
+    if (btnSep) btnSep.classList.toggle("active", activeType === "allSep");
+  }
+
+  /**
+   * Thực thi tải và tổng hợp dữ liệu đa Sheet
+   */
+  async runMultiSheetSummary() {
+    if (!window.ToolCnttReport) return;
+    if (!this.cnttMultiSelectedSheets || this.cnttMultiSelectedSheets.length === 0) {
+      this.showToast("Vui lòng chọn ít nhất 1 Sheet để tổng hợp!", "warning");
+      return;
+    }
+
+    this.setButtonLoading(this.btnRunMultiSummary, true, "Đang tải...");
+    this.showTopProgress(25);
+    if (this.cnttMultiStatusText) {
+      this.cnttMultiStatusText.innerHTML = `<span style="color:#38bdf8;">⏳ Đang tải dữ liệu từ <strong>${this.cnttMultiSelectedSheets.length}</strong> sheet...</span>`;
+    }
+
+    try {
+      const result = await ToolCnttReport.fetchMultipleSheetsData(this.cnttMultiSelectedSheets);
+      this.cnttMultiRawRecords = result.records || [];
+      this.cnttMultiAggregatedData = ToolCnttReport.aggregateWorkByStaff(this.cnttMultiRawRecords);
+
+      // Cập nhật các thẻ KPI
+      if (this.kpiMultiSelectedSheets) {
+        this.kpiMultiSelectedSheets.textContent = String(result.sheetsLoaded.length);
+      }
+      if (this.kpiMultiSelectedSheetsSub) {
+        this.kpiMultiSelectedSheetsSub.textContent = result.sheetsLoaded.join(", ");
+      }
+      if (this.kpiMultiTotalCases) {
+        this.kpiMultiTotalCases.textContent = String(this.cnttMultiAggregatedData.totalRecords);
+      }
+      if (this.kpiMultiTotalCasesSub) {
+        this.kpiMultiTotalCasesSub.textContent = `Bao gồm ${this.cnttMultiAggregatedData.allDepts.length} khoa/phòng`;
+      }
+      if (this.kpiMultiActiveStaff) {
+        this.kpiMultiActiveStaff.textContent = String(this.cnttMultiAggregatedData.totalStaff);
+      }
+      if (this.kpiMultiActiveStaffSub) {
+        this.kpiMultiActiveStaffSub.textContent = "Cán bộ tham gia xử lý";
+      }
+      if (this.kpiMultiOtherRepairs) {
+        this.kpiMultiOtherRepairs.textContent = String(this.cnttMultiAggregatedData.totalOtherRepairs);
+      }
+      if (this.kpiMultiOtherRepairsSub) {
+        this.kpiMultiOtherRepairsSub.textContent = "Nội dung ghi chi tiết";
+      }
+
+      // Điền bộ lọc cán bộ
+      this.populateMultiSummaryStaffDropdown();
+
+      // Vẽ giao diện thẻ cán bộ
+      this.renderMultiSheetSummaryCards();
+
+      if (this.cnttMultiStatusText) {
+        this.cnttMultiStatusText.innerHTML = `<span style="color:#10b981;">✅ Đã tổng hợp thành công <strong>${this.cnttMultiAggregatedData.totalRecords}</strong> ca từ <strong>${result.sheetsLoaded.length}</strong> sheet!</span>`;
+      }
+      this.showToast(`✅ Đã tổng hợp ${this.cnttMultiAggregatedData.totalRecords} ca công việc từ ${result.sheetsLoaded.length} sheet!`, "success", 4000);
+    } catch (err) {
+      console.error("runMultiSheetSummary error:", err);
+      if (this.cnttMultiStatusText) {
+        this.cnttMultiStatusText.innerHTML = `<span style="color:#ef4444;">❌ Lỗi tổng hợp: ${err.message}</span>`;
+      }
+      this.showToast(`Lỗi khi tổng hợp: ${err.message}`, "error");
+    } finally {
+      this.setButtonLoading(this.btnRunMultiSummary, false);
+      this.hideTopProgress();
+    }
+  }
+
+  /**
+   * Điền dropdown lọc cán bộ trong tab Tổng Hợp
+   */
+  populateMultiSummaryStaffDropdown() {
+    if (!this.selectMultiSummaryStaffFilter || !this.cnttMultiAggregatedData) return;
+    const currentVal = this.selectMultiSummaryStaffFilter.value;
+    const staffList = this.cnttMultiAggregatedData.staffList || [];
+
+    let html = `<option value="all">-- Tất cả cán bộ (${staffList.length}) --</option>`;
+    staffList.forEach(stf => {
+      html += `<option value="${stf.name}">${stf.name} (${stf.totalCases} ca)</option>`;
+    });
+
+    this.selectMultiSummaryStaffFilter.innerHTML = html;
+    if (currentVal && staffList.some(s => s.name === currentVal)) {
+      this.selectMultiSummaryStaffFilter.value = currentVal;
+    }
+  }
+
+  /**
+   * Vẽ toàn bộ danh sách thẻ cán bộ đã tổng hợp
+   */
+  renderMultiSheetSummaryCards() {
+    if (!this.cnttStaffCardsContainer) return;
+    if (!this.cnttMultiAggregatedData || !this.cnttMultiAggregatedData.staffList || this.cnttMultiAggregatedData.staffList.length === 0) {
+      this.cnttStaffCardsContainer.innerHTML = `
+        <div class="cntt-multi-placeholder">
+          <div style="text-align: center; padding: 40px 20px; color: #94a3b8;">
+            <div style="font-size: 2.2rem; margin-bottom: 10px;">ℹ️</div>
+            <h4 style="color: #f8fafc; margin: 0 0 6px 0;">Không tìm thấy ca công việc nào</h4>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">
+              Các sheet đã chọn không có dữ liệu công việc phù hợp.
+            </p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const filterStaff = this.selectMultiSummaryStaffFilter ? this.selectMultiSummaryStaffFilter.value : "all";
+    const keyword = (this.inputMultiSummarySearch ? this.inputMultiSummarySearch.value : "").trim().toLowerCase();
+
+    const filteredStaff = this.cnttMultiAggregatedData.staffList.filter(stf => {
+      if (filterStaff !== "all" && stf.name !== filterStaff) return false;
+      if (keyword) {
+        const catStr = Object.keys(stf.categories).join(" ");
+        const otherStr = stf.otherRepairs.map(o => `${o.dept} ${o.content} ${o.reqStaff}`).join(" ");
+        const fullStr = `${stf.name} ${Array.from(stf.depts).join(' ')} ${catStr} ${otherStr}`.toLowerCase();
+        if (!fullStr.includes(keyword)) return false;
+      }
+      return true;
+    });
+
+    if (filteredStaff.length === 0) {
+      this.cnttStaffCardsContainer.innerHTML = `
+        <div class="cntt-multi-placeholder">
+          <div style="text-align: center; padding: 35px 20px; color: #94a3b8;">
+            <h4 style="color: #f8fafc; margin: 0 0 6px 0;">Không có kết quả khớp với bộ lọc</h4>
+            <p style="margin: 0; font-size: 0.85rem; color: #64748b;">
+              Hãy thử tìm kiếm với từ khóa khác hoặc chuyển bộ lọc sang "Tất cả cán bộ".
+            </p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    this.cnttStaffCardsContainer.innerHTML = filteredStaff.map((stf, idx) => {
+      const initial = stf.name.charAt(0).toUpperCase();
+      const swEntries = Object.entries(stf.swCategories);
+      const hwEntries = Object.entries(stf.hwCategories);
+
+      // Chips phần mềm
+      const swChipsHtml = swEntries.map(([cat, count]) => `
+        <div class="cntt-cat-stat-chip is-software" title="${cat}">
+          <span>💻 ${cat}</span>
+          <strong class="cntt-cat-stat-count">${count}</strong>
+        </div>
+      `).join("");
+
+      // Chips phần cứng
+      const hwChipsHtml = hwEntries.map(([cat, count]) => `
+        <div class="cntt-cat-stat-chip is-hardware" title="${cat}">
+          <span>🔧 ${cat}</span>
+          <strong class="cntt-cat-stat-count">${count}</strong>
+        </div>
+      `).join("");
+
+      // Danh sách Sửa Chữa Khác (Ghi đầy đủ chi tiết nội dung trong ô)
+      let otherRepairsHtml = "";
+      if (stf.otherRepairs.length > 0) {
+        const itemsHtml = stf.otherRepairs.map((o, oIdx) => `
+          <li class="cntt-other-repair-item">
+            <span style="font-weight: 700; color: #fbbf24; min-width: 18px;">${oIdx + 1}.</span>
+            <span class="cntt-other-sheet-tag">Sheet ${o.sheet}</span>
+            <span class="cntt-other-dept-tag">${o.dept}</span>
+            <span class="cntt-other-content-text">${o.content}</span>
+            ${o.reqStaff ? `<span class="cntt-other-req-tag">Y/C: <strong>${o.reqStaff}</strong></span>` : ''}
+            ${o.soHoSo ? `<span style="font-size:0.7rem; color:#38bdf8;">HS: ${o.soHoSo}</span>` : ''}
+          </li>
+        `).join("");
+
+        otherRepairsHtml = `
+          <div class="cntt-other-repairs-callout">
+            <div class="cntt-other-repairs-title">
+              <span>🛠️ Chi Tiết Sửa Chữa Khác (${stf.otherRepairs.length} nội dung cụ thể):</span>
+            </div>
+            <ul class="cntt-other-repairs-list">
+              ${itemsHtml}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Chi tiết các ca cụ thể (bảng rút gọn)
+      const caseRowsHtml = stf.records.map((r, rIdx) => {
+        const swDesc = (r.softwareIssues || []).map(s => s.label).join(", ");
+        const hwDesc = (r.hardwareIssues || []).map(h => (h.key === "sua_chua_khac" || h.isText) ? `🛠️ ${h.value || h.label}` : h.label).join(", ");
+        return `
+          <tr>
+            <td style="text-align: center; color: #94a3b8; font-size: 0.74rem;">${r.stt || (rIdx + 1)}</td>
+            <td><span class="cntt-other-sheet-tag">${r.sheetName || ''}</span></td>
+            <td><strong style="color: #f8fafc; font-size: 0.78rem;">${r.dept}</strong></td>
+            <td style="font-size: 0.76rem; color: #cbd5e1;">${swDesc || '-'}</td>
+            <td style="font-size: 0.76rem; color: #cbd5e1;">${hwDesc || '-'}</td>
+            <td style="font-size: 0.74rem; color: #94a3b8;">${r.reqStaff || '-'}</td>
+            <td style="text-align: center; font-size: 0.72rem; color: #34d399;">${r.status || 'Đã xử lý'}</td>
+          </tr>
+        `;
+      }).join("");
+
+      return `
+        <div class="cntt-staff-summary-card" data-staff="${stf.name}">
+          <!-- Header Cán Bộ -->
+          <div class="cntt-staff-card-header">
+            <div class="cntt-staff-avatar-name">
+              <div class="cntt-staff-avatar">${initial}</div>
+              <div>
+                <div class="cntt-staff-name-title">${stf.name}</div>
+                <div class="cntt-staff-meta-badges">
+                  <span class="cntt-badge-meta" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700;">
+                    🎯 ${stf.totalCases} ca
+                  </span>
+                  <span class="cntt-badge-meta">
+                    📅 ${stf.sheets.size} sheet (${Array.from(stf.sheets).join(", ")})
+                  </span>
+                  <span class="cntt-badge-meta">
+                    🏢 ${stf.depts.size} khoa/phòng
+                  </span>
+                  ${stf.otherRepairs.length > 0 ? `<span class="cntt-badge-meta" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">🛠️ ${stf.otherRepairs.length} sửa chữa khác</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn-cntt-action btn-cntt-copy btn-copy-single-staff" data-staff="${stf.name}" title="Sao chép báo cáo riêng cho cán bộ ${stf.name} để gửi Zalo">
+              <span>📋 Copy Báo Cáo Cán Bộ</span>
+            </button>
+          </div>
+
+          <!-- Body Cán Bộ -->
+          <div class="cntt-staff-card-body">
+            <!-- 1. Danh mục Phần Mềm & Phần Cứng đã làm (Số lượng) -->
+            ${(swEntries.length > 0 || hwEntries.length > 0) ? `
+              <div class="cntt-category-counts-section">
+                <div class="cntt-cat-section-title">
+                  <span>📌 Số Lượng Các Mục Đã Thực Hiện:</span>
+                </div>
+                <div class="cntt-cat-chips-list">
+                  ${swChipsHtml}
+                  ${hwChipsHtml}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- 2. Khối Chi Tiết Sửa Chữa Khác (Ghi đầy đủ nội dung) -->
+            ${otherRepairsHtml}
+
+            <!-- 3. Accordion Xem Toàn Bộ Ca Chi Tiết -->
+            <div>
+              <button type="button" class="cntt-staff-cases-toggle" onclick="
+                const wrap = this.nextElementSibling;
+                const isHidden = wrap.classList.toggle('hidden');
+                this.innerHTML = isHidden ? '▶ Xem danh sách chi tiết ${stf.records.length} ca' : '▼ Thu gọn danh sách chi tiết ${stf.records.length} ca';
+              ">
+                ▶ Xem danh sách chi tiết ${stf.records.length} ca
+              </button>
+              <div class="cntt-staff-cases-table-wrap hidden">
+                <table class="cntt-table" style="margin: 0; font-size: 0.78rem;">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px; text-align: center;">STT</th>
+                      <th style="width: 70px;">Sheet</th>
+                      <th style="width: 120px;">Khoa / Phòng</th>
+                      <th>Sự Cố Phần Mềm</th>
+                      <th>Sự Cố Phần Cứng</th>
+                      <th style="width: 100px;">Yêu Cầu</th>
+                      <th style="width: 85px; text-align: center;">Trạng Thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${caseRowsHtml}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    // Bắt sự kiện sao chép cho từng cán bộ
+    this.cnttStaffCardsContainer.querySelectorAll(".btn-copy-single-staff").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        const staffName = e.currentTarget.dataset.staff;
+        this.copySingleStaffSummaryText(staffName);
+      });
+    });
+  }
+
+  /**
+   * Lọc thẻ cán bộ khi thay đổi dropdown hoặc ô tìm kiếm
+   */
+  filterMultiSheetCards() {
+    this.renderMultiSheetSummaryCards();
+  }
+
+  /**
+   * Sao chép văn bản báo cáo tổng hợp toàn bộ cán bộ để gửi Zalo / Giao ban
+   */
+  async copyMultiSheetSummaryText() {
+    if (!window.ToolCnttReport || !this.cnttMultiAggregatedData) {
+      this.showToast("Chưa có dữ liệu tổng hợp để sao chép!", "warning");
+      return;
+    }
+
+    const text = ToolCnttReport.formatMultiSheetSummaryAsText(this.cnttMultiAggregatedData, this.cnttMultiSelectedSheets);
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text);
+        this.showToast("📋 Đã sao chép Báo Cáo Tổng Hợp chuẩn đẹp! Sẵn sàng dán vào Zalo hoặc biên bản giao ban.", "success", 5000);
+      } catch (e) {
+        this.showToast("Không thể ghi vào bộ nhớ tạm trình duyệt.", "warning");
+      }
+    } else {
+      this.showToast("Trình duyệt không hỗ trợ tự động sao chép.", "warning");
+    }
+  }
+
+  /**
+   * Sao chép báo cáo công việc của riêng 1 cán bộ
+   */
+  async copySingleStaffSummaryText(staffName) {
+    if (!window.ToolCnttReport || !this.cnttMultiAggregatedData) return;
+    const stf = this.cnttMultiAggregatedData.staffList.find(s => s.name === staffName);
+    if (!stf) return;
+
+    const text = ToolCnttReport.formatSingleStaffSummaryAsText(stf, this.cnttMultiSelectedSheets);
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text);
+        this.showToast(`📋 Đã copy báo cáo công việc cán bộ [${staffName}]!`, "success", 4000);
+      } catch (e) {
+        this.showToast("Không thể ghi vào bộ nhớ tạm.", "warning");
+      }
+    }
+  }
+
+  /**
+   * Xuất file Excel Tổng Hợp Đa Sheet
+   */
+  exportMultiSheetExcel() {
+    if (!window.ToolCnttReport || !this.cnttMultiAggregatedData) {
+      this.showToast("Chưa có dữ liệu tổng hợp để xuất Excel!", "warning");
+      return;
+    }
+    try {
+      ToolCnttReport.exportMultiSheetExcel(this.cnttMultiAggregatedData, this.cnttMultiRawRecords, this.cnttMultiSelectedSheets);
+      this.showToast("📊 Đã xuất file Excel Tổng Hợp Đa Sheet thành công!", "success");
+    } catch (err) {
+      console.error(err);
+      this.showToast(`Lỗi xuất Excel: ${err.message}`, "error");
+    }
   }
 
   showModal(modalEl) {

@@ -467,7 +467,8 @@
                 key: cat.key,
                 label: cat.label,
                 value: val,
-                count: 1
+                count: 1,
+                isText: true
               });
             } else {
               const num = parseInt(val, 10);
@@ -1011,6 +1012,290 @@
       XLSX.utils.book_append_sheet(wb, wsDetail, "Danh Sách Chi Tiết");
 
       XLSX.writeFile(wb, `Bao_Cao_Cong_Tac_CNTT_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      return true;
+    },
+
+    /**
+     * Tải song song dữ liệu từ nhiều Sheet Google Trang Tính (ví dụ 4.9, 7.9...)
+     */
+    async fetchMultipleSheetsData(sheetNames = []) {
+      if (!Array.isArray(sheetNames) || sheetNames.length === 0) {
+        return { records: [], sheetsLoaded: [], failedSheets: [] };
+      }
+
+      const sheetsToFetch = Array.from(new Set(sheetNames.filter(Boolean)));
+      const results = await Promise.allSettled(
+        sheetsToFetch.map(sName => this.fetchGoogleSheetData(null, sName))
+      );
+
+      const combined = [];
+      const sheetsLoaded = [];
+      const failedSheets = [];
+
+      results.forEach((res, idx) => {
+        const sName = sheetsToFetch[idx];
+        if (res.status === "fulfilled" && Array.isArray(res.value)) {
+          sheetsLoaded.push(sName);
+          res.value.forEach(r => {
+            if (!r.sheetName) r.sheetName = sName;
+            combined.push(r);
+          });
+        } else {
+          failedSheets.push(sName);
+          console.warn(`Lỗi khi tải dữ liệu sheet [${sName}]:`, res.reason);
+        }
+      });
+
+      return {
+        records: combined,
+        sheetsLoaded,
+        failedSheets
+      };
+    },
+
+    /**
+     * Tổng hợp và phân tích khối lượng công việc theo từng Cán Bộ thực hiện
+     * Trả về số lượng từng danh mục đã làm, riêng "Sửa chữa khác" giữ nguyên chi tiết nội dung
+     */
+    aggregateWorkByStaff(records = []) {
+      const staffMap = {};
+      let totalOtherRepairsCount = 0;
+      const allDepts = new Set();
+      const allSheets = new Set();
+      const globalCategories = {};
+
+      records.forEach(r => {
+        const rawStaff = (r.execStaff || "").trim() || "Chưa ghi";
+        // Tách nếu có nhiều cán bộ cùng thực hiện (ngăn cách bởi dấu phẩy, cộng, gạch chéo, dấu &)
+        const staffTokens = rawStaff.split(/[,&+/;]+/).map(s => s.trim()).filter(Boolean);
+        const staffList = staffTokens.length > 0 ? staffTokens : [rawStaff];
+
+        staffList.forEach(rawToken => {
+          const resolvedName = this.resolveStaffName(rawToken);
+          if (!staffMap[resolvedName]) {
+            staffMap[resolvedName] = {
+              name: resolvedName,
+              rawNames: new Set([rawToken]),
+              totalCases: 0,
+              depts: new Set(),
+              sheets: new Set(),
+              categories: {},
+              swCategories: {},
+              hwCategories: {},
+              otherRepairs: [],
+              records: []
+            };
+          }
+
+          const sm = staffMap[resolvedName];
+          sm.rawNames.add(rawToken);
+          sm.totalCases++;
+          if (r.dept) {
+            sm.depts.add(r.dept);
+            allDepts.add(r.dept);
+          }
+          if (r.sheetName) {
+            sm.sheets.add(r.sheetName);
+            allSheets.add(r.sheetName);
+          }
+          sm.records.push(r);
+
+          // 1. Phân loại Phần mềm
+          (r.softwareIssues || []).forEach(sw => {
+            sm.categories[sw.label] = (sm.categories[sw.label] || 0) + (sw.count || 1);
+            sm.swCategories[sw.label] = (sm.swCategories[sw.label] || 0) + (sw.count || 1);
+            globalCategories[sw.label] = (globalCategories[sw.label] || 0) + (sw.count || 1);
+          });
+
+          // 2. Phân loại Phần cứng
+          (r.hardwareIssues || []).forEach(hw => {
+            if (hw.key === "sua_chua_khac" || hw.isText) {
+              const textContent = (hw.value && hw.value !== "0" && hw.value !== "1") ? hw.value : (r.note || hw.label);
+              sm.otherRepairs.push({
+                sheet: r.sheetName || "",
+                dept: r.dept || "",
+                reqStaff: r.reqStaff || "",
+                content: textContent,
+                stt: r.stt || "",
+                soHoSo: r.soHoSo || "",
+                soPhieu: r.soPhieu || "",
+                status: r.status || "Đã xử lý",
+                note: r.note || ""
+              });
+              totalOtherRepairsCount++;
+            } else {
+              sm.categories[hw.label] = (sm.categories[hw.label] || 0) + (hw.count || 1);
+              sm.hwCategories[hw.label] = (sm.hwCategories[hw.label] || 0) + (hw.count || 1);
+              globalCategories[hw.label] = (globalCategories[hw.label] || 0) + (hw.count || 1);
+            }
+          });
+        });
+      });
+
+      const staffListSorted = Object.values(staffMap).sort((a, b) => b.totalCases - a.totalCases);
+
+      return {
+        totalRecords: records.length,
+        totalStaff: staffListSorted.length,
+        totalOtherRepairs: totalOtherRepairsCount,
+        allDepts: Array.from(allDepts),
+        allSheets: Array.from(allSheets),
+        globalCategories,
+        staffList: staffListSorted
+      };
+    },
+
+    /**
+     * Tạo văn bản báo cáo tổng hợp chuẩn mẫu để copy gửi Zalo hoặc báo cáo giao ban
+     */
+    formatMultiSheetSummaryAsText(aggregatedData, selectedSheets = []) {
+      if (!aggregatedData || !Array.isArray(aggregatedData.staffList)) {
+        return "Chưa có dữ liệu tổng hợp.";
+      }
+
+      const sheetStr = selectedSheets.length ? selectedSheets.join(", ") : (aggregatedData.allSheets.join(", ") || "Hôm nay");
+      const lines = [
+        `📊 BÁO CÁO TỔNG HỢP CÔNG VIỆC PHÒNG CNTT`,
+        `📅 Sheet tổng hợp: ${sheetStr}`,
+        `🛠️ Tổng số ca: ${aggregatedData.totalRecords} ca | 👥 Cán bộ: ${aggregatedData.totalStaff} người`,
+        `----------------------------------------`
+      ];
+
+      aggregatedData.staffList.forEach((stf, idx) => {
+        lines.push(`\n${idx + 1}. 👤 CÁN BỘ: ${stf.name.toUpperCase()}`);
+        lines.push(`• Tổng số ca: ${stf.totalCases} ca (${stf.sheets.size} sheet: ${Array.from(stf.sheets).join(", ")})`);
+        
+        const catKeys = Object.keys(stf.categories);
+        if (catKeys.length > 0) {
+          lines.push(`📌 Các mục công việc đã làm:`);
+          catKeys.forEach(cat => {
+            lines.push(`   - ${cat}: ${stf.categories[cat]}`);
+          });
+        }
+
+        if (stf.otherRepairs.length > 0) {
+          lines.push(`🛠️ Chi tiết Sửa chữa khác (${stf.otherRepairs.length} nội dung):`);
+          stf.otherRepairs.forEach((o, oIdx) => {
+            const req = o.reqStaff ? ` (Y/C: ${o.reqStaff})` : "";
+            lines.push(`   ${oIdx + 1}) [${o.sheet}][${o.dept}] ${o.content}${req}`);
+          });
+        }
+      });
+
+      lines.push(`\n----------------------------------------`);
+      lines.push(`⚡ Xuất tự động từ Hệ Thống Báo Cáo Công Việc BVĐK Bắc Ninh Số 2`);
+      return lines.join("\n");
+    },
+
+    /**
+     * Tạo văn bản báo cáo cho riêng 1 cán bộ
+     */
+    formatSingleStaffSummaryAsText(staffData, selectedSheets = []) {
+      if (!staffData) return "";
+      const sheetStr = selectedSheets.length ? selectedSheets.join(", ") : (Array.from(staffData.sheets).join(", ") || "Hôm nay");
+      const lines = [
+        `👤 BÁO CÁO CÔNG VIỆC CÁ NHÂN: ${staffData.name.toUpperCase()}`,
+        `📅 Các Sheet: ${sheetStr}`,
+        `🛠️ Tổng số ca tiếp nhận & xử lý: ${staffData.totalCases} ca`,
+        `🏢 Khoa/Phòng phục vụ: ${Array.from(staffData.depts).join(", ")}`,
+        `----------------------------------------`
+      ];
+
+      const catKeys = Object.keys(staffData.categories);
+      if (catKeys.length > 0) {
+        lines.push(`📌 Số lượng các mục đã thực hiện:`);
+        catKeys.forEach(cat => {
+          lines.push(` - ${cat}: ${staffData.categories[cat]}`);
+        });
+      }
+
+      if (staffData.otherRepairs.length > 0) {
+        lines.push(`\n🛠️ Chi tiết Sửa chữa khác (${staffData.otherRepairs.length} nội dung):`);
+        staffData.otherRepairs.forEach((o, oIdx) => {
+          const req = o.reqStaff ? ` (Y/C: ${o.reqStaff})` : "";
+          lines.push(` ${oIdx + 1}. [${o.sheet}][${o.dept}] ${o.content}${req}`);
+        });
+      }
+
+      return lines.join("\n");
+    },
+
+    /**
+     * Xuất Excel Tổng Hợp Đa Sheet
+     */
+    exportMultiSheetExcel(aggregatedData, records = [], selectedSheets = []) {
+      if (!window.XLSX) {
+        alert("Thư viện SheetJS (XLSX) chưa sẵn sàng.");
+        return false;
+      }
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: TỔNG HỢP CÁN BỘ
+      const summaryRows = [
+        ["BÁO CÁO TỔNG HỢP CÔNG VIỆC PHÒNG CNTT - ĐA SHEET"],
+        [`Các Sheet tổng hợp: ${selectedSheets.join(", ") || "Toàn bộ"}`],
+        [`Thời gian xuất: ${new Date().toLocaleString("vi-VN")}`],
+        [],
+        ["STT", "Cán Bộ Thực Hiện", "Tổng Ca", "Số Khoa Phục Vụ", "Các Sheet", "Danh Mục Đã Làm", "Số Lượng Sửa Chữa Khác"],
+        ...aggregatedData.staffList.map((stf, idx) => [
+          idx + 1,
+          stf.name,
+          stf.totalCases,
+          stf.depts.size,
+          Array.from(stf.sheets).join(", "),
+          Object.entries(stf.categories).map(([k, v]) => `${k}: ${v}`).join("; "),
+          stf.otherRepairs.length
+        ])
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Tổng Hợp Cán Bộ");
+
+      // Sheet 2: CHI TIẾT SỬA CHỮA KHÁC
+      const otherRows = [
+        ["STT", "Sheet", "Khoa / Phòng", "Cán Bộ Thực Hiện", "Nội Dung Sửa Chữa Khác", "Cán Bộ Yêu Cầu", "Số Hồ Sơ", "Số Phiếu", "Tình Trạng", "Ghi Chú"]
+      ];
+      let oCounter = 1;
+      aggregatedData.staffList.forEach(stf => {
+        stf.otherRepairs.forEach(o => {
+          otherRows.push([
+            oCounter++,
+            o.sheet,
+            o.dept,
+            stf.name,
+            o.content,
+            o.reqStaff,
+            o.soHoSo,
+            o.soPhieu,
+            o.status,
+            o.note
+          ]);
+        });
+      });
+      const wsOther = XLSX.utils.aoa_to_sheet(otherRows);
+      XLSX.utils.book_append_sheet(wb, wsOther, "Chi Tiết Sửa Chữa Khác");
+
+      // Sheet 3: TOÀN BỘ CÁC CA
+      const detailRows = [
+        ["STT", "Sheet", "Khoa / Phòng", "Số Hồ Sơ", "Số Phiếu", "Sự Cố Phần Mềm", "Sự Cố Phần Cứng", "Cán Bộ Y/Cầu", "Cán Bộ Thực Hiện", "Tình Trạng", "Ghi Chú"],
+        ...records.map((r, i) => [
+          r.stt || (i + 1),
+          r.sheetName || "",
+          r.dept,
+          r.soHoSo,
+          r.soPhieu,
+          (r.softwareIssues || []).map(sw => `${sw.label}${sw.count > 1 ? ` (${sw.count})` : ''}`).join("; "),
+          (r.hardwareIssues || []).map(hw => (hw.key === "sua_chua_khac" || hw.isText) ? `🛠️ ${hw.value || hw.label}` : `${hw.label}${hw.count > 1 ? ` (${hw.count})` : ''}`).join("; "),
+          r.reqStaff,
+          r.execStaff,
+          r.status,
+          r.note
+        ])
+      ];
+      const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
+      XLSX.utils.book_append_sheet(wb, wsDetail, "Toàn Bộ Ca Công Tác");
+
+      const fileName = `Tong_Hop_CNTT_${selectedSheets.join("_") || "multi"}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
       return true;
     }
   };
