@@ -8276,7 +8276,7 @@ p {
       const swContainer = document.getElementById("containerSoftwareCheckboxes");
       if (swContainer) {
         swContainer.innerHTML = ToolCnttReport.SOFTWARE_CATEGORIES.map(cat => `
-          <div class="cntt-card-stepper sw-stepper" data-key="${cat.key}" data-label="${cat.label}" title="${cat.label}">
+          <div class="cntt-card-stepper sw-stepper" data-key="${cat.key}" data-label="${cat.label}" data-keywords="${cat.keywords || ''}" title="${cat.label}">
             <div class="stepper-body" data-action="toggle-step">
               <div class="stepper-check">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3.2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -9544,19 +9544,93 @@ p {
   }
 
   /**
-   * Lọc tức thì danh sách thẻ lỗi phần mềm theo từ khóa
+   * Khớp chuỗi tìm kiếm tiếng Việt thông minh:
+   * - Hỗ trợ cả 2 kiểu đặt dấu: xoá <-> xóa, huỷ <-> hủy, hoà <-> hòa, toá <-> tóa...
+   * - Hỗ trợ gõ không dấu: xoa, huy, sua, the bh, cls, cks...
+   * - Hỗ trợ tìm nhiều từ độc lập (xóa cls, huy cks, ra vien...)
+   */
+  matchVietnameseSearch(target, query) {
+    if (!query) return true;
+    if (!target) return false;
+
+    const targetTone = this.normalizeVietnameseTones(target);
+    const targetStrip = this.normalizeVietnameseForSearch(target);
+    const rawQuery = query.toLowerCase().trim();
+
+    const words = rawQuery.split(/\s+/).filter(Boolean);
+    if (words.length === 0) return true;
+
+    return words.every(w => this.matchSingleWordSearch(targetTone, targetStrip, w));
+  }
+
+  matchSingleWordSearch(targetTone, targetStrip, word) {
+    if (!word) return true;
+    const wordTone = this.normalizeVietnameseTones(word);
+    const wordStrip = this.normalizeVietnameseForSearch(word);
+
+    if (this.hasVietnameseTone(word)) {
+      // Có dấu: khớp theo chuỗi đã chuẩn hóa vị trí dấu (xóa <-> xoá, hủy <-> huỷ)
+      if (targetTone.includes(wordTone)) return true;
+      const reTone = new RegExp('(?:^|[\\s,./;()_+=~`!@#$%^&*-])' + this.escapeRegexSearch(wordTone), 'i');
+      return reTone.test(targetTone);
+    } else {
+      // Không dấu: khớp đầu từ ở chuỗi không dấu
+      const reStrip = new RegExp('(?:^|[\\s,./;()_+=~`!@#$%^&*-])' + this.escapeRegexSearch(wordStrip), 'i');
+      return reStrip.test(targetStrip);
+    }
+  }
+
+  hasVietnameseTone(str) {
+    return /[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(str || "");
+  }
+
+  escapeRegexSearch(str) {
+    return (str || "").replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  normalizeVietnameseForSearch(str) {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "d")
+      .trim();
+  }
+
+  normalizeVietnameseTones(str) {
+    if (!str) return "";
+    let s = str.toLowerCase().normalize("NFC");
+    const toneMap = [
+      [/oá/g, "óa"], [/oà/g, "òa"], [/oả/g, "ỏa"], [/oã/g, "õa"], [/oạ/g, "ọa"],
+      [/oé/g, "óe"], [/oè/g, "òe"], [/oẻ/g, "ỏe"], [/oẽ/g, "õe"], [/oẹ/g, "ọe"],
+      [/uý/g, "úy"], [/uỳ/g, "ùy"], [/uỷ/g, "ủy"], [/uỹ/g, "ũy"], [/uỵ/g, "ụy"],
+      [/iế/g, "iế"], [/uế/g, "uế"]
+    ];
+    toneMap.forEach(([from, to]) => {
+      s = s.replace(from, to);
+    });
+    return s;
+  }
+
+  /**
+   * Lọc tức thì danh sách thẻ lỗi phần mềm theo từ khóa (hỗ trợ cả Xóa và Xoá, Hủy và Huỷ, có dấu/không dấu)
    */
   filterSoftwareCards(query = "") {
-    const q = (query || "").trim().toLowerCase();
+    const rawQuery = (query || "").trim();
     const cards = document.querySelectorAll('.cntt-card-stepper.sw-stepper');
     cards.forEach(card => {
-      if (!q) {
+      if (!rawQuery) {
         card.style.display = "";
         return;
       }
-      const label = (card.dataset.label || "").toLowerCase();
-      const key = (card.dataset.key || "").toLowerCase();
-      if (label.includes(q) || key.includes(q)) {
+      const label = card.dataset.label || "";
+      const key = card.dataset.key || "";
+      const keywords = card.dataset.keywords || "";
+      const combined = `${label} ${key} ${keywords}`;
+
+      if (this.matchVietnameseSearch(combined, rawQuery)) {
         card.style.display = "";
       } else {
         card.style.display = "none";
@@ -9564,7 +9638,7 @@ p {
     });
 
     if (this.btnClearSwFilter) {
-      this.btnClearSwFilter.classList.toggle('hidden', !q);
+      this.btnClearSwFilter.classList.toggle('hidden', !rawQuery);
     }
   }
 

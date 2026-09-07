@@ -22,27 +22,27 @@
 
   // 21 Danh mục lỗi Phần Mềm chuẩn (Cột 4 -> Cột 24)
   const SOFTWARE_CATEGORIES = [
-    { key: "xoa_cls_pttt", col: 4, label: "Xoá CLS, PTTT" },
-    { key: "ep_the_bh", col: 5, label: "Ép thẻ BH" },
-    { key: "sua_phi_qr_tm", col: 6, label: "Sửa phí, mã QR sang TM và ngược lại" },
-    { key: "huy_cks", col: 7, label: "Huỷ CKS" },
-    { key: "huy_ban", col: 8, label: "Huỷ B/án" },
-    { key: "sua_tt_bn", col: 9, label: "Sửa TT bệnh nhân (NN, Đ/chỉ, tuổi, CCCD...) & công khám, kiểu khám" },
-    { key: "sua_gio_cls_pttt", col: 10, label: "Sửa ngày giờ CLS/PTTT, giờ đọc KQ, người TH, máy CLS" },
-    { key: "sua_ma_benh", col: 11, label: "Sửa mã bệnh kèm theo, bệnh chính" },
-    { key: "ho_tro_ky_so", col: 12, label: "Hỗ trợ ký số PM, QLVBĐH" },
-    { key: "sua_giay_rv", col: 13, label: "Sửa giấy RV, kết thúc ra viện, chuyển tuyến" },
-    { key: "dang_bai_website", col: 14, label: "Đăng bài trên website" },
-    { key: "sua_cach_dung_thuoc", col: 15, label: "Sửa cách dùng thuốc, ngày giờ thuốc, vật tư" },
-    { key: "phan_quyen_user", col: 16, label: "Phân quyền USER, đổi nick user" },
-    { key: "loi_ton_thuoc_hoso", col: 17, label: "Lỗi không kết thúc hồ sơ (tồn thuốc, thuốc chưa cấp)" },
-    { key: "sua_gio_phieu_xuat", col: 18, label: "Sửa ngày giờ, sửa xoá phiếu xuất khác" },
-    { key: "sua_xoa_anh_pacs", col: 19, label: "Sửa/xoá ảnh trên PACS, lỗi đẩy chỉ định PACS" },
-    { key: "mo_hs_ky_so_bs", col: 20, label: "Mở HS ký số bổ sung" },
-    { key: "sua_xoa_giuong", col: 21, label: "Sửa xoá giường, cập nhật giường, thêm giường" },
-    { key: "chuyen_thuoc_cp_dg", col: 22, label: "Chuyển thuốc CP-DG" },
-    { key: "sua_loi_xuat_toan", col: 23, label: "Sửa lỗi xuất toán tự động" },
-    { key: "vimes_xu_ly", col: 24, label: "Vimes Xử Lý" }
+    { key: "xoa_cls_pttt", col: 4, label: "Xoá CLS, PTTT", keywords: "xóa xoá xoa bỏ bo cls pttt" },
+    { key: "ep_the_bh", col: 5, label: "Ép thẻ BH", keywords: "ép ep the bh bảo hiểm bao hiem bhyt" },
+    { key: "sua_phi_qr_tm", col: 6, label: "Sửa phí, mã QR sang TM và ngược lại", keywords: "sửa sua phi qr tm tiền mặt tien mat chuyen khoan" },
+    { key: "huy_cks", col: 7, label: "Huỷ CKS", keywords: "hủy huỷ huy cks chữ ký số chu ky so vgca" },
+    { key: "huy_ban", col: 8, label: "Huỷ B/án", keywords: "hủy huỷ huy bệnh án benh an b/an b án" },
+    { key: "sua_tt_bn", col: 9, label: "Sửa TT bệnh nhân (NN, Đ/chỉ, tuổi, CCCD...) & công khám, kiểu khám", keywords: "sửa sua thông tin thong tin bệnh nhân benh nhan bn cccd nghe nghiep dia chi" },
+    { key: "sua_gio_cls_pttt", col: 10, label: "Sửa ngày giờ CLS/PTTT, giờ đọc KQ, người TH, máy CLS", keywords: "sửa sua ngày giờ ngay gio cls pttt ket qua thuc hien" },
+    { key: "sua_ma_benh", col: 11, label: "Sửa mã bệnh kèm theo, bệnh chính", keywords: "sửa sua mã bệnh ma benh icd kem theo benh chinh" },
+    { key: "ho_tro_ky_so", col: 12, label: "Hỗ trợ ký số PM, QLVBĐH", keywords: "hỗ trợ ho tro ký số ky so qlvbdh van ban phan mem" },
+    { key: "sua_giay_rv", col: 13, label: "Sửa giấy RV, kết thúc ra viện, chuyển tuyến", keywords: "sửa sua giấy ra viện giay rv ket thuc ra vien chuyen tuyen" },
+    { key: "dang_bai_website", col: 14, label: "Đăng bài trên website", keywords: "đăng dang bài bai website web cong thong tin" },
+    { key: "sua_cach_dung_thuoc", col: 15, label: "Sửa cách dùng thuốc, ngày giờ thuốc, vật tư", keywords: "sửa sua cách dùng thuoc vat tu lieu dung" },
+    { key: "phan_quyen_user", col: 16, label: "Phân quyền USER, đổi nick user", keywords: "phân quyền phan quyen user nick tài khoản tai khoan mat khau" },
+    { key: "loi_ton_thuoc_hoso", col: 17, label: "Lỗi không kết thúc hồ sơ (tồn thuốc, thuốc chưa cấp)", keywords: "lỗi loi ton thuoc tồn thuốc kết thúc ket thuc hồ sơ ho so chua cap" },
+    { key: "sua_gio_phieu_xuat", col: 18, label: "Sửa ngày giờ, sửa xoá phiếu xuất khác", keywords: "sửa sua xóa xoá xoa ngày giờ ngay gio phiếu xuất phieu xuat" },
+    { key: "sua_xoa_anh_pacs", col: 19, label: "Sửa/xoá ảnh trên PACS, lỗi đẩy chỉ định PACS", keywords: "sửa sua xóa xoá xoa ảnh anh pacs chỉ định chi dinh chup phim xquang ctdl" },
+    { key: "mo_hs_ky_so_bs", col: 20, label: "Mở HS ký số bổ sung", keywords: "mở mo hs ký số ky so bổ sung bo sung" },
+    { key: "sua_xoa_giuong", col: 21, label: "Sửa xoá giường, cập nhật giường, thêm giường", keywords: "sửa sua xóa xoá xoa giường giuong buồng buong bệnh phong" },
+    { key: "chuyen_thuoc_cp_dg", col: 22, label: "Chuyển thuốc CP-DG", keywords: "chuyển chuyen thuoc cp dg chi phí đon gia" },
+    { key: "sua_loi_xuat_toan", col: 23, label: "Sửa lỗi xuất toán tự động", keywords: "sửa sua xuất toán xuat toan tu dong bhyt" },
+    { key: "vimes_xu_ly", col: 24, label: "Vimes Xử Lý", keywords: "vimes xử lý xu ly loi he thong benh vien his" }
   ];
 
   // 10 Danh mục linh kiện & sửa chữa Phần Cứng chuẩn (Cột 25 -> Cột 34)
