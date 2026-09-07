@@ -56,7 +56,9 @@
 /* ==========================================================================
    LIGHT THEME DESIGN SYSTEM & HIGH-CONTRAST TOKENS
    ========================================================================== */
-[data-theme="light"] {
+[data-theme="light"],
+html[data-theme="light"],
+body[data-theme="light"] {
   /* Surface & Background tokens */
   --bg-main: #f1f5f9;
   --bg-card: #ffffff;
@@ -18549,18 +18551,134 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 /* Duty Roster Specific Controls in Light Mode */
-[data-theme="light"] .duty-filter-bar {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+[data-theme="light"] .duty-filter-bar,
+html[data-theme="light"] .duty-filter-bar {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
-[data-theme="light"] .duty-legend-item {
-  color: #475569;
+[data-theme="light"] .duty-legend-item,
+html[data-theme="light"] .duty-legend-item {
+  color: #475569 !important;
 }
+
+/* Hub Hero Stat Cards & Category Filter in Light Mode */
+[data-theme="light"] .hero-stat-card,
+[data-theme="light"] .stat-card,
+html[data-theme="light"] .hero-stat-card,
+html[data-theme="light"] .stat-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .hero-stat-val,
+[data-theme="light"] .stat-num,
+html[data-theme="light"] .hero-stat-val,
+html[data-theme="light"] .stat-num {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .hero-stat-label,
+[data-theme="light"] .stat-lbl,
+html[data-theme="light"] .hero-stat-label,
+html[data-theme="light"] .stat-lbl {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .cat-btn,
+html[data-theme="light"] .cat-btn {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .cat-btn:hover,
+html[data-theme="light"] .cat-btn:hover {
+  background: #f8fafc !important;
+  color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+[data-theme="light"] .cat-btn.active,
+html[data-theme="light"] .cat-btn.active {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* Tool Grid Cards in Light Mode */
+[data-theme="light"] .tool-card,
+html[data-theme="light"] .tool-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] .tool-card:hover,
+html[data-theme="light"] .tool-card:hover {
+  background: #ffffff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 0 18px -2px rgba(37, 99, 235, 0.15) !important;
+}
+
+[data-theme="light"] .tool-card-title,
+html[data-theme="light"] .tool-card-title {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .tool-card-desc,
+html[data-theme="light"] .tool-card-desc {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .tool-card-footer,
+html[data-theme="light"] .tool-card-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .tool-card-output,
+html[data-theme="light"] .tool-card-output {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .btn-open-tool,
+html[data-theme="light"] .btn-open-tool {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+[data-theme="light"] .tool-card:hover .btn-open-tool,
+html[data-theme="light"] .tool-card:hover .btn-open-tool {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* Tool Badges in Light Mode */
+[data-theme="light"] .badge-blue, html[data-theme="light"] .badge-blue { background: #eff6ff !important; color: #1d4ed8 !important; border: 1px solid #bfdbfe !important; }
+[data-theme="light"] .badge-emerald, html[data-theme="light"] .badge-emerald { background: #ecfdf5 !important; color: #047857 !important; border: 1px solid #a7f3d0 !important; }
+[data-theme="light"] .badge-violet, html[data-theme="light"] .badge-violet { background: #f5f3ff !important; color: #6d28d9 !important; border: 1px solid #ddd6fe !important; }
+[data-theme="light"] .badge-amber, html[data-theme="light"] .badge-amber { background: #fffbeb !important; color: #b45309 !important; border: 1px solid #fde68a !important; }
+[data-theme="light"] .badge-indigo, html[data-theme="light"] .badge-indigo { background: #eef2ff !important; color: #4338ca !important; border: 1px solid #c7d2fe !important; }
+[data-theme="light"] .badge-cyan, html[data-theme="light"] .badge-cyan { background: #ecfeff !important; color: #0e7490 !important; border: 1px solid #a5f3fc !important; }
+
+/* Tool Icons in Light Mode */
+[data-theme="light"] .icon-blue, html[data-theme="light"] .icon-blue { background: #eff6ff !important; color: #2563eb !important; }
+[data-theme="light"] .icon-emerald, html[data-theme="light"] .icon-emerald { background: #ecfdf5 !important; color: #059669 !important; }
+[data-theme="light"] .icon-violet, html[data-theme="light"] .icon-violet { background: #f5f3ff !important; color: #7c3aed !important; }
+[data-theme="light"] .icon-amber, html[data-theme="light"] .icon-amber { background: #fffbeb !important; color: #d97706 !important; }
+[data-theme="light"] .icon-indigo, html[data-theme="light"] .icon-indigo { background: #eef2ff !important; color: #4f46e5 !important; }
+[data-theme="light"] .icon-cyan, html[data-theme="light"] .icon-cyan { background: #ecfeff !important; color: #0891b2 !important; }
 
 /* ==========================================================================
    EXPLICIT DARK MODE ENFORCEMENT & BULLETPROOF RESTORATION
    ========================================================================== */
-[data-theme="dark"], :root:not([data-theme="light"]) {
+[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
   --bg-main: #0b0f19;
   --bg-card: #131b2e;
   --bg-card-hover: #19233c;

@@ -490,6 +490,9 @@ class AppController {
   setTheme(theme, notify = true) {
     const validTheme = theme === "light" ? "light" : "dark";
     document.documentElement.setAttribute("data-theme", validTheme);
+    if (document.body) {
+      document.body.setAttribute("data-theme", validTheme);
+    }
     try {
       localStorage.setItem("APP_THEME", validTheme);
     } catch (e) {}
@@ -507,6 +510,12 @@ class AppController {
   }
 
   toggleTheme() {
+    const now = Date.now();
+    if (this._lastThemeToggle && now - this._lastThemeToggle < 250) {
+      return;
+    }
+    this._lastThemeToggle = now;
+
     const current = this.getCurrentTheme();
     const next = current === "light" ? "dark" : "light";
     this.setTheme(next, true);
