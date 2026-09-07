@@ -173,12 +173,12 @@
     },
 
     /**
-     * Danh sách 30 sheet thực tế theo ngày trong Google Trang Tính P.CNTT (kèm GID chuẩn)
+     * Danh sách các sheet thực tế theo ngày trong Google Trang Tính P.CNTT (sắp xếp từ mới nhất tới cũ nhất)
      */
     AVAILABLE_SHEETS: [
-      { name: "4.9", gid: "229402778", label: "4.9 (Hôm nay / Hiện tại)" },
-      { name: "5-7.9", gid: "1974215368", label: "5-7.9" },
-      { name: "6.9", gid: "1419054481", label: "6.9" },
+      { name: "8.9", gid: "1419054481", label: "8.9" },
+      { name: "7.9", gid: "1974215368", label: "7.9 (Hôm nay / Hiện tại)" },
+      { name: "4.9", gid: "229402778", label: "4.9" },
       { name: "3.9", gid: "36166584", label: "3.9" },
       { name: "31.8-1.9-2.9", gid: "222465239", label: "31.8-1.9-2.9 (Lễ 2/9)" },
       { name: "28-29-30.8", gid: "524042424", label: "28-29-30.8" },
@@ -209,6 +209,56 @@
     ],
 
     /**
+     * Tự động quét thời gian thực toàn bộ danh sách Sheet và GID từ Google Trang Tính
+     * Bóc tách trực tiếp từ cấu trúc bootstrap của Google Spreadsheet
+     */
+    async fetchLiveGoogleSheetsList(sheetId = null) {
+      const id = sheetId || this.getConfig().sheetId || DEFAULT_SHEET_ID;
+      try {
+        const editUrl = `https://docs.google.com/spreadsheets/d/${id}/edit`;
+        const resp = await fetch(editUrl);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const html = await resp.text();
+
+        // Bóc tách GID và tên Sheet từ dữ liệu nhúng [27,0,"1974215368",[{"1":[[0,0,"7.9"]
+        const reJson = /\[\d+,\s*0,\s*\\?"(\d+)\\?",\s*\[\{\\?"1\\?":\[\[0,\s*0,\s*\\?"([^\\"]+)\\?"\]/g;
+        let m;
+        const liveSheets = [];
+        while ((m = reJson.exec(html)) !== null) {
+          const gid = m[1];
+          const name = m[2].trim();
+          if (name && !liveSheets.some(s => s.name === name)) {
+            liveSheets.push({ gid, name, label: name });
+          }
+        }
+
+        // Fallback sang DOM captions nếu regex json không khớp
+        if (liveSheets.length === 0) {
+          const reDom = /docs-sheet-tab-caption">([^<]+)<\/div>/g;
+          while ((m = reDom.exec(html)) !== null) {
+            const name = m[1].trim();
+            if (name && !liveSheets.some(s => s.name === name)) {
+              liveSheets.push({ gid: this.getSheetGid(name) || null, name, label: name });
+            }
+          }
+        }
+
+        if (liveSheets.length > 0) {
+          // Đảo ngược thứ tự để sheet ngày mới nhất (ví dụ 8.9, 7.9) luôn ở trên cùng
+          const sorted = [...liveSheets].reverse();
+          this.AVAILABLE_SHEETS = sorted;
+          try {
+            localStorage.setItem("CNTT_REPORT_LIVE_SHEETS", JSON.stringify(sorted));
+          } catch (e) {}
+          return sorted;
+        }
+      } catch (err) {
+        console.warn("fetchLiveGoogleSheetsList error, using cache/fallback:", err);
+      }
+      return this.AVAILABLE_SHEETS;
+    },
+
+    /**
      * Tra cứu GID chuẩn của sheet từ tên sheet
      */
     getSheetGid(sheetName) {
@@ -223,16 +273,43 @@
     },
 
     /**
-     * Tự động xác định tên sheet phù hợp với ngày hiện tại
+     * Tự động xác định tên sheet phù hợp với ngày hiện tại (ví dụ: 7.9)
      */
     getTodaySheetName() {
       const now = new Date();
       const d = now.getDate();
       const m = now.getMonth() + 1;
-      const single = `${d}.${m}`;
-      const exact = this.AVAILABLE_SHEETS.find(s => (typeof s === "object" ? s.name : s) === single);
-      if (exact) return (typeof exact === "object" ? exact.name : exact);
-      return "4.9";
+      const targetSingle = `${d}.${m}`;
+
+      // 1. Khớp chính xác ngày.tháng hiện tại (ví dụ: 7.9)
+      const exact = this.AVAILABLE_SHEETS.find(s => {
+        const name = (typeof s === "object" ? s.name : s).trim();
+        return name === targetSingle;
+      });
+      if (exact) return typeof exact === "object" ? exact.name : exact;
+
+      // 2. Khớp theo dải ngày (ví dụ 5-7.9 hoặc 7-8-9.8)
+      const inRange = this.AVAILABLE_SHEETS.find(s => {
+        const name = (typeof s === "object" ? s.name : s).trim();
+        if (name.includes(`-${d}.`) || name.startsWith(`${d}-`) || name.includes(`-${d}-`)) return true;
+        const match = name.match(/(\d+)[^\d]+(\d+)\.(\d+)/);
+        if (match && parseInt(match[3], 10) === m) {
+          const start = parseInt(match[1], 10);
+          const end = parseInt(match[2], 10);
+          if (d >= start && d <= end) return true;
+        }
+        return false;
+      });
+      if (inRange) return typeof inRange === "object" ? inRange.name : inRange;
+
+      // 3. Fallback: Lấy sheet có định dạng ngày gần nhất
+      const firstDateSheet = this.AVAILABLE_SHEETS.find(s => {
+        const name = typeof s === "object" ? s.name : s;
+        return /\d+\.\d+/.test(name);
+      });
+      if (firstDateSheet) return typeof firstDateSheet === "object" ? firstDateSheet.name : firstDateSheet;
+
+      return "7.9";
     },
 
     /**
@@ -291,7 +368,7 @@
       } else if (targetSheet) {
         sheetQuery = `&sheet=${encodeURIComponent(targetSheet)}`;
       }
-      const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json${sheetQuery}`;
+      const gvizUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:json${sheetQuery}&_t=${Date.now()}`;
 
       try {
         const resp = await fetch(gvizUrl);
@@ -320,7 +397,7 @@
         console.warn("GViz API failed, fallback to CSV export", gvizErr);
         // Fallback sang CSV endpoint
         const csvQuery = targetGid ? `&gid=${targetGid}` : (targetSheet ? `&sheet=${encodeURIComponent(targetSheet)}` : "");
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${csvQuery}`;
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${csvQuery}&_t=${Date.now()}`;
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error(`Không thể kết nối Google Sheet: ${resp.statusText}`);
         const csvText = await resp.text();
@@ -925,6 +1002,17 @@
       return true;
     }
   };
+
+  // Khởi tạo danh sách sheet đã lưu trong cache nếu có
+  try {
+    const cachedLiveSheets = localStorage.getItem("CNTT_REPORT_LIVE_SHEETS");
+    if (cachedLiveSheets) {
+      const parsed = JSON.parse(cachedLiveSheets);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        ToolCnttReport.AVAILABLE_SHEETS = parsed;
+      }
+    }
+  } catch (e) {}
 
   // Expose ra toàn cục
   window.ToolCnttReport = ToolCnttReport;

@@ -8168,7 +8168,8 @@ p {
     }
 
     if (this.cnttTargetSheetBadge) {
-      this.cnttTargetSheetBadge.textContent = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
+      const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
+      this.cnttTargetSheetBadge.textContent = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : fallbackSheet);
     }
   }
 
@@ -8251,16 +8252,18 @@ p {
     this.btnSaveCnttSheetConfig = document.getElementById("btnSaveCnttSheetConfig");
     this.txtCnttSheetConnectionStatus = document.getElementById("txtCnttSheetConnectionStatus");
 
-    // Trạng thái ban đầu: Đảm bảo chọn sheet chuẩn ngày hôm nay (4.9)
-    if (this.selectTargetSheetForEntry) {
-      if (!this.selectTargetSheetForEntry.value || this.selectTargetSheetForEntry.value.startsWith("Tháng") || this.selectTargetSheetForEntry.value === "Sheet1") {
-        this.selectTargetSheetForEntry.value = "4.9";
-      }
-      this.cnttSelectedSheet = this.selectTargetSheetForEntry.value || "4.9";
-    } else {
-      this.cnttSelectedSheet = "4.9";
+    // Trạng thái ban đầu: Tự động khởi tạo danh sách Sheet và chọn Sheet ngày hôm nay (ví dụ: 7.9)
+    const todaySheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
+    this.populateCnttSheetDropdown(todaySheet);
+    this.cnttSelectedSheet = (this.selectTargetSheetForEntry && this.selectTargetSheetForEntry.value) ? this.selectTargetSheetForEntry.value : todaySheet;
+    this.cnttNextEmptyRow = { row: 45, rangeStr: "B45:AK45", isFull: false };
+
+    // Tự động quét cập nhật danh sách sheet nền từ Google Sheets
+    if (window.ToolCnttReport) {
+      ToolCnttReport.fetchLiveGoogleSheetsList().then(() => {
+        this.populateCnttSheetDropdown(this.cnttSelectedSheet);
+      }).catch(() => {});
     }
-    this.cnttNextEmptyRow = { row: 17, rangeStr: "B17:AK17", isFull: false };
 
     // 1. Khởi tạo Combobox tìm kiếm & chọn Khoa/Phòng (47 khoa chuẩn)
     if (window.ToolCnttReport) {
@@ -8475,7 +8478,35 @@ p {
   }
 
   /**
-   * Xử lý khi người dùng chọn đổi Sheet (ví dụ: 4.9, 3.9, 5-7.9... hoặc nhập sheet mới)
+   * Điền động danh sách các Sheet thực tế vào dropdown chọn sheet
+   * Tự động nhận diện và gắn nhãn (Hôm nay / Hiện tại) cho sheet ngày hôm nay
+   */
+  populateCnttSheetDropdown(selectedSheetName = null) {
+    if (!this.selectTargetSheetForEntry || !window.ToolCnttReport) return;
+    const sheets = ToolCnttReport.AVAILABLE_SHEETS || [];
+    const todayName = ToolCnttReport.getTodaySheetName();
+    const activeSheet = selectedSheetName || this.cnttSelectedSheet || todayName;
+
+    let html = "";
+    sheets.forEach(s => {
+      const name = typeof s === "object" ? s.name : s;
+      const isToday = name === todayName;
+      const isSelected = name === activeSheet;
+      const labelText = isToday ? `${name} (Hôm nay / Hiện tại)` : name;
+      html += `<option value="${name}" ${isSelected ? "selected" : ""}>${labelText}</option>`;
+    });
+    html += `<option value="__custom__">➕ Nhập sheet khác...</option>`;
+
+    this.selectTargetSheetForEntry.innerHTML = html;
+    this.selectTargetSheetForEntry.value = activeSheet;
+    this.cnttSelectedSheet = activeSheet;
+    if (this.cnttTargetSheetBadge) {
+      this.cnttTargetSheetBadge.textContent = activeSheet;
+    }
+  }
+
+  /**
+   * Xử lý khi người dùng chọn đổi Sheet (ví dụ: 7.9, 8.9, 4.9... hoặc nhập sheet mới)
    */
   handleTargetSheetChange(newSheet) {
     if (newSheet === "__custom__") {
@@ -8501,7 +8532,8 @@ p {
         newSheet = cleanName;
       } else {
         if (this.selectTargetSheetForEntry) {
-          this.selectTargetSheetForEntry.value = this.cnttSelectedSheet || "4.9";
+          const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
+          this.selectTargetSheetForEntry.value = this.cnttSelectedSheet || fallbackSheet;
         }
         return;
       }
@@ -8575,9 +8607,18 @@ p {
   async fetchGoogleSheetDataForCntt(isSilent = false, targetSheet = null) {
     if (!window.ToolCnttReport) return;
     this.setButtonLoading(this.btnFetchGoogleSheet, true, "Đang đồng bộ...");
-    this.showTopProgress(35);
+    this.showTopProgress(20);
 
-    const sheetToFetch = targetSheet || this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
+    // 1. Quét cập nhật danh sách sheet thời gian thực từ Google Trang Tính
+    try {
+      await ToolCnttReport.fetchLiveGoogleSheetsList();
+      this.populateCnttSheetDropdown(targetSheet || this.cnttSelectedSheet);
+    } catch (sheetScanErr) {
+      console.warn("Lỗi quét danh sách sheet:", sheetScanErr);
+    }
+
+    const todaySheet = ToolCnttReport.getTodaySheetName();
+    const sheetToFetch = targetSheet || this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : todaySheet);
     this.cnttSelectedSheet = sheetToFetch;
 
     if (this.selectTargetSheetForEntry && this.selectTargetSheetForEntry.value !== sheetToFetch) {
@@ -8626,7 +8667,7 @@ p {
       this.populateCnttStaffDropdowns();
 
       if (!isSilent) {
-        this.showToast(`⚡ Đã đồng bộ thành công ${records.length} ca công tác từ Sheet [${sheetToFetch}]! Dòng trống tiếp theo: ${this.cnttNextEmptyRow.rangeStr}`, "success");
+        this.showToast(`⚡ Đã đồng bộ thời gian thực thành công ${records.length} ca công tác từ Sheet [${sheetToFetch}]! Dòng trống tiếp theo: ${this.cnttNextEmptyRow.rangeStr}`, "success", 4000);
       }
     } catch (err) {
       console.error("fetchGoogleSheetData error:", err);
@@ -9064,8 +9105,9 @@ p {
       ? window.ToolDutyRoster.getCurrentSession()
       : null;
 
-    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
-    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 17;
+    const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
+    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : fallbackSheet);
+    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 45;
     const targetRange = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.rangeStr : `B${targetRow}:AK${targetRow}`;
 
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
@@ -9163,8 +9205,9 @@ p {
       hwObj[hwTextInput.dataset.key] = hwTextInput.value.trim();
     }
 
-    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : "4.9");
-    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 17;
+    const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
+    const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : fallbackSheet);
+    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 45;
 
     const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
     const tsv = ToolCnttReport.buildTsvRow({
