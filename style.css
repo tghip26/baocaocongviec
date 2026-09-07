@@ -3191,6 +3191,27 @@ mark.highlight-term {
   justify-content: space-between;
 }
 
+.flex-row {
+  display: flex !important;
+  flex-direction: row;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.gap-12 {
+  gap: 12px;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
 /* Dropzone Styles */
 .dropzone {
   border: 2px dashed rgba(59, 130, 246, 0.4);
@@ -16228,19 +16249,28 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   gap: 10px;
   flex-wrap: wrap;
 }
 
+.cntt-section-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
 .cntt-section-title {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #38bdf8;
-  margin: 0 0 10px 0;
-  display: flex;
+  margin: 0;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .cntt-section-badge {
