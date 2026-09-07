@@ -5986,10 +5986,10 @@ p {
 
     if (this.dutyStaffList.length === 0) {
       this.dutyStaffListContainer.innerHTML = `
-        <div style="text-align: center; padding: 24px 10px; color: #94a3b8; font-size: 0.78rem; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(148, 163, 184, 0.2); border-radius: 8px;">
+        <div class="duty-empty-staff-box" style="text-align: center; padding: 24px 10px; font-size: 0.78rem; border-radius: 8px;">
           <div style="font-size: 1.6rem; margin-bottom: 6px;">👥</div>
-          <strong style="color:#f1f5f9; display:block; margin-bottom: 4px;">Chưa có cán bộ trong danh sách</strong>
-          <p style="margin: 0; font-size: 0.72rem; color: #64748b;">Nhấn nút <strong>"➕ Thêm Cán Bộ"</strong> ở trên để bắt đầu thêm nhân sự.</p>
+          <strong class="empty-staff-title" style="display:block; margin-bottom: 4px;">Chưa có cán bộ trong danh sách</strong>
+          <p class="empty-staff-desc" style="margin: 0; font-size: 0.72rem;">Nhấn nút <strong>"➕ Thêm Cán Bộ"</strong> ở trên để bắt đầu thêm nhân sự.</p>
         </div>
       `;
       this.populateStaffFilterDropdown();
@@ -6435,15 +6435,15 @@ p {
         const staffObj = this.dutyStaffList.find(s => s.id === st.id);
         const daysListStr = st.days && st.days.length > 0 ? st.days.join(", ") : "Chưa có";
         breakdownHtml += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:6px; background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:8px;">
+          <div class="duty-breakdown-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:6px; border-radius:8px;">
             <div>
-              <strong style="color:#f1f5f9; font-size:0.83rem;">${st.name}</strong>
-              <span style="font-size:0.7rem; color:#94a3b8; display:block; margin-top:2px;">${staffObj ? staffObj.role : 'Kỹ sư'} &bull; Các ngày trực: <span style="color:#38bdf8;">${daysListStr}</span></span>
+              <strong class="duty-breakdown-name" style="font-size:0.83rem;">${st.name}</strong>
+              <span class="duty-breakdown-meta" style="font-size:0.7rem; display:block; margin-top:2px;">${staffObj ? staffObj.role : 'Kỹ sư'} &bull; Các ngày trực: <span class="duty-days-tag">${daysListStr}</span></span>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
-              <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem;">${st.total} ca</span>
-              <span style="background:rgba(52,211,153,0.12); color:#34d399; padding:3px 6px; border-radius:6px; font-size:0.7rem;">${st.weekday} ngày thường</span>
-              <span style="background:rgba(245,158,11,0.12); color:#fbbf24; padding:3px 6px; border-radius:6px; font-size:0.7rem;">${st.weekend} T7/CN</span>
+              <span class="duty-stat-pill pill-total">${st.total} ca</span>
+              <span class="duty-stat-pill pill-weekday">${st.weekday} ngày thường</span>
+              <span class="duty-stat-pill pill-weekend">${st.weekend} T7/CN</span>
             </div>
           </div>
         `;
@@ -6750,13 +6750,13 @@ p {
       this.swapShiftInfoText.innerHTML = `
         <div style="font-size:0.92rem; margin-bottom:5px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
           <span>📅 <strong>Ngày ${day < 10 ? '0' + day : day}/${month < 10 ? '0' + month : month}/${year} (${dayObj ? dayObj.dayName : ''})</strong></span>
-          <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; font-weight:600; background:${dayObj && dayObj.isWeekend ? 'rgba(245,158,11,0.2);color:#fbbf24;' : 'rgba(56,189,248,0.2);color:#38bdf8;'}">${dayObj && dayObj.isWeekend ? 'Cuối tuần (T7/CN)' : 'Ngày thường'}</span>
+          <span style="font-size:0.72rem; padding:2px 8px; border-radius:12px; font-weight:600; background:${dayObj && dayObj.isWeekend ? 'rgba(245,158,11,0.2);color:#d97706;' : 'rgba(2,132,199,0.15);color:#0284c7;'}">${dayObj && dayObj.isWeekend ? 'Cuối tuần (T7/CN)' : 'Ngày thường'}</span>
         </div>
-        <div style="font-size:0.83rem; color:#cbd5e1; background:rgba(15,23,42,0.4); padding:6px 10px; border-radius:6px;">
+        <div class="duty-swap-current-info" style="font-size:0.83rem; padding:6px 10px; border-radius:6px;">
           👤 Hiện tại: 
           ${isOff 
-            ? '<strong style="color:#f87171;">💤 Nghỉ trực (Trống ca)</strong>' 
-            : `<strong style="color:#38bdf8;">${currentAssigned && currentAssigned.name ? currentAssigned.name : 'Chưa phân công'}</strong> ${currentAssigned && currentAssigned.phone ? `<span style="color:#34d399;font-size:0.75rem;">(📞 ${currentAssigned.phone})</span>` : ''}`
+            ? '<strong style="color:#ef4444;">💤 Nghỉ trực (Trống ca)</strong>' 
+            : `<strong style="color:#0284c7;">${currentAssigned && currentAssigned.name ? currentAssigned.name : 'Chưa phân công'}</strong> ${currentAssigned && currentAssigned.phone ? `<span style="color:#059669;font-size:0.75rem;">(📞 ${currentAssigned.phone})</span>` : ''}`
           }
         </div>
       `;

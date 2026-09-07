@@ -65,8 +65,8 @@
   </script>
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.6.0" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.6.0" />
+  <link rel="preload" href="style.css?v=3.7.0" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.7.0" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1449,7 +1449,7 @@
               </div>
             </div>
 
-            <div class="modal-body" style="padding: 16px 20px; background: #0c1222;">
+            <div class="modal-body word-ocr-modal-body" style="padding: 16px 20px;">
               <!-- Container 1: Trang Giấy Word A4 Siêu Đẹp (Times New Roman) -->
               <div class="word-sheet-wrapper" id="wordSheetWrapper">
                 <div class="word-sheet-page" id="wordSheetPage" contenteditable="true" spellcheck="false" title="Nhấp chuột vào đây để chỉnh sửa văn bản trực tiếp như Word">
@@ -3121,30 +3121,30 @@
       </div>
       <div class="modal-body">
         <!-- Ca trực sắp tới banner -->
-        <div class="personal-next-shift-box" id="personalNextShiftBox" style="margin-bottom: 14px; background: linear-gradient(135deg, rgba(2, 132, 199, 0.15) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 12px 16px;">
-          <span class="next-shift-lbl" style="color: #fbbf24; font-weight: 700; font-size: 0.8rem; display: block; margin-bottom: 4px;">⏰ Ca trực sắp tới:</span>
-          <div class="next-shift-val" id="personalNextShiftText" style="color: #f1f5f9; font-size: 0.85rem; font-weight: 600;">Đang tính toán...</div>
+        <div class="personal-next-shift-box" id="personalNextShiftBox" style="margin-bottom: 14px; border-radius: 12px; padding: 12px 16px;">
+          <span class="next-shift-lbl" style="font-weight: 700; font-size: 0.8rem; display: block; margin-bottom: 4px;">⏰ Ca trực sắp tới:</span>
+          <div class="next-shift-val" id="personalNextShiftText" style="font-size: 0.85rem; font-weight: 600;">Đang tính toán...</div>
         </div>
 
         <!-- 3 Thẻ chỉ số tổng hợp -->
         <div class="personal-stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
-          <div class="personal-stat-item" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 12px 10px; text-align: center;">
-            <span class="p-stat-val" id="personalTotalShifts" style="font-size: 1.5rem; font-weight: 800; color: #38bdf8; display: block;">0</span>
-            <span class="p-stat-lbl" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Tổng ca</span>
+          <div class="personal-stat-item" style="border-radius: 10px; padding: 12px 10px; text-align: center;">
+            <span class="p-stat-val" id="personalTotalShifts" style="font-size: 1.5rem; font-weight: 800; color: #0284c7; display: block;">0</span>
+            <span class="p-stat-lbl" style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase;">Tổng ca</span>
           </div>
-          <div class="personal-stat-item" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 12px 10px; text-align: center;">
-            <span class="p-stat-val" id="personalWeekdayShifts" style="font-size: 1.5rem; font-weight: 800; color: #34d399; display: block;">0</span>
-            <span class="p-stat-lbl" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Ngày thường</span>
+          <div class="personal-stat-item" style="border-radius: 10px; padding: 12px 10px; text-align: center;">
+            <span class="p-stat-val" id="personalWeekdayShifts" style="font-size: 1.5rem; font-weight: 800; color: #059669; display: block;">0</span>
+            <span class="p-stat-lbl" style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase;">Ngày thường</span>
           </div>
-          <div class="personal-stat-item weekend" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 12px 10px; text-align: center;">
-            <span class="p-stat-val" id="personalWeekendShifts" style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; display: block;">0</span>
-            <span class="p-stat-lbl" style="font-size: 0.72rem; color: #fbbf24; font-weight: 600; text-transform: uppercase;">Thứ 7 / CN</span>
+          <div class="personal-stat-item weekend" style="border-radius: 10px; padding: 12px 10px; text-align: center;">
+            <span class="p-stat-val" id="personalWeekendShifts" style="font-size: 1.5rem; font-weight: 800; color: #d97706; display: block;">0</span>
+            <span class="p-stat-lbl" style="font-size: 0.72rem; font-weight: 600; text-transform: uppercase;">Thứ 7 / CN</span>
           </div>
         </div>
 
         <!-- Bảng chi tiết phân bổ ca trực theo cán bộ -->
         <div style="margin-top: 10px;">
-          <h4 style="font-size: 0.84rem; font-weight: 700; color: #e2e8f0; margin-bottom: 8px;">📋 Bảng Phân Bổ Ca Trực Từng Cán Bộ</h4>
+          <h4 class="duty-breakdown-heading" style="font-size: 0.84rem; font-weight: 700; margin-bottom: 8px;">📋 Bảng Phân Bổ Ca Trực Từng Cán Bộ</h4>
           <div class="duty-stats-breakdown-container" id="dutyStatsBreakdownContainer" style="max-height: 220px; overflow-y: auto;"></div>
         </div>
       </div>
@@ -3402,12 +3402,12 @@
       </div>
       <div class="modal-body">
         <!-- Lời dẫn & Banner -->
-        <div class="calendar-sync-intro" style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px;">
+        <div class="calendar-sync-intro" style="border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px;">
           <div style="display: flex; gap: 12px; align-items: flex-start;">
             <span style="font-size: 1.5rem; line-height: 1;">🔔</span>
             <div>
-              <div style="font-size: 0.9rem; font-weight: 700; color: #f8fafc; margin-bottom: 3px;">Nhắc Lịch Tự Động • Không Bao Giờ Trễ Ca Trực</div>
-              <p style="font-size: 0.78rem; color: #94a3b8; line-height: 1.45; margin: 0;">
+              <div class="calendar-sync-intro-title" style="font-size: 0.9rem; font-weight: 700; margin-bottom: 3px;">Nhắc Lịch Tự Động • Không Bao Giờ Trễ Ca Trực</div>
+              <p class="calendar-sync-intro-desc" style="font-size: 0.78rem; line-height: 1.45; margin: 0;">
                 Tích hợp ca trực vào ứng dụng Lịch máy (iPhone/iPad/Android) hoặc Google Calendar. Thiết bị sẽ tự động rung và đổ chuông thông báo nhắc nhở trước 1 ngày và trước 2 giờ khi vào ca.
               </p>
             </div>
@@ -3417,8 +3417,8 @@
         <!-- Chọn đối tượng cán bộ & Tháng -->
         <div class="config-section" style="margin-bottom: 14px;">
           <div class="flex-row flex-between align-center" style="margin-bottom: 8px;">
-            <label class="setting-lbl" style="font-weight: 700; color: #e2e8f0; font-size: 0.85rem;">👤 Chọn Cán Bộ Nhận Lịch Trực:</label>
-            <span id="txtCalendarSyncMonthYear" style="font-size: 0.82rem; color: #38bdf8; font-weight: 700;">Tháng 09/2026</span>
+            <label class="setting-lbl" style="font-weight: 700; font-size: 0.85rem;">👤 Chọn Cán Bộ Nhận Lịch Trực:</label>
+            <span id="txtCalendarSyncMonthYear" style="font-size: 0.82rem; color: #0284c7; font-weight: 700;">Tháng 09/2026</span>
           </div>
           <select id="selectCalendarSyncStaff" class="w2h-text-input" style="width: 100%; font-size: 0.86rem; padding: 7px 12px;">
             <option value="all">-- Toàn Thể Cán Bộ Phòng CNTT (Tất cả ca trong tháng) --</option>
@@ -3426,8 +3426,8 @@
         </div>
 
         <!-- Cài đặt Báo Thức / Nhắc Nhở -->
-        <div class="config-section" style="margin-bottom: 14px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px 14px;">
-          <label class="setting-lbl" style="font-weight: 700; color: #cbd5e1; font-size: 0.82rem; margin-bottom: 8px; display: block;">⏰ Chuông Báo Thức & Thời Điểm Nhắc Nhở:</label>
+        <div class="config-section calendar-remind-box" style="margin-bottom: 14px; border-radius: 8px; padding: 12px 14px;">
+          <label class="setting-lbl" style="font-weight: 700; font-size: 0.82rem; margin-bottom: 8px; display: block;">⏰ Chuông Báo Thức & Thời Điểm Nhắc Nhở:</label>
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
             <label class="setting-checkbox-lbl" style="font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
               <input type="checkbox" id="chkRemind1Day" checked />
@@ -3447,10 +3447,10 @@
         <!-- Danh sách ca trực được phát hiện -->
         <div class="config-section" style="margin-bottom: 16px;">
           <div class="flex-row flex-between align-center" style="margin-bottom: 6px;">
-            <label class="setting-lbl" style="font-weight: 700; color: #e2e8f0; font-size: 0.85rem;">📋 Danh Sách Ca Trực Sẽ Đồng Bộ:</label>
-            <span id="txtCalendarSyncShiftCount" style="font-size: 0.8rem; color: #10b981; font-weight: 700;">0 ca trực</span>
+            <label class="setting-lbl" style="font-weight: 700; font-size: 0.85rem;">📋 Danh Sách Ca Trực Sẽ Đồng Bộ:</label>
+            <span id="txtCalendarSyncShiftCount" style="font-size: 0.8rem; color: #059669; font-weight: 700;">0 ca trực</span>
           </div>
-          <div id="calendarSyncShiftsList" style="max-height: 155px; overflow-y: auto; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 6px 10px;">
+          <div id="calendarSyncShiftsList" class="calendar-sync-shifts-list" style="max-height: 155px; overflow-y: auto; border-radius: 8px; padding: 6px 10px;">
             <!-- Rendered by JS -->
           </div>
         </div>
@@ -3605,7 +3605,7 @@
         <p class="modal-instruction" style="color: #cbd5e1; font-size: 0.82rem; margin-bottom: 12px;">
           Hệ thống phát hiện trong phiên ngoại tuyến (Offline) vừa qua, bạn đã thực hiện các chỉnh sửa/cập nhật dữ liệu. Bạn có muốn đồng bộ toàn bộ dữ liệu này lên hệ thống để lưu trữ an toàn không?
         </p>
-        <div class="sync-changes-preview" id="syncChangesPreview" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px; padding: 10px 14px; font-size: 0.76rem; color: #94a3b8; max-height: 120px; overflow-y: auto;">
+        <div class="sync-changes-preview" id="syncChangesPreview" style="border-radius: 8px; padding: 10px 14px; font-size: 0.76rem; max-height: 120px; overflow-y: auto;">
           Đang chuẩn bị dữ liệu đồng bộ...
         </div>
       </div>
@@ -3740,17 +3740,17 @@
   <script defer src="js/tools-registry.js?v=3.3.1"></script>
   <script defer src="js/tool-schema-lookup.js?v=3.3.1"></script>
   <script defer src="js/tool-sql-builder.js?v=3.3.1"></script>
-  <script defer src="js/tool-duty-roster.js?v=3.6.0"></script>
-  <script defer src="js/tool-bhyt-xml.js?v=3.4.0"></script>
-  <script defer src="js/tool-word-to-html.js?v=3.4.0"></script>
-  <script defer src="js/tool-word-page-remover.js?v=3.4.0"></script>
-  <script defer src="js/tool-pdf-to-image.js?v=3.4.0"></script>
-  <script defer src="js/tool-giamdinh.js?v=3.4.0"></script>
-  <script defer src="js/tool-cntt-report.js?v=3.6.0"></script>
-  <script defer src="js/tool-vgca-doichieu.js?v=3.4.0"></script>
-  <script defer src="js/tool-vgca-cks.js?v=3.4.0"></script>
-  <script defer src="js/tool-vgca-email.js?v=3.4.0"></script>
-  <script defer src="js/notification-manager.js?v=3.4.0"></script>
-  <script defer src="js/app.js?v=3.6.0"></script>
+  <script defer src="js/tool-duty-roster.js?v=3.7.0"></script>
+  <script defer src="js/tool-bhyt-xml.js?v=3.7.0"></script>
+  <script defer src="js/tool-word-to-html.js?v=3.7.0"></script>
+  <script defer src="js/tool-word-page-remover.js?v=3.7.0"></script>
+  <script defer src="js/tool-pdf-to-image.js?v=3.7.0"></script>
+  <script defer src="js/tool-giamdinh.js?v=3.7.0"></script>
+  <script defer src="js/tool-cntt-report.js?v=3.7.0"></script>
+  <script defer src="js/tool-vgca-doichieu.js?v=3.7.0"></script>
+  <script defer src="js/tool-vgca-cks.js?v=3.7.0"></script>
+  <script defer src="js/tool-vgca-email.js?v=3.7.0"></script>
+  <script defer src="js/notification-manager.js?v=3.7.0"></script>
+  <script defer src="js/app.js?v=3.7.0"></script>
 </body>
 </html>
