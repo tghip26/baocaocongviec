@@ -16976,12 +16976,14 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 .stepper-counter {
   display: flex;
   align-items: center;
-  gap: 3px;
+  justify-content: space-between;
+  gap: 2px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 7px;
-  padding: 2px 3px;
+  padding: 2px 4px;
   flex-shrink: 0;
+  min-width: 96px;
   transition: all 0.2s ease;
 }
 
@@ -17010,6 +17012,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   cursor: pointer;
   transition: all 0.15s ease;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .btn-step-count:hover {
@@ -17024,16 +17027,20 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 }
 
 .step-count-input {
-  width: 32px;
+  min-width: 36px;
+  max-width: 60px;
+  width: 44px;
   text-align: center;
   background: transparent;
   border: none;
   outline: none;
   color: #94a3b8;
   font-weight: 700;
-  font-size: 0.85rem;
-  padding: 0;
+  font-size: 0.92rem;
+  padding: 0 2px;
   -moz-appearance: textfield;
+  box-sizing: border-box;
+  letter-spacing: 0.5px;
 }
 
 .step-count-input::-webkit-outer-spin-button,
@@ -17044,7 +17051,7 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
 
 .cntt-card-stepper.is-selected .step-count-input {
   color: #38bdf8;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 800;
 }
 
@@ -17057,15 +17064,16 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   width: 100% !important;
   box-sizing: border-box;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   gap: 14px !important;
-  padding: 8px 14px !important;
-  min-height: 50px !important;
+  padding: 10px 14px !important;
+  min-height: 52px !important;
 }
 
 .hw-text-card .stepper-body {
   flex: 0 0 auto !important;
   min-width: auto !important;
+  padding-top: 8px !important;
   cursor: default;
 }
 
@@ -17081,15 +17089,21 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   color: #6ee7b7;
-  font-size: 0.85rem;
-  padding: 7px 14px;
+  font-size: 0.86rem;
+  padding: 8px 14px;
   flex: 1 1 auto !important;
   width: 100% !important;
   min-width: 0 !important;
-  height: 38px;
+  min-height: 40px;
+  max-height: 160px;
+  line-height: 1.45;
   box-sizing: border-box;
   outline: none;
-  transition: all 0.2s ease;
+  resize: vertical;
+  word-break: break-word;
+  white-space: pre-wrap;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .step-text-input:focus {

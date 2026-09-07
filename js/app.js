@@ -8408,7 +8408,7 @@ p {
                 <div class="stepper-body">
                   <span class="stepper-name" style="font-weight:700; color:#34d399;">🛠️ ${cat.label}:</span>
                 </div>
-                <input type="text" class="step-text-input" name="hw_issue_text" data-key="${cat.key}" data-label="${cat.label}" placeholder="Nhập chi tiết sửa chữa phần cứng, thiết bị hoặc công việc khác..." />
+                <textarea class="step-text-input" name="hw_issue_text" data-key="${cat.key}" data-label="${cat.label}" rows="1" placeholder="Nhập chi tiết sửa chữa phần cứng, thiết bị hoặc công việc khác..."></textarea>
               </div>
             `;
           }
@@ -8573,8 +8573,11 @@ p {
     if (btnClearHw) {
       btnClearHw.addEventListener("click", () => {
         document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = "0"; });
-        const hwTxt = document.querySelector('input[name="hw_issue_text"]');
-        if (hwTxt) hwTxt.value = "";
+        const hwTxt = document.querySelector('[name="hw_issue_text"]');
+        if (hwTxt) {
+          hwTxt.value = "";
+          hwTxt.style.height = "";
+        }
         document.querySelectorAll('.cntt-card-stepper.hw-stepper').forEach(c => c.classList.remove('is-selected'));
         this.updateCnttFormSummary();
       });
@@ -9362,7 +9365,7 @@ p {
       }
     });
 
-    const hwTextInput = document.querySelector('input[name="hw_issue_text"]');
+    const hwTextInput = document.querySelector('[name="hw_issue_text"]');
     if (hwTextInput && hwTextInput.value.trim()) {
       const val = hwTextInput.value.trim();
       hwIssues.push({ key: hwTextInput.dataset.key, label: hwTextInput.dataset.label, count: 1, value: val });
@@ -9480,7 +9483,7 @@ p {
       const val = parseInt(inp.value, 10) || 0;
       if (val > 0) hwObj[inp.dataset.key] = String(val);
     });
-    const hwTextInput = document.querySelector('input[name="hw_issue_text"]');
+    const hwTextInput = document.querySelector('[name="hw_issue_text"]');
     if (hwTextInput && hwTextInput.value.trim()) {
       hwObj[hwTextInput.dataset.key] = hwTextInput.value.trim();
     }
@@ -9526,8 +9529,11 @@ p {
     document.querySelectorAll('.cntt-card-stepper').forEach(c => c.classList.remove('is-selected'));
     document.querySelectorAll('input[name="sw_issue"]').forEach(inp => { inp.value = "0"; });
     document.querySelectorAll('input[name="hw_issue"]').forEach(inp => { inp.value = "0"; });
-    const hwTxt = document.querySelector('input[name="hw_issue_text"]');
-    if (hwTxt) hwTxt.value = "";
+    const hwTxt = document.querySelector('[name="hw_issue_text"]');
+    if (hwTxt) {
+      hwTxt.value = "";
+      hwTxt.style.height = "";
+    }
     if (this.inputFilterSwCards) {
       this.inputFilterSwCards.value = "";
       this.filterSoftwareCards("");
@@ -9848,11 +9854,14 @@ p {
     if (hwContainer) {
       hwContainer.addEventListener("click", handleStepperClick);
       hwContainer.addEventListener("input", (e) => {
-        if (e.target.classList.contains("step-count-input") || e.target.classList.contains("step-text-input")) {
-          if (e.target.classList.contains("step-count-input")) {
-            let val = parseInt(e.target.value, 10);
-            if (isNaN(val) || val < 0) e.target.value = 0;
-          }
+        if (e.target.classList.contains("step-count-input")) {
+          let val = parseInt(e.target.value, 10);
+          if (isNaN(val) || val < 0) e.target.value = 0;
+          this.updateCnttFormSummary();
+        } else if (e.target.classList.contains("step-text-input")) {
+          // Tự động co giãn chiều cao để người dùng luôn nhìn thấy toàn bộ nội dung đã nhập
+          e.target.style.height = "auto";
+          e.target.style.height = Math.max(40, Math.min(180, e.target.scrollHeight)) + "px";
           this.updateCnttFormSummary();
         }
       });
@@ -10020,7 +10029,19 @@ p {
       }
     });
 
-    const hwTxt = document.querySelector('input[name="hw_issue_text"]');
+    // Tự động điều chỉnh kích thước ô số lượng theo số chữ số nhập (10, 100...) để không bao giờ bị khuất nội dung
+    document.querySelectorAll('.step-count-input').forEach(inp => {
+      const len = String(inp.value || "").length;
+      if (len >= 3) {
+        inp.style.width = Math.min(68, len * 11 + 18) + "px";
+      } else if (len === 2) {
+        inp.style.width = "46px";
+      } else {
+        inp.style.width = "42px";
+      }
+    });
+
+    const hwTxt = document.querySelector('[name="hw_issue_text"]');
     if (hwTxt) {
       const card = hwTxt.closest('.cntt-card-stepper');
       if (hwTxt.value.trim()) {
