@@ -8357,16 +8357,6 @@ p {
     this.btnReloadSheetIframe = document.getElementById("btnReloadSheetIframe");
     this.cnttGoogleSheetIframe = document.getElementById("cnttGoogleSheetIframe");
 
-    // Modal Config
-    this.modalCnttSheetConfig = document.getElementById("modalCnttSheetConfig");
-    this.btnCloseCnttSheetConfig = document.getElementById("btnCloseCnttSheetConfig");
-    this.btnDismissCnttSheetConfig = document.getElementById("btnDismissCnttSheetConfig");
-    this.inputCustomCnttSheetUrl = document.getElementById("inputCustomCnttSheetUrl");
-    this.btnTestCnttSheetConnection = document.getElementById("btnTestCnttSheetConnection");
-    this.btnResetDefaultCnttSheet = document.getElementById("btnResetDefaultCnttSheet");
-    this.btnSaveCnttSheetConfig = document.getElementById("btnSaveCnttSheetConfig");
-    this.txtCnttSheetConnectionStatus = document.getElementById("txtCnttSheetConnectionStatus");
-
     // Trạng thái ban đầu: Tự động khởi tạo danh sách Sheet và chọn Sheet ngày hôm nay (ví dụ: 7.9)
     const todaySheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
     this.populateCnttSheetDropdown(todaySheet);
@@ -8530,8 +8520,15 @@ p {
     if (this.btnExportCnttExcel) {
       this.btnExportCnttExcel.addEventListener("click", () => this.exportCnttReportExcel());
     }
-    if (this.btnOpenSheetConfigModal) {
-      this.btnOpenSheetConfigModal.addEventListener("click", () => this.openCnttSheetConfigModal());
+    const gearBtn = this.btnOpenSheetConfigModal || document.getElementById("btnOpenSheetConfigModal") || document.querySelector(".btn-cntt-config");
+    if (gearBtn) {
+      gearBtn.addEventListener("click", (e) => {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        this.openCnttSheetConfigModal();
+      });
     }
     if (this.btnCloseCnttSheetConfigModal) {
       this.btnCloseCnttSheetConfigModal.addEventListener("click", () => this.closeCnttSheetConfigModal());
@@ -8718,23 +8715,6 @@ p {
       });
     }
 
-    // Modal Config Events
-    if (this.btnCloseCnttSheetConfig) {
-      this.btnCloseCnttSheetConfig.addEventListener("click", () => this.hideModal(this.modalCnttSheetConfig));
-    }
-    if (this.btnDismissCnttSheetConfig) {
-      this.btnDismissCnttSheetConfig.addEventListener("click", () => this.hideModal(this.modalCnttSheetConfig));
-    }
-    if (this.btnTestCnttSheetConnection) {
-      this.btnTestCnttSheetConnection.addEventListener("click", () => this.testCnttSheetConnection());
-    }
-    if (this.btnResetDefaultCnttSheet) {
-      this.btnResetDefaultCnttSheet.addEventListener("click", () => this.resetDefaultCnttSheetConfig());
-    }
-    if (this.btnSaveCnttSheetConfig) {
-      this.btnSaveCnttSheetConfig.addEventListener("click", () => this.saveCnttSheetConfig());
-    }
-
     // Cập nhật session ban đầu
     this.updateCnttUserSessionUI();
 
@@ -8862,33 +8842,57 @@ p {
    * Mở modal Cấu hình liên kết Google Sheet & Apps Script Web App
    */
   openCnttSheetConfigModal() {
-    if (!this.modalCnttSheetConfig || !window.ToolCnttReport) return;
-    const cfg = ToolCnttReport.getConfig();
-    const cleanId = ToolCnttReport.extractSheetId(cfg.sheetId || ToolCnttReport.DEFAULT_SHEET_ID);
-    if (this.cfgCnttSheetId) {
-      this.cfgCnttSheetId.value = cleanId;
+    if (!this.modalCnttSheetConfig) {
+      this.modalCnttSheetConfig = document.getElementById("modalCnttSheetConfig");
     }
-    if (this.cfgCnttAppsScriptUrl) {
-      this.cfgCnttAppsScriptUrl.value = cfg.appsScriptUrl || "";
+    if (!this.modalCnttSheetConfig) {
+      console.warn("modalCnttSheetConfig not found in DOM");
+      return;
     }
-    if (this.cnttWebhookStatusBadge) {
-      if (cfg.appsScriptUrl) {
-        this.cnttWebhookStatusBadge.textContent = "Đã liên kết (Tự động ghi online)";
-        this.cnttWebhookStatusBadge.className = "tool-badge badge-emerald";
-      } else {
-        this.cnttWebhookStatusBadge.textContent = "Chưa liên kết";
-        this.cnttWebhookStatusBadge.className = "tool-badge badge-amber";
+
+    if (window.ToolCnttReport) {
+      const cfg = ToolCnttReport.getConfig();
+      const cleanId = ToolCnttReport.extractSheetId(cfg.sheetId || ToolCnttReport.DEFAULT_SHEET_ID);
+      if (!this.cfgCnttSheetId) {
+        this.cfgCnttSheetId = document.getElementById("cfgCnttSheetId");
+      }
+      if (this.cfgCnttSheetId) {
+        this.cfgCnttSheetId.value = cleanId;
+      }
+
+      if (!this.cfgCnttAppsScriptUrl) {
+        this.cfgCnttAppsScriptUrl = document.getElementById("cfgCnttAppsScriptUrl");
+      }
+      if (this.cfgCnttAppsScriptUrl) {
+        this.cfgCnttAppsScriptUrl.value = cfg.appsScriptUrl || "";
+      }
+
+      if (!this.cnttWebhookStatusBadge) {
+        this.cnttWebhookStatusBadge = document.getElementById("cnttWebhookStatusBadge");
+      }
+      if (this.cnttWebhookStatusBadge) {
+        if (cfg.appsScriptUrl) {
+          this.cnttWebhookStatusBadge.textContent = "Đã liên kết (Tự động ghi online)";
+          this.cnttWebhookStatusBadge.className = "tool-badge badge-emerald";
+        } else {
+          this.cnttWebhookStatusBadge.textContent = "Chưa liên kết";
+          this.cnttWebhookStatusBadge.className = "tool-badge badge-amber";
+        }
       }
     }
-    this.modalCnttSheetConfig.classList.remove("hidden");
+
+    this.showModal(this.modalCnttSheetConfig);
   }
 
   /**
    * Đóng modal Cấu hình liên kết Google Sheet
    */
   closeCnttSheetConfigModal() {
+    if (!this.modalCnttSheetConfig) {
+      this.modalCnttSheetConfig = document.getElementById("modalCnttSheetConfig");
+    }
     if (this.modalCnttSheetConfig) {
-      this.modalCnttSheetConfig.classList.add("hidden");
+      this.hideModal(this.modalCnttSheetConfig);
     }
   }
 
@@ -9008,26 +9012,51 @@ p {
     // 1. Quét tìm dòng trống an toàn từ hàng 7 đến hàng 100
     let verifiedRow = 7;
     let verifiedStt = "1";
-    const rawRows = records && Array.isArray(records._rawRows) ? records._rawRows : [];
+    let isFull = false;
 
-    for (let excelRow = 7; excelRow <= 100; excelRow++) {
-      const gvizIdx = excelRow - 7;
-      const r = rawRows[gvizIdx];
-      if (!r) {
-        // Hàng hoàn toàn chưa được tạo / chưa có dữ liệu trên Google Sheets
-        verifiedRow = excelRow;
-        verifiedStt = String(excelRow - 6);
-        break;
-      }
-      const cells = (r.c || []).map(cell => (cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : (cell.f || "")) : ""));
-      // Kiểm tra các cột B đến AK (chỉ số 1 đến 36)
-      const hasContent = cells.slice(1, 37).some(v => v !== "" && v !== "0");
-      if (!hasContent) {
-        // Dòng hoàn toàn trống!
-        verifiedRow = excelRow;
-        // Nếu cột A đã có in sẵn STT, lấy STT đó; nếu không thì lấy excelRow - 6
-        verifiedStt = cells[0] && !isNaN(parseInt(cells[0], 10)) ? cells[0] : String(excelRow - 6);
-        break;
+    if (records && records._nextEmptyRow && typeof records._nextEmptyRow.row === "number") {
+      verifiedRow = records._nextEmptyRow.row;
+      verifiedStt = records._nextEmptyRow.stt || String(verifiedRow - 6);
+      isFull = !!records._nextEmptyRow.isFull;
+    } else {
+      const rawRows = records && Array.isArray(records._rawRows) ? records._rawRows : [];
+      let foundEmpty = false;
+
+      if (rawRows.length > 0) {
+        for (let excelRow = 7; excelRow <= 100; excelRow++) {
+          const gvizIdx = excelRow - 7;
+          const r = rawRows[gvizIdx];
+          if (!r) {
+            verifiedRow = excelRow;
+            verifiedStt = String(excelRow - 6);
+            foundEmpty = true;
+            break;
+          }
+          const cells = (r.c || []).map(cell => (cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : (cell.f || "")) : ""));
+          // Kiểm tra các cột B đến AK (chỉ số 1 đến 36)
+          const hasContent = cells.slice(1, 37).some(v => v !== "" && v !== "0");
+          if (!hasContent) {
+            verifiedRow = excelRow;
+            verifiedStt = cells[0] && !isNaN(parseInt(cells[0], 10)) ? cells[0] : String(excelRow - 6);
+            foundEmpty = true;
+            break;
+          }
+        }
+        if (!foundEmpty) {
+          // Toàn bộ các dòng từ 7 đến 100 đã đầy
+          verifiedRow = 100;
+          verifiedStt = String(records && Array.isArray(records) ? records.length + 1 : 94);
+          isFull = true;
+        }
+      } else if (records && Array.isArray(records) && records.length > 0) {
+        // Fallback khi không có _rawRows nhưng có records parsed
+        verifiedRow = Math.min(100, 7 + records.length);
+        verifiedStt = String(records.length + 1);
+        isFull = verifiedRow >= 100;
+      } else {
+        // Nếu hoàn toàn chưa tải được dữ liệu, giữ nguyên dòng hiện tại hoặc mặc định 7
+        verifiedRow = this.cnttNextEmptyRow && this.cnttNextEmptyRow.row > 7 ? this.cnttNextEmptyRow.row : 7;
+        verifiedStt = this.cnttNextEmptyRow && this.cnttNextEmptyRow.stt ? this.cnttNextEmptyRow.stt : "1";
       }
     }
 
@@ -9035,7 +9064,7 @@ p {
     this.cnttNextEmptyRow = {
       row: verifiedRow,
       rangeStr: `B${verifiedRow}:AK${verifiedRow}`,
-      isFull: verifiedRow > 100,
+      isFull: isFull || verifiedRow > 100,
       stt: verifiedStt
     };
     this.updateNextEmptyRowUI();

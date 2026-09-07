@@ -15717,6 +15717,10 @@ h1, h2, h3, h4, h5, h6, .hero-title, .tool-card-title, .workspace-title {
   line-height: 1.2;
 }
 
+.btn-cntt-action svg {
+  pointer-events: none;
+}
+
 .btn-cntt-action.btn-cntt-sync {
   background: linear-gradient(135deg, #0284c7, #2563eb);
   color: #ffffff;

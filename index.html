@@ -65,8 +65,8 @@
   </script>
 
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.8.2" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.8.2" />
+  <link rel="preload" href="style.css?v=3.8.6" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.8.6" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -1986,7 +1986,7 @@
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                   <span>Xuất Excel</span>
                 </button>
-                <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính">
+                <button type="button" class="btn-cntt-action btn-cntt-config" id="btnOpenSheetConfigModal" title="Cấu hình liên kết Google Trang Tính" onclick="if (window.appController) window.appController.openCnttSheetConfigModal();">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
                 <button type="button" class="btn-cntt-action btn-cntt-users admin-only-btn" id="btnCnttOpenUserManage" title="Quản lý tài khoản người dùng & phân quyền (Chỉ dành cho Admin)" style="display: none;">
@@ -2920,7 +2920,7 @@
     <div class="modal-card modal-config-card" style="max-width: 680px;">
       <div class="modal-header">
         <h3 class="modal-title">⚙️ CẤU HÌNH ĐỒNG BỘ ONLINE GOOGLE SHEET</h3>
-        <button type="button" class="modal-close" id="btnCloseCnttSheetConfigModal">&times;</button>
+        <button type="button" class="modal-close" id="btnCloseCnttSheetConfigModal" onclick="if (window.appController) window.appController.closeCnttSheetConfigModal();">&times;</button>
       </div>
       <div class="modal-body">
         <div class="config-section-alert" style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 12px; margin-bottom: 14px; font-size: 0.85rem; line-height: 1.5; color: #bae6fd;">
@@ -2962,17 +2962,20 @@
         </div>
 
         <div class="flex-row gap-8 align-center" style="margin-top: 12px;">
-          <button type="button" class="btn-cntt-action" id="btnCopyAppsScriptCode" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-weight: 700; padding: 7px 14px;">
+          <button type="button" class="btn-cntt-action" id="btnCopyAppsScriptCode" onclick="if (window.appController) window.appController.copyAppsScriptCode();" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(52, 211, 153, 0.4); font-weight: 700; padding: 7px 14px;">
             📋 Sao Chép Mã Apps Script
           </button>
-          <button type="button" class="btn-cntt-action" id="btnTestAppsScriptConnection" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; padding: 7px 14px;">
+          <button type="button" class="btn-cntt-action" id="btnTestAppsScriptConnection" onclick="if (window.appController) window.appController.testAppsScriptConnection();" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 600; padding: 7px 14px;">
             🧪 Kiểm Tra Kết Nối
           </button>
         </div>
       </div>
       <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnResetCnttSheetConfig">Đặt lại mặc định</button>
-        <button type="button" class="btn-modal-confirm" id="btnSaveCnttSheetConfig">LƯU CẤU HÌNH &rarr;</button>
+        <div class="flex-row gap-8">
+          <button type="button" class="btn-modal-reset" id="btnDismissCnttSheetConfigModal" onclick="if (window.appController) window.appController.closeCnttSheetConfigModal();">Đóng</button>
+          <button type="button" class="btn-modal-reset" id="btnResetCnttSheetConfig" onclick="if (window.appController) window.appController.resetCnttSheetConfig();" style="border-color: rgba(239, 68, 68, 0.3); color: #f87171;">Đặt lại mặc định</button>
+        </div>
+        <button type="button" class="btn-modal-confirm" id="btnSaveCnttSheetConfig" onclick="if (window.appController) window.appController.saveCnttSheetConfig();">💾 LƯU CẤU HÌNH &rarr;</button>
       </div>
     </div>
   </div>
@@ -3758,41 +3761,6 @@
     </div>
   </div>
 
-  <!-- MODAL: Cấu Hình Liên Kết Google Trang Tính (Báo Cáo Công Tác) -->
-  <div class="modal-overlay hidden" id="modalCnttSheetConfig">
-    <div class="modal-card" style="max-width: 580px;">
-      <div class="modal-header">
-        <div class="flex-row gap-8 align-center">
-          <span style="font-size: 1.25rem;">⚙️</span>
-          <h3 class="modal-title">CẤU HÌNH GOOGLE TRANG TÍNH (P.CNTT)</h3>
-        </div>
-        <button type="button" class="modal-close" id="btnCloseCnttSheetConfig">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size: 0.8rem; color: #94a3b8; line-height: 1.45; margin-bottom: 14px;">
-          Hệ thống đang liên kết với Google Trang Tính báo cáo công tác sửa chữa của Phòng CNTT. Khi chuyển sang file tháng mới, bạn chỉ cần dán đường link mới vào ô bên dưới:
-        </p>
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label class="form-label" style="font-weight: 700; color: #e2e8f0;">Đường Link Google Trang Tính (URL):</label>
-          <input type="text" id="inputCustomCnttSheetUrl" class="w2h-text-input" style="width: 100%; font-size: 0.85rem;" placeholder="https://docs.google.com/spreadsheets/d/.../edit?usp=sharing" />
-        </div>
-        <div class="flex-row gap-8" style="margin-top: 14px;">
-          <button type="button" class="btn-duty-action" id="btnTestCnttSheetConnection" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);">
-            <span>Kiểm Tra Kết Nối</span>
-          </button>
-          <button type="button" class="btn-modal-reset" id="btnResetDefaultCnttSheet" style="font-size: 0.78rem;">
-            <span>Đặt Lại Link Gốc Bệnh Viện</span>
-          </button>
-        </div>
-        <div id="txtCnttSheetConnectionStatus" style="margin-top: 10px; font-size: 0.8rem; display: none;"></div>
-      </div>
-      <div class="modal-footer flex-between">
-        <button type="button" class="btn-modal-reset" id="btnDismissCnttSheetConfig">Hủy</button>
-        <button type="button" class="btn-modal-confirm" id="btnSaveCnttSheetConfig">LƯU CẤU HÌNH &rarr;</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
@@ -3808,11 +3776,11 @@
   <script defer src="js/tool-word-page-remover.js?v=3.7.0"></script>
   <script defer src="js/tool-pdf-to-image.js?v=3.7.0"></script>
   <script defer src="js/tool-giamdinh.js?v=3.7.0"></script>
-  <script defer src="js/tool-cntt-report.js?v=3.8.5"></script>
+  <script defer src="js/tool-cntt-report.js?v=3.8.6"></script>
   <script defer src="js/tool-vgca-doichieu.js?v=3.8.0"></script>
   <script defer src="js/tool-vgca-cks.js?v=3.8.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.8.0"></script>
   <script defer src="js/notification-manager.js?v=3.8.0"></script>
-  <script defer src="js/app.js?v=3.8.5"></script>
+  <script defer src="js/app.js?v=3.8.6"></script>
 </body>
 </html>
