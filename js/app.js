@@ -79,6 +79,12 @@ class AppController {
     this.headerSearchResultsList = document.getElementById("headerSearchResultsList");
     this.btnClearGlobalSearch = document.getElementById("btnClearGlobalSearch");
 
+    // Theme Mode Toggle Elements (Dark / Light)
+    this.btnToggleTheme = document.getElementById("btnToggleTheme");
+    this.iconThemeMoon = document.getElementById("iconThemeMoon");
+    this.iconThemeSun = document.getElementById("iconThemeSun");
+    this.txtCurrentTheme = document.getElementById("txtCurrentTheme");
+
     // Notification Center Elements
     this.btnToggleNotificationCenter = document.getElementById("btnToggleNotificationCenter");
     this.notificationBadgeCount = document.getElementById("notificationBadgeCount");
@@ -458,10 +464,80 @@ class AppController {
     this.cnttActiveTab = "analytics";
   }
 
+  /* ==========================================================================
+     THEME CONTROLLER (Dark Mode / Light Mode Switch & Persistence)
+     ========================================================================== */
+  initThemeEvents() {
+    if (this.btnToggleTheme) {
+      this.btnToggleTheme.addEventListener("click", () => this.toggleTheme());
+    }
+
+    // Keyboard shortcut: Alt + T
+    window.addEventListener("keydown", (e) => {
+      if (e.altKey && (e.key === "t" || e.key === "T")) {
+        e.preventDefault();
+        this.toggleTheme();
+      }
+    });
+
+    this.updateThemeUi();
+  }
+
+  getCurrentTheme() {
+    return document.documentElement.getAttribute("data-theme") || localStorage.getItem("APP_THEME") || "dark";
+  }
+
+  setTheme(theme, notify = true) {
+    const validTheme = theme === "light" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", validTheme);
+    try {
+      localStorage.setItem("APP_THEME", validTheme);
+    } catch (e) {}
+
+    this.updateThemeUi(validTheme);
+
+    try {
+      window.dispatchEvent(new CustomEvent("app-theme-changed", { detail: { theme: validTheme } }));
+    } catch (e) {}
+
+    if (notify && typeof this.showToast === "function") {
+      const modeText = validTheme === "light" ? "Giao diện Sáng (Light Mode)" : "Giao diện Tối (Dark Mode)";
+      this.showToast(`Đã chuyển sang ${modeText}`, "info");
+    }
+  }
+
+  toggleTheme() {
+    const current = this.getCurrentTheme();
+    const next = current === "light" ? "dark" : "light";
+    this.setTheme(next, true);
+  }
+
+  updateThemeUi(theme) {
+    const currentTheme = theme || this.getCurrentTheme();
+    const isLight = currentTheme === "light";
+
+    if (this.iconThemeMoon) {
+      this.iconThemeMoon.classList.toggle("hidden", isLight);
+    }
+    if (this.iconThemeSun) {
+      this.iconThemeSun.classList.toggle("hidden", !isLight);
+    }
+    if (this.txtCurrentTheme) {
+      this.txtCurrentTheme.textContent = isLight ? "Sáng" : "Tối";
+    }
+    if (this.btnToggleTheme) {
+      this.btnToggleTheme.setAttribute(
+        "title",
+        isLight ? "Chuyển sang Giao diện Tối (Alt + T)" : "Chuyển sang Giao diện Sáng (Alt + T)"
+      );
+    }
+  }
+
   initEvents() {
     // Hash change for SPA routing
     window.addEventListener("hashchange", () => this.handleUrlHash());
 
+    this.initThemeEvents();
     this.initNetworkStatus();
     this.initNotificationEvents();
     this.initSqlBuilderEvents();
@@ -10909,6 +10985,14 @@ p {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  window.appController = new AppController();
-});
+function bootAppController() {
+  if (!window.appController) {
+    window.appController = new AppController();
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootAppController);
+} else {
+  bootAppController();
+}

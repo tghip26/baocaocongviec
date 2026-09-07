@@ -21,9 +21,52 @@
   <!-- Google Fonts: Inter & Outfit with font-display swap -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
+  <!-- Immediate Theme Initializer to eliminate FOUC -->
+  <script>
+    (function() {
+      try {
+        var theme = localStorage.getItem('APP_THEME') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+
+      window.__syncThemeButtonUi = function() {
+        var isLight = (document.documentElement.getAttribute('data-theme') || 'dark') === 'light';
+        var moon = document.getElementById('iconThemeMoon');
+        var sun = document.getElementById('iconThemeSun');
+        var txt = document.getElementById('txtCurrentTheme');
+        var btn = document.getElementById('btnToggleTheme');
+        if (moon) moon.classList.toggle('hidden', isLight);
+        if (sun) sun.classList.toggle('hidden', !isLight);
+        if (txt) txt.textContent = isLight ? 'Sáng' : 'Tối';
+        if (btn) btn.setAttribute('title', isLight ? 'Chuyển sang Giao diện Tối (Alt + T)' : 'Chuyển sang Giao diện Sáng (Alt + T)');
+      };
+
+      window.__toggleAppTheme = function() {
+        var current = document.documentElement.getAttribute('data-theme') || 'dark';
+        var next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('APP_THEME', next); } catch (e) {}
+        window.__syncThemeButtonUi();
+        try { window.dispatchEvent(new CustomEvent('app-theme-changed', { detail: { theme: next } })); } catch (e) {}
+        if (window.appController && typeof window.appController.showToast === 'function') {
+          var modeText = next === 'light' ? 'Giao diện Sáng (Light Mode)' : 'Giao diện Tối (Dark Mode)';
+          window.appController.showToast('Đã chuyển sang ' + modeText, 'info');
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.__syncThemeButtonUi);
+      } else {
+        window.__syncThemeButtonUi();
+      }
+    })();
+  </script>
+
   <!-- Preload Master Stylesheet for Instant First Contentful Paint -->
-  <link rel="preload" href="style.css?v=3.4.7" as="style" />
-  <link rel="stylesheet" href="style.css?v=3.4.7" />
+  <link rel="preload" href="style.css?v=3.5.0" as="style" />
+  <link rel="stylesheet" href="style.css?v=3.5.0" />
 
   <!-- Core Client-side Libraries (Deferred to unblock initial render) -->
   <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -225,6 +268,13 @@
         </div>
 
         <div class="header-right">
+          <!-- Nút Chuyển đổi Giao diện Sáng / Tối -->
+          <button type="button" class="btn-theme-toggle" id="btnToggleTheme" onclick="window.__toggleAppTheme && window.__toggleAppTheme()" title="Chuyển đổi giao diện Sáng / Tối (Phím tắt: Alt + T)">
+            <span class="theme-icon icon-moon" id="iconThemeMoon">🌙</span>
+            <span class="theme-icon icon-sun hidden" id="iconThemeSun">☀️</span>
+            <span class="theme-label" id="txtCurrentTheme">Tối</span>
+          </button>
+
           <!-- 1. Nút Cấu hình Đơn vị Mục tiêu -->
           <button type="button" class="btn-header-config" id="btnOpenConfigHeader" title="Cấu hình Đơn vị & Đường dẫn lưu tệp">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -3701,6 +3751,6 @@
   <script defer src="js/tool-vgca-cks.js?v=3.4.0"></script>
   <script defer src="js/tool-vgca-email.js?v=3.4.0"></script>
   <script defer src="js/notification-manager.js?v=3.4.0"></script>
-  <script defer src="js/app.js?v=3.4.7"></script>
+  <script defer src="js/app.js?v=3.5.0"></script>
 </body>
 </html>
