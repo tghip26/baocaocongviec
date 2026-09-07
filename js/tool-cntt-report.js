@@ -125,7 +125,7 @@
     HARDWARE_CATEGORIES,
 
     /**
-     * Lấy cấu hình Google Sheet hiện tại từ LocalStorage
+     * Lấy cấu hình Google Sheet & Apps Script Web App hiện tại từ LocalStorage
      */
     getConfig() {
       try {
@@ -133,14 +133,16 @@
         if (saved) {
           const parsed = JSON.parse(saved);
           let sName = parsed.sheetName || "";
-          // Nếu lưu tên sheet cũ là 'Tháng ...' không đúng với sheet ngày thực tế trên Google Sheets, xóa đi
           if (sName && (sName.startsWith("Tháng") || sName === "Sheet1")) {
             sName = "";
           }
+          const rawId = parsed.sheetId || DEFAULT_SHEET_ID;
+          const cleanSheetId = this.extractSheetId(rawId);
           return {
-            sheetId: parsed.sheetId || DEFAULT_SHEET_ID,
+            sheetId: cleanSheetId,
             sheetName: sName,
-            customUrl: parsed.customUrl || `https://docs.google.com/spreadsheets/d/${DEFAULT_SHEET_ID}/edit?usp=sharing`
+            appsScriptUrl: (parsed.appsScriptUrl || "").trim(),
+            customUrl: parsed.customUrl || `https://docs.google.com/spreadsheets/d/${cleanSheetId}/edit?usp=sharing`
           };
         }
       } catch (e) {
@@ -149,15 +151,30 @@
       return {
         sheetId: DEFAULT_SHEET_ID,
         sheetName: "",
+        appsScriptUrl: "",
         customUrl: `https://docs.google.com/spreadsheets/d/${DEFAULT_SHEET_ID}/edit?usp=sharing`
       };
     },
 
     /**
-     * Lưu cấu hình Google Sheet mới
+     * Lưu cấu hình Google Sheet & Apps Script Web App mới
      */
     saveConfig(config) {
-      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+      try {
+        const current = this.getConfig();
+        const merged = { ...current, ...config };
+        if (merged.sheetId) {
+          merged.sheetId = this.extractSheetId(merged.sheetId);
+        }
+        if (merged.appsScriptUrl) {
+          merged.appsScriptUrl = merged.appsScriptUrl.trim();
+        }
+        localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(merged));
+        return merged;
+      } catch (e) {
+        console.error("Error saving CNTT config", e);
+        return null;
+      }
     },
 
     /**
@@ -975,43 +992,7 @@
       return cols;
     },
 
-    /**
-     * Lấy cấu hình kết nối Google Sheet & Apps Script Webhook
-     */
-    getConfig() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY_CONFIG);
-        const parsed = raw ? JSON.parse(raw) : {};
-        return {
-          sheetId: parsed.sheetId || DEFAULT_SHEET_ID,
-          appsScriptUrl: (parsed.appsScriptUrl || "").trim()
-        };
-      } catch (e) {
-        return {
-          sheetId: DEFAULT_SHEET_ID,
-          appsScriptUrl: ""
-        };
-      }
-    },
 
-    /**
-     * Lưu cấu hình kết nối
-     */
-    saveConfig(cfg) {
-      try {
-        const current = this.getConfig();
-        const merged = { ...current, ...cfg };
-        localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(merged));
-        return merged;
-      } catch (e) {
-        console.error("Error saving CNTT config", e);
-        return null;
-      }
-    },
-
-    /**
-     * Đoạn mã nguồn Google Apps Script chuẩn để người dùng dán vào Tiện ích mở rộng của Google Trang Tính
-     */
     /**
      * Đoạn mã nguồn Google Apps Script chuẩn có hỗ trợ HÀNG ĐỢI TUẦN TỰ & KHÓA CHỐNG GHI ĐÈ
      * Xử lý trọn vẹn trường hợp nhiều người cùng nhập ca một lúc

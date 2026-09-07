@@ -8554,6 +8554,66 @@ p {
       this.btnTestAppsScriptConnection.addEventListener("click", () => this.testAppsScriptConnection());
     }
 
+    // Tự động kiểm tra và phản hồi trực tiếp khi người dùng nhập hoặc dán link Web App
+    if (this.cfgCnttAppsScriptUrl) {
+      const handleAppsScriptInput = (e) => {
+        const val = (e.target.value || "").trim();
+        if (val && val.includes("script.google.com")) {
+          if (this.cnttWebhookStatusBadge) {
+            this.cnttWebhookStatusBadge.textContent = "Đã nhận diện Link Web App";
+            this.cnttWebhookStatusBadge.className = "tool-badge badge-emerald";
+          }
+          // Tự động lưu ngay lập tức để không bao giờ bị mất khi người dùng reload trang
+          if (window.ToolCnttReport) {
+            ToolCnttReport.saveConfig({ appsScriptUrl: val });
+          }
+        } else if (val) {
+          if (this.cnttWebhookStatusBadge) {
+            this.cnttWebhookStatusBadge.textContent = "URL phải bắt đầu bằng https://script.google.com/...";
+            this.cnttWebhookStatusBadge.className = "tool-badge badge-amber";
+          }
+        } else {
+          if (this.cnttWebhookStatusBadge) {
+            this.cnttWebhookStatusBadge.textContent = "Chưa liên kết";
+            this.cnttWebhookStatusBadge.className = "tool-badge badge-amber";
+          }
+          if (window.ToolCnttReport) {
+            ToolCnttReport.saveConfig({ appsScriptUrl: "" });
+          }
+        }
+      };
+
+      this.cfgCnttAppsScriptUrl.addEventListener("input", handleAppsScriptInput);
+      this.cfgCnttAppsScriptUrl.addEventListener("change", handleAppsScriptInput);
+      this.cfgCnttAppsScriptUrl.addEventListener("paste", () => setTimeout(() => handleAppsScriptInput({ target: this.cfgCnttAppsScriptUrl }), 50));
+    }
+
+    // Tự động trích xuất Spreadsheet ID khi người dùng dán link Google Sheets đầy đủ
+    if (this.cfgCnttSheetId) {
+      const handleSheetIdInput = (e) => {
+        const val = (e.target.value || "").trim();
+        if (val && window.ToolCnttReport) {
+          const cleanId = ToolCnttReport.extractSheetId(val);
+          if (cleanId && cleanId !== val && val.includes("docs.google.com")) {
+            this.cfgCnttSheetId.value = cleanId;
+          }
+          ToolCnttReport.saveConfig({ sheetId: cleanId });
+        }
+      };
+
+      this.cfgCnttSheetId.addEventListener("input", handleSheetIdInput);
+      this.cfgCnttSheetId.addEventListener("change", handleSheetIdInput);
+      this.cfgCnttSheetId.addEventListener("paste", () => setTimeout(() => handleSheetIdInput({ target: this.cfgCnttSheetId }), 50));
+    }
+
+    // Khởi tạo trạng thái ban đầu của nhãn kết nối
+    if (window.ToolCnttReport) {
+      const initCfg = ToolCnttReport.getConfig();
+      if (initCfg.appsScriptUrl && this.cnttSyncStatusText) {
+        this.cnttSyncStatusText.textContent = "Đã kết nối Tự Động Online";
+      }
+    }
+
     // Form Events
     if (this.formCnttRepairEntry) {
       this.formCnttRepairEntry.addEventListener("submit", (e) => this.handleCnttFormSubmit(e));
@@ -8804,8 +8864,13 @@ p {
   openCnttSheetConfigModal() {
     if (!this.modalCnttSheetConfig || !window.ToolCnttReport) return;
     const cfg = ToolCnttReport.getConfig();
-    if (this.cfgCnttSheetId) this.cfgCnttSheetId.value = cfg.sheetId || "1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA";
-    if (this.cfgCnttAppsScriptUrl) this.cfgCnttAppsScriptUrl.value = cfg.appsScriptUrl || "";
+    const cleanId = ToolCnttReport.extractSheetId(cfg.sheetId || ToolCnttReport.DEFAULT_SHEET_ID);
+    if (this.cfgCnttSheetId) {
+      this.cfgCnttSheetId.value = cleanId;
+    }
+    if (this.cfgCnttAppsScriptUrl) {
+      this.cfgCnttAppsScriptUrl.value = cfg.appsScriptUrl || "";
+    }
     if (this.cnttWebhookStatusBadge) {
       if (cfg.appsScriptUrl) {
         this.cnttWebhookStatusBadge.textContent = "Đã liên kết (Tự động ghi online)";
@@ -8832,16 +8897,31 @@ p {
    */
   saveCnttSheetConfig() {
     if (!window.ToolCnttReport) return;
-    const sheetId = (this.cfgCnttSheetId ? this.cfgCnttSheetId.value : "").trim() || "1_I7qmDx7mtIOcCLkEkDz_PCaC8KPd_Po-pqEh7krdPA";
+    const rawSheetId = (this.cfgCnttSheetId ? this.cfgCnttSheetId.value : "").trim();
+    const sheetId = ToolCnttReport.extractSheetId(rawSheetId) || ToolCnttReport.DEFAULT_SHEET_ID;
     const appsScriptUrl = (this.cfgCnttAppsScriptUrl ? this.cfgCnttAppsScriptUrl.value : "").trim();
 
     ToolCnttReport.saveConfig({ sheetId, appsScriptUrl });
-    this.showToast("💾 Đã lưu cấu hình Google Sheet & Apps Script thành công!", "success");
-    this.closeCnttSheetConfigModal();
+
+    if (this.cfgCnttSheetId) this.cfgCnttSheetId.value = sheetId;
+    if (this.cfgCnttAppsScriptUrl) this.cfgCnttAppsScriptUrl.value = appsScriptUrl;
+
+    if (this.cnttWebhookStatusBadge) {
+      if (appsScriptUrl) {
+        this.cnttWebhookStatusBadge.textContent = "Đã liên kết (Tự động ghi online)";
+        this.cnttWebhookStatusBadge.className = "tool-badge badge-emerald";
+      } else {
+        this.cnttWebhookStatusBadge.textContent = "Chưa liên kết";
+        this.cnttWebhookStatusBadge.className = "tool-badge badge-amber";
+      }
+    }
 
     if (this.cnttSyncStatusText) {
       this.cnttSyncStatusText.textContent = appsScriptUrl ? "Đã kết nối Tự Động Online" : "Đã đồng bộ";
     }
+
+    this.showToast("💾 Đã lưu cấu hình Google Sheet & Apps Script thành công!", "success");
+    this.closeCnttSheetConfigModal();
   }
 
   /**
@@ -10362,91 +10442,7 @@ p {
     }
   }
 
-  /**
-   * Mở modal cấu hình liên kết Google Sheet
-   */
-  openCnttSheetConfigModal() {
-    if (!window.ToolCnttReport) return;
-    const cfg = ToolCnttReport.getConfig();
-    if (this.inputCustomCnttSheetUrl) {
-      this.inputCustomCnttSheetUrl.value = cfg.customUrl;
-    }
-    if (this.txtCnttSheetConnectionStatus) {
-      this.txtCnttSheetConnectionStatus.style.display = "none";
-    }
-    this.showModal(this.modalCnttSheetConfig);
-  }
 
-  /**
-   * Kiểm tra kết nối tới URL Google Sheet
-   */
-  async testCnttSheetConnection() {
-    if (!window.ToolCnttReport) return;
-    const url = this.inputCustomCnttSheetUrl ? this.inputCustomCnttSheetUrl.value.trim() : "";
-    const sheetId = ToolCnttReport.extractSheetId(url);
-
-    this.setButtonLoading(this.btnTestCnttSheetConnection, true, "Đang kiểm tra...");
-    if (this.txtCnttSheetConnectionStatus) {
-      this.txtCnttSheetConnectionStatus.style.display = "block";
-      this.txtCnttSheetConnectionStatus.style.color = "#38bdf8";
-      this.txtCnttSheetConnectionStatus.textContent = "⏳ Đang kết nối tới Google Sheets...";
-    }
-
-    try {
-      const records = await ToolCnttReport.fetchGoogleSheetData(sheetId);
-      if (this.txtCnttSheetConnectionStatus) {
-        this.txtCnttSheetConnectionStatus.style.color = "#10b981";
-        this.txtCnttSheetConnectionStatus.innerHTML = `✅ Kết nối thành công! Đọc được <strong>${records.length}</strong> ca công tác từ bảng tính.`;
-      }
-      this.showToast(`✅ Kết nối thành công! Tìm thấy ${records.length} dòng dữ liệu.`, "success");
-    } catch (err) {
-      if (this.txtCnttSheetConnectionStatus) {
-        this.txtCnttSheetConnectionStatus.style.color = "#ef4444";
-        this.txtCnttSheetConnectionStatus.textContent = `❌ Lỗi kết nối: ${err.message}. Hãy đảm bảo Sheet đã được Bật chia sẻ công khai ("Bất kỳ ai có liên kết đều xem được").`;
-      }
-      this.showToast(`Lỗi kết nối: ${err.message}`, "error");
-    } finally {
-      this.setButtonLoading(this.btnTestCnttSheetConnection, false);
-    }
-  }
-
-  /**
-   * Đặt lại cấu hình link Google Sheet mặc định
-   */
-  resetDefaultCnttSheetConfig() {
-    if (!window.ToolCnttReport) return;
-    if (this.inputCustomCnttSheetUrl) {
-      this.inputCustomCnttSheetUrl.value = `https://docs.google.com/spreadsheets/d/${ToolCnttReport.DEFAULT_SHEET_ID}/edit?usp=sharing`;
-    }
-    if (this.txtCnttSheetConnectionStatus) {
-      this.txtCnttSheetConnectionStatus.style.display = "none";
-    }
-    this.showToast("Đã khôi phục đường link Google Trang Tính gốc của bệnh viện.", "info");
-  }
-
-  /**
-   * Lưu cấu hình liên kết Google Sheet mới
-   */
-  saveCnttSheetConfig() {
-    if (!window.ToolCnttReport) return;
-    const url = this.inputCustomCnttSheetUrl ? this.inputCustomCnttSheetUrl.value.trim() : "";
-    const sheetId = ToolCnttReport.extractSheetId(url);
-
-    ToolCnttReport.saveConfig({
-      sheetId: sheetId,
-      customUrl: url || `https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing`
-    });
-
-    if (this.cnttGoogleSheetIframe) {
-      this.cnttGoogleSheetIframe.src = `https://docs.google.com/spreadsheets/d/${sheetId}/edit?usp=sharing&rm=minimal`;
-    }
-
-    this.hideModal(this.modalCnttSheetConfig);
-    this.showToast("⚙️ Đã lưu cấu hình Google Trang Tính mới!", "success");
-
-    // Tải lại dữ liệu
-    this.fetchGoogleSheetDataForCntt(false);
-  }
 
   // =========================================================================
   // MULTI-SHEET WORKLOAD SUMMARY (TỔNG HỢP CÔNG VIỆC ĐA SHEET)
