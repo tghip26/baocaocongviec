@@ -321,6 +321,7 @@
         return {
           row: startRow,
           rangeStr: `B${startRow}:AK${startRow}`,
+          stt: String(startRow - 6),
           isFull: false
         };
       }
@@ -331,6 +332,7 @@
           return {
             row: excelRow,
             rangeStr: `B${excelRow}:AK${excelRow}`,
+            stt: String(excelRow - 6),
             isFull: false
           };
         }
@@ -338,9 +340,11 @@
         // Quét các cột từ B (cột 1) đến AK (cột 36)
         const hasContent = cells.slice(1, 37).some(v => v !== "" && v !== "0");
         if (!hasContent) {
+          const stt = cells[0] && !isNaN(parseInt(cells[0], 10)) ? cells[0] : String(excelRow - 6);
           return {
             row: excelRow,
             rangeStr: `B${excelRow}:AK${excelRow}`,
+            stt: stt,
             isFull: false
           };
         }
@@ -348,6 +352,7 @@
       return {
         row: maxRow + 1,
         rangeStr: `B${maxRow + 1}:AK${maxRow + 1}`,
+        stt: String(maxRow + 1 - 6),
         isFull: true
       };
     },
@@ -565,6 +570,13 @@
           });
         }
       });
+
+      // Tạo cấu trúc rawRows tương thích GViz để computeNextEmptyRow hoạt động chính xác
+      const rawRows = lines.slice(6).map(cells => ({
+        c: cells.map(v => ({ v: v }))
+      }));
+      records._rawRows = rawRows;
+      records._nextEmptyRow = this.computeNextEmptyRow(rawRows, 7, 100);
 
       return records;
     },

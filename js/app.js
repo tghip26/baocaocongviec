@@ -8161,10 +8161,10 @@ p {
         this.cnttTargetRowDisplay.title = `Bảng B7:AK100 đã đầy, sẽ ghi tiếp vào dòng ${this.cnttNextEmptyRow.row}`;
       } else {
         this.cnttTargetRowDisplay.style.color = "#34d399";
-        this.cnttTargetRowDisplay.title = `Dòng trống đầu tiên phát hiện tự động: Hàng ${this.cnttNextEmptyRow.row}`;
+        this.cnttTargetRowDisplay.title = `Dòng trống an toàn phát hiện thời gian thực: Hàng ${this.cnttNextEmptyRow.row} (Bấm để quét lại)`;
       }
     } else {
-      this.cnttTargetRowDisplay.textContent = "B51:AK51";
+      this.cnttTargetRowDisplay.textContent = "B48:AK48";
     }
 
     if (this.cnttTargetSheetBadge) {
@@ -8394,6 +8394,34 @@ p {
     if (btnCopyBottom) {
       btnCopyBottom.addEventListener("click", () => this.copyFormTsvRow());
     }
+    if (this.cnttNextRowIndicator) {
+      this.cnttNextRowIndicator.style.cursor = "pointer";
+      this.cnttNextRowIndicator.addEventListener("click", () => {
+        this.showToast("🔄 Đang quét lại dòng trống Google Sheet thời gian thực...", "info", 1500);
+        this.syncAndVerifyEmptyRow();
+      });
+    }
+
+    // Tự động quét cập nhật lại dòng trống khi quay lại tab
+    window.addEventListener("focus", () => {
+      const isCnttActive = this.currentViewId === "cnttWorkReportView" || (window.location.hash && window.location.hash.includes("cntt"));
+      if (isCnttActive) {
+        this.syncAndVerifyEmptyRow();
+      }
+    });
+
+    // Tự động cập nhật lại dòng trống khi người dùng bắt đầu nhấn điền nội dung trong Form
+    const cnttFormContainer = document.getElementById("formCnttRepairEntry");
+    if (cnttFormContainer) {
+      let lastFormFocusSync = 0;
+      cnttFormContainer.addEventListener("focusin", () => {
+        const now = Date.now();
+        if (now - lastFormFocusSync > 15000) {
+          lastFormFocusSync = now;
+          this.syncAndVerifyEmptyRow();
+        }
+      });
+    }
     const btnClearSw = document.getElementById("btnClearSwSection");
     if (btnClearSw) {
       btnClearSw.addEventListener("click", () => {
@@ -8552,18 +8580,36 @@ p {
   }
 
   /**
-   * Cập nhật đường dẫn mở Google Sheet và nhúng iframe tới đúng tab/sheet
+   * Cập nhật đường dẫn mở Google Sheet và nhúng iframe tới đúng tab/sheet (và dòng cụ thể nếu có)
    */
-  updateCnttTargetSheetLinks(sheetName) {
+  updateCnttTargetSheetLinks(sheetName, targetRow = null) {
     if (!window.ToolCnttReport) return;
     const gid = ToolCnttReport.getSheetGid ? ToolCnttReport.getSheetGid(sheetName) : null;
     const cfg = ToolCnttReport.getConfig();
     const sheetId = cfg.sheetId || ToolCnttReport.DEFAULT_SHEET_ID;
     const baseUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
-    const fullUrl = gid ? `${baseUrl}?gid=${gid}#gid=${gid}` : baseUrl;
+    
+    // Nếu có dòng cụ thể, thêm range=B{targetRow} để Google Sheets tự động chọn ô đó
+    const row = targetRow || (this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : null);
+    const rangeParam = row ? `&range=B${row}` : "";
+    const hashParam = gid 
+      ? `#gid=${gid}${rangeParam ? `&range=B${row}` : ""}` 
+      : (rangeParam ? `#range=B${row}` : "");
+    const fullUrl = gid 
+      ? `${baseUrl}?gid=${gid}${rangeParam}${hashParam}` 
+      : (rangeParam ? `${baseUrl}?range=B${row}${hashParam}` : baseUrl);
 
     const linkExternal = document.getElementById("linkOpenGoogleSheetExternal");
-    if (linkExternal) linkExternal.href = fullUrl;
+    if (linkExternal) {
+      linkExternal.href = fullUrl;
+      const span = linkExternal.querySelector("span");
+      if (span) {
+        span.textContent = row ? `↗ Mở ô B${row}` : `↗ Mở Sheet`;
+      }
+      linkExternal.title = row 
+        ? `Mở Google Trang Tính và tự động chọn ô B${row} (nhấn Ctrl+V để dán)` 
+        : `Mở trực tiếp Google Trang Tính trên tab mới`;
+    }
 
     const linkTab = document.getElementById("linkOpenSheetTab");
     if (linkTab) linkTab.href = fullUrl;
@@ -8573,6 +8619,78 @@ p {
         ? `${baseUrl}?gid=${gid}&rm=minimal` 
         : `${baseUrl}?usp=sharing&rm=minimal`;
     }
+  }
+
+  /**
+   * Tự động quét Google Sheet thời gian thực để tìm chính xác dòng trống đầu tiên
+   * Đảm bảo an toàn tuyệt đối, tránh ghi đè nhầm lên dòng đã có dữ liệu của người khác
+   */
+  async syncAndVerifyEmptyRow(targetSheet = null) {
+    if (!window.ToolCnttReport) return null;
+    const sheetName = targetSheet || this.cnttSelectedSheet || ToolCnttReport.getTodaySheetName();
+    
+    let records = null;
+    try {
+      records = await ToolCnttReport.fetchGoogleSheetData(null, sheetName);
+    } catch (err) {
+      console.warn("Lỗi fetch dữ liệu thời gian thực:", err);
+    }
+
+    // 1. Quét tìm dòng trống an toàn từ hàng 7 đến hàng 100
+    let verifiedRow = 7;
+    let verifiedStt = "1";
+    const rawRows = records && Array.isArray(records._rawRows) ? records._rawRows : [];
+
+    for (let excelRow = 7; excelRow <= 100; excelRow++) {
+      const gvizIdx = excelRow - 7;
+      const r = rawRows[gvizIdx];
+      if (!r) {
+        // Hàng hoàn toàn chưa được tạo / chưa có dữ liệu trên Google Sheets
+        verifiedRow = excelRow;
+        verifiedStt = String(excelRow - 6);
+        break;
+      }
+      const cells = (r.c || []).map(cell => (cell ? (cell.v !== null && cell.v !== undefined ? String(cell.v).trim() : (cell.f || "")) : ""));
+      // Kiểm tra các cột B đến AK (chỉ số 1 đến 36)
+      const hasContent = cells.slice(1, 37).some(v => v !== "" && v !== "0");
+      if (!hasContent) {
+        // Dòng hoàn toàn trống!
+        verifiedRow = excelRow;
+        // Nếu cột A đã có in sẵn STT, lấy STT đó; nếu không thì lấy excelRow - 6
+        verifiedStt = cells[0] && !isNaN(parseInt(cells[0], 10)) ? cells[0] : String(excelRow - 6);
+        break;
+      }
+    }
+
+    // 2. Cập nhật trạng thái dòng trống
+    this.cnttNextEmptyRow = {
+      row: verifiedRow,
+      rangeStr: `B${verifiedRow}:AK${verifiedRow}`,
+      isFull: verifiedRow > 100,
+      stt: verifiedStt
+    };
+    this.updateNextEmptyRowUI();
+    this.updateCnttTargetSheetLinks(sheetName, verifiedRow);
+
+    // 3. Nếu lấy được records thời gian thực, cập nhật danh sách và phân tích KPI
+    if (records && Array.isArray(records)) {
+      const allLocalRows = ToolCnttReport.getLocalRows();
+      const localRows = allLocalRows.filter(r => !r.targetSheet || r.targetSheet === sheetName);
+      this.cnttRecords = [...localRows, ...records];
+      this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
+      this.renderCnttAnalytics();
+      this.renderCnttTable();
+      this.renderUserActivityLogUI();
+      this.populateCnttStaffDropdowns();
+    }
+
+    return {
+      row: verifiedRow,
+      rangeStr: `B${verifiedRow}:AK${verifiedRow}`,
+      stt: verifiedStt,
+      targetSheet: sheetName,
+      records: records || []
+    };
   }
 
   /**
@@ -8597,6 +8715,9 @@ p {
       }
     });
 
+    if (tabName === "form") {
+      this.syncAndVerifyEmptyRow();
+    }
     if (tabName === "analytics") this.renderCnttAnalytics();
     if (tabName === "table") this.renderCnttTable();
   }
@@ -9047,9 +9168,11 @@ p {
   }
 
   /**
-   * Xử lý lưu ca công tác từ Form (lưu tài khoản người nhập, sheet và tính toán dòng trống B7:AK100)
+   * Xử lý lưu ca công tác từ Form:
+   * Tự động quét Google Sheet thời gian thực trước khi lưu để xác định đúng dòng trống 100%,
+   * tránh ghi đè nhầm dòng có dữ liệu của người khác
    */
-  handleCnttFormSubmit(e) {
+  async handleCnttFormSubmit(e) {
     e.preventDefault();
     if (!window.ToolCnttReport) return;
 
@@ -9060,6 +9183,11 @@ p {
     const execStaff = this.selectFormExecStaff ? this.selectFormExecStaff.value : "Dương";
     const status = this.selectFormStatus ? this.selectFormStatus.value : "Đã xử lý";
     const note = this.inputFormNote ? this.inputFormNote.value.trim() : "";
+
+    if (!dept) {
+      this.showToast("Vui lòng chọn Khoa / Phòng!", "warning");
+      return;
+    }
 
     const swIssues = [];
     const swObj = {};
@@ -9095,91 +9223,96 @@ p {
       hwCount += 1;
     }
 
-    if (!dept) {
-      this.showToast("Vui lòng chọn Khoa / Phòng!", "warning");
-      return;
-    }
-
-    // Lấy thông tin tài khoản đăng nhập từ Lịch Trực CNTT
-    const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
-      ? window.ToolDutyRoster.getCurrentSession()
-      : null;
+    // Hiển thị trạng thái đang kiểm tra Google Sheet thời gian thực
+    this.setButtonLoading(this.btnSubmitCnttRecord, true, "Đang quét Google Sheet...");
 
     const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
     const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : fallbackSheet);
-    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 45;
-    const targetRange = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.rangeStr : `B${targetRow}:AK${targetRow}`;
 
-    const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
-    const newRecord = {
-      id: `local_${Date.now()}`,
-      stt: nextStt,
-      dept: dept,
-      soHoSo: soHoSo,
-      soPhieu: soPhieu,
-      softwareIssues: swIssues,
-      softwareCount: swCount,
-      hardwareIssues: hwIssues,
-      hardwareCount: hwCount,
-      reqStaff: reqStaff,
-      execStaff: execStaff,
-      note: note,
-      status: status,
-      targetSheet: targetSheet,
-      targetRow: targetRow,
-      targetRange: targetRange,
-      userAccount: session ? session.username : "guest",
-      userFullname: session ? (session.fullname || session.username) : execStaff,
-      userRole: session ? (session.role || "staff") : "staff",
-      createdAt: new Date().toISOString()
-    };
+    try {
+      // 1. TỰ ĐỘNG ĐỒNG BỘ & XÁC MINH DÒNG TRỐNG THỜI GIAN THỰC TẠI THỜI ĐIỂM BẤM
+      const verified = await this.syncAndVerifyEmptyRow(targetSheet);
+      const targetRow = verified ? verified.row : (this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 48);
+      const targetRange = verified ? verified.rangeStr : `B${targetRow}:AK${targetRow}`;
+      const nextStt = verified ? verified.stt : String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
 
-    // 1. Lưu cục bộ
-    ToolCnttReport.saveLocalRow(newRecord);
+      // Lấy thông tin tài khoản đăng nhập từ Lịch Trực CNTT
+      const session = (window.ToolDutyRoster && typeof window.ToolDutyRoster.getCurrentSession === "function")
+        ? window.ToolDutyRoster.getCurrentSession()
+        : null;
 
-    // 2. Ghi nhật ký người dùng trên các tài khoản
-    if (ToolCnttReport.logUserActivity) {
-      ToolCnttReport.logUserActivity(newRecord, session);
-    }
+      const newRecord = {
+        id: `local_${Date.now()}`,
+        stt: nextStt,
+        dept: dept,
+        soHoSo: soHoSo,
+        soPhieu: soPhieu,
+        softwareIssues: swIssues,
+        softwareCount: swCount,
+        hardwareIssues: hwIssues,
+        hardwareCount: hwCount,
+        reqStaff: reqStaff,
+        execStaff: execStaff,
+        note: note,
+        status: status,
+        targetSheet: targetSheet,
+        targetRow: targetRow,
+        targetRange: targetRange,
+        userAccount: session ? session.username : "guest",
+        userFullname: session ? (session.fullname || session.username) : execStaff,
+        userRole: session ? (session.role || "staff") : "staff",
+        createdAt: new Date().toISOString()
+      };
 
-    // 3. Tự động nhảy dòng trống tiếp theo xuống dòng dưới nó
-    if (this.cnttNextEmptyRow) {
-      this.cnttNextEmptyRow.row = targetRow + 1;
-      this.cnttNextEmptyRow.rangeStr = `B${this.cnttNextEmptyRow.row}:AK${this.cnttNextEmptyRow.row}`;
+      // 1. Lưu cục bộ & nhật ký
+      ToolCnttReport.saveLocalRow(newRecord);
+      if (ToolCnttReport.logUserActivity) {
+        ToolCnttReport.logUserActivity(newRecord, session);
+      }
+
+      if (!this.cnttRecords) this.cnttRecords = [];
+      this.cnttRecords.unshift(newRecord);
+      this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
+      this.renderCnttAnalytics();
+      this.renderCnttTable();
+      this.renderUserActivityLogUI();
+
+      // 2. Cập nhật dòng trống tiếp theo xuống dòng kế
+      this.cnttNextEmptyRow = {
+        row: targetRow + 1,
+        rangeStr: `B${targetRow + 1}:AK${targetRow + 1}`,
+        isFull: targetRow >= 100,
+        stt: String(parseInt(nextStt, 10) + 1)
+      };
       this.updateNextEmptyRowUI();
+      this.updateCnttTargetSheetLinks(targetSheet, targetRow);
+
+      // 3. Tạo dòng TSV chuẩn xác cho dòng này
+      const tsv = ToolCnttReport.buildTsvRow({
+        dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
+      }, nextStt, false);
+
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(tsv);
+      }
+
+      this.showToast(`✅ Đã đồng bộ Google Sheet: Dòng trống an toàn là B${targetRow}:AK${targetRow} (STT ${nextStt})! Dữ liệu đã COPY. Bấm "Mở ô B${targetRow}" để dán Ctrl+V.`, "success", 8000);
+
+      this.resetCnttForm();
+      this.switchCnttTab("table");
+    } catch (err) {
+      console.error("Lỗi khi lưu ca:", err);
+      this.showToast(`Lỗi đồng bộ: ${err.message}`, "error");
+    } finally {
+      this.setButtonLoading(this.btnSubmitCnttRecord, false);
     }
-
-    if (!this.cnttRecords) this.cnttRecords = [];
-    this.cnttRecords.unshift(newRecord);
-    this.cnttAnalytics = ToolCnttReport.computeAnalytics(this.cnttRecords);
-
-    this.renderCnttAnalytics();
-    this.renderCnttTable();
-    this.renderUserActivityLogUI();
-    this.populateCnttUserFilterDropdown();
-
-    const tsv = ToolCnttReport.buildTsvRow({
-      dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
-    }, nextStt, false);
-
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(tsv).then(() => {
-        this.showToast(`🎉 Đã lưu ca [${dept}]! Dữ liệu đã COPY. Vui lòng mở Google Sheet [${targetSheet}], chọn ô B${targetRow} và bấm Ctrl+V để dán.`, "success", 7500);
-      }).catch(() => {
-        this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}] vào Sheet [${targetSheet}] (Dòng B${targetRow})!`, "success");
-      });
-    } else {
-      this.showToast(`🎉 Đã lưu ca sửa chữa [${dept}] vào Sheet [${targetSheet}] (Dòng B${targetRow}) thành công!`, "success");
-    }
-
-    this.resetCnttForm();
-    this.switchCnttTab("table");
   }
 
   /**
-   * Sao chép dòng dữ liệu định dạng TSV của Form để dán Ctrl+V vào đúng dòng trống của Sheet
+   * Sao chép dòng dữ liệu định dạng TSV của Form:
+   * Tự động quét lại Google Sheet thời gian thực trước khi copy để đảm bảo đúng dòng trống
    */
-  copyFormTsvRow() {
+  async copyFormTsvRow() {
     if (!window.ToolCnttReport) return;
     const dept = this.inputFormDept ? this.inputFormDept.value : "";
     const soHoSo = this.inputFormSoHoSo ? this.inputFormSoHoSo.value.trim() : "";
@@ -9207,21 +9340,27 @@ p {
 
     const fallbackSheet = window.ToolCnttReport ? ToolCnttReport.getTodaySheetName() : "7.9";
     const targetSheet = this.cnttSelectedSheet || (this.selectTargetSheetForEntry ? this.selectTargetSheetForEntry.value : fallbackSheet);
-    const targetRow = this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 45;
 
-    const nextStt = String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
-    const tsv = ToolCnttReport.buildTsvRow({
-      dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
-    }, nextStt, false);
+    this.showToast(`🔍 Đang kiểm tra dòng trống Google Sheet [${targetSheet}] thời gian thực...`, "info", 1500);
 
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(tsv).then(() => {
-        this.showToast(`📋 Đã copy dữ liệu chuẩn Google Sheet! Vui lòng chọn ô B${targetRow} trên sheet [${targetSheet}] và nhấn Ctrl+V để dán.`, "success", 7000);
-      }).catch(() => {
-        this.showToast("Không thể truy cập bộ nhớ đệm.", "warning");
-      });
-    } else {
-      this.showToast("Trình duyệt không hỗ trợ tự động sao chép.", "warning");
+    try {
+      const verified = await this.syncAndVerifyEmptyRow(targetSheet);
+      const targetRow = verified ? verified.row : (this.cnttNextEmptyRow ? this.cnttNextEmptyRow.row : 48);
+      const nextStt = verified ? verified.stt : String((this.cnttRecords ? this.cnttRecords.length : 0) + 1);
+
+      const tsv = ToolCnttReport.buildTsvRow({
+        dept, soHoSo, soPhieu, software: swObj, hardware: hwObj, reqStaff, execStaff, note, status
+      }, nextStt, false);
+
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(tsv);
+        this.showToast(`📋 Đã copy dữ liệu chuẩn! Dòng trống thực tế là B${targetRow}:AK${targetRow} (STT ${nextStt}). Vui lòng dán Ctrl+V vào ô B${targetRow} trên sheet [${targetSheet}].`, "success", 7500);
+      } else {
+        this.showToast("Trình duyệt không hỗ trợ tự động sao chép.", "warning");
+      }
+    } catch (err) {
+      console.warn("Lỗi kiểm tra dòng trống:", err);
+      this.showToast("Đã copy dữ liệu theo dòng hiển thị hiện tại.", "info");
     }
   }
 
